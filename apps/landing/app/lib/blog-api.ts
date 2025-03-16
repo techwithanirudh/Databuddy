@@ -1,6 +1,6 @@
 // Utility functions to fetch blog data from API routes
 
-import { Post, Category, Tag } from '@/types/blog';
+import { Post, Category, Tag } from '@databuddy/db';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://www.databuddy.cc';
 
@@ -24,12 +24,12 @@ async function fetchAPI<T>(endpoint: string, fallback: T): Promise<T> {
 }
 
 // Get all posts
-export async function getAllPosts(): Promise<Post[]> {
+export async function getAllPosts() {
   return fetchAPI<Post[]>('posts', []);
 }
 
 // Get a single post by slug
-export async function getPostBySlug(slug: string): Promise<Post | null> {
+export async function getPostBySlug(slug: string) {
   try {
     const response = await fetch(`${API_BASE_URL}/api/blog/posts/${slug}`, {
       next: { revalidate: 3600 }
@@ -51,7 +51,7 @@ export async function getPostBySlug(slug: string): Promise<Post | null> {
 }
 
 // Get recent posts
-export async function getRecentPosts(limit: number = 5): Promise<Post[]> {
+export async function getRecentPosts(limit: number = 5) {
   return fetchAPI<Post[]>(`recent-posts?limit=${limit}`, []);
 }
 
@@ -61,7 +61,7 @@ export async function getRelatedPosts(
   categoryIds: string[],
   tagIds: string[],
   limit: number = 3
-): Promise<Post[]> {
+) {
   const categoryParams = categoryIds.map(id => `categoryId=${id}`).join('&');
   const tagParams = tagIds.map(id => `tagId=${id}`).join('&');
   
@@ -72,12 +72,10 @@ export async function getRelatedPosts(
 }
 
 // Get posts by category
-export async function getPostsByCategory(categoryId: string): Promise<Post[]> {
+export async function getPostsByCategory(categoryId: string) {
   try {
     const posts = await getAllPosts();
-    return posts.filter(post => 
-      post.categories?.some((category: Category) => category.id === categoryId) || false
-    );
+    return posts.filter(post => post.categoryId === categoryId);
   } catch (error) {
     console.error('Error fetching posts by category:', error);
     return [];
@@ -85,12 +83,16 @@ export async function getPostsByCategory(categoryId: string): Promise<Post[]> {
 }
 
 // Get posts by tag
-export async function getPostsByTag(tagId: string): Promise<Post[]> {
+export async function getPostsByTag(tagId: string) {
   try {
+    // Since we're getting posts from the API, they'll have the tags property added
+    // by the server transformation
     const posts = await getAllPosts();
-    return posts.filter(post => 
-      post.tags?.some(tag => tag.id === tagId) || false
-    );
+    // We need to type cast here since the API response includes tags
+    return posts.filter(post => {
+      const postWithTags = post as unknown as { tags?: { id: string }[] };
+      return postWithTags.tags?.some(tag => tag.id === tagId) || false;
+    });
   } catch (error) {
     console.error('Error fetching posts by tag:', error);
     return [];
@@ -98,11 +100,11 @@ export async function getPostsByTag(tagId: string): Promise<Post[]> {
 }
 
 // Get all categories
-export async function getAllCategories(): Promise<Category[]> {
+export async function getAllCategories() {
   return fetchAPI<Category[]>('categories', []);
 }
 
 // Get all tags
-export async function getAllTags(): Promise<Tag[]> {
+export async function getAllTags() {
   return fetchAPI<Tag[]>('tags', []);
 } 

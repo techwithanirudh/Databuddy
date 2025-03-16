@@ -2,11 +2,11 @@
 
 import prisma from "@/lib/db";
 import { unstable_cache } from "next/cache";
-import { Post, SidebarPost, SidebarCategory, SidebarTag } from "@/app/types/blog";
+import { Post, User, Category, Tag } from "@databuddy/db";
 
 // Get all published blog posts
 export const getAllPublishedPosts = unstable_cache(
-  async (): Promise<Post[]> => {
+  async () => {
     const posts = await prisma.post.findMany({
       where: { 
         published: true 
@@ -17,7 +17,7 @@ export const getAllPublishedPosts = unstable_cache(
             name: true
           }
         },
-        categories: true,
+        category: true,
         tags: true
       },
       orderBy: {
@@ -25,16 +25,17 @@ export const getAllPublishedPosts = unstable_cache(
       }
     });
     
-    // Transform the data to match our expected Post type
+    // Transform the data to match our expected Post type with categories array
     const transformedPosts = posts.map(post => ({
       ...post,
+      categories: post.category ? [post.category] : [],
       author: {
         name: post.author.name || 'Anonymous',
         image: null
       }
     }));
     
-    return transformedPosts as unknown as Post[];
+    return transformedPosts;
   },
   ["published-posts"],
   { revalidate: 3600 } // Revalidate every hour
@@ -42,7 +43,7 @@ export const getAllPublishedPosts = unstable_cache(
 
 // Get a single blog post by slug
 export const getPostBySlug = unstable_cache(
-  async (slug: string): Promise<Post | null> => {
+  async (slug: string) => {
     const post = await prisma.post.findUnique({
       where: { 
         slug,
@@ -54,23 +55,24 @@ export const getPostBySlug = unstable_cache(
             name: true
           }
         },
-        categories: true,
+        category: true,
         tags: true
       }
     });
     
     if (!post) return null;
     
-    // Transform the data to match our expected Post type
+    // Transform the data to match our expected Post type with categories array
     const transformedPost = {
       ...post,
+      categories: post.category ? [post.category] : [],
       author: {
         name: post.author.name || 'Anonymous',
         image: null
       }
     };
     
-    return transformedPost as unknown as Post;
+    return transformedPost;
   },
   ["post-by-slug"],
   { revalidate: 3600 } // Revalidate every hour
@@ -78,13 +80,13 @@ export const getPostBySlug = unstable_cache(
 
 // Get related posts based on categories and tags
 export const getRelatedPosts = unstable_cache(
-  async (postId: string, categoryIds: string[], tagIds: string[], limit = 3): Promise<Post[]> => {
+  async (postId: string, categoryIds: string[], tagIds: string[], limit = 3) => {
     const posts = await prisma.post.findMany({
       where: {
         id: { not: postId },
         published: true,
         OR: [
-          { categories: { some: { id: { in: categoryIds } } } },
+          { categoryId: { in: categoryIds } },
           { tags: { some: { id: { in: tagIds } } } }
         ]
       },
@@ -94,7 +96,7 @@ export const getRelatedPosts = unstable_cache(
             name: true
           }
         },
-        categories: true,
+        category: true,
         tags: true
       },
       orderBy: {
@@ -103,16 +105,17 @@ export const getRelatedPosts = unstable_cache(
       take: limit
     });
     
-    // Transform the data to match our expected Post type
+    // Transform the data to match our expected Post type with categories array
     const transformedPosts = posts.map(post => ({
       ...post,
+      categories: post.category ? [post.category] : [],
       author: {
         name: post.author.name || 'Anonymous',
         image: null
       }
     }));
     
-    return transformedPosts as unknown as Post[];
+    return transformedPosts;
   },
   ["related-posts"],
   { revalidate: 3600 } // Revalidate every hour
@@ -120,7 +123,7 @@ export const getRelatedPosts = unstable_cache(
 
 // Get recent posts
 export const getRecentPosts = unstable_cache(
-  async (limit = 5): Promise<SidebarPost[]> => {
+  async (limit = 5) => {
     const posts = await prisma.post.findMany({
       where: { 
         published: true 
@@ -130,7 +133,6 @@ export const getRecentPosts = unstable_cache(
         title: true,
         slug: true,
         excerpt: true,
-        coverImage: true,
         createdAt: true,
         author: {
           select: {
@@ -147,13 +149,14 @@ export const getRecentPosts = unstable_cache(
     // Transform the data to match our expected SidebarPost type
     const transformedPosts = posts.map(post => ({
       ...post,
+      coverImage: null, // Add this field to match expected type
       author: {
         name: post.author.name || 'Anonymous',
         image: null
       }
     }));
     
-    return transformedPosts as unknown as SidebarPost[];
+    return transformedPosts;
   },
   ["recent-posts"],
   { revalidate: 3600 } // Revalidate every hour
@@ -161,7 +164,7 @@ export const getRecentPosts = unstable_cache(
 
 // Get all categories with post count
 export const getAllCategories = unstable_cache(
-  async (): Promise<SidebarCategory[]> => {
+  async () => {
     const categories = await prisma.category.findMany({
       include: {
         _count: {
@@ -182,7 +185,7 @@ export const getAllCategories = unstable_cache(
     return categories.map(category => ({
       ...category,
       postCount: category._count.posts
-    })) as unknown as SidebarCategory[];
+    }));
   },
   ["all-categories"],
   { revalidate: 3600 } // Revalidate every hour
@@ -190,7 +193,7 @@ export const getAllCategories = unstable_cache(
 
 // Get all tags with post count
 export const getAllTags = unstable_cache(
-  async (): Promise<SidebarTag[]> => {
+  async () => {
     const tags = await prisma.tag.findMany({
       include: {
         _count: {
@@ -211,7 +214,7 @@ export const getAllTags = unstable_cache(
     return tags.map(tag => ({
       ...tag,
       postCount: tag._count.posts
-    })) as unknown as SidebarTag[];
+    }));
   },
   ["all-tags"],
   { revalidate: 3600 } // Revalidate every hour

@@ -44,7 +44,7 @@ export async function generateMetadata(
     : new Date(post.createdAt).toISOString()
   
   // Construct the canonical URL for the post
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://databuddy.co'
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.databuddy.cc'
   const canonicalUrl = `${baseUrl}/blog/${post.slug}`
   
   // Optionally access and extend parent metadata
@@ -97,8 +97,8 @@ export default async function BlogPostPage({ params }: Props) {
   const readingTime = calculateReadingTime(post.content)
   
   // Get category and tag IDs for related posts
-  const categoryIds = post.categories ? post.categories.map((category: { id: string }) => category.id) : []
-  const tagIds = post.tags ? post.tags.map((tag: { id: string }) => tag.id) : []
+  const categoryIds = post.categories ? post.categories.map((category) => category.id) : []
+  const tagIds = post.tags ? post.tags.map((tag) => tag.id) : []
   
   // Fetch related posts, recent posts, categories, and tags in parallel
   const [relatedPosts, recentPosts, categories, tags] = await Promise.all([
@@ -109,7 +109,7 @@ export default async function BlogPostPage({ params }: Props) {
   ])
   
   // Construct the canonical URL for the post
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://databuddy.co'
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.databuddy.co'
   const canonicalUrl = `${baseUrl}/blog/${post.slug}`
   
   // Prepare structured data for the article

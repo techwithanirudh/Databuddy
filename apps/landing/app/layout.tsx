@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   authors: [{ name: "Databuddy Team" }],
   creator: "Databuddy Analytics",
   publisher: "Databuddy Analytics",
-  metadataBase: new URL("https://databuddy.ai"),
+  metadataBase: new URL("https://www.databuddy.cc"),
   openGraph: {
     type: "website",
     locale: "en_US",

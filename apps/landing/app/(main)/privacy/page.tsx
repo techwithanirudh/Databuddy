@@ -14,7 +14,7 @@ export const metadata = {
     title: "Privacy Policy | Databuddy Analytics",
     description: "Learn how Databuddy Analytics collects, uses, and protects your data in compliance with global privacy regulations.",
     type: "website",
-    url: "https://databuddy.cc/privacy",
+    url: "https://www.databuddy.cc/privacy",
   },
   twitter: {
     card: "summary_large_image",
@@ -79,7 +79,7 @@ export default function PrivacyPolicyPage() {
                     Introduction
                   </h2>
                   <p>
-                    At Databuddy Analytics (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;), we respect your privacy and are committed to protecting your personal data. This privacy policy explains how we collect, use, and safeguard your information when you visit our website at <a href="https://databuddy.cc" target="_blank" rel="noopener noreferrer">databuddy.cc</a> (the &quot;Website&quot;) or use our analytics services (the &quot;Service&quot;).
+                    At Databuddy Analytics (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;), we respect your privacy and are committed to protecting your personal data. This privacy policy explains how we collect, use, and safeguard your information when you visit our website at <a href="https://www.databuddy.cc" target="_blank" rel="noopener noreferrer">databuddy.cc</a> (the &quot;Website&quot;) or use our analytics services (the &quot;Service&quot;).
                   </p>
                   
                   <h2 className="flex items-center gap-2">

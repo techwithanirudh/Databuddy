@@ -13,7 +13,7 @@ export const metadata = {
     title: "Terms of Service | Databuddy Analytics",
     description: "The terms and conditions governing the use of Databuddy Analytics services and website.",
     type: "website",
-    url: "https://databuddy.cc/terms",
+    url: "https://www.databuddy.cc/terms",
   },
   twitter: {
     card: "summary_large_image",
@@ -73,8 +73,8 @@ export default function TermsOfServicePage() {
                     <FileText className="h-5 w-5 text-sky-400" />
                     1. Introduction
                   </h2>
-                  <p>
-                    Welcome to Databuddy Analytics (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;). These Terms of Service (&quot;Terms&quot;) govern your access to and use of the Databuddy Analytics website at <a href="https://databuddy.cc" target="_blank" rel="noopener noreferrer">databuddy.cc</a> (the &quot;Website&quot;) and our analytics services (the &quot;Service&quot;).
+                  <p> 
+                    Welcome to Databuddy Analytics (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;). These Terms of Service (&quot;Terms&quot;) govern your access to and use of the Databuddy Analytics website at <a href="https://www.databuddy.cc" target="_blank" rel="noopener noreferrer">databuddy.cc</a> (the &quot;Website&quot;) and our analytics services (the &quot;Service&quot;).
                   </p>
                   <p>
                     By accessing or using our Website or Services, you agree to be bound by these Terms. If you do not agree to these Terms, please do not access or use our Website or Services.

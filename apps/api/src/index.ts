@@ -14,7 +14,7 @@ app.use(highlightMiddleware({
 // Add middleware
 app.use('*', logger());
 // app.use('*', cors({
-//   origin: ['http://localhost:3000', 'https://databuddy.cc'],
+//   origin: ['http://localhost:3000', 'https://www.databuddy.co'],
 //   credentials: true,
 // }));
 

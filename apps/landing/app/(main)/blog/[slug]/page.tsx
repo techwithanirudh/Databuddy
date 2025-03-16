@@ -52,8 +52,8 @@ export async function generateMetadata(
   
   // Extract keywords from tags and categories
   const keywords = [
-    ...post.tags.map((tag: { name: string }) => tag.name),
-    ...post.categories.map((category: { name: string }) => category.name),
+    ...(post.tags ? post.tags.map((tag: { name: string }) => tag.name) : []),
+    ...(post.categories ? post.categories.map((category: { name: string }) => category.name) : []),
     'analytics', 'web analytics', 'privacy'
   ]
   
@@ -97,8 +97,8 @@ export default async function BlogPostPage({ params }: Props) {
   const readingTime = calculateReadingTime(post.content)
   
   // Get category and tag IDs for related posts
-  const categoryIds = post.categories.map((category: { id: string }) => category.id)
-  const tagIds = post.tags.map((tag: { id: string }) => tag.id)
+  const categoryIds = post.categories ? post.categories.map((category: { id: string }) => category.id) : []
+  const tagIds = post.tags ? post.tags.map((tag: { id: string }) => tag.id) : []
   
   // Fetch related posts, recent posts, categories, and tags in parallel
   const [relatedPosts, recentPosts, categories, tags] = await Promise.all([

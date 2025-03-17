@@ -22,10 +22,14 @@ export interface BlogPost {
 
 export interface BlogCategory extends DbCategory {
   postCount?: number;
+  name: string;
+  slug: string;
 }
 
 export interface BlogTag extends DbTag {
   postCount?: number;
+  name: string;
+  slug: string;
 }
 
 export interface BlogAuthor {

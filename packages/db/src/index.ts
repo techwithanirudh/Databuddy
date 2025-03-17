@@ -19,11 +19,12 @@ export type {
   Website,
   Account,
   Session,
-  Verification
+  Verification,
+  ApplicationStatus,
+  Role,
+  WebsiteStatus
 } from "@prisma/client";
 
-// Re-export enums for better discoverability
-export { Role, WebsiteStatus } from "@prisma/client";
 
 // Export Prisma namespace for advanced type operations
 export { Prisma };

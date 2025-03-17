@@ -6,6 +6,17 @@ import {
   Mail,
   ArrowUp
 } from "lucide-react"
+import { competitors } from "../(main)/compare/data"
+
+// Generate competitor links dynamically
+const getCompetitorLinks = () => {
+  return competitors
+    .filter(c => c.id !== "Databuddy")
+    .map(competitor => ({
+      name: `vs ${competitor.name}`,
+      href: `/compare/${competitor.id}`
+    }));
+};
 
 const footerLinks = [
   {
@@ -38,12 +49,7 @@ const footerLinks = [
   },
   {
     title: "Compare",
-    links: [
-      { name: "vs Google Analytics", href: "/compare?competitor=google-analytics" },
-      { name: "vs Plausible", href: "/compare?competitor=plausible" },
-      { name: "vs Fathom", href: "/compare?competitor=fathom" },
-      { name: "vs Matomo", href: "/compare?competitor=matomo" },
-    ]
+    links: getCompetitorLinks()
   }
 ]
 

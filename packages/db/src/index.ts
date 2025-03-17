@@ -1,29 +1,6 @@
 import { Prisma } from "@prisma/client";
-import { db } from "./client";
-
-// Export everything from Prisma client
-export * from "@prisma/client";
-export { db };
-
-// Re-export specific types for better discoverability and type safety
-export type {
-  User,
-  Post,
-  Category,
-  Tag,
-  Email,
-  Contact,
-  CompanyInfo,
-  JobListing,
-  JobApplication,
-  Website,
-  Account,
-  Session,
-  Verification,
-  ApplicationStatus,
-  Role,
-  WebsiteStatus
-} from "@prisma/client";
+export * from "./client"
+export * from '../generated/client'
 
 
 // Export Prisma namespace for advanced type operations

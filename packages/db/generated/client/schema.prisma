@@ -15,14 +15,14 @@ datasource db {
 }
 
 model Email {
-  id        String   @id @default(dbgenerated("gen_random_uuid()"))
+  id        String   @id @default(uuid())
   ipAddress String?
   email     String
   createdAt DateTime @default(now())
 }
 
 model Contact {
-  id              String    @id @default(dbgenerated("gen_random_uuid()"))
+  id              String    @id @default(uuid())
   name            String
   email           String
   phone           String?
@@ -41,7 +41,7 @@ model Contact {
 // Authentication models
 
 model User {
-  id            String     @id @default(dbgenerated("gen_random_uuid()"))
+  id            String     @id @default(uuid())
   email         String     @unique
   firstName     String?
   lastName      String?
@@ -72,7 +72,7 @@ model User {
 }
 
 model Verification {
-  id         String    @id
+  id         String    @id @default(uuid())
   identifier String
   value      String
   expiresAt  DateTime
@@ -83,7 +83,7 @@ model Verification {
 }
 
 model Session {
-  id        String   @id
+  id        String   @id @default(uuid())
   expiresAt DateTime
   token     String
   createdAt DateTime

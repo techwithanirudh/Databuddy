@@ -1,9 +1,7 @@
-import { createLogger } from '@/packages/logger/src';
 import { PrismaClient } from '@prisma/client';
 
 export * from '@prisma/client';
 
-const logger = createLogger('db');
 
 /**
  * Get a properly configured PrismaClient instance

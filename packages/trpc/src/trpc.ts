@@ -4,12 +4,6 @@ import { Role } from '@prisma/client';
 
 import { TRPCAccessError, TRPCNotFoundError, TRPCInternalServerError, TRPCBadRequestError } from './errors';
 
-export function createTRPCRouter() {
-  return router({
-    project: projectRouter,
-  });
-}
-
 // Context type definition
 export interface Context {
   user?: {
@@ -47,6 +41,9 @@ const t = initTRPC.context<Context>().create({
 // Export reusable router and procedure helpers
 export const router = t.router;
 export const publicProcedure = t.procedure;
+
+// Create a tRPC router
+export const createTRPCRouter = t.router;
 
 // Middleware to check if user is authenticated
 const isAuthed = t.middleware(({ ctx, next }) => {

@@ -1,10 +1,9 @@
-import { router } from './trpc';
+import { router, createTRPCRouter } from './trpc';
 // import { userRouter } from './routers/user';
 // import { postRouter } from './routers/post';
 import { projectRouter } from './routers/project';
-import { createTRPCRouter } from './trpc';
 
-export const appRouter = createTRPCRouter({
+export const appRouter = router({
 //   user: userRouter,
 //   post: postRouter,
   project: projectRouter,

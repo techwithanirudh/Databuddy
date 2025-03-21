@@ -40,8 +40,9 @@ model User {
   firstName     String?
   lastName      String?
   image         String?
-  emailVerified DateTime?
+  emailVerified Boolean         @default(false)
   name          String? // Computed field for display purposes
+  password      String?
   status        UserStatus      @default(ACTIVE)
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @default(now()) @updatedAt

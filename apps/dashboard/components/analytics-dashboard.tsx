@@ -1,10 +1,67 @@
 "use client";
 
-import { useAnalyticsData } from "../hooks/use-analytics-data";
+import { useState, useEffect } from "react";
+
+// Temporary analytics data hook
+function useAnalyticsData() {
+  const [timeSeriesData, setTimeSeriesData] = useState({
+    visitors: Array.from({ length: 30 }, (_, i) => ({
+      date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      value: Math.floor(Math.random() * 1000) + 500,
+    })),
+    pageViews: Array.from({ length: 30 }, (_, i) => ({
+      date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      value: Math.floor(Math.random() * 2000) + 1000,
+    })),
+    bounceRate: Array.from({ length: 30 }, (_, i) => ({
+      date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      value: Math.floor(Math.random() * 20) + 30,
+    })),
+  });
+  
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    // Simulate loading
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, []);
+  
+  return { timeSeriesData, isLoading };
+}
+
+// Temporary analytics summary hook
+function useAnalyticsSummary() {
+  const [summary, setSummary] = useState({
+    totalVisitors: 24583,
+    visitorsTrend: "+12%",
+    totalPageViews: 68294,
+    pageViewsTrend: "+8%",
+    averageBounceRate: "42%",
+    bounceRateTrend: "-5%"
+  });
+  
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  useEffect(() => {
+    // Simulate loading
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1200);
+    
+    return () => clearTimeout(timer);
+  }, []);
+  
+  return { summary, isLoading, error };
+}
+
 import { AnalyticsChart } from "./analytics-chart";
 import { Card, CardContent } from "@/components/ui/card";
 import { Users, MousePointerClick, Activity, ArrowUpRight, Clock } from "lucide-react";
-import { useAnalyticsSummary } from "../hooks/get-analytics-summary";
 import { Loader2 } from "lucide-react";
 
 export function AnalyticsDashboard() {

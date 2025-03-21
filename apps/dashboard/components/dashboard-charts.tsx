@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart, LineChart, PieChart } from "@/components/ui/charts";
+import { BarChart, LineChart, PieChart } from "recharts";
 import { useEffect, useState } from "react";
 import { useApiClient } from "@/lib/hooks/use-api-client";
 import { Loader2 } from "lucide-react";

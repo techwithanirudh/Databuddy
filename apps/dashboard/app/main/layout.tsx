@@ -5,8 +5,8 @@ import Link from "next/link";
 import { LayoutDashboard, Globe, User, Settings, Menu, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { UserDropdown } from "@/app/components/layout/user-dropdown";
-import { useSession } from "@/lib/auth-client";
+import { UserDropdown } from "@/components/layout/user-dropdown";
+import { useSession } from "@databuddy/auth";
 
 interface DashboardLayoutProps {
   children: ReactNode;

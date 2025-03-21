@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth, canManageUsers } from '@/lib/auth'
-import prisma from '@/lib/db'
+import { auth, canManageUsers } from '@databuddy/auth'
+import { prisma } from '@databuddy/db'
 import { headers } from 'next/headers';
 
 

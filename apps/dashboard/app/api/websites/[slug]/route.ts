@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import db from "@/lib/db";
+import { auth } from "@databuddy/auth";
+import { db } from "@databuddy/db";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: { name: string } }
 ) {
   try {
     const session = await auth.api.getSession({
@@ -18,11 +18,11 @@ export async function GET(
       );
     }
 
-    const { slug } = params;
+    const { name } = params;
 
     const website = await db.website.findFirst({
       where: {
-        slug,
+        name: name,
         userId: session.user.id
       }
     });

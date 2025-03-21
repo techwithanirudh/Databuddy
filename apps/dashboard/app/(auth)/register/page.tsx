@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { signIn } from "@databuddy/auth";
+import { loginWithEmail, registerWithEmail, signIn, signUp } from "@databuddy/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,36 +52,50 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-        }),
-      });
+      // const response = await fetch("/api/auth/register", {
+      //   method: "POST",
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //   },
+      //   body: JSON.stringify({
+      //     name: formData.name,
+      //     email: formData.email,
+      //     password: formData.password,
+      //   }),
+      // });
 
-      const data = await response.json();
+      // const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.message || "Something went wrong");
+      // if (!response.ok) {
+      //   throw new Error(data.message || "Something went wrong");
+      // }
+
+      const { success, data } = await registerWithEmail(formData.email, formData.password, formData.name);
+
+      if (!success) {
+        toast.error(data?.error?.message ?? "Something went wrong");
+        return;
       }
 
       toast.success("Account created successfully");
       
       // Sign in the user after successful registration
-      await signIn.email({
-        email: formData.email,
-        password: formData.password,
-        fetchOptions: {
-          onSuccess: () => {
-            router.push("/dashboard");
-          }
-        }
-      });
+      const { success: loginSuccess, data: loginData } = await loginWithEmail(formData.email, formData.password, { redirectUrl: "/dashboard", router });
+
+      if (!loginSuccess) {
+        toast.error(loginData?.error?.message ?? "Something went wrong");
+        return;
+      }
+      
+      // await signIn.email({
+      //   email: formData.email,
+      //   password: formData.password,
+      // fetchOptions: {
+      //   onSuccess: () => {
+      //     router.push("/dashboard");
+      //   }
+      // }
+      // });
       
       router.refresh();
     } catch (error) {

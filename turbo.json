@@ -11,12 +11,10 @@
     "db:generate": {
       "cache": false
     },
-    "db:migrate": {
+    "db:push": {
       "cache": false,
-      "persistent": true
-    },
-    "db:deploy": {
-      "cache": false
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "dependsOn": ["^db:generate"]
     },
     "lint": {
       "dependsOn": ["^lint"]

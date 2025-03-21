@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import db from "@/lib/db";
+import { db } from "@databuddy/db";
 import { z } from "zod";
-import { auth } from "@/lib/auth";
+import { auth } from "@databuddy/auth";
 import { headers } from "next/headers";
 
 // Schema for website creation/update
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
 
     // Check if slug already exists
     const existingWebsite = await db.website.findUnique({
-      where: { slug },
+      where: { name: validatedData.name },
     });
 
     if (existingWebsite) {
@@ -76,16 +76,8 @@ export async function POST(req: NextRequest) {
     const website = await db.website.create({
       data: {
         ...validatedData,
-        slug,
+        name: validatedData.name,
         userId: session.user.id,
-      },
-    });
-
-    // Create initial analytics record
-    await db.websiteAnalytics.create({
-      data: {
-        websiteId: website.id,
-        date: new Date(),
       },
     });
 

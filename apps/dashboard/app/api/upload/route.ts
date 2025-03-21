@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth' 
-import { uploadFile, uploadOptimizedImage, ImageSize } from '@/app/lib/supabase'
+import { auth } from '@databuddy/auth' 
+import { uploadFile, uploadOptimizedImage, ImageSize } from '@/lib/supabase'
 import { headers } from 'next/headers'
 
 export async function POST(request: NextRequest) {

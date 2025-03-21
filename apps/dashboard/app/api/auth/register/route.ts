@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { hash } from "bcrypt";
-import { db as prisma } from "@databuddy/db";
+import { prisma } from "@databuddy/db";
+import { createLogger } from "@databuddy/logger";
 import { z } from "zod";
+
+const logger = createLogger("dashboard-register");
 
 // Define validation schema
 const userSchema = z.object({
@@ -58,7 +61,7 @@ export async function POST(req: Request) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Registration error:", error);
+    logger.error("Registration error:", error);
     return NextResponse.json(
       { message: "Something went wrong" },
       { status: 500 }

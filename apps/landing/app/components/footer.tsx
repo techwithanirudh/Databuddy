@@ -19,10 +19,10 @@ const footerLinks = [
   {
     title: "Product",
     links: [
-      { name: "Features", href: "/#features" },
-      { name: "Pricing", href: "/#pricing" },
+      { name: "Features", href: "/features" },
+      { name: "Pricing", href: "/pricing" },
       { name: "Demo", href: "/demo" },
-      { name: "FAQ", href: "/#faq" },
+      { name: "FAQ", href: "/faq" },
       { name: "Early Access", href: "/#cta-form" },
     ]
   },

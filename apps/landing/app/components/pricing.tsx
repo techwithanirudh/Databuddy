@@ -337,7 +337,7 @@ export default function Pricing() {
                     }`}
                     asChild
                   >
-                    <Link href="#cta-form">
+                    <Link href="/contact">
                       {plan.price === "0" ? "Get Started" : plan.price === "Contact us" ? "Contact Sales" : "Subscribe"}
                     </Link>
                   </Button>

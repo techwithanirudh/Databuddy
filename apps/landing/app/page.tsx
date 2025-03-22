@@ -4,6 +4,9 @@ import FadeIn from "./components/FadeIn";
 import SidebarNavigation from "./components/sidebar-navigation";
 import Hero from "./components/hero";
 import Features from "./components/features";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { ArrowRight, DollarSign, Sparkles } from "lucide-react";
 
 import dynamic from "next/dynamic"; 
 
@@ -11,7 +14,6 @@ const CTA = dynamic(() => import("./components/cta"), { ssr: true });
 const Privacy = dynamic(() => import("./components/privacy"), { ssr: true });
 const FAQ = dynamic(() => import("./components/faq"), { ssr: true });
 const Comparison = dynamic(() => import("./components/comparison"), { ssr: true });
-const Pricing = dynamic(() => import("./components/pricing"), { ssr: true });
 const Performance = dynamic(() => import("./components/performance"), { ssr: true });
 const Mission = dynamic(() => import("./components/mission"), { ssr: true });
 const Roadmap = dynamic(() => import("./components/roadmap"), { ssr: true });
@@ -31,11 +33,6 @@ export default function Home() {
         <SidebarNavigation />
         <FadeIn>
           <Hero />
-        </FadeIn>
-        <FadeIn delay={100}>
-          <div id="features">
-            <Features />
-          </div>
         </FadeIn>
         {/* <FadeIn delay={100}>
           <SocialProof />
@@ -71,11 +68,6 @@ export default function Home() {
         {/* <FadeIn delay={100}>
           <Roadmap />
         </FadeIn> */}
-        <FadeIn delay={100}>
-          <div id="pricing">
-            <Pricing />
-          </div>
-        </FadeIn>
         <FadeIn delay={100}>
           <div id="faq">
             <FAQ />

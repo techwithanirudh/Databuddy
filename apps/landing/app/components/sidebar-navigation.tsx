@@ -21,13 +21,13 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 // Define navigation sections
 const navigationSections = [
-  { name: "Features", id: "features", icon: <Sparkles className="h-4 w-4" /> },
+  { name: "Features", id: "features", icon: <Sparkles className="h-4 w-4" />, href: "/features" },
   { name: "Privacy", id: "privacy", icon: <Shield className="h-4 w-4" /> },
   { name: "Mission", id: "mission", icon: <Zap className="h-4 w-4" /> },
   { name: "Compare", id: "compare", icon: <Layers className="h-4 w-4" /> },
   { name: "Performance", id: "performance", icon: <LineChart className="h-4 w-4" /> },
   { name: "Data OS", id: "data-os", icon: <Boxes className="h-4 w-4" /> },
-  { name: "Pricing", id: "pricing", icon: <DollarSign className="h-4 w-4" /> },
+  { name: "Pricing", id: "pricing", icon: <DollarSign className="h-4 w-4" />, href: "/pricing" },
   { name: "FAQ", id: "faq", icon: <HelpCircle className="h-4 w-4" /> },
   { name: "Contact", id: "contact", icon: <Mail className="h-4 w-4" /> },
   { name: "CTA", id: "cta-form", icon: <MessageSquare className="h-4 w-4" /> },
@@ -129,7 +129,12 @@ export default function SidebarNavigation() {
     };
   }, []); // Remove sectionProgress from dependencies
 
-  const handleSectionClick = (sectionId: string) => {
+  const handleSectionClick = (sectionId: string, href?: string) => {
+    if (href) {
+      window.location.href = href;
+      return;
+    }
+    
     const element = document.getElementById(sectionId);
     if (element) {
       // Smooth scroll to section without changing URL
@@ -187,7 +192,7 @@ export default function SidebarNavigation() {
               return (
                 <motion.button
                   key={section.id}
-                  onClick={() => handleSectionClick(section.id)}
+                  onClick={() => handleSectionClick(section.id, section.href)}
                   className={cn(
                     "relative flex items-center rounded-lg px-3 py-2 text-left",
                     "transition-all duration-200 overflow-hidden",

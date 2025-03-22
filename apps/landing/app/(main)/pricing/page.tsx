@@ -95,34 +95,34 @@ export default function PricingPage() {
         <main className="pt-8" itemScope itemType="https://schema.org/PriceSpecification">
           {/* Hero section with glow effect */}
           <FadeIn>
-            <section className="container mx-auto px-4 py-16 max-w-6xl relative">
+            <section className="container mx-auto px-4 py-16 max-w-6xl relative" aria-labelledby="pricing-title">
               {/* Decorative elements */}
-              <div className="absolute top-0 right-10 w-72 h-72 bg-sky-500/10 rounded-full blur-3xl -z-10" />
-              <div className="absolute bottom-0 left-10 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl -z-10" />
+              <div className="absolute top-0 right-10 w-72 h-72 bg-sky-500/10 rounded-full blur-3xl -z-10" aria-hidden="true" />
+              <div className="absolute bottom-0 left-10 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl -z-10" aria-hidden="true" />
               
               <div className="text-center mb-8 relative">
-                <div className="inline-flex items-center justify-center p-2 bg-sky-500/10 rounded-full mb-5 border border-sky-500/20">
+                <div className="inline-flex items-center justify-center p-2 bg-sky-500/10 rounded-full mb-5 border border-sky-500/20" aria-hidden="true">
                   <DollarSign className="h-6 w-6 text-sky-400" />
                 </div>
-                <h1 className="text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-blue-500 mb-6">
+                <h1 id="pricing-title" className="text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-blue-500 mb-6" itemProp="name">
                   Simple, Transparent Pricing
                 </h1>
-                <p className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto mb-8">
+                <p className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto mb-8" itemProp="description">
                   Start with <span itemProp="minPrice">50,000 free pageviews</span> per month. Scale up as you grow with our flexible pricing options designed for businesses of all sizes.
                 </p>
                 
                 {/* Key benefits */}
-                <div className="flex flex-wrap justify-center gap-x-8 gap-y-4 max-w-3xl mx-auto mt-10">
-                  <div className="flex items-center">
-                    <CreditCard className="h-5 w-5 text-emerald-400 mr-2" />
+                <div className="flex flex-wrap justify-center gap-x-8 gap-y-4 max-w-3xl mx-auto mt-10" role="list" aria-label="Key pricing benefits">
+                  <div className="flex items-center" role="listitem">
+                    <CreditCard className="h-5 w-5 text-emerald-400 mr-2" aria-hidden="true" />
                     <span className="text-slate-200">No credit card required to start</span>
                   </div>
-                  <div className="flex items-center">
-                    <Shield className="h-5 w-5 text-emerald-400 mr-2" />
+                  <div className="flex items-center" role="listitem">
+                    <Shield className="h-5 w-5 text-emerald-400 mr-2" aria-hidden="true" />
                     <span className="text-slate-200">GDPR and CCPA compliant</span>
                   </div>
-                  <div className="flex items-center">
-                    <Zap className="h-5 w-5 text-emerald-400 mr-2" />
+                  <div className="flex items-center" role="listitem">
+                    <Zap className="h-5 w-5 text-emerald-400 mr-2" aria-hidden="true" />
                     <span className="text-slate-200">14-day money back guarantee</span>
                   </div>
                 </div>
@@ -145,33 +145,33 @@ export default function PricingPage() {
             <section aria-labelledby="included-features" className="container mx-auto px-4 py-8 max-w-5xl">
               <h2 id="included-features" className="text-2xl font-bold text-center text-white mb-10">Features Included With All Plans</h2>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div className="bg-slate-900/30 border border-slate-800 rounded-xl p-6 hover:border-sky-500/30 hover:bg-slate-900/50 transition-all">
-                  <div className="bg-sky-500/10 p-3 rounded-xl w-fit mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8" role="list" aria-label="Common features">
+                <div className="bg-slate-900/30 border border-slate-800 rounded-xl p-6 hover:border-sky-500/30 hover:bg-slate-900/50 transition-all" role="listitem" itemScope itemType="https://schema.org/ItemList">
+                  <div className="bg-sky-500/10 p-3 rounded-xl w-fit mb-4" aria-hidden="true">
                     <Shield className="h-6 w-6 text-sky-400" />
                   </div>
-                  <h3 className="text-xl font-semibold text-white mb-3">Privacy-First Analytics</h3>
-                  <p className="text-slate-300">
+                  <h3 className="text-xl font-semibold text-white mb-3" itemProp="name">Privacy-First Analytics</h3>
+                  <p className="text-slate-300" itemProp="description">
                     Cookieless tracking, GDPR and CCPA compliant out of the box, no consent banners needed.
                   </p>
                 </div>
                 
-                <div className="bg-slate-900/30 border border-slate-800 rounded-xl p-6 hover:border-sky-500/30 hover:bg-slate-900/50 transition-all">
-                  <div className="bg-sky-500/10 p-3 rounded-xl w-fit mb-4">
+                <div className="bg-slate-900/30 border border-slate-800 rounded-xl p-6 hover:border-sky-500/30 hover:bg-slate-900/50 transition-all" role="listitem" itemScope itemType="https://schema.org/ItemList">
+                  <div className="bg-sky-500/10 p-3 rounded-xl w-fit mb-4" aria-hidden="true">
                     <Zap className="h-6 w-6 text-sky-400" />
                   </div>
-                  <h3 className="text-xl font-semibold text-white mb-3">Ultra-Fast Performance</h3>
-                  <p className="text-slate-300">
+                  <h3 className="text-xl font-semibold text-white mb-3" itemProp="name">Ultra-Fast Performance</h3>
+                  <p className="text-slate-300" itemProp="description">
                     Lightweight tracking script (just 1.5KB), 247x smaller than Google Analytics with minimal site impact.
                   </p>
                 </div>
                 
-                <div className="bg-slate-900/30 border border-slate-800 rounded-xl p-6 hover:border-sky-500/30 hover:bg-slate-900/50 transition-all">
-                  <div className="bg-sky-500/10 p-3 rounded-xl w-fit mb-4">
+                <div className="bg-slate-900/30 border border-slate-800 rounded-xl p-6 hover:border-sky-500/30 hover:bg-slate-900/50 transition-all" role="listitem" itemScope itemType="https://schema.org/ItemList">
+                  <div className="bg-sky-500/10 p-3 rounded-xl w-fit mb-4" aria-hidden="true">
                     <Wallet className="h-6 w-6 text-sky-400" />
                   </div>
-                  <h3 className="text-xl font-semibold text-white mb-3">Full Data Ownership</h3>
-                  <p className="text-slate-300">
+                  <h3 className="text-xl font-semibold text-white mb-3" itemProp="name">Full Data Ownership</h3>
+                  <p className="text-slate-300" itemProp="description">
                     You own 100% of your analytics data with complete control and export capabilities.
                   </p>
                 </div>
@@ -185,47 +185,59 @@ export default function PricingPage() {
               <h2 id="pricing-faq" className="text-3xl font-bold text-center text-white mb-2">Frequently Asked Questions</h2>
               <p className="text-slate-400 text-center mb-10">Everything you need to know about our pricing and billing</p>
               
-              <div className="grid gap-6 md:grid-cols-2">
-                <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 hover:border-sky-500/30 hover:bg-slate-900/80 transition-colors">
-                  <h3 className="text-lg font-semibold text-white mb-3">Can I upgrade or downgrade my plan?</h3>
-                  <p className="text-slate-300">
-                    Yes, you can change your plan at any time. Changes take effect on your next billing cycle, and you&apos;ll only be charged for what you use.
-                  </p>
+              <div className="grid gap-6 md:grid-cols-2" itemScope itemType="https://schema.org/FAQPage">
+                <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 hover:border-sky-500/30 hover:bg-slate-900/80 transition-colors" itemScope itemType="https://schema.org/Question">
+                  <h3 className="text-lg font-semibold text-white mb-3" itemProp="name">Can I upgrade or downgrade my plan?</h3>
+                  <div itemScope itemType="https://schema.org/Answer" itemProp="acceptedAnswer">
+                    <p className="text-slate-300" itemProp="text">
+                      Yes, you can change your plan at any time. Changes take effect on your next billing cycle, and you&apos;ll only be charged for what you use.
+                    </p>
+                  </div>
                 </div>
                 
-                <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 hover:border-sky-500/30 hover:bg-slate-900/80 transition-colors">
-                  <h3 className="text-lg font-semibold text-white mb-3">Do you offer refunds?</h3>
-                  <p className="text-slate-300">
-                    We offer a 14-day money-back guarantee if you&apos;re not satisfied with our service. No questions asked.
-                  </p>
+                <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 hover:border-sky-500/30 hover:bg-slate-900/80 transition-colors" itemScope itemType="https://schema.org/Question">
+                  <h3 className="text-lg font-semibold text-white mb-3" itemProp="name">Do you offer refunds?</h3>
+                  <div itemScope itemType="https://schema.org/Answer" itemProp="acceptedAnswer">
+                    <p className="text-slate-300" itemProp="text">
+                      We offer a 14-day money-back guarantee if you&apos;re not satisfied with our service. No questions asked.
+                    </p>
+                  </div>
                 </div>
                 
-                <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 hover:border-sky-500/30 hover:bg-slate-900/80 transition-colors">
-                  <h3 className="text-lg font-semibold text-white mb-3">What happens if I exceed my pageviews?</h3>
-                  <p className="text-slate-300">
-                    With the pay-as-you-go plan, you&apos;ll be billed for additional pageviews at a tiered rate. With bundles, you can purchase additional capacity as needed.
-                  </p>
+                <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 hover:border-sky-500/30 hover:bg-slate-900/80 transition-colors" itemScope itemType="https://schema.org/Question">
+                  <h3 className="text-lg font-semibold text-white mb-3" itemProp="name">What happens if I exceed my pageviews?</h3>
+                  <div itemScope itemType="https://schema.org/Answer" itemProp="acceptedAnswer">
+                    <p className="text-slate-300" itemProp="text">
+                      With the pay-as-you-go plan, you&apos;ll be billed for additional pageviews at a tiered rate. With bundles, you can purchase additional capacity as needed.
+                    </p>
+                  </div>
                 </div>
                 
-                <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 hover:border-sky-500/30 hover:bg-slate-900/80 transition-colors">
-                  <h3 className="text-lg font-semibold text-white mb-3">Do you offer custom plans?</h3>
-                  <p className="text-slate-300">
-                    Yes, we offer custom plans for businesses with specific needs. Contact our sales team for more information.
-                  </p>
+                <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 hover:border-sky-500/30 hover:bg-slate-900/80 transition-colors" itemScope itemType="https://schema.org/Question">
+                  <h3 className="text-lg font-semibold text-white mb-3" itemProp="name">Do you offer custom plans?</h3>
+                  <div itemScope itemType="https://schema.org/Answer" itemProp="acceptedAnswer">
+                    <p className="text-slate-300" itemProp="text">
+                      Yes, we offer custom plans for businesses with specific needs. Contact our sales team for more information.
+                    </p>
+                  </div>
                 </div>
                 
-                <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 hover:border-sky-500/30 hover:bg-slate-900/80 transition-colors">
-                  <h3 className="text-lg font-semibold text-white mb-3">How does the free plan work?</h3>
-                  <p className="text-slate-300">
-                    Our free plan includes 50,000 pageviews per month with core features. No credit card required, and you can upgrade anytime.
-                  </p>
+                <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 hover:border-sky-500/30 hover:bg-slate-900/80 transition-colors" itemScope itemType="https://schema.org/Question">
+                  <h3 className="text-lg font-semibold text-white mb-3" itemProp="name">How does the free plan work?</h3>
+                  <div itemScope itemType="https://schema.org/Answer" itemProp="acceptedAnswer">
+                    <p className="text-slate-300" itemProp="text">
+                      Our free plan includes 50,000 pageviews per month with core features. No credit card required, and you can upgrade anytime.
+                    </p>
+                  </div>
                 </div>
                 
-                <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 hover:border-sky-500/30 hover:bg-slate-900/80 transition-colors">
-                  <h3 className="text-lg font-semibold text-white mb-3">How are pageviews counted?</h3>
-                  <p className="text-slate-300">
-                    A pageview is counted each time a page loads with our tracking script. We don&apos;t count bot traffic or repetitive views from the same user within a short timeframe.
-                  </p>
+                <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 hover:border-sky-500/30 hover:bg-slate-900/80 transition-colors" itemScope itemType="https://schema.org/Question">
+                  <h3 className="text-lg font-semibold text-white mb-3" itemProp="name">How are pageviews counted?</h3>
+                  <div itemScope itemType="https://schema.org/Answer" itemProp="acceptedAnswer">
+                    <p className="text-slate-300" itemProp="text">
+                      A pageview is counted each time a page loads with our tracking script. We don&apos;t count bot traffic or repetitive views from the same user within a short timeframe.
+                    </p>
+                  </div>
                 </div>
               </div>
               

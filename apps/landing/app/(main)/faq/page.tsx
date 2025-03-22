@@ -17,16 +17,22 @@ import { Card, CardContent } from "@/components/ui/card";
 export const metadata = {
   title: "Frequently Asked Questions | Databuddy Analytics",
   description: "Find answers to common questions about Databuddy Analytics, including privacy features, pricing, performance, and more.",
+  keywords: "analytics FAQ, cookieless tracking, GDPR analytics, privacy analytics, web analytics performance, Databuddy help",
+  alternates: {
+    canonical: "https://www.databuddy.cc/faq",
+  },
   openGraph: {
     title: "Frequently Asked Questions | Databuddy Analytics",
     description: "Find answers to common questions about Databuddy Analytics, including privacy features, pricing, performance, and more.",
     type: "website",
     url: "https://www.databuddy.cc/faq",
+    siteName: "Databuddy Analytics",
   },
   twitter: {
     card: "summary_large_image",
     title: "Frequently Asked Questions | Databuddy Analytics",
     description: "Find answers to common questions about Databuddy Analytics, including privacy features, pricing, performance, and more.",
+    creator: "@databuddyps",
   },
 };
 
@@ -68,7 +74,7 @@ const faqCategories = [
     questions: [
       {
         question: "Do I need to add cookie consent banners with Databuddy?",
-        answer: "No. Databuddy's analytics are completely cookieless, using privacy-preserving techniques to provide accurate analytics without tracking individual users. Our customers typically see a 30% increase in conversion rates after removing those intrusive cookie banners while still getting the insights they need."
+        answer: "No. Databuddy&apos;s analytics are completely cookieless, using privacy-preserving techniques to provide accurate analytics without tracking individual users. Our customers typically see a 30% increase in conversion rates after removing those intrusive cookie banners while still getting the insights they need."
       },
       {
         question: "How accurate is cookieless analytics compared to traditional methods?",
@@ -96,7 +102,7 @@ const faqCategories = [
     questions: [
       {
         question: "How does Databuddy impact my site's performance?",
-        answer: "Databuddy has minimal impact on your site's performance. Our tracking script is 247x smaller than Google Analytics (just 1.5KB vs 371KB), loads 6x faster (30-50ms vs 234ms), has 2-5x lighter CPU impact (0.8-1.5% vs 3-6%), and uses 10x less energy. This means faster page loads, better Core Web Vitals scores, and improved SEO rankings."
+        answer: "Databuddy has minimal impact on your site&apos;s performance. Our tracking script is 247x smaller than Google Analytics (just 1.5KB vs 371KB), loads 6x faster (30-50ms vs 234ms), has 2-5x lighter CPU impact (0.8-1.5% vs 3-6%), and uses 10x less energy. This means faster page loads, better Core Web Vitals scores, and improved SEO rankings."
       },
       {
         question: "How does Databuddy handle high-traffic sites?",
@@ -164,11 +170,11 @@ const faqCategories = [
     questions: [
       {
         question: "Can I upgrade or downgrade my plan?",
-        answer: "Yes, you can change your plan at any time. Changes take effect on your next billing cycle, and you'll only be charged for what you use."
+        answer: "Yes, you can change your plan at any time. Changes take effect on your next billing cycle, and you&apos;ll only be charged for what you use."
       },
       {
         question: "Do you offer refunds?",
-        answer: "We offer a 14-day money-back guarantee if you're not satisfied with our service. No questions asked."
+        answer: "We offer a 14-day money-back guarantee if you&apos;re not satisfied with our service. No questions asked."
       },
       {
         question: "Do you offer custom plans for larger businesses?",
@@ -176,7 +182,7 @@ const faqCategories = [
       },
       {
         question: "What happens if I exceed my monthly pageview limit?",
-        answer: "If you exceed your monthly pageview limit, we'll continue collecting data and notify you about the overage. You'll have the option to upgrade to a higher plan or pay a small overage fee for the additional pageviews. We won't suddenly stop collecting data or surprise you with a large bill."
+        answer: "If you exceed your monthly pageview limit, we&apos;ll continue collecting data and notify you about the overage. You&apos;ll have the option to upgrade to a higher plan or pay a small overage fee for the additional pageviews. We won&apos;t suddenly stop collecting data or surprise you with a large bill."
       }
     ]
   }
@@ -306,6 +312,27 @@ export default function FAQPage() {
           </FadeIn>
         </main>
         <Footer />
+        
+        {/* Structured data for FAQs */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              "mainEntity": faqCategories.flatMap((category) => 
+                category.questions.map((faq) => ({
+                  "@type": "Question",
+                  "name": faq.question,
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": faq.answer
+                  }
+                }))
+              )
+            })
+          }}
+        />
       </div>
     </div>
   );

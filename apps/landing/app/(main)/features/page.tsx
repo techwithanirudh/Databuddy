@@ -91,7 +91,7 @@ const featureCategories = [
   {
     id: "performance",
     title: "Performance",
-    description: "Lightning-fast analytics with zero impact on your site's speed and performance.",
+    description: "Lightning-fast analytics with zero impact on your site&apos;s speed and performance.",
     icon: <Gauge className="h-6 w-6" />,
     color: "from-orange-400 to-orange-600",
     highlights: [
@@ -139,7 +139,7 @@ export default function FeaturesPage() {
       <Background />
       <div className="relative z-10 h-full overflow-auto scrollbar-hide">
         <Navbar />
-        <main className="pt-8">
+        <main className="pt-8" itemScope itemType="https://schema.org/WebPage">
           {/* Hero section */}
           <FadeIn>
             <div className="container mx-auto px-4 py-16 max-w-6xl relative">
@@ -148,10 +148,10 @@ export default function FeaturesPage() {
               <div className="absolute bottom-0 left-10 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -z-10" />
               
               <div className="text-center mb-8 relative">
-                <h1 className="text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-blue-500 mb-6">
+                <h1 className="text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-blue-500 mb-6" itemProp="headline">
                   Powerful Features, Simple Interface
                 </h1>
-                <p className="text-lg md:text-xl text-slate-300 max-w-3xl mx-auto mb-10">
+                <p className="text-lg md:text-xl text-slate-300 max-w-3xl mx-auto mb-10" itemProp="description">
                   Everything you need to understand your audience without compromising their privacy or your site&apos;s performance.
                 </p>
                 <div className="flex flex-wrap justify-center gap-4 mt-8">
@@ -177,19 +177,20 @@ export default function FeaturesPage() {
             <div className="container mx-auto px-4 py-16">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
                 {featureCategories.map((category) => (
-                  <div key={category.id} className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 hover:border-sky-500/30 hover:shadow-lg hover:shadow-sky-500/5 transition-all duration-300">
+                  <div key={category.id} id={category.id} className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 hover:border-sky-500/30 hover:shadow-lg hover:shadow-sky-500/5 transition-all duration-300" itemScope itemType="https://schema.org/ItemList">
                     <div className="flex items-center gap-4 mb-4">
                       <div className={`p-3 rounded-xl bg-gradient-to-br ${category.color} text-white`}>
                         {category.icon}
                       </div>
-                      <h2 className="text-xl font-bold">{category.title}</h2>
+                      <h2 className="text-xl font-bold" itemProp="name">{category.title}</h2>
                     </div>
-                    <p className="text-slate-400 mb-4">{category.description}</p>
+                    <p className="text-slate-400 mb-4" itemProp="description">{category.description}</p>
                     <ul className="space-y-2 mb-6">
                       {category.highlights.map((highlight, index) => (
-                        <li key={index} className="flex items-start">
+                        <li key={index} className="flex items-start" itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">
                           <CheckCircle className="h-5 w-5 text-sky-400 mr-2 shrink-0 mt-0.5" />
-                          <span className="text-slate-300 text-sm">{highlight}</span>
+                          <span className="text-slate-300 text-sm" itemProp="name">{highlight}</span>
+                          <meta itemProp="position" content={String(index + 1)} />
                         </li>
                       ))}
                     </ul>
@@ -277,33 +278,41 @@ export default function FeaturesPage() {
                 <p className="text-slate-400">Common questions about Databuddy&apos;s features</p>
               </div>
 
-              <div className="grid gap-6 md:grid-cols-2">
-                <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 hover:border-sky-500/30 hover:bg-slate-900/80 transition-colors">
-                  <h3 className="text-lg font-semibold text-white mb-3">How does cookieless tracking work?</h3>
-                  <p className="text-slate-300">
-                    Databuddy uses a combination of techniques including probabilistic matching and session-based tracking to provide accurate analytics without cookies or personal identifiers.
-                  </p>
+              <div className="grid gap-6 md:grid-cols-2" itemScope itemType="https://schema.org/FAQPage">
+                <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 hover:border-sky-500/30 hover:bg-slate-900/80 transition-colors" itemScope itemType="https://schema.org/Question">
+                  <h3 className="text-lg font-semibold text-white mb-3" itemProp="name">How does cookieless tracking work?</h3>
+                  <div itemScope itemType="https://schema.org/Answer" itemProp="acceptedAnswer">
+                    <p className="text-slate-300" itemProp="text">
+                      Databuddy uses a combination of techniques including probabilistic matching and session-based tracking to provide accurate analytics without cookies or personal identifiers.
+                    </p>
+                  </div>
                 </div>
 
-                <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 hover:border-sky-500/30 hover:bg-slate-900/80 transition-colors">
-                  <h3 className="text-lg font-semibold text-white mb-3">Do you offer a free plan?</h3>
-                  <p className="text-slate-300">
-                    Yes, Databuddy offers a free plan with up to 50,000 pageviews per month and core analytics features. <Link href="/pricing" className="text-sky-400 hover:underline">View pricing details</Link>.
-                  </p>
+                <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 hover:border-sky-500/30 hover:bg-slate-900/80 transition-colors" itemScope itemType="https://schema.org/Question">
+                  <h3 className="text-lg font-semibold text-white mb-3" itemProp="name">Do you offer a free plan?</h3>
+                  <div itemScope itemType="https://schema.org/Answer" itemProp="acceptedAnswer">
+                    <p className="text-slate-300" itemProp="text">
+                      Yes, Databuddy offers a free plan with up to 50,000 pageviews per month and core analytics features. <Link href="/pricing" className="text-sky-400 hover:underline">View pricing details</Link>.
+                    </p>
+                  </div>
                 </div>
 
-                <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 hover:border-sky-500/30 hover:bg-slate-900/80 transition-colors">
-                  <h3 className="text-lg font-semibold text-white mb-3">What makes Databuddy different from other analytics?</h3>
-                  <p className="text-slate-300">
-                    Databuddy combines privacy-first design, high performance, and developer-friendly features in one platform. <Link href="/compare" className="text-sky-400 hover:underline">See how we compare</Link>.
-                  </p>
+                <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 hover:border-sky-500/30 hover:bg-slate-900/80 transition-colors" itemScope itemType="https://schema.org/Question">
+                  <h3 className="text-lg font-semibold text-white mb-3" itemProp="name">What makes Databuddy different from other analytics?</h3>
+                  <div itemScope itemType="https://schema.org/Answer" itemProp="acceptedAnswer">
+                    <p className="text-slate-300" itemProp="text">
+                      Databuddy combines privacy-first design, high performance, and developer-friendly features in one platform. <Link href="/compare" className="text-sky-400 hover:underline">See how we compare</Link>.
+                    </p>
+                  </div>
                 </div>
 
-                <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 hover:border-sky-500/30 hover:bg-slate-900/80 transition-colors">
-                  <h3 className="text-lg font-semibold text-white mb-3">Can I export my data?</h3>
-                  <p className="text-slate-300">
-                    Yes, you can export your analytics data in JSON or CSV format, or use our API for direct integration with your systems.
-                  </p>
+                <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 hover:border-sky-500/30 hover:bg-slate-900/80 transition-colors" itemScope itemType="https://schema.org/Question">
+                  <h3 className="text-lg font-semibold text-white mb-3" itemProp="name">Can I export my data?</h3>
+                  <div itemScope itemType="https://schema.org/Answer" itemProp="acceptedAnswer">
+                    <p className="text-slate-300" itemProp="text">
+                      Yes, you can export your analytics data in JSON or CSV format, or use our API for direct integration with your systems.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>

@@ -191,30 +191,6 @@ export default async function BlogPage() {
             </div>
           </FadeIn>
 
-          {/* No Content Guidance - Only show if no posts at all */}
-          {!hasPosts && (
-            <FadeIn delay={200}>
-              <div className="container mx-auto px-4 py-6 max-w-6xl">
-                <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-6 my-8">
-                  <div className="flex items-start gap-4">
-                    <div className="p-3 bg-amber-500/10 rounded-full">
-                      <AlertCircle className="h-6 w-6 text-amber-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-semibold mb-2">Why am I seeing this?</h3>
-                      <p className="text-slate-300 mb-3">
-                        This empty state appears because there are no blog posts published yet. Once content is added, this section will be replaced with your blog posts.
-                      </p>
-                      <p className="text-slate-400 text-sm">
-                        <span className="font-medium text-amber-400">Admin tip:</span> Use the admin dashboard to create your first blog post.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </FadeIn>
-          )}
-
           {/* CTA section */}
           <FadeIn delay={200}>
             <div className="container mx-auto px-4 py-16 max-w-6xl">

@@ -3,48 +3,40 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { 
-  Menu, BarChart2, ArrowRight
-} from "lucide-react"
+import { Menu, BarChart2, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetTitle } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
 import VisuallyHidden from "@/components/ui/visuallyhidden"
-import { 
-  homeNavGroups, blogNavGroups, demoNavGroups, 
-  compareNavGroups, contactNavGroups, flattenNavItems 
-} from "./nav-links"
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-  navigationMenuTriggerStyle,
-} from "@/components/ui/navigation-menu"
+
+// Main navigation links - simplified without dropdowns
+const mainNavLinks = [
+  { name: "Features", href: "/features" },
+  { name: "Pricing", href: "/pricing" },
+  { name: "About", href: "/about" },
+  { name: "Contact", href: "/contact" }
+];
 
 export default function NavbarClient() {
   const pathname = usePathname()
   const [isScrolled, setIsScrolled] = React.useState(false)
   const [isOpen, setIsOpen] = React.useState(false)
-  const closeTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
   
-  // Determine which nav groups to use based on the current path
-  const getNavGroups = () => {
-    if (pathname === "/") return homeNavGroups
-    if (pathname.startsWith("/blog")) return blogNavGroups
-    if (pathname.startsWith("/demo")) return demoNavGroups
-    if (pathname.startsWith("/compare")) return compareNavGroups
-    if (pathname.startsWith("/contact")) return contactNavGroups
-    return homeNavGroups // Default to home nav groups
-  }
-  
-  const navGroups = getNavGroups()
   const isHomePage = pathname === "/"
-  
   const ctaLink = isHomePage ? "#cta-form" : "/#cta-form"
+
+  // Handle scroll events to change navbar style
+  React.useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10)
+    }
+    
+    window.addEventListener("scroll", handleScroll)
+    return () => {
+      window.removeEventListener("scroll", handleScroll)
+    }
+  }, [])
 
   // Handle hash change and smooth scroll
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
@@ -70,39 +62,6 @@ export default function NavbarClient() {
     tap: { scale: 0.95, transition: { duration: 0.1 } }
   }
 
-  // Desktop navigation using shadcn Navigation Menu
-  const DesktopNav = () => (
-    <NavigationMenu className="hidden md:flex">
-      <NavigationMenuList>
-        {navGroups.map((group) => (
-          <NavigationMenuItem key={group.name}>
-            <NavigationMenuTrigger className="bg-transparent text-slate-200 hover:text-white hover:bg-slate-800/50">
-              {group.name}
-            </NavigationMenuTrigger>
-            <NavigationMenuContent>
-              <ul className="grid w-[220px] gap-2 p-4 md:w-[260px] bg-slate-900 border border-slate-800 rounded-lg">
-                {group.items.map((item) => (
-                  <li key={item.name}>
-                    <NavigationMenuLink asChild>
-                      <Link
-                        href={item.href}
-                        onClick={(e) => handleNavClick(e, item.href)}
-                        className="flex items-center gap-2 p-2 hover:bg-slate-800 rounded-md text-slate-300 hover:text-sky-400 transition-colors"
-                      >
-                        {item.icon}
-                        <span>{item.name}</span>
-                      </Link>
-                    </NavigationMenuLink>
-                  </li>
-                ))}
-              </ul>
-            </NavigationMenuContent>
-          </NavigationMenuItem>
-        ))}
-      </NavigationMenuList>
-    </NavigationMenu>
-  )
-
   // Mobile navigation
   const MobileNav = () => (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -122,27 +81,24 @@ export default function NavbarClient() {
           Databuddy
         </SheetTitle>
         <nav className="flex flex-col space-y-4 mt-8">
-          {navGroups.map((group) => (
-            <div key={group.name} className="space-y-2">
-              <h3 className="text-sm font-medium text-slate-400">{group.name}</h3>
-              <ul className="space-y-1 pl-2">
-                {group.items.map((item) => (
-                  <li key={item.name}>
-                    <SheetClose asChild>
-                      <Link
-                        href={item.href}
-                        onClick={(e) => handleNavClick(e, item.href)}
-                        className="flex items-center gap-2 p-2 text-slate-300 hover:text-sky-400 hover:bg-slate-800/50 rounded-md transition-colors"
-                      >
-                        {item.icon}
-                        <span>{item.name}</span>
-                      </Link>
-                    </SheetClose>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          <ul className="space-y-1">
+            {mainNavLinks.map((item) => (
+              <li key={item.name}>
+                <SheetClose asChild>
+                  <Link
+                    href={item.href}
+                    onClick={(e) => handleNavClick(e, item.href)}
+                    className={cn(
+                      "flex items-center gap-2 p-2 text-slate-300 hover:text-sky-400 hover:bg-slate-800/50 rounded-md transition-colors",
+                      pathname === item.href && "text-sky-400 bg-slate-800/30"
+                    )}
+                  >
+                    <span>{item.name}</span>
+                  </Link>
+                </SheetClose>
+              </li>
+            ))}
+          </ul>
           <div className="pt-4 mt-4 border-t border-slate-800">
             <SheetClose asChild>
               <Button asChild className="w-full bg-sky-500 hover:bg-sky-600">
@@ -191,11 +147,26 @@ export default function NavbarClient() {
           </motion.div>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center gap-1">
-            <DesktopNav />
+          <div className="hidden md:flex items-center gap-6">
+            {/* Main Links */}
+            <div className="flex items-center gap-5">
+              {mainNavLinks.map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  onClick={(e) => handleNavClick(e, item.href)}
+                  className={cn(
+                    "text-sm font-medium text-slate-200 hover:text-sky-400 transition-colors",
+                    pathname === item.href && "text-sky-400"
+                  )}
+                >
+                  {item.name}
+                </Link>
+              ))}
+            </div>
             
             {/* Demo Button */}
-            <div className="h-6 w-px bg-slate-800 mx-2"></div>
+            <div className="h-6 w-px bg-slate-800 mx-1"></div>
             <motion.div
               variants={buttonVariants}
               initial="initial"
@@ -217,7 +188,7 @@ export default function NavbarClient() {
               initial="initial"
               whileHover="hover"
               whileTap="tap"
-              className="ml-2"
+              className="ml-1"
             >
               <Button 
                 className="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 font-medium shadow-lg shadow-sky-500/20 rounded-full group"
@@ -233,7 +204,7 @@ export default function NavbarClient() {
           </div>
 
           {/* Mobile Menu Trigger */}
-          <div className="lg:hidden flex items-center gap-3">
+          <div className="md:hidden flex items-center gap-3">
             <MobileNav />
           </div>
         </div>

@@ -1,6 +1,5 @@
-import { db } from "@databuddy/db";
+import { db, AccessLevel, Role } from "@databuddy/db";
 import { TRPCError } from '@trpc/server';
-import { AccessLevel, Role } from '@prisma/client';
 
 // Cache duration in seconds
 const CACHE_DURATION = 5 * 60; // 5 minutes

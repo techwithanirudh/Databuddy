@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { db } from '@databuddy/db';
-import { AccessLevel, ProjectType, Role } from '@prisma/client';
+import { AccessLevel, ProjectType, Role } from '@databuddy/db';
 import { adminProcedure, protectedProcedure, publicProcedure, router } from '../trpc';
 import { requireProjectAccess, requireOrganizationAccess, getProjectAccessCached } from '../access';
 

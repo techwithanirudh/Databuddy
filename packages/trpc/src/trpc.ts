@@ -1,6 +1,6 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { ZodError } from 'zod';
-import { Role } from '@prisma/client';
+import { Role } from '@databuddy/db';
 
 import { TRPCAccessError, TRPCNotFoundError, TRPCInternalServerError, TRPCBadRequestError } from './errors';
 

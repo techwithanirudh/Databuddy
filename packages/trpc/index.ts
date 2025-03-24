@@ -1,3 +1,3 @@
 export * from './src/root';
 export * from './src/trpc';
-export { getProjectAccess } from './src/access';
+export { getProjectAccess, getOrganizationAccess, getClientAccess } from './src/access';

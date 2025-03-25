@@ -1,6 +1,6 @@
 "use client";
 
-import { AddWebsiteDialog } from "@/app/components/dashboard/add-website-dialog";
+import { AddWebsiteDialog } from "@/components/add-website-dialog";
 
 interface DashboardHeaderProps {
   title: string;

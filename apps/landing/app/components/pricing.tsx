@@ -159,7 +159,7 @@ export default function Pricing() {
       <div className="container px-4 mx-auto">
         {/* Schema.org markup for pricing */}
         <div itemScope itemType="https://schema.org/SoftwareApplication" className="sr-only">
-          <meta itemProp="name" content="Databuddy Analytics" />
+          <meta itemProp="name" content="Databuddy" />
           <meta itemProp="applicationCategory" content="BusinessApplication" />
           <div itemScope itemType="https://schema.org/AggregateOffer" itemProp="offers">
             <meta itemProp="lowPrice" content="0" />

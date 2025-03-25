@@ -57,7 +57,7 @@ export function PostGrid({ posts }: PostGridProps) {
               </div>
             ) : (
               <div className="relative h-52 w-full bg-gradient-to-br from-slate-800/50 to-slate-900/50 flex items-center justify-center">
-                <div className="text-slate-600 text-lg font-medium">Databuddy Analytics</div>
+                <div className="text-slate-600 text-lg font-medium">Databuddy</div>
               </div>
             )}
             

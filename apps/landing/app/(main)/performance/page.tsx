@@ -19,7 +19,7 @@ import {
 
 // Define metadata for SEO
 export const metadata: Metadata = {
-  title: "Lightning Fast Performance | Databuddy Analytics",
+  title: "Lightning Fast Performance | Databuddy",
   description: "Databuddy's analytics script is 247x smaller than Google Analytics, loads 6x faster, and uses 10x less energy, improving your Core Web Vitals.",
   keywords: "analytics performance, fast analytics, Core Web Vitals, web performance, lightweight analytics, site speed",
   alternates: {
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     url: 'https://www.databuddy.cc/performance',
     title: 'Lightning Fast Analytics Performance | Databuddy',
     description: 'Databuddy\'s analytics script is 247x smaller than Google Analytics, loads 6x faster, and uses 10x less energy.',
-    siteName: 'Databuddy Analytics',
+    siteName: 'Databuddy',
   },
   twitter: {
     card: 'summary_large_image',
@@ -212,11 +212,11 @@ export default function PerformancePage() {
               __html: JSON.stringify({
                 "@context": "https://schema.org",
                 "@type": "WebPage",
-                "name": "Lightning Fast Performance | Databuddy Analytics",
+                "name": "Lightning Fast Performance | Databuddy",
                 "description": "Databuddy's analytics script is 247x smaller than Google Analytics, loads 6x faster, and uses 10x less energy, improving your Core Web Vitals.",
                 "mainEntity": {
                   "@type": "Product",
-                  "name": "Databuddy Analytics",
+                  "name": "Databuddy",
                   "description": "Privacy-first web analytics with exceptional performance",
                   "brand": {
                     "@type": "Brand",

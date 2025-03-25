@@ -74,7 +74,7 @@ export function analyzeKeywordDensity(content: string, keyword: string): number 
  * @param maxLength Maximum length for the title
  * @returns An SEO-optimized title
  */
-export function generateSeoTitle(title: string, siteName: string = 'Databuddy Analytics', maxLength: number = 60): string {
+export function generateSeoTitle(title: string, siteName: string = 'Databuddy', maxLength: number = 60): string {
   // If title already includes site name, return it if within length
   if (title.includes(siteName) && title.length <= maxLength) {
     return title;

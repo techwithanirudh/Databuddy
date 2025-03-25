@@ -9,23 +9,23 @@ import Link from "next/link";
 import Script from "next/script";
 
 export const metadata: Metadata = {
-  title: "Pricing Plans | Databuddy Analytics Privacy-First Web Analytics",
-  description: "Explore Databuddy Analytics pricing plans starting with 50,000 free pageviews monthly. GDPR-compliant, cookie-free analytics with flexible options for businesses of all sizes.",
+  title: "Pricing Plans | Databuddy Privacy-First Web Analytics",
+  description: "Explore Databuddy pricing plans starting with 50,000 free pageviews monthly. GDPR-compliant, cookie-free analytics with flexible options for businesses of all sizes.",
   keywords: ["analytics pricing", "web analytics cost", "GDPR compliant analytics", "cookieless analytics pricing", "privacy-first analytics plans", "free website analytics"],
   alternates: {
     canonical: "https://www.databuddy.cc/pricing"
   },
   openGraph: {
     title: "Transparent Pricing Plans for Privacy-First Analytics | Databuddy",
-    description: "Explore Databuddy Analytics pricing plans starting with 50,000 free pageviews monthly. GDPR-compliant, cookie-free analytics with flexible options for businesses of all sizes.",
+    description: "Explore Databuddy pricing plans starting with 50,000 free pageviews monthly. GDPR-compliant, cookie-free analytics with flexible options for businesses of all sizes.",
     url: "https://www.databuddy.cc/pricing",
     type: "website",
-    siteName: "Databuddy Analytics"
+    siteName: "Databuddy"
   },
   twitter: {
     card: "summary_large_image",
     title: "Privacy-First Analytics Pricing | Databuddy",
-    description: "Explore Databuddy Analytics pricing plans starting with 50,000 free pageviews monthly. GDPR-compliant, cookie-free analytics with flexible options for businesses of all sizes."
+    description: "Explore Databuddy pricing plans starting with 50,000 free pageviews monthly. GDPR-compliant, cookie-free analytics with flexible options for businesses of all sizes."
   }
 };
 
@@ -38,7 +38,7 @@ export default function PricingPage() {
     "price": "0",
     "minPrice": "0",
     "maxPrice": "299",
-    "description": "Databuddy Analytics pricing ranges from free (50,000 pageviews/month) to $299/month for Enterprise plans.",
+    "description": "Databuddy pricing ranges from free (50,000 pageviews/month) to $299/month for Enterprise plans.",
     "validFrom": "2023-01-01",
     "eligibleTransactionVolume": {
       "@type": "PriceSpecification",
@@ -133,7 +133,7 @@ export default function PricingPage() {
           {/* Main pricing section */}
           <FadeIn>
             <section aria-labelledby="pricing-plans" className="container mx-auto px-4 mb-16">
-              <h2 id="pricing-plans" className="sr-only">Databuddy Analytics Pricing Plans</h2>
+              <h2 id="pricing-plans" className="sr-only">Databuddy Pricing Plans</h2>
               <div className="bg-gradient-to-b from-slate-900/50 to-slate-950/50 backdrop-blur-sm rounded-2xl border border-slate-800 shadow-xl shadow-sky-500/5 overflow-hidden">
                 <Pricing />
               </div>

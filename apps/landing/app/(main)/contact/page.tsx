@@ -9,8 +9,8 @@ import { Linkedin, Mail, MapPin, Phone } from "lucide-react";
 const Contact = dynamic(() => import("@/app/components/contact"), { ssr: true });
 
 export const metadata = {
-  title: "Contact Us | Databuddy Analytics",
-  description: "Get in touch with the Databuddy Analytics team for questions, support, or to learn more about our privacy-first analytics solution.",
+  title: "Contact Us | Databuddy",
+  description: "Get in touch with the Databuddy team for questions, support, or to learn more about our privacy-first analytics solution.",
 };
 
 export default function ContactPage() {
@@ -48,7 +48,7 @@ export default function ContactPage() {
                   Get in Touch
                 </h1>
                 <p className="text-lg text-slate-300 max-w-2xl mx-auto">
-                  Have questions about Databuddy Analytics? Our team is here to help you implement 
+                  Have questions about Databuddy? Our team is here to help you implement 
                   the right analytics solution for your business.
                 </p>
               </div>

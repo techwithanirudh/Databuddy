@@ -28,8 +28,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Define metadata for SEO
 export const metadata: Metadata = {
-  title: "Features | Databuddy Analytics",
-  description: "Explore the complete feature set of Databuddy Analytics. Privacy-first web analytics with powerful features, simple integration, and zero impact on site performance.",
+  title: "Features | Databuddy",
+  description: "Explore the complete feature set of Databuddy. Privacy-first web analytics with powerful features, simple integration, and zero impact on site performance.",
   keywords: "web analytics, privacy analytics, GDPR analytics, cookieless tracking, performance analytics, data visualization, event streaming, plugin ecosystem, developer API",
   alternates: {
     canonical: 'https://www.databuddy.cc/features',
@@ -37,13 +37,13 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     url: 'https://www.databuddy.cc/features',
-    title: 'Features | Databuddy Analytics',
+    title: 'Features | Databuddy',
     description: 'Privacy-first web analytics with powerful features and zero impact on your site performance.',
-    siteName: 'Databuddy Analytics',
+    siteName: 'Databuddy',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Databuddy Analytics Features',
+    title: 'Databuddy Features',
     description: 'Privacy-first web analytics with powerful features and zero impact on your site performance.',
     creator: '@databuddyps',
   },
@@ -514,12 +514,12 @@ export default function FeaturesPage() {
               __html: JSON.stringify({
                 "@context": "https://schema.org",
                 "@type": "WebPage",
-                "name": "Databuddy Analytics Features",
+                "name": "Databuddy Features",
                 "description": "Privacy-first web analytics with powerful features and zero impact on your site performance.",
                 "url": "https://databuddy.cc/features",
                 "mainEntity": {
                   "@type": "SoftwareApplication",
-                  "name": "Databuddy Analytics",
+                  "name": "Databuddy",
                   "applicationCategory": "WebApplication",
                   "operatingSystem": "All",
                   "offers": {

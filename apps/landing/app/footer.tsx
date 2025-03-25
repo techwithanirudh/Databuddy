@@ -115,7 +115,7 @@ export default function Footer() {
         
         <div className="flex flex-col md:flex-row justify-between items-center pt-8 border-t border-slate-800">
           <p className="text-xs text-slate-500 mb-4 md:mb-0">
-            © {new Date().getFullYear()} Databuddy Analytics. All rights reserved.
+            © {new Date().getFullYear()} Databuddy. All rights reserved.
           </p>
           
           <div className="flex items-center space-x-6">

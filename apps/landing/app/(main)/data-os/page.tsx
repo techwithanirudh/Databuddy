@@ -19,7 +19,7 @@ import {
 
 // Define metadata for SEO
 export const metadata: Metadata = {
-  title: "Data Operating System | Databuddy Analytics",
+  title: "Data Operating System | Databuddy",
   description: "Databuddy's Data OS is more than analytics—it's an interoperable data layer with event streaming, plugin ecosystem, self-hosting, and data warehouse sync capabilities.",
   keywords: "data operating system, event streaming, analytics platform, data platform, data ecosystem, plugin ecosystem, self-hosted analytics",
   alternates: {
@@ -28,9 +28,9 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     url: 'https://www.databuddy.cc/data-os',
-    title: 'Data Operating System | Databuddy Analytics',
+    title: 'Data Operating System | Databuddy',
     description: 'More than analytics: A complete data operating system with event streaming, developer API, and plugin ecosystem.',
-    siteName: 'Databuddy Analytics',
+    siteName: 'Databuddy',
   },
   twitter: {
     card: 'summary_large_image',

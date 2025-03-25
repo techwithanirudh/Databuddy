@@ -24,7 +24,7 @@ import { Separator } from "@/components/ui/separator";
 
 // Define metadata for SEO
 export const metadata: Metadata = {
-  title: "Privacy Policy | Databuddy Analytics",
+  title: "Privacy Policy | Databuddy",
   description: "Databuddy&apos;s privacy policy details how we collect, use, and protect your information in compliance with global privacy regulations.",
   keywords: "privacy policy, data protection, GDPR, CCPA, data privacy, analytics privacy",
   alternates: {
@@ -33,13 +33,13 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     url: 'https://www.databuddy.cc/privacy-policy',
-    title: 'Privacy Policy | Databuddy Analytics',
+    title: 'Privacy Policy | Databuddy',
     description: 'Learn about how Databuddy collects, uses, and protects your information.',
-    siteName: 'Databuddy Analytics',
+    siteName: 'Databuddy',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Privacy Policy | Databuddy Analytics',
+    title: 'Privacy Policy | Databuddy',
     description: 'Learn about how Databuddy collects, uses, and protects your information.',
     creator: '@databuddyps',
   },
@@ -251,7 +251,7 @@ export default function PrivacyPolicyPage() {
               
               <div className="prose prose-invert prose-lg max-w-none">
                 <p className="lead text-lg text-slate-300">
-                  This Privacy Policy describes how Databuddy Analytics (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) collects, uses, and shares information when you use our website, products, and services. We are committed to protecting your privacy and ensuring you have a positive experience on our website and while using our products and services.
+                  This Privacy Policy describes how Databuddy (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) collects, uses, and shares information when you use our website, products, and services. We are committed to protecting your privacy and ensuring you have a positive experience on our website and while using our products and services.
                 </p>
                 
                 {/* Render policy sections */}
@@ -320,7 +320,7 @@ export default function PrivacyPolicyPage() {
                       <a href="mailto:privacy@databuddy.cc" className="hover:underline">privacy@databuddy.cc</a>
                     </p>
                     {/* <p className="text-slate-300">
-                      Databuddy Analytics<br />
+                      Databuddy<br />
                       123 Data Street<br />
                       Analytics City, AC 12345<br />
                       United States

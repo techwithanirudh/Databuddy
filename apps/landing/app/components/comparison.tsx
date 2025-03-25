@@ -63,7 +63,7 @@ export default function Comparison() {
       <div className="container px-4 mx-auto">
         {/* Schema.org markup for comparison */}
         <div itemScope itemType="https://schema.org/Product" className="sr-only">
-          <meta itemProp="name" content="Databuddy Analytics" />
+          <meta itemProp="name" content="Databuddy" />
           <div itemProp="offers" itemScope itemType="https://schema.org/Offer">
             <meta itemProp="price" content="0" />
             <meta itemProp="priceCurrency" content="USD" />

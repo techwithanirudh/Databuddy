@@ -24,8 +24,8 @@ import {
 
 // Define metadata for SEO
 export const metadata: Metadata = {
-  title: "GDPR Compliance | Databuddy Analytics",
-  description: "Learn about GDPR and how Databuddy Analytics ensures compliance with the General Data Protection Regulation through cookieless tracking and privacy-first approaches.",
+  title: "GDPR Compliance | Databuddy",
+  description: "Learn about GDPR and how Databuddy ensures compliance with the General Data Protection Regulation through cookieless tracking and privacy-first approaches.",
   keywords: "GDPR, data protection, privacy analytics, GDPR compliance, cookieless tracking, data privacy, privacy regulations, EU privacy law",
   alternates: {
     canonical: 'https://www.databuddy.cc/privacy/gdpr',
@@ -33,14 +33,14 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     url: 'https://www.databuddy.cc/privacy/gdpr',
-    title: 'GDPR Compliance | Databuddy Analytics',
-    description: 'Learn about GDPR and how Databuddy Analytics ensures compliance with the General Data Protection Regulation.',
-    siteName: 'Databuddy Analytics',
+    title: 'GDPR Compliance | Databuddy',
+    description: 'Learn about GDPR and how Databuddy ensures compliance with the General Data Protection Regulation.',
+    siteName: 'Databuddy',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'GDPR Compliance | Databuddy Analytics',
-    description: 'Learn about GDPR and how Databuddy Analytics ensures compliance with the General Data Protection Regulation.',
+    title: 'GDPR Compliance | Databuddy',
+    description: 'Learn about GDPR and how Databuddy ensures compliance with the General Data Protection Regulation.',
     creator: '@databuddyps',
   },
 };
@@ -550,8 +550,8 @@ export default function GDPRPage() {
               __html: JSON.stringify({
                 "@context": "https://schema.org",
                 "@type": "WebPage",
-                "name": "GDPR Compliance | Databuddy Analytics",
-                "description": "Learn about GDPR and how Databuddy Analytics ensures compliance with the General Data Protection Regulation through cookieless tracking and privacy-first approaches.",
+                "name": "GDPR Compliance | Databuddy",
+                "description": "Learn about GDPR and how Databuddy ensures compliance with the General Data Protection Regulation through cookieless tracking and privacy-first approaches.",
                 "mainEntity": {
                   "@type": "Article",
                   "name": "Understanding GDPR Compliance",

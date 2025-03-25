@@ -21,7 +21,7 @@ import { Separator } from "@/components/ui/separator";
 
 // Define metadata for SEO
 export const metadata: Metadata = {
-  title: "Blog | Databuddy Analytics",
+  title: "Blog | Databuddy",
   description: "Read the latest insights, tutorials and updates about privacy-first analytics, web performance, and data collection best practices.",
   keywords: "analytics blog, privacy-first analytics, web performance, GDPR compliance, cookieless tracking, data analytics, analytics insights",
   alternates: {
@@ -30,13 +30,13 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     url: 'https://www.databuddy.cc/blog',
-    title: 'Blog | Databuddy Analytics',
+    title: 'Blog | Databuddy',
     description: 'Insights, tutorials and updates about privacy-first analytics and web performance.',
-    siteName: 'Databuddy Analytics',
+    siteName: 'Databuddy',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Databuddy Analytics Blog',
+    title: 'Databuddy Blog',
     description: 'Insights, tutorials and updates about privacy-first analytics and web performance.',
     creator: '@databuddyps',
   },
@@ -117,7 +117,7 @@ export default async function BlogPage() {
                   <BookOpen className="h-6 w-6 text-sky-400" />
                 </div>
                 <h1 className="text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-blue-500 mb-6">
-                  Databuddy Analytics Blog
+                  Databuddy Blog
                 </h1>
                 <p className="text-lg md:text-xl text-slate-300 max-w-3xl mx-auto mb-10">
                   Insights, tutorials, and best practices for privacy-first analytics and web performance
@@ -228,12 +228,12 @@ export default async function BlogPage() {
               __html: JSON.stringify({
                 "@context": "https://schema.org",
                 "@type": "Blog",
-                "name": "Databuddy Analytics Blog",
+                "name": "Databuddy Blog",
                 "description": "Insights, tutorials and updates about privacy-first analytics and web performance.",
                 "url": "https://databuddy.cc/blog",
                 "publisher": {
                   "@type": "Organization",
-                  "name": "Databuddy Analytics",
+                  "name": "Databuddy",
                   "logo": {
                     "@type": "ImageObject",
                     "url": "https://databuddy.cc/logo.png"

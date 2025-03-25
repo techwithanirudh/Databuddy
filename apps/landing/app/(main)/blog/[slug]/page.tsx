@@ -39,7 +39,7 @@ export async function generateMetadata(
   
   if (!post) {
     return {
-      title: 'Post Not Found | Databuddy Analytics',
+      title: 'Post Not Found | Databuddy',
       description: 'The requested blog post could not be found.'
     };
   }
@@ -143,7 +143,7 @@ export default async function BlogPostPage({ params }: Props): Promise<React.Rea
     },
     publisher: {
       '@type': 'Organization',
-      name: 'Databuddy Analytics',
+      name: 'Databuddy',
       logo: {
         '@type': 'ImageObject',
         url: `${baseUrl}/images/logo.png`

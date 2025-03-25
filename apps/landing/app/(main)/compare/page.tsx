@@ -26,7 +26,7 @@ import Image from "next/image";
 // Define metadata for SEO
 export const metadata: Metadata = {
   title: "Analytics Comparison | Databuddy vs Google Analytics",
-  description: "See how Databuddy Analytics compares to Google Analytics with our feature comparison. Discover the privacy, performance and data ownership benefits.",
+  description: "See how Databuddy compares to Google Analytics with our feature comparison. Discover the privacy, performance and data ownership benefits.",
   keywords: "analytics comparison, Google Analytics alternative, GDPR analytics, cookieless analytics, privacy-focused analytics, analytics comparison",
   alternates: {
     canonical: 'https://www.databuddy.cc/compare',
@@ -35,13 +35,13 @@ export const metadata: Metadata = {
     type: 'website',
     url: 'https://www.databuddy.cc/compare',
     title: 'Analytics Comparison | Databuddy vs Google Analytics',
-    description: 'Compare Databuddy Analytics to Google Analytics and see why our privacy-first approach delivers better results.',
-    siteName: 'Databuddy Analytics',
+    description: 'Compare Databuddy to Google Analytics and see why our privacy-first approach delivers better results.',
+    siteName: 'Databuddy',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Databuddy vs Google Analytics Comparison',
-    description: 'Compare Databuddy Analytics to Google Analytics and see why our privacy-first approach delivers better results.',
+    description: 'Compare Databuddy to Google Analytics and see why our privacy-first approach delivers better results.',
     creator: '@databuddyps',
   },
 };
@@ -150,7 +150,7 @@ export default function ComparisonPage() {
                   </div>
                   <div className="md:w-3/4">
                     <div className="flex items-center mb-4">
-                      <h2 className="text-2xl font-bold mr-3">Databuddy Analytics</h2>
+                      <h2 className="text-2xl font-bold mr-3">Databuddy</h2>
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-sky-500/20 text-sky-400 border border-sky-500/30">
                         Our Platform
                       </span>
@@ -441,15 +441,15 @@ export default function ComparisonPage() {
                 "@context": "https://schema.org",
                 "@type": "WebPage",
                 "name": "Databuddy vs Google Analytics Comparison",
-                "description": "Compare Databuddy Analytics to Google Analytics and see why our privacy-first approach delivers better results.",
+                "description": "Compare Databuddy to Google Analytics and see why our privacy-first approach delivers better results.",
                 "mainEntity": {
                   "@type": "Table",
-                  "about": "Comparison between Databuddy Analytics and Google Analytics",
+                  "about": "Comparison between Databuddy and Google Analytics",
                   "name": "Analytics Comparison Table"
                 },
                 "publisher": {
                   "@type": "Organization",
-                  "name": "Databuddy Analytics",
+                  "name": "Databuddy",
                   "logo": {
                     "@type": "ImageObject",
                     "url": "https://databuddy.cc/logo.png"

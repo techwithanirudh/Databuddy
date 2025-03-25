@@ -17,8 +17,8 @@ import {
 
 // Define metadata for SEO
 export const metadata: Metadata = {
-  title: "About Us | Databuddy Analytics",
-  description: "Learn about Databuddy Analytics' mission to provide lightning-fast, privacy-focused web analytics that doesn't compromise user privacy or site performance.",
+  title: "About Us | Databuddy",
+  description: "Learn about Databuddy' mission to provide lightning-fast, privacy-focused web analytics that doesn't compromise user privacy or site performance.",
   keywords: "privacy analytics, analytics mission, ethical data collection, web analytics vision, databuddy team, user privacy",
   alternates: {
     canonical: 'https://www.databuddy.cc/about',
@@ -26,13 +26,13 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     url: 'https://www.databuddy.cc/about',
-    title: 'About Databuddy Analytics',
+    title: 'About Databuddy',
     description: 'Our mission is to provide businesses with privacy-focused analytics that respects users while delivering powerful insights.',
-    siteName: 'Databuddy Analytics',
+    siteName: 'Databuddy',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'About Databuddy Analytics',
+    title: 'About Databuddy',
     description: 'Our mission is to provide businesses with privacy-focused analytics that respects users while delivering powerful insights.',
     creator: '@databuddyps',
   },
@@ -99,7 +99,7 @@ export default function AboutPage() {
                   <Heart className="h-6 w-6 text-sky-400" />
                 </div>
                 <h1 className="text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-blue-500 mb-6" itemProp="headline">
-                  About Databuddy Analytics
+                  About Databuddy
                 </h1>
                 <p className="text-lg md:text-xl text-slate-300 max-w-3xl mx-auto mb-10" itemProp="description">
                   We&apos;re on a mission to build better analytics that balances powerful insights with respect for user privacy.
@@ -119,7 +119,7 @@ export default function AboutPage() {
               <div className="text-center mb-12">
                 <h2 className="text-3xl md:text-4xl font-bold mb-4">Our Core Values</h2>
                 <p className="text-slate-400 max-w-2xl mx-auto">
-                  These principles guide everything we do at Databuddy Analytics.
+                  These principles guide everything we do at Databuddy.
                 </p>
               </div>
 
@@ -182,7 +182,7 @@ export default function AboutPage() {
                   He believed there had to be a better way—analytics that respect user privacy while still providing valuable insights, without slowing down websites or requiring complex configurations.
                 </p>
                 <p className="text-slate-300 leading-relaxed">
-                  Today, Databuddy Analytics is helping businesses of all sizes understand their audience and improve their digital experiences, all while maintaining the highest standards of privacy and performance.
+                  Today, Databuddy is helping businesses of all sizes understand their audience and improve their digital experiences, all while maintaining the highest standards of privacy and performance.
                 </p>
               </div>
             </div>
@@ -220,7 +220,7 @@ export default function AboutPage() {
               __html: JSON.stringify({
                 "@context": "https://schema.org",
                 "@type": "Organization",
-                "name": "Databuddy Analytics",
+                "name": "Databuddy",
                 "url": "https://www.databuddy.cc",
                 "logo": "https://www.databuddy.cc/logo.png",
                 "description": "Privacy-first web analytics that doesn't compromise on features or performance.",

@@ -1,6 +1,6 @@
-# Databuddy Analytics - Early Adopter Guide
+# Databuddy - Early Adopter Guide
 
-Welcome to the Databuddy Analytics early adopter guide! This document provides all the information you need to understand our website structure, get started with our product, and provide valuable feedback to help us build the future of privacy-first analytics.
+Welcome to the Databuddy early adopter guide! This document provides all the information you need to understand our website structure, get started with our product, and provide valuable feedback to help us build the future of privacy-first analytics.
 
 ## Table of Contents
 
@@ -14,7 +14,7 @@ Welcome to the Databuddy Analytics early adopter guide! This document provides a
 
 ## Project Overview
 
-Databuddy Analytics is a privacy-first web analytics platform currently in pre-MVP stage (founded in 2025). Our mission is to provide powerful analytics insights without compromising user privacy, offering a cookieless tracking solution that's fully compliant with privacy regulations.
+Databuddy is a privacy-first web analytics platform currently in pre-MVP stage (founded in 2025). Our mission is to provide powerful analytics insights without compromising user privacy, offering a cookieless tracking solution that's fully compliant with privacy regulations.
 
 ### Key Features (Planned)
 
@@ -31,7 +31,7 @@ Databuddy Analytics is a privacy-first web analytics platform currently in pre-M
 Our website consists of the following main pages:
 
 ### Home Page (`/`)
-- Introduction to Databuddy Analytics
+- Introduction to Databuddy
 - Feature highlights
 - Pricing information
 - FAQ section
@@ -152,6 +152,6 @@ When providing feedback, please include:
 
 ---
 
-Thank you for being an early adopter of Databuddy Analytics! Your feedback and support are crucial as we build the future of privacy-first analytics.
+Thank you for being an early adopter of Databuddy! Your feedback and support are crucial as we build the future of privacy-first analytics.
 
 For any questions not covered in this guide, please reach out to us at [hello@databuddy.cc](mailto:hello@databuddy.cc) or join our [Discord community](https://discord.gg/databuddy). 

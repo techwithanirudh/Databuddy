@@ -1,6 +1,7 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { ZodError } from 'zod';
 import { Role } from '@databuddy/db';
+import superjson from 'superjson';
 
 import { TRPCAccessError, TRPCNotFoundError, TRPCInternalServerError, TRPCBadRequestError } from './errors';
 
@@ -26,6 +27,7 @@ export const createContext = async (opts: {
 
 // Initialize tRPC
 const t = initTRPC.context<Context>().create({
+  transformer: superjson,
   errorFormatter({ shape, error }) {
     return {
       ...shape,

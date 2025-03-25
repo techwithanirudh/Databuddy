@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'All Blog Posts | Databuddy Analytics',
+  title: 'All Blog Posts | Databuddy',
   description: 'Browse all articles and insights about privacy-first analytics, web performance, and data collection best practices.',
   alternates: {
     canonical: 'https://www.databuddy.cc/blog/archive',

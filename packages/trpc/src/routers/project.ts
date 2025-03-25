@@ -1,339 +1,243 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { db } from '@databuddy/db';
-import { AccessLevel, ProjectType, Role } from '@databuddy/db';
-import { adminProcedure, protectedProcedure, publicProcedure, router } from '../trpc';
-import { requireProjectAccess, requireOrganizationAccess, getProjectAccessCached } from '../access';
+import { ProjectService } from '@databuddy/db/src/services/project.service';
+import { router, protectedProcedure } from '../trpc';
+import { ProjectType } from '@databuddy/db/generated/client';
+
+const projectCreateSchema = z.object({
+  name: z.string(),
+  slug: z.string(),
+  description: z.string().optional(),
+  type: z.nativeEnum(ProjectType),
+  organizationId: z.string().uuid(),
+  clientId: z.string().uuid().optional(),
+  startDate: z.date().optional(),
+  endDate: z.date().optional(),
+});
+
+const projectUpdateSchema = z.object({
+  name: z.string().optional(),
+  slug: z.string().optional(),
+  description: z.string().optional(),
+  type: z.nativeEnum(ProjectType).optional(),
+  clientId: z.string().uuid().optional(),
+  startDate: z.date().optional(),
+  endDate: z.date().optional(),
+  status: z.string().optional(),
+});
 
 export const projectRouter = router({
-  list: protectedProcedure
-    .input(
-      z.object({
-        organizationId: z.string(),
-        limit: z.number().min(1).max(100).default(50),
-        cursor: z.string().nullish(),
-      })
-    )
-    .use(requireOrganizationAccess(Role.VIEWER))
-    .query(async ({ input, ctx }) => {
-      const { organizationId, limit, cursor } = input;
-      
-      const projects = await db.project.findMany({
-        take: limit + 1,
-        cursor: cursor ? { id: cursor } : undefined,
-        orderBy: { updatedAt: 'desc' },
-        where: { 
-          organizationId,
-          deletedAt: null,
-        },
-        include: {
-          client: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-        },
-      });
-
-      let nextCursor: typeof cursor = undefined;
-      if (projects.length > limit) {
-        const nextItem = projects.pop();
-        nextCursor = nextItem?.id;
-      }
-
-      return {
-        projects,
-        nextCursor,
-      };
-    }),
-
-  // Get a project by ID
-  byId: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .use(requireProjectAccess(AccessLevel.VIEWER))
-    .query(async ({ input }) => {
-      const { id } = input;
-      
-      const project = await db.project.findUnique({
-        where: { 
-          id,
-          deletedAt: null,
-        },
-        include: {
-          client: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              phone: true,
-              type: true,
-            },
-          },
-          organization: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-          access: {
-            select: {
-              id: true,
-              userId: true,
-              level: true,
-              user: {
-                select: {
-                  id: true,
-                  firstName: true,
-                  lastName: true,
-                  email: true,
-                },
-              },
-            },
-          },
-        },
-      });
-
-      if (!project) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Project not found',
-        });
-      }
-
-      return project;
-    }),
-
   // Create a new project
   create: protectedProcedure
-    .input(
-      z.object({
-        name: z.string().min(1),
-        slug: z.string().min(1),
-        description: z.string().optional(),
-        type: z.nativeEnum(ProjectType).default(ProjectType.WEBSITE),
-        organizationId: z.string(),
-        clientId: z.string().optional(),
-        startDate: z.date().optional(),
-        endDate: z.date().optional(),
-      })
-    )
-    .use(requireOrganizationAccess(Role.EDITOR))
-    .mutation(async ({ input, ctx }) => {
-      const { organizationId, slug } = input;
-      
-      // Check if slug is already used in this organization
-      const existingProject = await db.project.findFirst({
-        where: {
-          organizationId,
-          slug,
-        },
-      });
-
-      if (existingProject) {
-        throw new TRPCError({
-          code: 'CONFLICT',
-          message: 'A project with this slug already exists in this organization',
-        });
-      }
-
-      // Create the project
-      const project = await db.project.create({
-        data: {
+    .input(projectCreateSchema)
+    .mutation(async ({ input }) => {
+      try {
+        const project = await ProjectService.create({
           name: input.name,
           slug: input.slug,
           description: input.description,
           type: input.type,
-          organizationId: input.organizationId,
-          clientId: input.clientId,
+          organization: {
+            connect: { id: input.organizationId }
+          },
+          client: input.clientId ? {
+            connect: { id: input.clientId }
+          } : undefined,
           startDate: input.startDate,
           endDate: input.endDate,
-        },
-      });
+        });
+        return project;
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to create project',
+          cause: error,
+        });
+      }
+    }),
 
-      // Create project access separately
-      await db.projectAccess.create({
-        data: {
-          projectId: project.id,
-          userId: ctx.user.id,
-          level: AccessLevel.ADMIN,
-        },
-      });
-
+  // Get project by ID
+  byId: protectedProcedure
+    .input(z.string().uuid())
+    .query(async ({ input }) => {
+      const project = await ProjectService.findById(input);
+      if (!project) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Project not found' });
+      }
       return project;
     }),
 
-  // Update a project
+  // Get project by slug and organization
+  bySlug: protectedProcedure
+    .input(z.object({
+      slug: z.string(),
+      organizationId: z.string().uuid(),
+    }))
+    .query(async ({ input }) => {
+      const project = await ProjectService.findBySlug(input.slug, input.organizationId);
+      if (!project) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Project not found' });
+      }
+      return project;
+    }),
+
+  // List projects by organization
+  byOrganization: protectedProcedure
+    .input(z.string().uuid())
+    .query(async ({ input }) => {
+      try {
+        const projects = await ProjectService.findByOrganization(input);
+        return projects;
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to list projects',
+          cause: error,
+        });
+      }
+    }),
+
+  // List projects by client
+  byClient: protectedProcedure
+    .input(z.string().uuid())
+    .query(async ({ input }) => {
+      try {
+        const projects = await ProjectService.findByClient(input);
+        return projects;
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to list projects',
+          cause: error,
+        });
+      }
+    }),
+
+  // Update project
   update: protectedProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        name: z.string().min(1).optional(),
-        slug: z.string().min(1).optional(),
-        description: z.string().optional(),
-        type: z.nativeEnum(ProjectType).optional(),
-        clientId: z.string().optional().nullable(),
-        startDate: z.date().optional().nullable(),
-        endDate: z.date().optional().nullable(),
-        status: z.string().optional(),
-      })
-    )
-    .use(requireProjectAccess(AccessLevel.EDITOR))
+    .input(z.object({
+      id: z.string().uuid(),
+      data: projectUpdateSchema,
+    }))
     .mutation(async ({ input }) => {
-      const { id, ...data } = input;
-      
-      // If slug is being updated, check if it's already used
-      if (data.slug) {
-        const project = await db.project.findUnique({
-          where: { id },
-          select: { organizationId: true },
-        });
-        
-        if (!project) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: 'Project not found',
-          });
+      try {
+        const updateData: any = { ...input.data };
+        if (input.data.clientId) {
+          updateData.client = { connect: { id: input.data.clientId } };
+          delete updateData.clientId;
         }
-        
-        const existingProject = await db.project.findFirst({
-          where: {
-            organizationId: project.organizationId,
-            slug: data.slug,
-            id: { not: id },
-          },
+        const project = await ProjectService.update(input.id, updateData);
+        return project;
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update project',
+          cause: error,
         });
-        
-        if (existingProject) {
-          throw new TRPCError({
-            code: 'CONFLICT',
-            message: 'A project with this slug already exists in this organization',
-          });
-        }
       }
-      
-      // Update the project
-      const updatedProject = await db.project.update({
-        where: { id },
-        data,
-      });
-      
-      return updatedProject;
     }),
 
-  // Delete a project (soft delete)
+  // Update project status
+  updateStatus: protectedProcedure
+    .input(z.object({
+      id: z.string().uuid(),
+      status: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      try {
+        const project = await ProjectService.updateStatus(input.id, input.status);
+        return project;
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update project status',
+          cause: error,
+        });
+      }
+    }),
+
+  // Delete project
   delete: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .use(requireProjectAccess(AccessLevel.ADMIN))
+    .input(z.string().uuid())
     .mutation(async ({ input }) => {
-      const { id } = input;
-      
-      // Soft delete the project
-      await db.project.update({
-        where: { id },
-        data: {
-          deletedAt: new Date(),
-        },
-      });
-      
-      return { success: true };
+      try {
+        await ProjectService.delete(input);
+        return { success: true };
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to delete project',
+          cause: error,
+        });
+      }
     }),
 
-  // Get project access for the current user
-  access: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ input, ctx }) => {
-      const { id } = input;
-      const userId = ctx.user.id;
-      
-      const access = await getProjectAccessCached({ userId, projectId: id });
-      
-      return access;
-    }),
-
-  // Add a user to a project
-  addUser: protectedProcedure
-    .input(
-      z.object({
-        projectId: z.string(),
-        userId: z.string(),
-        level: z.nativeEnum(AccessLevel).default(AccessLevel.VIEWER),
-      })
-    )
-    .use(requireProjectAccess(AccessLevel.ADMIN))
+  // Add project access
+  addAccess: protectedProcedure
+    .input(z.object({
+      projectId: z.string().uuid(),
+      userId: z.string().uuid(),
+      level: z.enum(['ADMIN', 'EDITOR', 'VIEWER']),
+    }))
     .mutation(async ({ input }) => {
-      const { projectId, userId, level } = input;
-      
-      // Check if user already has access
-      const existingAccess = await db.projectAccess.findFirst({
-        where: {
-          projectId,
-          userId,
-        },
-      });
-      
-      if (existingAccess) {
-        // Update existing access
-        return db.projectAccess.update({
-          where: {
-            id: existingAccess.id,
-          },
-          data: { level },
+      try {
+        await ProjectService.addAccess(input.projectId, {
+          user: { connect: { id: input.userId } },
+          project: { connect: { id: input.projectId } },
+          level: input.level,
+        });
+        return { success: true };
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to add project access',
+          cause: error,
         });
       }
-      
-      // Create new access
-      return db.projectAccess.create({
-        data: {
-          projectId,
-          userId,
-          level,
-        },
-      });
     }),
 
-  // Remove a user from a project
-  removeUser: protectedProcedure
-    .input(
-      z.object({
-        projectId: z.string(),
-        userId: z.string(),
-      })
-    )
-    .use(requireProjectAccess(AccessLevel.ADMIN))
-    .mutation(async ({ input, ctx }) => {
-      const { projectId, userId } = input;
-      
-      // Don't allow removing yourself
-      if (userId === ctx.user.id) {
+  // Remove project access
+  removeAccess: protectedProcedure
+    .input(z.object({
+      projectId: z.string().uuid(),
+      userId: z.string().uuid(),
+    }))
+    .mutation(async ({ input }) => {
+      try {
+        await ProjectService.removeAccess(input.projectId, input.userId);
+        return { success: true };
+      } catch (error) {
         throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'You cannot remove yourself from the project',
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to remove project access',
+          cause: error,
         });
       }
-      
-      // Find the access record
-      const access = await db.projectAccess.findFirst({
-        where: {
-          projectId,
-          userId,
-        },
-      });
-      
-      if (!access) {
+    }),
+
+  // Add project event
+  addEvent: protectedProcedure
+    .input(z.object({
+      projectId: z.string().uuid(),
+      name: z.string(),
+      description: z.string().optional(),
+      data: z.record(z.any()).optional(),
+    }))
+    .mutation(async ({ input }) => {
+      try {
+        await ProjectService.addEvent(input.projectId, {
+          name: input.name,
+          description: input.description,
+          data: input.data,
+          project: { connect: { id: input.projectId } },
+        });
+        return { success: true };
+      } catch (error) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'User does not have access to this project',
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to add project event',
+          cause: error,
         });
       }
-      
-      // Remove access
-      await db.projectAccess.delete({
-        where: {
-          id: access.id,
-        },
-      });
-      
-      return { success: true };
     }),
 }); 

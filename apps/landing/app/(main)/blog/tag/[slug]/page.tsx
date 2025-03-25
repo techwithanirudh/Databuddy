@@ -34,17 +34,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   
   if (!tag) {
     return {
-      title: 'Tag Not Found | Databuddy Analytics',
+      title: 'Tag Not Found | Databuddy',
       description: 'The requested tag could not be found.'
     };
   }
   
   return {
-    title: `#${tag.name} | Databuddy Analytics Blog`,
+    title: `#${tag.name} | Databuddy Blog`,
     description: `Browse all posts tagged with #${tag.name}. Discover insights, tutorials, and resources related to ${tag.name} in data analytics.`,
     keywords: [`${tag.name}`, 'data analytics', 'blog', 'insights', 'tutorials'],
     openGraph: {
-      title: `#${tag.name} | Databuddy Analytics Blog`,
+      title: `#${tag.name} | Databuddy Blog`,
       description: `Browse all posts tagged with #${tag.name}. Discover insights, tutorials, and resources related to ${tag.name} in data analytics.`,
       type: 'website',
       url: `/blog/tag/${slug}`,
@@ -53,13 +53,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           url: '/images/og-image.jpg',
           width: 1200,
           height: 630,
-          alt: `Databuddy Analytics - ${tag.name} tag`
+          alt: `Databuddy - ${tag.name} tag`
         }
       ]
     },
     twitter: {
       card: 'summary_large_image',
-      title: `#${tag.name} | Databuddy Analytics Blog`,
+      title: `#${tag.name} | Databuddy Blog`,
       description: `Browse all posts tagged with #${tag.name}. Discover insights, tutorials, and resources.`,
       images: ['/images/og-image.jpg']
     }

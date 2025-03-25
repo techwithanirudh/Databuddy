@@ -48,14 +48,14 @@ export async function generateMetadata({ params }: { params: Promise<{ competito
   
   if (!competitor) {
     return {
-      title: "Competitor Comparison | Databuddy Analytics",
-      description: "Compare Databuddy Analytics with other analytics platforms."
+      title: "Competitor Comparison | Databuddy",
+      description: "Compare Databuddy with other analytics platforms."
     };
   }
   
   return {
     title: `Databuddy vs ${competitor.name} Comparison | Analytics Platform Comparison`,
-    description: `See how Databuddy Analytics compares to ${competitor.name}. Detailed feature comparison, strengths, limitations, and why Databuddy is the better choice.`,
+    description: `See how Databuddy compares to ${competitor.name}. Detailed feature comparison, strengths, limitations, and why Databuddy is the better choice.`,
     keywords: [
       `analytics comparison`, 
       `${competitor.name} alternative`, 
@@ -76,7 +76,7 @@ export async function generateMetadata({ params }: { params: Promise<{ competito
     ],
     openGraph: {
       title: `Databuddy vs ${competitor.name} | Analytics Platform Comparison`,
-      description: `See how Databuddy Analytics compares to ${competitor.name}. Detailed feature comparison, strengths, limitations, and why Databuddy is the better choice.`,
+      description: `See how Databuddy compares to ${competitor.name}. Detailed feature comparison, strengths, limitations, and why Databuddy is the better choice.`,
       type: "website",
       url: `/compare/${competitor.id}`,
     },

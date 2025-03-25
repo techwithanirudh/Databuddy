@@ -80,9 +80,9 @@ model Verification {
 model Session {
   id        String   @id @default(uuid())
   expiresAt DateTime
-  token     String
-  createdAt DateTime
-  updatedAt DateTime
+  token     String   @unique // Ensure token is unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   ipAddress String?
   userAgent String?
   userId    String?

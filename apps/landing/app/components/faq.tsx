@@ -72,7 +72,7 @@ export default function FAQ() {
             Frequently Asked <span className="text-sky-400">Questions</span>
           </h2>
           <p className="text-slate-300 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
-            Everything you need to know about Databuddy Analytics. Can&apos;t find the answer you&apos;re looking for?
+            Everything you need to know about Databuddy. Can&apos;t find the answer you&apos;re looking for?
             <a href="#contact" className="text-sky-400 hover:text-sky-300 ml-1 font-medium">
               Reach out to our team
             </a>.

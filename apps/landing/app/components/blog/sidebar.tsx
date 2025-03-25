@@ -166,7 +166,7 @@ export function BlogSidebar({ recentPosts, categories, tags }: BlogSidebarProps)
       {/* Call to Action */}
       <div className="bg-gradient-to-br from-indigo-900/20 to-slate-900/70 border border-indigo-500/20 rounded-lg p-5 shadow-sm">
         <h3 className="text-lg font-poppins font-medium text-white mb-2">Need Data Analytics?</h3>
-        <p className="text-sm text-slate-400 mb-4">Discover how Databuddy Analytics can transform your business data into actionable insights.</p>
+        <p className="text-sm text-slate-400 mb-4">Discover how Databuddy can transform your business data into actionable insights.</p>
         <Button className="w-full bg-indigo-600 hover:bg-indigo-500 text-white">
           <Link href="/contact">Get Started</Link>
         </Button>

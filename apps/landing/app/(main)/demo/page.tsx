@@ -177,7 +177,7 @@ export default function DemoPage() {
             <div>
               <h1 className="text-2xl md:text-3xl font-bold text-white bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-300">Analytics Dashboard</h1>
               <div className="flex items-center mt-1">
-                <span className="text-slate-400">Live demo of Databuddy Analytics</span>
+                <span className="text-slate-400">Live demo of Databuddy</span>
                 <Badge variant="outline" color="blue" className="ml-2 bg-blue-500/10 text-blue-500">Placeholder Data</Badge>
               </div>
             </div>

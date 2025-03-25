@@ -30,16 +30,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   
   if (!category) {
     return {
-      title: 'Category Not Found | Databuddy Analytics',
+      title: 'Category Not Found | Databuddy',
       description: 'The requested category could not be found.'
     };
   }
   
   return {
-    title: `${category.name} | Databuddy Analytics Blog`,
+    title: `${category.name} | Databuddy Blog`,
     description: `Browse all posts in the ${category.name} category.`,
     openGraph: {
-      title: `${category.name} | Databuddy Analytics Blog`,
+      title: `${category.name} | Databuddy Blog`,
       description: `Browse all posts in the ${category.name} category.`,
     }
   };

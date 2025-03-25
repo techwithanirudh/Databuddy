@@ -7,18 +7,18 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 
 export const metadata = {
-  title: "Terms of Service | Databuddy Analytics",
-  description: "The terms and conditions governing the use of Databuddy Analytics services and website.",
+  title: "Terms of Service | Databuddy",
+  description: "The terms and conditions governing the use of Databuddy services and website.",
   openGraph: {
-    title: "Terms of Service | Databuddy Analytics",
-    description: "The terms and conditions governing the use of Databuddy Analytics services and website.",
+    title: "Terms of Service | Databuddy",
+    description: "The terms and conditions governing the use of Databuddy services and website.",
     type: "website",
     url: "https://www.databuddy.cc/terms",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Terms of Service | Databuddy Analytics",
-    description: "The terms and conditions governing the use of Databuddy Analytics services and website.",
+    title: "Terms of Service | Databuddy",
+    description: "The terms and conditions governing the use of Databuddy services and website.",
   },
 };
 
@@ -62,7 +62,7 @@ export default function TermsOfServicePage() {
                     <div>
                       <h3 className="text-lg font-semibold text-white mt-0 mb-2">Our Commitment</h3>
                       <p className="m-0">
-                        At Databuddy Analytics, we&apos;re committed to transparency and fairness. These Terms of Service are designed 
+                        At Databuddy, we&apos;re committed to transparency and fairness. These Terms of Service are designed 
                         to clearly outline the rules and guidelines for using our services. We&apos;ve made every effort to use plain 
                         language and avoid confusing legal jargon wherever possible.
                       </p>
@@ -74,7 +74,7 @@ export default function TermsOfServicePage() {
                     1. Introduction
                   </h2>
                   <p> 
-                    Welcome to Databuddy Analytics (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;). These Terms of Service (&quot;Terms&quot;) govern your access to and use of the Databuddy Analytics website at <a href="https://www.databuddy.cc" target="_blank" rel="noopener noreferrer">databuddy.cc</a> (the &quot;Website&quot;) and our analytics services (the &quot;Service&quot;).
+                    Welcome to Databuddy (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;). These Terms of Service (&quot;Terms&quot;) govern your access to and use of the Databuddy website at <a href="https://www.databuddy.cc" target="_blank" rel="noopener noreferrer">databuddy.cc</a> (the &quot;Website&quot;) and our analytics services (the &quot;Service&quot;).
                   </p>
                   <p>
                     By accessing or using our Website or Services, you agree to be bound by these Terms. If you do not agree to these Terms, please do not access or use our Website or Services.
@@ -118,11 +118,11 @@ export default function TermsOfServicePage() {
                       },
                       {
                         term: "Website",
-                        definition: "Databuddy Analytics, accessible from databuddy.cc."
+                        definition: "Databuddy, accessible from databuddy.cc."
                       },
                       {
                         term: "Service",
-                        definition: "The analytics platform provided by Databuddy Analytics."
+                        definition: "The analytics platform provided by Databuddy."
                       }
                     ].map((item, index) => (
                       <div key={index} className="bg-slate-800/30 rounded-lg p-3">
@@ -163,7 +163,7 @@ export default function TermsOfServicePage() {
                     <ul className="space-y-2 mb-0">
                       <li>License, sell, rent, lease, assign, distribute, transmit, host, outsource, disclose, or otherwise commercially exploit the Service.</li>
                       <li>Modify, make derivative works of, disassemble, decrypt, reverse compile, or reverse engineer any part of the Service.</li>
-                      <li>Remove, alter, or obscure any proprietary notice (including any notice of copyright or trademark) of Databuddy Analytics or its affiliates, partners, suppliers, or licensors.</li>
+                      <li>Remove, alter, or obscure any proprietary notice (including any notice of copyright or trademark) of Databuddy or its affiliates, partners, suppliers, or licensors.</li>
                       <li>Use the Service in any way that violates any applicable local, state, national, or international law or regulation.</li>
                       <li>Use the Service for any purpose that is harmful, fraudulent, deceptive, threatening, harassing, defamatory, obscene, or otherwise objectionable.</li>
                       <li>Engage in any activity that interferes with or disrupts the Service (or the servers and networks connected to the Service).</li>
@@ -201,7 +201,7 @@ export default function TermsOfServicePage() {
                   <div className="bg-slate-800/30 rounded-lg p-4 mb-4">
                     <h3 className="text-lg font-semibold mb-2">6.1 Our Intellectual Property</h3>
                     <p className="mb-0">
-                      The Service and its original content, features, and functionality are and will remain the exclusive property of Databuddy Analytics and its licensors. The Service is protected by copyright, trademark, and other laws of both the United States and foreign countries. Our trademarks and trade dress may not be used in connection with any product or service without the prior written consent of Databuddy Analytics.
+                      The Service and its original content, features, and functionality are and will remain the exclusive property of Databuddy and its licensors. The Service is protected by copyright, trademark, and other laws of both the United States and foreign countries. Our trademarks and trade dress may not be used in connection with any product or service without the prior written consent of Databuddy.
                     </p>
                   </div>
                   
@@ -256,7 +256,7 @@ export default function TermsOfServicePage() {
                     9. Limitation of Liability
                   </h2>
                   <p>
-                    In no event shall Databuddy Analytics, nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential, or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from:
+                    In no event shall Databuddy, nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential, or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from:
                   </p>
                   <ul className="space-y-2">
                     <li>Your access to or use of or inability to access or use the Service.</li>

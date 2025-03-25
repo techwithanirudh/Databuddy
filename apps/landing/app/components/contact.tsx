@@ -131,7 +131,7 @@ export default function Contact() {
             Ready to <span className="text-sky-400">get started</span>?
           </h2>
           <p className="text-slate-300 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
-            Have questions about Databuddy Analytics? Our team is ready to help you implement the right analytics solution for your business.
+            Have questions about Databuddy? Our team is ready to help you implement the right analytics solution for your business.
           </p>
         </div>
 

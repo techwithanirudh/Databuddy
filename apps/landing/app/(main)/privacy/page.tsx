@@ -19,7 +19,7 @@ import {
 
 // Define metadata for SEO
 export const metadata: Metadata = {
-  title: "Privacy-First Analytics | Databuddy Analytics",
+  title: "Privacy-First Analytics | Databuddy",
   description: "Databuddy provides GDPR & CCPA compliant web analytics without cookies. No consent banners needed while still getting accurate data.",
   keywords: "privacy analytics, GDPR analytics, CCPA compliant, cookieless tracking, consent-free analytics, privacy-focused data collection",
   alternates: {
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     url: 'https://www.databuddy.cc/privacy',
     title: 'Privacy-First Analytics | Databuddy',
     description: 'Get accurate web analytics without collecting personal data. No cookies, no consent banners, full GDPR & CCPA compliance.',
-    siteName: 'Databuddy Analytics',
+    siteName: 'Databuddy',
   },
   twitter: {
     card: 'summary_large_image',
@@ -264,11 +264,11 @@ export default function PrivacyPage() {
               __html: JSON.stringify({
                 "@context": "https://schema.org",
                 "@type": "WebPage",
-                "name": "Privacy-First Analytics | Databuddy Analytics",
+                "name": "Privacy-First Analytics | Databuddy",
                 "description": "Databuddy provides GDPR & CCPA compliant web analytics without cookies. No consent banners needed while still getting accurate data.",
                 "mainEntity": {
                   "@type": "SoftwareApplication",
-                  "name": "Databuddy Analytics",
+                  "name": "Databuddy",
                   "applicationCategory": "AnalyticsApplication",
                   "operatingSystem": "Web",
                   "offers": {

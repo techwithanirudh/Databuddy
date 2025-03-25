@@ -16,32 +16,32 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Databuddy Analytics - Privacy-First Web Analytics",
+  title: "Databuddy - Privacy-First Web Analytics",
   description: "Experience powerful, privacy-first analytics that matches Google Analytics feature-for-feature without compromising user data. Zero cookies required, 100% data ownership, and AI-powered insights to help your business grow while staying compliant.",
   keywords: ["analytics", "web analytics", "privacy", "GDPR compliant", "cookieless", "website tracking", "data ownership", "performance analytics", "AI analytics", "privacy-first"],
   authors: [{ name: "Databuddy Team" }],
-  creator: "Databuddy Analytics",
-  publisher: "Databuddy Analytics",
+  creator: "Databuddy",
+  publisher: "Databuddy",
   metadataBase: new URL("https://www.databuddy.cc"),
   openGraph: {
     type: "website",
     locale: "en_US",
     url: "https://www.databuddy.cc",
-    title: "Databuddy Analytics - Privacy-First Web Analytics",
+    title: "Databuddy - Privacy-First Web Analytics",
     description: "Experience powerful, privacy-first analytics that matches Google Analytics feature-for-feature without compromising user data. Zero cookies required, 100% data ownership, and AI-powered insights to help your business grow while staying compliant.",
-    siteName: "Databuddy Analytics",
+    siteName: "Databuddy",
     images: [
       {
         url: "/images/og_image.png",
         width: 1200,
         height: 630,
-        alt: "Databuddy Analytics Dashboard"
+        alt: "Databuddy Dashboard"
       }
     ]
   },
   twitter: {
     card: "summary_large_image",
-    title: "Databuddy Analytics - Privacy-First Web Analytics",
+    title: "Databuddy - Privacy-First Web Analytics",
     description: "Experience powerful, privacy-first analytics that matches Google Analytics feature-for-feature without compromising user data. Zero cookies required, 100% data ownership, and AI-powered insights to help your business grow while staying compliant.",
     images: ["/images/og_image.png"],
     creator: "@Databuddy_ps",

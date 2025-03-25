@@ -31,8 +31,8 @@ import {
 
 // Define metadata for SEO
 export const metadata: Metadata = {
-  title: "CCPA & CPRA Compliance | Databuddy Analytics",
-  description: "Learn about CCPA & CPRA and how Databuddy Analytics ensures compliance with California's consumer privacy regulations through privacy-first analytics.",
+  title: "CCPA & CPRA Compliance | Databuddy",
+  description: "Learn about CCPA & CPRA and how Databuddy ensures compliance with California's consumer privacy regulations through privacy-first analytics.",
   keywords: "CCPA, CPRA, California privacy, consumer privacy, data protection, privacy analytics, compliance, cookieless tracking, data privacy, privacy regulations",
   alternates: {
     canonical: 'https://www.databuddy.cc/privacy/ccpa-cpra',
@@ -40,14 +40,14 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     url: 'https://www.databuddy.cc/privacy/ccpa-cpra',
-    title: 'CCPA & CPRA Compliance | Databuddy Analytics',
-    description: "Learn about CCPA & CPRA and how Databuddy Analytics ensures compliance with California's consumer privacy regulations.",
-    siteName: 'Databuddy Analytics',
+    title: 'CCPA & CPRA Compliance | Databuddy',
+    description: "Learn about CCPA & CPRA and how Databuddy ensures compliance with California's consumer privacy regulations.",
+    siteName: 'Databuddy',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'CCPA & CPRA Compliance | Databuddy Analytics',
-    description: "Learn about CCPA & CPRA and how Databuddy Analytics ensures compliance with California's consumer privacy regulations.",
+    title: 'CCPA & CPRA Compliance | Databuddy',
+    description: "Learn about CCPA & CPRA and how Databuddy ensures compliance with California's consumer privacy regulations.",
     creator: '@databuddyps',
   },
 };
@@ -608,7 +608,7 @@ export default function CCPACPRAPage() {
                   
                   <div className="flex justify-center">
                     <Button asChild className="bg-amber-500 hover:bg-amber-600 text-white">
-                      <Link href="/demo">Try Databuddy Analytics</Link>
+                      <Link href="/demo">Try Databuddy</Link>
                     </Button>
                   </div>
                 </div>

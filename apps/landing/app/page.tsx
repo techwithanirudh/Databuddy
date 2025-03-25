@@ -20,22 +20,22 @@ const Footer = dynamic(() => import("./components/footer"), { ssr: true });
 const EarlyAccessPopup = dynamic(() => import("./components/EarlyAccessPopup"), { ssr: true });
 
 export const metadata: Metadata = {
-  title: "Databuddy Analytics | Privacy-First Web Analytics",
+  title: "Databuddy | Privacy-First Web Analytics",
   description: "Fast, privacy-first web analytics that gives you the insights you need without compromising user privacy or site performance.",
   keywords: ["privacy analytics", "cookieless analytics", "GDPR compliant analytics", "web analytics", "fast analytics", "privacy-first"],
   alternates: {
     canonical: "https://www.databuddy.cc"
   },
   openGraph: {
-    title: "Databuddy Analytics | Privacy-First Web Analytics",
+    title: "Databuddy | Privacy-First Web Analytics",
     description: "Fast, privacy-first web analytics that gives you the insights you need without compromising user privacy or site performance.",
     url: "https://www.databuddy.cc",
     type: "website",
-    siteName: "Databuddy Analytics"
+    siteName: "Databuddy"
   },
   twitter: {
     card: "summary_large_image",
-    title: "Databuddy Analytics | Privacy-First Web Analytics",
+    title: "Databuddy | Privacy-First Web Analytics",
     description: "Fast, privacy-first web analytics that gives you the insights you need without compromising user privacy or site performance."
   }
 };
@@ -129,7 +129,7 @@ export default function Home() {
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "Organization",
-              "name": "Databuddy Analytics",
+              "name": "Databuddy",
               "url": "https://www.databuddy.cc",
               "logo": "https://www.databuddy.cc/logo.png",
               "description": "Privacy-first web analytics that doesn't compromise on features or performance.",

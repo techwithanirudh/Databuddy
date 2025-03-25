@@ -51,7 +51,7 @@ export default function Performance() {
       <div className="container px-4 mx-auto">
         {/* Schema.org markup for performance metrics */}
         <div itemScope itemType="https://schema.org/Product" className="sr-only">
-          <meta itemProp="name" content="Databuddy Analytics" />
+          <meta itemProp="name" content="Databuddy" />
           <div itemScope itemType="https://schema.org/AggregateRating" itemProp="aggregateRating">
             <meta itemProp="ratingValue" content="4.9" />
             <meta itemProp="reviewCount" content="128" />

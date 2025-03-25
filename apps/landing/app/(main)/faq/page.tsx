@@ -15,23 +15,23 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 
 export const metadata = {
-  title: "Frequently Asked Questions | Databuddy Analytics",
-  description: "Find answers to common questions about Databuddy Analytics, including privacy features, pricing, performance, and more.",
+  title: "Frequently Asked Questions | Databuddy",
+  description: "Find answers to common questions about Databuddy, including privacy features, pricing, performance, and more.",
   keywords: "analytics FAQ, cookieless tracking, GDPR analytics, privacy analytics, web analytics performance, Databuddy help",
   alternates: {
     canonical: "https://www.databuddy.cc/faq",
   },
   openGraph: {
-    title: "Frequently Asked Questions | Databuddy Analytics",
-    description: "Find answers to common questions about Databuddy Analytics, including privacy features, pricing, performance, and more.",
+    title: "Frequently Asked Questions | Databuddy",
+    description: "Find answers to common questions about Databuddy, including privacy features, pricing, performance, and more.",
     type: "website",
     url: "https://www.databuddy.cc/faq",
-    siteName: "Databuddy Analytics",
+    siteName: "Databuddy",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Frequently Asked Questions | Databuddy Analytics",
-    description: "Find answers to common questions about Databuddy Analytics, including privacy features, pricing, performance, and more.",
+    title: "Frequently Asked Questions | Databuddy",
+    description: "Find answers to common questions about Databuddy, including privacy features, pricing, performance, and more.",
     creator: "@databuddyps",
   },
 };
@@ -210,7 +210,7 @@ export default function FAQPage() {
                   Frequently Asked Questions
                 </h1>
                 <p className="text-slate-300 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
-                  Everything you need to know about Databuddy Analytics. Can&apos;t find the answer you&apos;re looking for?{" "}
+                  Everything you need to know about Databuddy. Can&apos;t find the answer you&apos;re looking for?{" "}
                   <Link href="/contact" className="text-sky-400 hover:text-sky-300 font-medium">
                     Reach out to our team
                   </Link>
@@ -295,7 +295,7 @@ export default function FAQPage() {
                   <CardContent className="relative p-8 text-center">
                     <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-300 mb-4">Still have questions?</h2>
                     <p className="text-slate-300 mb-6 max-w-lg mx-auto">
-                      We&apos;re here to help! Reach out to our team for answers to any other questions you may have about Databuddy Analytics.
+                      We&apos;re here to help! Reach out to our team for answers to any other questions you may have about Databuddy.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                       <Button asChild className="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white shadow-lg shadow-sky-500/20 border-0">

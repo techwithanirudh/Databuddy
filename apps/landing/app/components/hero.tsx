@@ -11,7 +11,7 @@ export default function Hero() {
     <section className="min-h-[90vh] flex items-center justify-center pt-16 px-4 sm:px-6">
       <div className="container mx-auto">
         <div itemScope itemType="https://schema.org/SoftwareApplication" className="sr-only">
-          <meta itemProp="name" content="Databuddy Analytics"/>
+          <meta itemProp="name" content="Databuddy"/>
           <meta itemProp="applicationCategory" content="BusinessApplication"/>
           <meta itemProp="operatingSystem" content="Web"/>
           <meta itemProp="offers" itemScope itemType="https://schema.org/Offer">

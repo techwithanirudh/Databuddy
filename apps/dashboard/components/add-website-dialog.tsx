@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { PlusCircle } from "lucide-react";
 import { toast } from "sonner";
+import { api } from "@/lib/trpc";
 
 interface AddWebsiteDialogProps {
   variant?: "default" | "outline" | "ghost";
@@ -28,60 +29,37 @@ export function AddWebsiteDialog({
 }: AddWebsiteDialogProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
-    url: "",
+    domain: "",
   });
-  const [error, setError] = useState<string | null>(null);
+
+  const createWebsite = api.website.create.useMutation({
+    onSuccess: () => {
+      setOpen(false);
+      setFormData({ name: "", domain: "" });
+      toast.success('Website added successfully');
+      router.refresh();
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    setError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    setError(null);
 
-    try {
-      // Validate URL format
-      if (!formData.url.startsWith('http://') && !formData.url.startsWith('https://')) {
-        formData.url = `https://${formData.url}`;
-      }
-
-      const response = await fetch('/api/websites', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to add website');
-      }
-      
-      // Close the dialog and reset form
-      setOpen(false);
-      setFormData({ name: "", url: "" });
-      
-      // Show success toast
-      toast.success('Website added successfully');
-      
-      // Refresh the dashboard
-      router.refresh();
-    } catch (error) {
-      console.error("Error adding website:", error);
-      setError(error instanceof Error ? error.message : 'An unexpected error occurred');
-      toast.error(error instanceof Error ? error.message : 'Failed to add website');
-    } finally {
-      setIsSubmitting(false);
+    let domain = formData.domain;
+    if (!domain.startsWith('http://') && !domain.startsWith('https://')) {
+      domain = `https://${domain}`;
     }
+
+    createWebsite.mutate({ domain });
   };
 
   return (
@@ -118,12 +96,12 @@ export function AddWebsiteDialog({
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="url" className="text-slate-300">Website URL</Label>
+              <Label htmlFor="domain" className="text-slate-300">Website URL</Label>
               <Input
-                id="url"
-                name="url"
+                id="domain"
+                name="domain"
                 placeholder="https://example.com"
-                value={formData.url}
+                value={formData.domain}
                 onChange={handleChange}
                 required
                 className="bg-slate-800 border-slate-700 text-white focus:border-sky-500/50 focus:ring-sky-500/20"
@@ -132,9 +110,9 @@ export function AddWebsiteDialog({
                 Enter the full URL including https://
               </p>
             </div>
-            {error && (
+            {createWebsite.error && (
               <div className="text-sm text-rose-500 bg-rose-500/10 p-2 rounded border border-rose-500/20">
-                {error}
+                {createWebsite.error.message}
               </div>
             )}
           </div>
@@ -149,10 +127,10 @@ export function AddWebsiteDialog({
             </Button>
             <Button 
               type="submit" 
-              disabled={isSubmitting}
+              disabled={createWebsite.isPending}
               className="bg-sky-600 hover:bg-sky-700 text-white"
             >
-              {isSubmitting ? "Adding..." : "Add Website"}
+              {createWebsite.isPending ? "Adding..." : "Add Website"}
             </Button>
           </DialogFooter>
         </form>

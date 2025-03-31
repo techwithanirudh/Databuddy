@@ -3,7 +3,9 @@
   "version": "1.0.50",
   "scripts": {
     "dev": "bun --watch run src/index.ts",
-    "pm2": "",
+    "pm2": "pm2 start src/index.ts --interpreter bun --name databuddy-api",
+    "pm2:stop": "pm2 stop databuddy-api",
+    "pm2:restart": "pm2 restart databuddy-api",
     "deploy": "wrangler deploy --minify",
     "dry-run": "wrangler deploy --minify --dry-run",
     "migrate:events": "bun run src/commands/run-events-migration.ts",

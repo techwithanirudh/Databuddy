@@ -2,6 +2,7 @@ import React from "react";
 import { ExternalLink } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import {
   Tooltip,
   TooltipContent,
@@ -24,6 +25,7 @@ interface MetricToggleProps {
   checked: boolean;
   onChange: () => void;
   color: string;
+  description?: string;
 }
 
 export const MetricToggle: React.FC<MetricToggleProps> = ({
@@ -32,26 +34,71 @@ export const MetricToggle: React.FC<MetricToggleProps> = ({
   checked,
   onChange,
   color,
-}) => (
-  <div className="flex items-center space-x-2">
-    <Checkbox 
-      id={id} 
-      checked={checked}
-      onCheckedChange={onChange}
-      className={`data-[state=checked]:bg-${color} data-[state=checked]:text-white`}
-    />
-    <Label htmlFor={id} className="text-xs cursor-pointer flex items-center gap-1">
-      <div className={`w-3 h-3 rounded-full bg-${color}`}></div>
-      {label}
-    </Label>
-  </div>
-);
+  description
+}) => {
+  
+  // Get proper hex values for the colors
+  const getColorMap = (colorName: string) => {
+    const colorMap: Record<string, string> = {
+      'blue-500': '#3b82f6',
+      'green-500': '#22c55e',
+      'emerald-500': '#10b981',
+      'yellow-500': '#eab308',
+      'red-500': '#ef4444',
+      'purple-500': '#a855f7',
+      'pink-500': '#ec4899',
+      'indigo-500': '#6366f1',
+      'orange-500': '#f97316',
+      'sky-500': '#0ea5e9',
+    };
+    
+    return colorMap[colorName] || '#3b82f6'; // Default to blue if color not found
+  };
+  
+  const colorHex = getColorMap(color);
+  
+  return (
+          <div 
+            className={cn(
+              "flex items-center gap-2 px-2.5 py-1.5 rounded-full transition-all cursor-pointer border",
+              checked 
+                ? `border-${color} bg-${color}/10 hover:bg-${color}/15` 
+                : "border-border bg-transparent hover:bg-muted/50"
+            )}
+            onClick={onChange}
+            role="button"
+            aria-pressed={checked}
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onChange();
+              }
+            }}
+          >
+            <div 
+              className={cn(
+                "w-2.5 h-2.5 rounded-full transition-all", 
+                checked ? "scale-100" : "scale-75 opacity-50"
+              )}
+              style={{ backgroundColor: colorHex }}
+            />
+            <span className={cn(
+              "text-xs font-medium transition-colors",
+              checked ? `text-${color}` : "text-muted-foreground"
+            )}>
+              {label}
+            </span>
+          </div>
+  );
+};
 
 interface MetricTogglesProps {
   metrics: Record<string, boolean>;
   onToggle: (metric: string) => void;
   colors: Record<string, string>;
   labels?: Record<string, string>;
+  descriptions?: Record<string, string>;
 }
 
 export const MetricToggles: React.FC<MetricTogglesProps> = ({
@@ -59,20 +106,32 @@ export const MetricToggles: React.FC<MetricTogglesProps> = ({
   onToggle,
   colors,
   labels = {},
-}) => (
-  <div className="flex items-center gap-3 flex-wrap">
-    {Object.keys(metrics).map(metric => (
-      <MetricToggle
-        key={metric}
-        id={`metric-${metric}`}
-        label={labels[metric] || metric.charAt(0).toUpperCase() + metric.slice(1).replace(/_/g, ' ')}
-        checked={metrics[metric]}
-        onChange={() => onToggle(metric)}
-        color={colors[metric] || 'blue-500'}
-      />
-    ))}
-  </div>
-);
+  descriptions = {},
+}) => {
+  const metricDescriptions = {
+    pageviews: "Total number of pages viewed by visitors",
+    visitors: "Number of unique users visiting your website",
+    sessions: "A group of interactions within a time frame",
+    bounce_rate: "Percentage of single-page sessions",
+    ...descriptions
+  };
+
+  return (
+    <div className="flex items-center gap-2 flex-wrap">
+      {Object.keys(metrics).map(metric => (
+        <MetricToggle
+          key={metric}
+          id={`metric-${metric}`}
+          label={labels[metric] || metric.charAt(0).toUpperCase() + metric.slice(1).replace(/_/g, ' ')}
+          checked={metrics[metric]}
+          onChange={() => onToggle(metric)}
+          color={colors[metric] || 'blue-500'}
+          description={metricDescriptions[metric as keyof typeof metricDescriptions]}
+        />
+      ))}
+    </div>
+  );
+};
 
 interface ExternalLinkButtonProps {
   href: string;

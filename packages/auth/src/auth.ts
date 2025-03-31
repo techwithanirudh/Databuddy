@@ -23,6 +23,11 @@ export const auth = betterAuth({
         provider: "postgresql",
     }),
     appName: "databuddy.cc",
+    cookie: {
+        domain: process.env.NODE_ENV === 'production' ? ".databuddy.cc" : undefined,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: "lax"
+    },
     socialProviders: {
         google: {
             clientId: process.env.GOOGLE_CLIENT_ID as string,

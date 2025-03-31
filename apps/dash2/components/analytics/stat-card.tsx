@@ -62,6 +62,27 @@ export function StatCard({
     return trend > 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400";
   };
 
+  // Format value to fit smaller screens if needed
+  const formatValue = (val: string | number): string => {
+    // If it's a string that ends with '%', preserve it
+    if (typeof val === 'string' && val.endsWith('%')) {
+      return val;
+    }
+    
+    // For numeric values or strings that can be converted to numbers
+    const numVal = typeof val === 'number' ? val : parseFloat(val);
+    if (!isNaN(numVal)) {
+      // Handle larger numbers more compactly
+      if (numVal >= 1000000) {
+        return (numVal / 1000000).toFixed(1) + 'M';
+      } else if (numVal >= 1000) {
+        return (numVal / 1000).toFixed(1) + 'K';
+      }
+    }
+    
+    return val.toString();
+  };
+
   if (isLoading) {
     return (
       <Card className={cn("overflow-hidden", className)}>
@@ -77,29 +98,38 @@ export function StatCard({
     );
   }
 
+  // Check if value is a time string (like "5h 9m 23s")
+  const isTimeValue = typeof value === 'string' && /\d+[hm]\s+\d+[ms]/.test(value);
+
   return (
-    <Card className={cn("overflow-hidden transition-all hover:shadow-md py-2", getVariantClasses(), className)}>
-      <div className="p-2">
+    <Card className={cn("overflow-hidden transition-all hover:shadow-md py-1 sm:py-2", getVariantClasses(), className)}>
+      <div className="p-1 sm:p-2">
         <div className="flex items-center justify-between">
-          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-tight">{title}</p>
+          <p className="text-[9px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-tight line-clamp-1">{title}</p>
           {Icon && (
-            <Icon className="h-3 w-3 text-muted-foreground" />
+            <Icon className="h-3 w-3 text-muted-foreground ml-1 flex-shrink-0" />
           )}
         </div>
-        <div className="text-base font-bold leading-none mt-1.5">{value}</div>
-        <div className="flex items-center text-[10px] mt-1 leading-none">
+        <div className={cn(
+          "font-bold leading-none mt-1 sm:mt-1.5",
+          isTimeValue ? "text-xs sm:text-sm" : "text-sm sm:text-base",
+          typeof value === 'string' && value.length > 8 ? "text-xs" : ""
+        )}>
+          {formatValue(value)}
+        </div>
+        <div className="flex items-center text-[9px] sm:text-[10px] mt-1 leading-none">
           {trend !== undefined && !isNaN(trend) && (
-            <span className={cn("font-medium", getTrendColor())}>
+            <span className={cn("font-medium whitespace-nowrap", getTrendColor())}>
               {trend > 0 ? "↑" : trend < 0 ? "↓" : "→"} {Math.abs(trend)}%
             </span>
           )}
           {trendLabel && trend !== undefined && !isNaN(trend) && (
-            <span className="text-muted-foreground ml-1">
+            <span className="text-muted-foreground ml-1 hidden xs:inline">
               {trendLabel}
             </span>
           )}
           {description && (!trendLabel || trend === undefined || isNaN(trend)) && (
-            <span className="text-muted-foreground">
+            <span className="text-muted-foreground line-clamp-1">
               {description}
             </span>
           )}

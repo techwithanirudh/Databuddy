@@ -37,20 +37,22 @@ basketRouter.use('*', async (c, next) => {
           return origin;
         }
         
+        // Get the website's domain
         let domain = website?.domain || '';
-        
         if (domain.startsWith('http://') || domain.startsWith('https://')) {
           domain = new URL(domain).hostname;
         }
         
+        // Get the origin hostname
         const originHostname = new URL(origin).hostname;
         
-        if (domain && (originHostname === domain || 
-                     (domain.length > 0 && originHostname.endsWith(`.${domain}`)))) {
+        // Allow if origin matches website domain or is a subdomain
+        if (domain && (originHostname === domain || originHostname.endsWith(`.${domain}`))) {
           return origin;
         }
         
-        logger.warn('Origin mismatch but allowing', { origin, domain });
+        // Log warning but still allow the request
+        logger.warn('Origin mismatch but allowing', { origin, domain, clientId: website?.id });
         return origin;
       } catch (error) {
         logger.error('Error validating origin', { origin, error });
@@ -62,6 +64,12 @@ basketRouter.use('*', async (c, next) => {
       'databuddy-client-id',
       'databuddy-sdk-name',
       'databuddy-sdk-version',
+      'Origin',
+      'Accept',
+      'Accept-Language',
+      'Accept-Encoding',
+      'User-Agent',
+      'Referer'
     ],
     allowMethods: ['POST', 'OPTIONS', 'GET'],
     exposeHeaders: ['Content-Type'],

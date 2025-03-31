@@ -16,6 +16,8 @@ export interface TodayStats {
   pageviews: number;
   visitors: number;
   sessions: number;
+  bounce_rate: number;
+  bounce_rate_pct: string;
 }
 
 export interface DateRange {

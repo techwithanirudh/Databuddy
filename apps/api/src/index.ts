@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { createLogger } from '@databuddy/logger';
-import { highlightMiddleware } from '@highlight-run/hono'
+// import { highlightMiddleware } from '@highlight-run/hono'
 import { appRouter } from '@databuddy/trpc';
 import { trpcServer } from '@hono/trpc-server'
 import { authMiddleware } from './middleware/auth'
@@ -22,16 +22,28 @@ type AppVariables = {
 
 const app = new Hono<AppVariables>();
 
-// Add core middleware
-app.use(highlightMiddleware({
-  projectID: 'ney0p09d'
-}));
+// // Add core middleware
+// app.use(highlightMiddleware({
+//   projectID: 'ney0p09d'
+// }));
 
 app.use('*', logger());
 
 // Configure CORS - must be before auth routes
 app.use('*', cors({
-  origin: ['https://dashboard.databuddy.cc', 'http://localhost:3000', 'http://localhost:4000'],
+  origin: (origin) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return null;
+    
+    const allowedOrigins = [
+      'https://dashboard.databuddy.cc',
+      'http://localhost:3000',
+      'http://localhost:4000',
+      'https://api.databuddy.cc'
+    ];
+    
+    return allowedOrigins.includes(origin) ? origin : null;
+  },
   allowHeaders: [
     'Content-Type',
     'databuddy-client-id',
@@ -125,32 +137,32 @@ function mapTRPCErrorToStatus(code: string): number {
   }
 }
 
-// Development server
-if (process.env.NODE_ENV !== 'production') {
-  const port = process.env.PORT || 3001;
-  console.log(`Server is running on port ${port}`);
+// // Development server
+// if (process.env.NODE_ENV !== 'production') {
+//   const port = process.env.PORT || 3001;
+//   console.log(`Server is running on port ${port}`);
   
-  const server = Bun.serve({
-    port: Number(port),
-    fetch: app.fetch,
-  });
+//   const server = Bun.serve({
+//     port: Number(port),
+//     fetch: app.fetch,
+//   });
 
-  // Handle graceful shutdown
-  process.on('SIGINT', () => {
-    console.log('Shutting down server...');
-    server.stop();
-    process.exit(0);
-  });
+//   // Handle graceful shutdown
+//   process.on('SIGINT', () => {
+//     console.log('Shutting down server...');
+//     server.stop();
+//     process.exit(0);
+//   });
 
-  process.on('SIGTERM', () => {
-    console.log('Shutting down server...');
-    server.stop();
-    process.exit(0);
-  });
-}
+//   process.on('SIGTERM', () => {
+//     console.log('Shutting down server...');
+//     server.stop();
+//     process.exit(0);
+//   });
+// }
 
-// // Export the app for Cloudflare Workers - DONT ENABLE.
-// export default {
-//   fetch: app.fetch,
-//   port: process.env.PORT || 3001,
-// };
+// Export the app for Cloudflare Workers - DONT ENABLE.
+export default {
+  fetch: app.fetch,
+  port: process.env.PORT || 3001,
+};

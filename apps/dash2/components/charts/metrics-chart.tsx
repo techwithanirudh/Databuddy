@@ -43,6 +43,7 @@ interface MetricsChartProps {
     date: string;
     pageviews?: number;
     visitors?: number;
+    unique_visitors?: number;
     sessions?: number;
     bounce_rate?: number;
     [key: string]: any;
@@ -116,17 +117,19 @@ export function MetricsChart({
   }
 
   // Determine which metrics are present in the data
-  const hasPageviews = data.some(item => 'pageviews' in item);
-  const hasVisitors = data.some(item => 'visitors' in item);
-  const hasSessions = data.some(item => 'sessions' in item);
-  const hasBounceRate = data.some(item => 'bounce_rate' in item);
+  const hasPageviews = data.some(item => 'pageviews' in item && item.pageviews !== undefined);
+  const hasVisitors = data.some(item => 'visitors' in item && item.visitors !== undefined);
+  const hasUniqueVisitors = data.some(item => 'unique_visitors' in item && item.unique_visitors !== undefined);
+  const hasSessions = data.some(item => 'sessions' in item && item.sessions !== undefined);
+  const hasBounceRate = data.some(item => 'bounce_rate' in item && item.bounce_rate !== undefined);
 
   // Colors and gradients for metrics
   const metricColors = {
-    pageviews: "#6366f1", // Indigo
-    visitors: "#10b981", // Emerald
-    sessions: "#f59e0b", // Amber
-    bounce_rate: "#ef4444", // Red
+    pageviews: "#3b82f6", // Blue-500
+    visitors: "#22c55e", // Green-500
+    unique_visitors: "#10b981", // Emerald-500
+    sessions: "#eab308", // Yellow-500
+    bounce_rate: "#ef4444", // Red-500
   };
 
   return (
@@ -148,6 +151,12 @@ export function MetricsChart({
               <linearGradient id="colorVisitors" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor={metricColors.visitors} stopOpacity={0.3} />
                 <stop offset="95%" stopColor={metricColors.visitors} stopOpacity={0.05} />
+              </linearGradient>
+              
+              {/* Unique Visitors gradient */}
+              <linearGradient id="colorUniqueVisitors" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={metricColors.unique_visitors} stopOpacity={0.3} />
+                <stop offset="95%" stopColor={metricColors.unique_visitors} stopOpacity={0.05} />
               </linearGradient>
               
               {/* Sessions gradient */}
@@ -242,6 +251,20 @@ export function MetricsChart({
                 strokeWidth={2}
                 activeDot={{ r: 6, strokeWidth: 1, stroke: '#fff' }}
                 name="Visitors"
+                yAxisId="left"
+              />
+            )}
+            
+            {hasUniqueVisitors && (
+              <Area 
+                type="monotone" 
+                dataKey="unique_visitors" 
+                stroke={metricColors.unique_visitors} 
+                fillOpacity={1} 
+                fill="url(#colorUniqueVisitors)" 
+                strokeWidth={2}
+                activeDot={{ r: 6, strokeWidth: 1, stroke: '#fff' }}
+                name="Unique Visitors"
                 yAxisId="left"
               />
             )}

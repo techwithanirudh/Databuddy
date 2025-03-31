@@ -73,11 +73,13 @@ export const websiteAuthHook = (): MiddlewareHandler<{
     // First try to get client ID from header
     let clientId = c.req.header('databuddy-client-id');
     const origin = c.req.header('origin') || '';
+
     
     // If no header, try to get from URL parameters (for beacon API compatibility)
     if (!clientId || clientId === 'undefined') {
       const url = new URL(c.req.url);
       clientId = url.searchParams.get('client_id') || '';
+      
       
       // If still no client ID, return 401
       if (!clientId) {
@@ -141,8 +143,8 @@ export const websiteAuthHook = (): MiddlewareHandler<{
       
       await next();
     } catch (error) {
-      logger.error('Error validating website', { clientId, error });
-      return c.json({ error: 'Authentication error', details: error }, 500);
+      // logger.error('Error validating website', { clientId, error });
+      return c.json({ error: 'Authentication error', message: error instanceof Error ? error.message : 'Unknown error' }, 500);
     }
   };
 }; 

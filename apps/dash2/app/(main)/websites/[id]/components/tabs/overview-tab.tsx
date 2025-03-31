@@ -29,9 +29,16 @@ import {
 } from "../utils/analytics-helpers";
 import { MetricToggles, ExternalLinkButton, BORDER_RADIUS } from "../utils/ui-components";
 import { FullTabProps, MetricPoint } from "../utils/types";
-
-// Define metric types
-type MetricType = 'pageviews' | 'visitors' | 'sessions' | 'bounce_rate';
+// Define trend calculation return type
+interface TrendCalculation {
+  visitors?: number;
+  unique_visitors?: number;
+  sessions?: number;
+  pageviews?: number;
+  bounce_rate?: number;
+  session_duration?: number;
+  pages_per_session?: number;
+}
 
 export function WebsiteOverviewTab({
   websiteId,
@@ -42,14 +49,18 @@ export function WebsiteOverviewTab({
 }: FullTabProps) {
   // Local state for adjusted granularity
   const [adjustedDateRange, setAdjustedDateRange] = useState(dateRange);
+  const [isDateRangeChanging, setIsDateRangeChanging] = useState(false);
   
   // Fetch analytics data
   const { analytics, loading, refetch } = useWebsiteAnalytics(websiteId, adjustedDateRange);
 
   // Chart metric visibility
-  const [visibleMetrics, setVisibleMetrics] = useState<Record<string, boolean>>(
-    createMetricToggles(['pageviews', 'sessions'])
-  );
+  const [visibleMetrics, setVisibleMetrics] = useState<Record<string, boolean>>({
+    pageviews: true,
+    visitors: true,
+    sessions: true,
+    bounce_rate: false
+  });
   
   // Toggle metric visibility
   const toggleMetric = useCallback((metric: string) => {
@@ -61,8 +72,10 @@ export function WebsiteOverviewTab({
     handleDataRefresh(isRefreshing, refetch, setIsRefreshing, "Analytics data has been updated");
   }, [isRefreshing, refetch, setIsRefreshing]);
 
-  // Set granularity based on date range
+  // Track date range changes and set loading state
   useEffect(() => {
+    setIsDateRangeChanging(true);
+    // Set granularity based on date range
     const start = new Date(dateRange.start_date);
     const end = new Date(dateRange.end_date);
     const diffHours = Math.abs(end.getTime() - start.getTime()) / (1000 * 60 * 60);
@@ -76,6 +89,13 @@ export function WebsiteOverviewTab({
       setAdjustedDateRange(dateRange);
     }
   }, [dateRange]);
+
+  // Clear the loading state when data arrives
+  useEffect(() => {
+    if (!loading.summary && isDateRangeChanging) {
+      setIsDateRangeChanging(false);
+    }
+  }, [loading.summary, isDateRangeChanging]);
 
   // Format data for UI
   const deviceData = useMemo(() => 
@@ -135,16 +155,29 @@ export function WebsiteOverviewTab({
   const chartData = useMemo(() => {
     if (!analytics.events_by_date?.length) return [];
     
-    return analytics.events_by_date.map((event: MetricPoint) => {
+    return analytics.events_by_date.map((event: any) => {
+      // Start with the date
       const filtered: any = { 
         date: formatDateByGranularity(event.date, adjustedDateRange.granularity) 
       };
       
-      Object.entries(visibleMetrics).forEach(([metric, isVisible]) => {
-        if (isVisible && metric in event) {
-          filtered[metric] = event[metric];
-        }
-      });
+      // Map the metrics from the API data
+      if (visibleMetrics.pageviews) {
+        filtered.pageviews = event.pageviews;
+      }
+      
+      if (visibleMetrics.visitors) {
+        // Use visitors field from events_by_date
+        filtered.visitors = event.visitors || event.unique_visitors || 0;
+      }
+      
+      if (visibleMetrics.sessions) {
+        filtered.sessions = event.sessions;
+      }
+      
+      if (visibleMetrics.bounce_rate) {
+        filtered.bounce_rate = event.bounce_rate;
+      }
       
       return filtered;
     });
@@ -158,16 +191,17 @@ export function WebsiteOverviewTab({
   // Metric colors
   const metricColors = {
     pageviews: 'blue-500',
-    visitors: 'emerald-500',
+    visitors: 'green-500',
     sessions: 'yellow-500',
     bounce_rate: 'red-500'
   };
 
   // Calculate trends
-  const calculateTrends = useMemo(() => {
+  const calculateTrends = useMemo<TrendCalculation>(() => {
     if (!analytics.events_by_date?.length || analytics.events_by_date.length < 2) {
       return {
         visitors: undefined,
+        unique_visitors: undefined,
         sessions: undefined,
         pageviews: undefined,
         bounce_rate: undefined,
@@ -180,15 +214,39 @@ export function WebsiteOverviewTab({
       new Date(a.date).getTime() - new Date(b.date).getTime()
     );
     
-    const midpoint = Math.floor(events.length / 2);
-    const previousPeriod = events.slice(0, midpoint);
-    const currentPeriod = events.slice(midpoint);
+    // Filter out days with no activity to prevent skewing calculations
+    const activeEvents = events.filter(event => 
+      event.pageviews > 0 || 
+      event.sessions > 0 || 
+      (event.visitors && event.visitors > 0)
+    );
+    
+    if (activeEvents.length < 2) {
+      return {
+        visitors: undefined,
+        unique_visitors: undefined,
+        sessions: undefined,
+        pageviews: undefined,
+        bounce_rate: undefined,
+        session_duration: undefined,
+        pages_per_session: undefined
+      };
+    }
+    
+    const midpoint = Math.floor(activeEvents.length / 2);
+    const previousPeriod = activeEvents.slice(0, midpoint);
+    const currentPeriod = activeEvents.slice(midpoint);
     
     // Calculate metrics for each period
     const sum = (arr: any[], field: string) => arr.reduce((sum, item) => sum + (item[field] || 0), 0);
     
     const currentVisitors = sum(currentPeriod, 'visitors');
     const previousVisitors = sum(previousPeriod, 'visitors');
+    
+    // Use visitors instead since the API returns unique_visitors at the summary level
+    // but uses visitors in the events_by_date array
+    const currentUniqueVisitors = currentVisitors;
+    const previousUniqueVisitors = previousVisitors;
     
     const currentSessions = sum(currentPeriod, 'sessions');
     const previousSessions = sum(previousPeriod, 'sessions');
@@ -221,6 +279,7 @@ export function WebsiteOverviewTab({
 
     return {
       visitors: calcTrend(currentVisitors, previousVisitors),
+      unique_visitors: calcTrend(currentUniqueVisitors, previousUniqueVisitors),
       sessions: calcTrend(currentSessions, previousSessions),
       pageviews: calcTrend(currentPageviews, previousPageviews),
       pages_per_session: calcTrend(currentPagesPerSession, previousPagesPerSession),
@@ -248,7 +307,7 @@ export function WebsiteOverviewTab({
                 value={analytics.summary?.unique_visitors || 0}
                 icon={Users}
                 description={`${analytics.today?.visitors || 0} today`}
-                isLoading={loading.summary}
+                isLoading={loading.summary || isDateRangeChanging}
                 variant="default"
                 trend={calculateTrends.visitors}
                 trendLabel={calculateTrends.visitors !== undefined ? "vs previous period" : undefined}
@@ -261,7 +320,7 @@ export function WebsiteOverviewTab({
                 value={analytics.summary?.sessions || 0}
                 icon={BarChart}
                 description={`${analytics.today?.sessions || 0} today`}
-                isLoading={loading.summary}
+                isLoading={loading.summary || isDateRangeChanging}
                 variant="default"
                 trend={calculateTrends.sessions}
                 trendLabel={calculateTrends.sessions !== undefined ? "vs previous period" : undefined}
@@ -274,7 +333,7 @@ export function WebsiteOverviewTab({
                 value={analytics.summary?.pageviews || 0}
                 icon={Globe}
                 description={`${analytics.today?.pageviews || 0} today`}
-                isLoading={loading.summary}
+                isLoading={loading.summary || isDateRangeChanging}
                 variant="default"
                 trend={calculateTrends.pageviews}
                 trendLabel={calculateTrends.pageviews !== undefined ? "vs previous period" : undefined}
@@ -291,7 +350,7 @@ export function WebsiteOverviewTab({
                   ) : '0'
                 }
                 icon={LayoutDashboard}
-                isLoading={loading.summary}
+                isLoading={loading.summary || isDateRangeChanging}
                 variant="default"
                 trend={calculateTrends.pages_per_session}
                 trendLabel={calculateTrends.pages_per_session !== undefined ? "vs previous period" : undefined}
@@ -303,7 +362,7 @@ export function WebsiteOverviewTab({
                 title="BOUNCE RATE"
                 value={analytics.summary?.bounce_rate_pct || '0%'}
                 icon={MousePointer}
-                isLoading={loading.summary}
+                isLoading={loading.summary || isDateRangeChanging}
                 trend={calculateTrends.bounce_rate}
                 trendLabel={calculateTrends.bounce_rate !== undefined ? "vs previous period" : undefined}
                 variant={getColorVariant(analytics.summary?.bounce_rate || 0, 70, 50)}
@@ -316,7 +375,7 @@ export function WebsiteOverviewTab({
                 title="AVG. SESSION"
                 value={analytics.summary?.avg_session_duration_formatted || '0s'}
                 icon={Timer}
-                isLoading={loading.summary}
+                isLoading={loading.summary || isDateRangeChanging}
                 variant="default"
                 trend={calculateTrends.session_duration}
                 trendLabel={calculateTrends.session_duration !== undefined ? "vs previous period" : undefined}
@@ -353,7 +412,7 @@ export function WebsiteOverviewTab({
         </div>
         <MetricsChart 
           data={chartData} 
-          isLoading={loading.summary}
+          isLoading={loading.summary || isDateRangeChanging}
         />
       </div>
 
@@ -364,7 +423,7 @@ export function WebsiteOverviewTab({
           <div className="rounded-2xl border shadow-sm overflow-hidden">
             <DistributionChart 
               data={deviceData} 
-              isLoading={loading.summary}
+              isLoading={loading.summary || isDateRangeChanging}
               title="Device Types"
               description="Visitors by device type"
               height={190}
@@ -377,7 +436,7 @@ export function WebsiteOverviewTab({
               columns={referrerColumns}
               title="Top Referrers"
               description="Sources of your traffic"
-              isLoading={loading.summary}
+              isLoading={loading.summary || isDateRangeChanging}
               limit={5}
             />
           </div>
@@ -388,7 +447,7 @@ export function WebsiteOverviewTab({
           <div className="rounded-2xl border shadow-sm overflow-hidden">
             <DistributionChart 
               data={browserData} 
-              isLoading={loading.summary}
+              isLoading={loading.summary || isDateRangeChanging}
               title="Browsers"
               description="Visitors by browser"
               height={190}
@@ -401,7 +460,7 @@ export function WebsiteOverviewTab({
               columns={topPagesColumns}
               title="Top Pages"
               description="Most viewed content"
-              isLoading={loading.summary}
+              isLoading={loading.summary || isDateRangeChanging}
               limit={5}
             />
           </div>

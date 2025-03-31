@@ -3,32 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { 
-  LayoutDashboard,
-  Settings,
-  Sun,
-  Moon,
-  BarChart,
-  FileText,
-  Globe,
-  PlusCircle,
-  Filter,
-  Target,
-  TestTube,
-  CreditCard,
-  BookOpen,
-  LifeBuoy,
-  ChevronDown,
-  ArrowLeft,
-  Users,
-  Clock,
-  Map,
-  MapPin,
-  ClipboardList,
-  Megaphone,
-  Inbox,
-} from "lucide-react";
+import { Button } from "@/components/once-ui/components";
+import { Flex, Icon } from "@/components/once-ui/components";
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { TopHeader } from "./top-header";
@@ -46,7 +22,7 @@ const websiteNavigation = [
   {
     title: "ANALYTICS",
     items: [
-      { name: "Overview", icon: LayoutDashboard, href: "" },
+      { name: "Overview", icon: "helpCircle", href: "" }, // Using helpCircle as a substitute for dashboard
       // { name: "Sessions", icon: Clock, href: "/sessions" },
       // { name: "Profiles", icon: Users, href: "/profiles" },
       // { name: "Geography", icon: Map, href: "/geography" },
@@ -71,8 +47,8 @@ const websiteNavigation = [
   {
     title: "ACCOUNT",
     items: [
-      { name: "Settings", icon: Settings, href: "/settings" },
-      { name: "Billing", icon: CreditCard, href: "/billing" },
+      { name: "Settings", icon: "settings", href: "/settings" },
+      { name: "Billing", icon: "creditCard", href: "/billing" }, // Need to add creditCard to iconLibrary
     ],
   },
 ];
@@ -128,8 +104,7 @@ export function Sidebar() {
               {/* Back to websites button */}
               <div className="mb-6">
                 <Link href="/websites">
-                  <Button variant="outline" className="w-full justify-start mb-5 group focus-ring">
-                    <ArrowLeft className="h-4 w-4 mr-2.5 group-hover:-translate-x-0.5 transition-transform" />
+                  <Button variant="secondary" size="m" prefixIcon="chevronLeft" className="w-full justify-start mb-5">
                     <span>Back to Websites</span>
                   </Button>
                 </Link>
@@ -174,12 +149,11 @@ export function Sidebar() {
                               : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                           )}
                         >
-                          <item.icon className={cn(
-                            "h-5 w-5",
-                            isActive
-                              ? "text-primary" 
-                              : "opacity-75 group-hover:opacity-100"
-                          )} />
+                          <Icon 
+                            name={item.icon} 
+                            size="s" 
+                            onBackground={isActive ? "brand-strong" : "neutral-medium"} 
+                          />
                           <span>{item.name}</span>
                         </Link>
                       );
@@ -192,12 +166,11 @@ export function Sidebar() {
             // Regular sidebar for website selection page
             <>
               <div className="mb-8">
-                <Button variant="default" className="w-full justify-start mb-5 focus-ring">
-                  <Link href="/websites" className="flex flex-row items-center">
-                    <Globe className="h-4 w-4 mr-2.5" />
+                <Link href="/websites">
+                  <Button variant="primary" size="m" prefixIcon="globe" fillWidth className="mb-5">
                     Websites
-                  </Link>
-                </Button>
+                  </Button>
+                </Link>
 
                 <div className="space-y-1.5 mt-5">
                   {isLoading ? (
@@ -227,7 +200,7 @@ export function Sidebar() {
                       <CollapsibleTrigger asChild>
                         <div className="flex items-center justify-between px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground cursor-pointer">
                           <span className="font-medium">Your Websites</span>
-                          <ChevronDown className="h-4 w-4" />
+                          <Icon name="chevronDown" size="s" />
                         </div>
                       </CollapsibleTrigger>
                       <CollapsibleContent className="mt-1.5 space-y-1">
@@ -266,7 +239,7 @@ export function Sidebar() {
                         : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                     )}
                   >
-                    <Settings className="h-5 w-5" />
+                    <Icon name="settings" size="s" onBackground={pathname === "/settings" ? "brand-strong" : "neutral-medium"} />
                     <span>Settings</span>
                   </Link>
                   <Link
@@ -278,7 +251,7 @@ export function Sidebar() {
                         : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                     )}
                   >
-                    <CreditCard className="h-5 w-5" />
+                    <Icon name="creditCard" size="s" onBackground={pathname === "/billing" ? "brand-strong" : "neutral-medium"} />
                     <span>Billing</span>
                   </Link>
                 </div>
@@ -286,27 +259,7 @@ export function Sidebar() {
             </>
           )}
         </div>
-
-        {/* Theme toggle at the bottom of sidebar */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">Theme</span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="focus-ring h-8 w-8"
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            >
-              {mounted && theme === "dark" ? (
-                <Sun className="h-5 w-5" />
-              ) : (
-                <Moon className="h-5 w-5" />
-              )}
-              <span className="sr-only">Toggle theme</span>
-            </Button>
-          </div>
-        </div>
       </div>
     </>
   );
-} 
+}   

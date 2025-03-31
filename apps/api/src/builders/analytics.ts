@@ -1,7 +1,15 @@
-import { createSqlBuilder } from '@databuddy/db';
+/**
+ * Analytics SQL Builders
+ * 
+ * This file contains functions to build SQL queries for analytics data.
+ * Each function returns either a builder object or a SQL string.
+ */
+
+import { SqlBuilder } from '../utils/sql-builder';
 import { parseReferrer } from '../utils/referrer';
 import { parseUserAgent } from '../utils/user-agent';
 import { anonymizeIp } from '../utils/ip-geo';
+import { createSqlBuilder } from '@databuddy/db';
 
 // Types for analytics data
 export interface SummaryData {
@@ -75,6 +83,7 @@ export interface TodayData {
   pageviews: number;
   visitors: number;
   sessions: number;
+  bounce_rate: number;
 }
 
 export interface UTMData {
@@ -138,29 +147,25 @@ export function createSummaryBuilder(websiteId: string, startDate: string, endDa
        FROM analytics.events 
        WHERE client_id = '${websiteId}'
        AND time >= parseDateTimeBestEffort('${startDate}')
-       AND time <= parseDateTimeBestEffort('${endDate} 23:59:59')
-       AND toDate(time) < today()) as pageviews,
+       AND time <= parseDateTimeBestEffort('${endDate} 23:59:59')) as pageviews,
       
       (SELECT COUNT(DISTINCT anonymous_id) 
        FROM analytics.events 
        WHERE client_id = '${websiteId}'
        AND time >= parseDateTimeBestEffort('${startDate}')
-       AND time <= parseDateTimeBestEffort('${endDate} 23:59:59')
-       AND toDate(time) < today()) as unique_visitors,
+       AND time <= parseDateTimeBestEffort('${endDate} 23:59:59')) as unique_visitors,
       
       (SELECT COUNT(DISTINCT session_id) 
        FROM analytics.events 
        WHERE client_id = '${websiteId}'
        AND time >= parseDateTimeBestEffort('${startDate}')
-       AND time <= parseDateTimeBestEffort('${endDate} 23:59:59')
-       AND toDate(time) < today()) as sessions,
+       AND time <= parseDateTimeBestEffort('${endDate} 23:59:59')) as sessions,
       
       (SELECT AVG(is_bounce) * 100 
        FROM analytics.events 
        WHERE client_id = '${websiteId}'
        AND time >= parseDateTimeBestEffort('${startDate}')
-       AND time <= parseDateTimeBestEffort('${endDate} 23:59:59')
-       AND toDate(time) < today()) as bounce_rate,
+       AND time <= parseDateTimeBestEffort('${endDate} 23:59:59')) as bounce_rate,
       
       (SELECT AVG(duration) 
        FROM session_durations) as avg_session_duration
@@ -179,13 +184,59 @@ export function createTodayBuilder(websiteId: string) {
   builder.sb.select = buildCommonSelect({
     pageviews: "COUNT(CASE WHEN event_name = 'screen_view' THEN 1 END) as pageviews",
     visitors: "COUNT(DISTINCT anonymous_id) as visitors",
-    sessions: "COUNT(DISTINCT session_id) as sessions"
+    sessions: "COUNT(DISTINCT session_id) as sessions",
+    bounce_rate: "AVG(is_bounce) * 100 as bounce_rate"
   });
   
   builder.sb.where = {
     client_filter: `client_id = '${websiteId}'`,
     date_filter: "toDate(time) = today()"
   };
+  
+  return builder;
+}
+
+/**
+ * Create a builder that gets today's data broken down by hour
+ * This allows for more accurate aggregation of today's data
+ */
+export function createTodayByHourBuilder(websiteId: string) {
+  const builder = createSqlBuilder();
+  const today = new Date().toISOString().split('T')[0];
+  
+  const sql = `
+    WITH hour_range AS (
+      SELECT arrayJoin(arrayMap(
+        h -> toDateTime('${today} 00:00:00') + (h * 3600),
+        range(24)
+      )) AS datetime
+    ),
+    hourly_metrics AS (
+      SELECT
+        toStartOfHour(time) as event_hour,
+        countIf(event_name = 'screen_view') as pageviews,
+        countDistinct(anonymous_id) as unique_visitors,
+        countDistinct(session_id) as sessions,
+        avg(is_bounce) * 100 as bounce_rate
+      FROM analytics.events
+      WHERE 
+        client_id = '${websiteId}'
+        AND toDate(time) = today()
+      GROUP BY event_hour
+    )
+    SELECT
+      formatDateTime(hour_range.datetime, '%Y-%m-%d %H:00:00') as date,
+      COALESCE(hm.pageviews, 0) as pageviews,
+      if(hm.pageviews > 0, hm.unique_visitors, 0) as unique_visitors,
+      if(hm.pageviews > 0, hm.sessions, 0) as sessions,
+      COALESCE(hm.bounce_rate, 0) as bounce_rate
+    FROM hour_range
+    LEFT JOIN hourly_metrics hm ON hour_range.datetime = hm.event_hour
+    ORDER BY hour_range.datetime ASC
+  `;
+  
+  // Override the getSql method to return our custom query
+  builder.getSql = () => sql;
   
   return builder;
 }
@@ -198,7 +249,7 @@ export function createTopPagesBuilder(websiteId: string, startDate: string, endD
     path: 'path',
     pageviews: 'COUNT(*) as pageviews',
     visitors: 'COUNT(DISTINCT anonymous_id) as visitors',
-    avg_time_on_page: 'AVG(time_on_page) as avg_time_on_page'
+    avg_time_on_page: 'AVG(CASE WHEN time_on_page > 0 AND time_on_page IS NOT NULL THEN time_on_page / 1000 ELSE NULL END) as avg_time_on_page'
   });
   
   builder.sb.where = buildWhereClauses(websiteId, startDate, endDate, {
@@ -392,12 +443,13 @@ export function createScreenResolutionsBuilder(websiteId: string, startDate: str
   
   builder.sb.select = buildCommonSelect({
     resolution: 'screen_resolution',
-    count: 'COUNT(*) as count',
+    count: 'COUNT(CASE WHEN event_name = \'screen_view\' THEN 1 END) as count',
     visitors: 'COUNT(DISTINCT anonymous_id) as visitors'
   });
   
   builder.sb.where = buildWhereClauses(websiteId, startDate, endDate, {
-    resolution_filter: "screen_resolution != ''"
+    resolution_filter: "screen_resolution != ''",
+    event_filter: "event_name = 'screen_view'"
   });
   
   builder.sb.groupBy = buildCommonGroupBy({ resolution: 'screen_resolution' });
@@ -478,18 +530,18 @@ export function createPerformanceBuilder(websiteId: string, startDate: string, e
   builder.setTable('events');
   
   builder.sb.select = buildCommonSelect({
-    avg_load_time: 'AVG(CASE WHEN load_time > 0 THEN load_time END) as avg_load_time',
-    avg_ttfb: 'AVG(CASE WHEN ttfb > 0 THEN ttfb END) as avg_ttfb',
-    avg_dom_ready_time: 'AVG(CASE WHEN dom_ready_time > 0 THEN dom_ready_time END) as avg_dom_ready_time',
-    avg_render_time: 'AVG(CASE WHEN render_time > 0 THEN render_time END) as avg_render_time',
-    avg_fcp: 'AVG(CASE WHEN fcp > 0 THEN fcp END) as avg_fcp',
-    avg_lcp: 'AVG(CASE WHEN lcp > 0 THEN lcp END) as avg_lcp',
-    avg_cls: 'AVG(CASE WHEN cls > 0 THEN cls END) as avg_cls'
+    avg_load_time: 'AVG(CASE WHEN load_time > 0 AND load_time IS NOT NULL THEN load_time ELSE NULL END) as avg_load_time',
+    avg_ttfb: 'AVG(CASE WHEN ttfb > 0 AND ttfb IS NOT NULL THEN ttfb ELSE NULL END) as avg_ttfb',
+    avg_dom_ready_time: 'AVG(CASE WHEN dom_ready_time > 0 AND dom_ready_time IS NOT NULL THEN dom_ready_time ELSE NULL END) as avg_dom_ready_time',
+    avg_render_time: 'AVG(CASE WHEN render_time > 0 AND render_time IS NOT NULL THEN render_time ELSE NULL END) as avg_render_time',
+    avg_fcp: 'AVG(CASE WHEN fcp > 0 AND fcp IS NOT NULL THEN fcp ELSE NULL END) as avg_fcp',
+    avg_lcp: 'AVG(CASE WHEN lcp > 0 AND lcp IS NOT NULL THEN lcp ELSE NULL END) as avg_lcp',
+    avg_cls: 'AVG(CASE WHEN cls > 0 AND cls IS NOT NULL THEN cls ELSE NULL END) as avg_cls'
   });
   
   builder.sb.where = buildWhereClauses(websiteId, startDate, endDate, {
-    valid_filter: '(load_time > 0 OR ttfb > 0 OR dom_ready_time > 0 OR render_time > 0)',
-    event_filter: "event_name = 'screen_view'"
+    valid_filter: '(event_name = \'screen_view\' OR event_name = \'performance\')',
+    performance_filter: '(load_time IS NOT NULL OR ttfb IS NOT NULL OR fcp IS NOT NULL OR lcp IS NOT NULL)'
   });
   
   return builder;

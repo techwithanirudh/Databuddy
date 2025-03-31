@@ -160,6 +160,8 @@
             this.pageStartTime = Date.now();
             this.pageEngagementStart = Date.now(); // Ensure this is initialized
             this.utmParams = this.getUtmParams();
+            this.isTemporarilyHidden = false; // Track if we're just tabbed out or actually leaving
+            this.visibilityChangeTimer = null; // Timer for tracking visibility changes
 
             // Always set up exit tracking for page_exit events
             if (typeof window !== 'undefined') {
@@ -247,12 +249,6 @@
                 this.interactionCount = 0;
                 this.hasExitIntent = false;
                 
-                if (this.options.trackScrollDepth) {
-                    window.addEventListener('scroll', () => {
-                        this.trackScrollDepth();
-                    }, { passive: true });
-                }
-                
                 if (this.options.trackExitIntent) {
                     document.addEventListener('mouseleave', (e) => {
                         if (e.clientY <= 0) {
@@ -280,9 +276,10 @@
 
         trackScrollDepth() {
             if (this.isServer()) return;
-            
-            const scroll_depth = Math.round(this.maxScrollDepth);
-            this.track('scroll_depth', { scroll_depth });
+            const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+            const currentScroll = window.scrollY;
+            const scrollPercent = Math.round((currentScroll / scrollHeight) * 100);
+            this.maxScrollDepth = Math.max(this.maxScrollDepth, scrollPercent);
         }
         
         ready() {
@@ -290,15 +287,27 @@
             this.flush();
         }
         
-        async send(event) {
-            if (event.payload && (event.payload.profileId || this.profileId)) {
-                event.payload.anonymousId = this.anonymousId;
-                delete event.payload.profileId;
+        // Helper method to prepare event data consistently
+        prepareEventData(event) {
+            if (event.payload) {
+                // Convert profileId to anonymousId if needed
+                if (event.payload.profileId || this.profileId) {
+                    event.payload.anonymousId = this.anonymousId;
+                    delete event.payload.profileId;
+                }
+                
+                // Ensure sessionId is included in properties
+                if (event.payload.properties) {
+                    event.payload.properties.sessionId = this.sessionId;
+                }
             }
             
-            if (event.payload && event.payload.properties) {
-                event.payload.properties.sessionId = this.sessionId;
-            }
+            return event;
+        }
+
+        async send(event) {
+            // Prepare event data
+            event = this.prepareEventData(event);
             
             // Skip sending if disabled or filtered out
             if (this.options.disabled || (this.options.filter && !this.options.filter(event))) {
@@ -395,15 +404,23 @@
             } catch (error) {
                 console.error("Databuddy: Error sending batch", error);
                 
-                // If batch fails, try to send events individually
-                console.debug(`Databuddy: Attempting to send ${batchEvents.length} events individually`);
-                batchEvents.forEach(event => {
-                    // Mark event as force send to avoid infinite loop
-                    event.isForceSend = true;
-                    this.send(event).catch(e => {
-                        console.warn(`Databuddy: Failed to send individual event`, e);
+                // Only retry for specific network errors, not server responses
+                // This helps prevent duplicate events if the server processed the batch but failed to respond
+                const isNetworkError = !error.status && error.name === 'TypeError';
+                
+                if (isNetworkError) {
+                    // If batch failed due to network error, try to send events individually
+                    console.debug(`Databuddy: Network error detected, attempting to send ${batchEvents.length} events individually`);
+                    batchEvents.forEach(event => {
+                        // Mark event as force send to avoid infinite loop
+                        event.isForceSend = true;
+                        this.send(event).catch(e => {
+                            console.warn(`Databuddy: Failed to send individual event`, e);
+                        });
                     });
-                });
+                } else {
+                    console.debug(`Databuddy: Server error detected - will not retry to avoid duplicates`);
+                }
                 
                 return null;
             }
@@ -524,15 +541,8 @@
             if (this.isServer()) return null;
             
             try {
-                // Format event data for sending
-                if (event.payload && (event.payload.profileId || this.profileId)) {
-                    event.payload.anonymousId = this.anonymousId;
-                    delete event.payload.profileId;
-                }
-                
-                if (event.payload && event.payload.properties) {
-                    event.payload.properties.sessionId = this.sessionId;
-                }
+                // Prepare event data
+                event = this.prepareEventData(event);
                 
                 // Skip sending if disabled or filtered out
                 if (this.options.disabled || (this.options.filter && !this.options.filter(event))) {
@@ -685,27 +695,21 @@
 
         setupExitTracking() {
             if (typeof window === 'undefined') return;
-
-            console.log("Databuddy: Setting up exit tracking");
             
             window.addEventListener('scroll', () => {
                 const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
                 const currentScroll = window.scrollY;
                 const scrollPercent = Math.round((currentScroll / scrollHeight) * 100);
                 this.maxScrollDepth = Math.max(this.maxScrollDepth, scrollPercent);
-            });
+            }, { passive: true });
 
             const interactionEvents = ['click', 'keypress', 'mousemove', 'touchstart'];
             interactionEvents.forEach(event => {
-                window.addEventListener(event, () => {
-                    this.interactionCount++;
-                }, { once: true });
+                window.addEventListener(event, () => this.interactionCount++, { once: true });
             });
 
             window.addEventListener('mouseout', (e) => {
-                if (e.clientY <= 0 && !this.hasExitIntent) {
-                    this.hasExitIntent = true;
-                }
+                if (e.clientY <= 0) this.hasExitIntent = true;
             });
 
             document.addEventListener('click', (e) => {
@@ -713,80 +717,62 @@
                 if (link && link.href) {
                     try {
                         const linkUrl = new URL(link.href);
-                        const isSameOrigin = linkUrl.origin === window.location.origin;
-                        if (isSameOrigin) {
-                            this.isInternalNavigation = true;
-                        }
-                    } catch (err) {
-                        // Invalid URL, ignore
-                    }
+                        if (linkUrl.origin === window.location.origin) this.isInternalNavigation = true;
+                    } catch (err) {}
                 }
             });
 
-            window.addEventListener('popstate', () => {
-                this.isInternalNavigation = true;
+            ['popstate', 'pushstate', 'replacestate'].forEach(event => {
+                window.addEventListener(event, () => this.isInternalNavigation = true);
             });
 
-            window.addEventListener('pushstate', () => {
-                this.isInternalNavigation = true;
-            });
-
-            window.addEventListener('replacestate', () => {
-                this.isInternalNavigation = true;
-            });
-
-            // Use the 'pagehide' event as it's more reliable than 'beforeunload'
-            window.addEventListener('pagehide', (event) => {
-                console.log("Databuddy: pagehide event triggered", {
-                    persisted: event.persisted,
-                    isInternalNavigation: this.isInternalNavigation
-                });
+            const exitHandler = (event) => {
+                // Flushes batch but doesn't track exit if we're just temporarily hidden (tabbed out)
+                if (this.options.enableBatching) this.flushBatch();
                 
-                // Flush any batched events before handling page exit
-                if (this.options.enableBatching) {
-                    console.log("Databuddy: Flushing batch queue on pagehide");
-                    this.flushBatch();
-                }
-                
-                if (!this.isInternalNavigation) {
+                // Only send actual exit event if we're really leaving the page
+                // and not just switching tabs or minimizing
+                if (!this.isInternalNavigation && !this.isTemporarilyHidden) {
                     this.trackExitData();
                 }
+                
                 this.isInternalNavigation = false;
+            };
+
+            window.addEventListener('pagehide', () => {
+                // pagehide is more likely to indicate actual page exit
+                this.isTemporarilyHidden = false;
+                exitHandler();
             });
             
-            // Also keep beforeunload as a backup
-            window.addEventListener('beforeunload', (event) => {
-                console.log("Databuddy: beforeunload event triggered", {
-                    isInternalNavigation: this.isInternalNavigation
-                });
-                
-                // Flush any batched events before handling page exit
-                if (this.options.enableBatching) {
-                    console.log("Databuddy: Flushing batch queue on beforeunload");
-                    this.flushBatch();
-                }
-                
-                if (!this.isInternalNavigation) {
-                    this.trackExitData();
-                }
-                this.isInternalNavigation = false;
+            window.addEventListener('beforeunload', () => {
+                // beforeunload is definitely a page exit
+                this.isTemporarilyHidden = false;
+                exitHandler();
             });
-
+            
             document.addEventListener('visibilitychange', () => {
-                console.log("Databuddy: visibilitychange event", {
-                    state: document.visibilityState,
-                    isInternalNavigation: this.isInternalNavigation
-                });
-                
                 if (document.visibilityState === 'hidden') {
-                    // Flush any batched events when page becomes hidden
-                    if (this.options.enableBatching) {
-                        console.log("Databuddy: Flushing batch queue on visibility hidden");
-                        this.flushBatch();
+                    // When the page is hidden, mark as temporarily hidden first
+                    this.isTemporarilyHidden = true;
+                    
+                    // Clear any existing timer
+                    if (this.visibilityChangeTimer) {
+                        clearTimeout(this.visibilityChangeTimer);
                     }
                     
-                    if (!this.isInternalNavigation) {
-                        this.trackExitData();
+                    // Only flush batch, don't track exit event
+                    if (this.options.enableBatching) {
+                        this.flushBatch();
+                    }
+                } else if (document.visibilityState === 'visible') {
+                    // User returned to the page, clear temporary hidden state
+                    this.isTemporarilyHidden = false;
+                    
+                    // Clear any existing timer
+                    if (this.visibilityChangeTimer) {
+                        clearTimeout(this.visibilityChangeTimer);
+                        this.visibilityChangeTimer = null;
                     }
                 }
             });
@@ -795,11 +781,8 @@
         trackExitData() {
             if (this.isServer()) return;
             
-            console.log("Databuddy: Preparing page_exit event");
-            const time_on_page = Math.round((Date.now() - this.pageEngagementStart) / 1000);
-            const utm_params = this.getUtmParams();
-            const exit_data = {
-                time_on_page: time_on_page,
+            const exitData = {
+                time_on_page: Math.round((Date.now() - this.pageEngagementStart) / 1000),
                 scroll_depth: Math.round(this.maxScrollDepth),
                 interaction_count: this.interactionCount,
                 has_exit_intent: this.hasExitIntent,
@@ -808,14 +791,9 @@
                 __path: window.location.href,
                 __title: document.title,
                 __timestamp_ms: Date.now(),
-                utm_source: utm_params.utm_source || "",
-                utm_medium: utm_params.utm_medium || "",
-                utm_campaign: utm_params.utm_campaign || "",
-                utm_term: utm_params.utm_term || "",
-                utm_content: utm_params.utm_content || ""
+                ...this.getUtmParams()
             };
             
-            // Create exit event
             const exitEvent = {
                 type: "track",
                 payload: {
@@ -825,27 +803,20 @@
                         ...this.global ?? {},
                         sessionId: this.sessionId,
                         sessionStartTime: this.sessionStartTime,
-                        ...exit_data
+                        ...exitData
                     }
                 },
-                priority: "high" // Mark exit events as high priority
+                priority: "high"
             };
             
-            // Check if we should add to batch or send immediately
             if (this.options.enableBatching) {
-                // If batch queue is empty, try to send immediately for better reliability
                 if (this.batchQueue.length === 0) {
-                    console.log("Databuddy: Sending exit event immediately (batch queue empty)");
                     this.sendExitEventImmediately(exitEvent);
                 } else {
-                    // Add to front of batch queue to prioritize
-                    console.log("Databuddy: Adding exit event to front of batch queue");
                     this.batchQueue.unshift(exitEvent);
-                    this.flushBatch(); // Flush immediately
+                    this.flushBatch();
                 }
             } else {
-                // Use normal tracking if batching is disabled
-                console.log("Databuddy: Tracking exit event (batching disabled)");
                 this.sendExitEventImmediately(exitEvent);
             }
         }
@@ -854,22 +825,15 @@
         async sendExitEventImmediately(exitEvent) {
             try {
                 // Try sendBeacon first (most reliable for exit events)
-                console.debug("Databuddy: Sending exit event via beacon");
                 const beaconResult = await this.sendBeacon(exitEvent);
-                if (beaconResult) {
-                    console.debug("Databuddy: Successfully sent exit event via beacon");
-                    return beaconResult;
-                }
+                if (beaconResult) return beaconResult;
                 
                 // Fall back to fetch with keepalive
-                console.debug("Databuddy: Beacon failed for exit event, using fetch with keepalive");
-                const fetchOptions = {
+                return this.api.fetch("/basket", exitEvent, {
                     keepalive: true,
                     credentials: 'omit'
-                };
-                return this.api.fetch("/basket", exitEvent, fetchOptions);
+                });
             } catch (e) {
-                console.error("Databuddy: Failed to send exit event", e);
                 return null;
             }
         }
@@ -1011,9 +975,9 @@
             
             if (this.isServer()) return;
             
-            // Set global properties without default referrer
+            // Set global properties with configurable anonymized flag
             this.setGlobalProperties({
-                __anonymized: true
+                __anonymized: t.anonymized !== false // Default to true unless explicitly set to false
             });
             
             // Set up screen view tracking if enabled
@@ -1044,10 +1008,21 @@
                   , i = r.closest("a");
                 if (i && r) {
                     let n = i.getAttribute("href");
-                    n?.startsWith("http") && this.track("link_out", {
-                        href: n,
-                        text: i.innerText || i.getAttribute("title") || r.getAttribute("alt") || r.getAttribute("title")
-                    })
+                    if (n) {
+                        try {
+                            const url = new URL(n, window.location.origin);
+                            const isOutgoing = url.origin !== window.location.origin;
+                            
+                            if (isOutgoing) {
+                                this.track("link_out", {
+                                    href: n,
+                                    text: i.innerText || i.getAttribute("title") || r.getAttribute("alt") || r.getAttribute("title")
+                                });
+                            }
+                        } catch (e) {
+                            // Invalid URL, ignore
+                        }
+                    }
                 }
             })
         }
@@ -1109,18 +1084,11 @@
             
             if (this.lastPath && this.pageEngagementStart && this.options.trackEngagement) {
                 const time_on_page = Math.round((Date.now() - this.pageEngagementStart) / 1000);
-                const exit_data = {
-                    __path: this.lastPath,
-                    time_on_page: time_on_page,
-                    scroll_depth: Math.round(this.maxScrollDepth),
-                    interaction_count: this.interactionCount,
-                    exit_intent: this.hasExitIntent,
-                    screen_resolution: `${window.screen.width}x${window.screen.height}`,
-                    viewport_size: `${window.innerWidth}x${window.innerHeight}`,
-                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                    language: navigator.language,
-                    ...this.getConnectionInfo(),
-                    ...this.getUtmParams()
+                const previousPageData = {
+                    previous_path: this.lastPath,
+                    previous_time_on_page: time_on_page,
+                    previous_scroll_depth: Math.round(this.maxScrollDepth),
+                    previous_interaction_count: this.interactionCount
                 };
                 
                 this.maxScrollDepth = 0;
@@ -1136,32 +1104,22 @@
                 this.lastPath = i;
                 this.pageCount++;
                 
-                const utm_params = this.getUtmParams();
-                const connection_info = this.getConnectionInfo();
-                const viewport_info = {
-                    screen_resolution: `${window.screen.width}x${window.screen.height}`,
-                    viewport_size: `${window.innerWidth}x${window.innerHeight}`
-                };
-                const timezone_info = {
-                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                    language: navigator.language
-                };
-                const referrer_info = {
-                    __referrer: this.global?.__referrer || document.referrer || 'direct'
-                };
-
-                this.track("screen_view", {
+                const pageData = {
                     ...n ?? {},
                     __path: i,
                     __title: document.title,
                     __timestamp_ms: Date.now(),
                     page_count: this.pageCount,
-                    ...utm_params,
-                    ...connection_info,
-                    ...viewport_info,
-                    ...timezone_info,
-                    ...referrer_info,
-                });
+                    ...this.getUtmParams(),
+                    ...this.getConnectionInfo(),
+                    screen_resolution: `${window.screen.width}x${window.screen.height}`,
+                    viewport_size: `${window.innerWidth}x${window.innerHeight}`,
+                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    language: navigator.language,
+                    __referrer: this.global?.__referrer || document.referrer || 'direct'
+                };
+
+                this.track("screen_view", pageData);
             }
         }
     }
@@ -1287,18 +1245,6 @@
             // Don't initialize without a client ID
             if (!clientId) return;
             
-            console.log('Databuddy: Initializing with config', { 
-                clientId, 
-                apiUrl: config.apiUrl,
-                samplingRate: config.samplingRate,
-                enableRetries: config.enableRetries,
-                enableBatching: config.enableBatching,
-                batchSize: config.batchSize,
-                batchTimeout: config.batchTimeout,
-                // Don't log all config details to keep log cleaner
-                // ...config
-            });
-            
             // Initialize the tracker with the merged configuration
             window.databuddy = new d({
                 ...config,
@@ -1334,22 +1280,58 @@
     }
 
     // When page is being unloaded, flush any pending batches
+    let visibilityChangeTimeout;
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'hidden' && window.databuddy) {
-            console.log("Databuddy: Page hidden, flushing batch");
-            if (window.databuddy.options.enableBatching) {
-                // Use synchronous flushing to ensure data is sent before page unloads
-                window.databuddy.flushBatch();
+            // Clear any existing timeout
+            if (visibilityChangeTimeout) {
+                clearTimeout(visibilityChangeTimeout);
+            }
+            
+            // Set a new timeout to check if we're still hidden after a delay
+            visibilityChangeTimeout = setTimeout(() => {
+                // Only flush batches, don't track exit
+                if (document.visibilityState === 'hidden') {
+                    console.log("Databuddy: Page hidden, flushing batch");
+                    if (window.databuddy.options.enableBatching) {
+                        window.databuddy.flushBatch();
+                    }
+                }
+            }, 1000);
+            
+            // Mark as temporarily hidden
+            if (window.databuddy) {
+                window.databuddy.isTemporarilyHidden = true;
+            }
+        } else if (document.visibilityState === 'visible' && window.databuddy) {
+            // User came back to the page, clear the timeout
+            if (visibilityChangeTimeout) {
+                clearTimeout(visibilityChangeTimeout);
+                visibilityChangeTimeout = null;
+            }
+            
+            // Reset temporarily hidden flag
+            if (window.databuddy) {
+                window.databuddy.isTemporarilyHidden = false;
             }
         }
     });
 
     window.addEventListener('pagehide', () => {
         if (window.databuddy) {
+            // Clear any pending visibility change timeout
+            if (visibilityChangeTimeout) {
+                clearTimeout(visibilityChangeTimeout);
+            }
+            
             console.log("Databuddy: Page hiding, flushing batch");
             if (window.databuddy.options.enableBatching) {
-                // Use synchronous flushing to ensure data is sent before page unloads
                 window.databuddy.flushBatch();
+            }
+            
+            // Mark as actually leaving the page, not just tabbing out
+            if (window.databuddy) {
+                window.databuddy.isTemporarilyHidden = false;
             }
         }
     });
@@ -1357,10 +1339,19 @@
     // Also handle the beforeunload event as a last resort
     window.addEventListener('beforeunload', () => {
         if (window.databuddy) {
+            // Clear any pending visibility change timeout
+            if (visibilityChangeTimeout) {
+                clearTimeout(visibilityChangeTimeout);
+            }
+            
             console.log("Databuddy: Page unloading, flushing batch");
             if (window.databuddy.options.enableBatching) {
-                // Use synchronous flushing to ensure data is sent before page unloads
                 window.databuddy.flushBatch();
+            }
+            
+            // Mark as actually leaving the page, not just tabbing out
+            if (window.databuddy) {
+                window.databuddy.isTemporarilyHidden = false;
             }
         }
     });

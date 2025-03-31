@@ -16,6 +16,7 @@ import { format } from 'date-fns';
 import { 
   createSummaryBuilder, 
   createTodayBuilder, 
+  createTodayByHourBuilder,
   createTopPagesBuilder, 
   createTopReferrersBuilder, 
   createEventsByDateBuilder,
@@ -38,6 +39,16 @@ import {
   createSessionEventsBuilder,
   parseReferrers
 } from '../builders/analytics';
+import { 
+  formatTime, formatPerformanceMetric, getDefaultDateRange, formatCleanPath,
+  formatAnalyticsEntry, createSuccessResponse, createErrorResponse,
+  calculateWeightedBounceRate
+} from '../utils/analytics-helpers';
+import {
+  mergeTodayDataIntoSummary,
+  updateEventsWithTodayData,
+  mergeTodayIntoTrends
+} from '../utils/today-data-processor';
 
 // Define types for data processing
 interface ReferrerData {
@@ -60,6 +71,24 @@ interface PageData {
   avg_time_on_page: number | null;
 }
 
+interface AnalyticsEntry {
+  date: string;
+  pageviews: number;
+  unique_visitors?: number;
+  visitors?: number;
+  sessions: number;
+  bounce_rate: number;
+  avg_session_duration?: number;
+  [key: string]: any;
+}
+
+interface TodayData {
+  pageviews: number;
+  visitors: number;
+  sessions: number;
+  bounce_rate: number;
+  [key: string]: any;
+}
 
 // Initialize logger
 const logger = createLogger('analytics-api');
@@ -86,46 +115,6 @@ const analyticsQuerySchema = z.object({
 });
 
 /**
- * Format time in seconds to a human-readable format
- * For durations under 60 seconds, returns "Xs"
- * For longer durations, returns "Xm Xs"
- */
-function formatTime(seconds: number): string {
-  if (!seconds || isNaN(seconds)) return '0s';
-  
-  seconds = Math.round(seconds);
-  if (seconds < 60) return `${seconds}s`;
-  
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  
-  // Update to handle hours for long durations
-  if (minutes >= 60) {
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
-    return `${hours}h ${remainingMinutes}m ${remainingSeconds}s`;
-  }
-  
-  // For consistency, always use the same format with hours, even if hours is 0
-  return `0h ${minutes}m ${remainingSeconds}s`;
-}
-
-/**
- * Format performance metric to show units and rounded values
- */
-function formatPerformanceMetric(value: number, unit: string = 'ms'): string {
-  if (!value || isNaN(value)) return `0 ${unit}`;
-  
-  // Round to nearest integer
-  value = Math.round(value);
-  
-  // For large values, format with commas for readability
-  const formattedValue = value.toLocaleString();
-  
-  return `${formattedValue} ${unit}`;
-}
-
-/**
  * Get summary statistics
  * GET /analytics/summary
  */
@@ -138,16 +127,14 @@ analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async
   }
 
   try {
-    // Set default date range if not provided (last 30 days)
-    const endDate = params.end_date || new Date().toISOString().split('T')[0];
-    const startDate = params.start_date || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    
-    // Get today's date for comparison
+    // Set default date range if not provided
+    const { startDate, endDate } = getDefaultDateRange(params.end_date, params.start_date);
     const today = new Date().toISOString().split('T')[0];
     
     // Use our builders for all queries
     const summaryBuilder = createSummaryBuilder(params.website_id, startDate, endDate);
     const todayBuilder = createTodayBuilder(params.website_id);
+    const todayByHourBuilder = createTodayByHourBuilder(params.website_id);
     const topPagesBuilder = createTopPagesBuilder(params.website_id, startDate, endDate, 5);
     const topReferrersBuilder = createTopReferrersBuilder(params.website_id, startDate, endDate, 5);
     const eventsByDateBuilder = createEventsByDateBuilder(
@@ -171,6 +158,7 @@ analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async
     const [
       summaryData, 
       todayData, 
+      todayHourlyData,
       topPages, 
       topReferrers, 
       eventsByDate, 
@@ -187,6 +175,7 @@ analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async
     ] = await Promise.all([
       chQuery(summaryBuilder.getSql()),
       chQuery(todayBuilder.getSql()),
+      chQuery(todayByHourBuilder.getSql()),
       chQuery(topPagesBuilder.getSql()),
       chQuery(topReferrersBuilder.getSql()),
       chQuery(eventsByDateBuilder.getSql()),
@@ -202,7 +191,41 @@ analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async
       chQuery(performanceBuilder.getSql())
     ]);
     
-    // Transform browser data to include browser and version
+    // Process today's hourly data to make sure we have accurate "today" summary
+    const todaySummary = {
+      pageviews: 0,
+      visitors: 0,
+      sessions: 0,
+      bounce_rate: 0,
+      bounce_rate_pct: "0%"
+    };
+    
+    // Sum up all the pageviews, visitors, and sessions from today's hourly data
+    // This ensures we're using the actual data for today, not just the last hour
+    let todayTotalSessions = 0;
+    let todayBounceRateSum = 0;
+    
+    todayHourlyData.forEach(hour => {
+      if (hour.pageviews > 0) {
+        todaySummary.pageviews += hour.pageviews;
+        todaySummary.visitors += hour.unique_visitors || 0;
+        todaySummary.sessions += hour.sessions || 0;
+        
+        // Track total sessions and weighted bounce rate
+        if (hour.sessions > 0 && hour.bounce_rate > 0) {
+          todayTotalSessions += hour.sessions;
+          todayBounceRateSum += (hour.sessions * hour.bounce_rate);
+        }
+      }
+    });
+    
+    // Calculate weighted bounce rate
+    if (todayTotalSessions > 0) {
+      todaySummary.bounce_rate = todayBounceRateSum / todayTotalSessions;
+      todaySummary.bounce_rate_pct = `${Math.round(todaySummary.bounce_rate * 10) / 10}%`;
+    }
+    
+    // Process browser data to include browser and version
     const processedBrowserVersions = browserVersions.map(item => {
       const userAgentInfo = parseUserAgent(item.user_agent);
       const version = extractBrowserVersion(item.user_agent) || 'Unknown';
@@ -258,18 +281,7 @@ analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async
     
     // Process top pages to normalize paths
     const processedTopPages = topPages.map(page => {
-      let cleanPath = page.path;
-      
-      // Remove protocol and hostname if present
-      try {
-        if (page.path?.startsWith('http')) {
-          const url = new URL(page.path);
-          cleanPath = url.pathname + url.search + url.hash;
-        }
-      } catch (e) {
-        // If URL parsing fails, keep the original path
-      }
-      
+      const cleanPath = formatCleanPath(page.path);
       const timeOnPage = page.avg_time_on_page || 0;
       
       return {
@@ -283,18 +295,7 @@ analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async
     
     // Process today's top pages
     const processedTodayTopPages = todayTopPages.map(page => {
-      let cleanPath = page.path;
-      
-      // Remove protocol and hostname if present
-      try {
-        if (page.path?.startsWith('http')) {
-          const url = new URL(page.path);
-          cleanPath = url.pathname + url.search + url.hash;
-        }
-      } catch (e) {
-        // If URL parsing fails, keep the original path
-      }
-      
+      const cleanPath = formatCleanPath(page.path);
       const timeOnPage = page.avg_time_on_page || 0;
       
       return {
@@ -306,64 +307,15 @@ analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async
       } as PageData & { avg_time_on_page_formatted: string };
     });
     
-    // Merge today's data with historical data
-    const summary = {
-      pageviews: (summaryData[0]?.pageviews || 0) + (todayData[0]?.pageviews || 0),
-      unique_visitors: (summaryData[0]?.unique_visitors || 0) + (todayData[0]?.visitors || 0),
-      visitors: (summaryData[0]?.unique_visitors || 0) + (todayData[0]?.visitors || 0),
-      sessions: (summaryData[0]?.sessions || 0) + (todayData[0]?.sessions || 0),
-      bounce_rate: summaryData[0]?.bounce_rate || 0,
-      avg_session_duration: summaryData[0]?.avg_session_duration || 0
-    };
+    // Use utility to merge today's data with historical data
+    const summary = mergeTodayDataIntoSummary(summaryData[0], todaySummary);
     
-    // Add today to events_by_date if it's within the date range
-    if (today >= startDate && today <= endDate) {
-      // Only add today's summary data when using daily granularity
-      if (params.granularity === 'daily') {
-        const todayStats = {
-          date: today,
-          pageviews: todayData[0]?.pageviews || 0,
-          unique_visitors: todayData[0]?.visitors || 0,
-          sessions: todayData[0]?.sessions || 0,
-          bounce_rate: 0, // We don't have this for raw events
-          avg_session_duration: 0 // We don't have this for raw events
-        };
-        
-        // Check if today exists in eventsByDate
-        const todayExists = eventsByDate.some(day => day.date === today);
-        
-        if (todayExists) {
-          // Update today's data to include real-time data
-          const todayIndex = eventsByDate.findIndex(day => day.date === today);
-          if (todayIndex >= 0) {
-            eventsByDate[todayIndex].pageviews += todayData[0]?.pageviews || 0;
-            eventsByDate[todayIndex].unique_visitors += todayData[0]?.visitors || 0;
-            eventsByDate[todayIndex].sessions += todayData[0]?.sessions || 0;
-          }
-        } else {
-          // Add today if it doesn't exist
-          eventsByDate.push(todayStats);
-          // Sort by date
-          eventsByDate.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-        }
-      } else if (params.granularity === 'hourly') {
-        // For hourly granularity, distribute today's data to the current hour
-        const now = new Date();
-        const currentHourFormatted = format(now, 'yyyy-MM-dd HH:00:00');
-        
-        // Check if current hour exists in eventsByDate
-        const currentHourIndex = eventsByDate.findIndex(hour => hour.date === currentHourFormatted);
-        
-        if (currentHourIndex >= 0) {
-          // Update current hour's data to include real-time data
-          eventsByDate[currentHourIndex].pageviews += todayData[0]?.pageviews || 0;
-          eventsByDate[currentHourIndex].unique_visitors += todayData[0]?.visitors || 0;
-          eventsByDate[currentHourIndex].sessions += todayData[0]?.sessions || 0;
-        }
-        // If current hour doesn't exist in the data, we don't add it
-        // as it might be outside the 48-hour limit applied in the hourly query
-      }
-    }
+    // Update events_by_date to include today's data
+    const updatedEventsByDate = updateEventsWithTodayData(
+      eventsByDate as AnalyticsEntry[], 
+      todaySummary, 
+      params.granularity as 'hourly' | 'daily'
+    );
     
     // Merge top pages data
     const mergedTopPages = [...processedTopPages];
@@ -382,12 +334,31 @@ analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async
       }
     });
     
-    // Sort and limit to top 5
+    // Sort and limit
     mergedTopPages.sort((a, b) => b.pageviews - a.pageviews);
-    const finalTopPages = mergedTopPages.slice(0, 5);
+    const finalTopPages = mergedTopPages.slice(0, params.limit);
     
     // Merge top referrers data
     const mergedTopReferrers = [...processedReferrers];
+    
+    // Add today's top referrers that aren't already in the list
+    processedTodayReferrers.forEach(todayReferrer => {
+      const existingReferrerIndex = mergedTopReferrers.findIndex(r => 
+        r.referrer === todayReferrer.referrer || r.domain === todayReferrer.domain);
+      
+      if (existingReferrerIndex >= 0) {
+        // Update existing referrer with today's data
+        mergedTopReferrers[existingReferrerIndex].visitors += todayReferrer.visitors;
+        mergedTopReferrers[existingReferrerIndex].pageviews += todayReferrer.pageviews;
+      } else {
+        // Add new referrer from today
+        mergedTopReferrers.push(todayReferrer);
+      }
+    });
+    
+    // Sort and limit
+    mergedTopReferrers.sort((a, b) => b.visitors - a.visitors);
+    const finalTopReferrers = mergedTopReferrers.slice(0, params.limit);
     
     return c.json({
       success: true,
@@ -407,22 +378,21 @@ analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async
         avg_session_duration: Math.round(summary.avg_session_duration),
         avg_session_duration_formatted: formatTime(summary.avg_session_duration)
       },
-      today: {
-        pageviews: todayData[0]?.pageviews || 0,
-        visitors: todayData[0]?.visitors || 0,
-        sessions: todayData[0]?.sessions || 0
-      },
-      events_by_date: eventsByDate.map(day => ({
+      events_by_date: updatedEventsByDate.map(day => ({
         ...day,
         bounce_rate_pct: `${Math.round(day.bounce_rate * 10) / 10}%`,
-        avg_session_duration_formatted: formatTime(day.avg_session_duration)
+        avg_session_duration_formatted: formatTime(day.avg_session_duration || 0)
       })),
+      
+      // Use our calculated today summary instead of just today's raw data
+      today: todaySummary,
+      
       top_pages: finalTopPages,
-      top_referrers: processedReferrers.slice(0, 5),
+      top_referrers: finalTopReferrers,
       screen_resolutions: resolutions,
       browser_versions: processedBrowserVersions,
       countries: processedCountries,
-      device_types: deviceTypes.slice(0, 5),
+      device_types: deviceTypes.slice(0, params.limit),
       connection_types: connectionTypes,
       languages: languages,
       timezones: timezones,
@@ -434,12 +404,12 @@ analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async
         avg_fcp: Math.round(performance[0]?.avg_fcp || 0),
         avg_lcp: Math.round(performance[0]?.avg_lcp || 0),
         avg_cls: Math.round((performance[0]?.avg_cls || 0) * 1000) / 1000,
-        avg_load_time_formatted: formatPerformanceMetric(performance[0]?.avg_load_time),
-        avg_ttfb_formatted: formatPerformanceMetric(performance[0]?.avg_ttfb),
-        avg_dom_ready_time_formatted: formatPerformanceMetric(performance[0]?.avg_dom_ready_time),
-        avg_render_time_formatted: formatPerformanceMetric(performance[0]?.avg_render_time),
-        avg_fcp_formatted: formatPerformanceMetric(performance[0]?.avg_fcp),
-        avg_lcp_formatted: formatPerformanceMetric(performance[0]?.avg_lcp),
+        avg_load_time_formatted: formatPerformanceMetric(performance[0]?.avg_load_time || 0),
+        avg_ttfb_formatted: formatPerformanceMetric(performance[0]?.avg_ttfb || 0),
+        avg_dom_ready_time_formatted: formatPerformanceMetric(performance[0]?.avg_dom_ready_time || 0),
+        avg_render_time_formatted: formatPerformanceMetric(performance[0]?.avg_render_time || 0),
+        avg_fcp_formatted: formatPerformanceMetric(performance[0]?.avg_fcp || 0),
+        avg_lcp_formatted: formatPerformanceMetric(performance[0]?.avg_lcp || 0),
         avg_cls_formatted: formatPerformanceMetric(performance[0]?.avg_cls || 0, '')
       }
     });
@@ -469,8 +439,9 @@ analyticsRouter.get('/trends', zValidator('query', analyticsQuerySchema), async 
   }
 
   try {
-    const endDate = params.end_date || new Date().toISOString().split('T')[0];
-    const startDate = params.start_date || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    // Use default date handling
+    const { startDate, endDate } = getDefaultDateRange(params.end_date, params.start_date);
+    const today = new Date().toISOString().split('T')[0];
     
     // Use EventsByDateBuilder to get consistent results across endpoints
     const eventsByDateBuilder = createEventsByDateBuilder(
@@ -480,23 +451,76 @@ analyticsRouter.get('/trends', zValidator('query', analyticsQuerySchema), async 
       params.granularity as 'hourly' | 'daily'
     );
     
-    // Execute the query
+    // Execute the query for historical data
     const eventsByDate = await chQuery(eventsByDateBuilder.getSql());
     
-    // Format the data for better readability
-    const formattedTrends = eventsByDate.map(entry => ({
-      date: entry.date,
-      pageviews: entry.pageviews || 0,
-      visitors: entry.unique_visitors || 0,
-      sessions: entry.sessions || 0,
-      bounce_rate: Math.round((entry.bounce_rate || 0) * 10) / 10,
-      bounce_rate_pct: `${Math.round((entry.bounce_rate || 0) * 10) / 10}%`,
-      avg_session_duration: Math.round(entry.avg_session_duration || 0),
-      avg_session_duration_formatted: formatTime(entry.avg_session_duration || 0)
-    }));
+    // Format the base data
+    const formattedTrends = eventsByDate.map(entry => formatAnalyticsEntry(entry));
     
-    return c.json({
-      success: true,
+    // Get today's data if needed
+    if (today >= startDate && today <= endDate) {
+      const todayBuilder = createTodayBuilder(params.website_id);
+      const todayByHourBuilder = createTodayByHourBuilder(params.website_id);
+      
+      const [todayResults, todayHourlyData] = await Promise.all([
+        chQuery(todayBuilder.getSql()),
+        chQuery(todayByHourBuilder.getSql())
+      ]);
+      
+      // Calculate accurate todaySummary from hourly data
+      const todaySummary = {
+        pageviews: 0,
+        visitors: 0,
+        sessions: 0,
+        bounce_rate: 0
+      };
+      
+      // Sum up all the pageviews, visitors, and sessions from today's hourly data
+      let todayTotalSessions = 0;
+      let todayBounceRateSum = 0;
+      
+      todayHourlyData.forEach(hour => {
+        if (hour.pageviews > 0) {
+          todaySummary.pageviews += hour.pageviews;
+          todaySummary.visitors += hour.unique_visitors || 0;
+          todaySummary.sessions += hour.sessions || 0;
+          
+          // Track total sessions and weighted bounce rate
+          if (hour.sessions > 0 && hour.bounce_rate > 0) {
+            todayTotalSessions += hour.sessions;
+            todayBounceRateSum += (hour.sessions * hour.bounce_rate);
+          }
+        }
+      });
+      
+      // Calculate weighted bounce rate
+      if (todayTotalSessions > 0) {
+        todaySummary.bounce_rate = todayBounceRateSum / todayTotalSessions;
+      }
+      
+      // Merge today's data with trends based on interval type
+      if (todaySummary.pageviews > 0) {
+        const updatedTrends = mergeTodayIntoTrends(
+          formattedTrends, 
+          todaySummary, 
+          params.granularity as 'hourly' | 'daily'
+        );
+        
+        return c.json(createSuccessResponse({
+          website_id: params.website_id,
+          date_range: {
+            start_date: startDate,
+            end_date: endDate,
+            granularity: params.granularity
+          },
+          interval: params.granularity === 'hourly' ? 'hour' : 'day',
+          data: updatedTrends
+        }));
+      }
+    }
+    
+    // Return without today's data
+    return c.json(createSuccessResponse({
       website_id: params.website_id,
       date_range: {
         start_date: startDate,
@@ -505,17 +529,14 @@ analyticsRouter.get('/trends', zValidator('query', analyticsQuerySchema), async 
       },
       interval: params.granularity === 'hourly' ? 'hour' : 'day',
       data: formattedTrends
-    });
+    }));
   } catch (error) {
     logger.error('Error retrieving trends analytics data', { 
       error,
       website_id: params.website_id
     });
     
-    return c.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred'
-    }, 500);
+    return c.json(createErrorResponse(error), 500);
   }
 });
 
@@ -532,8 +553,9 @@ analyticsRouter.get('/chart', zValidator('query', analyticsQuerySchema), async (
   }
 
   try {
-    const endDate = params.end_date || new Date().toISOString().split('T')[0];
-    const startDate = params.start_date || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    // Use default date handling
+    const { startDate, endDate } = getDefaultDateRange(params.end_date, params.start_date);
+    const today = new Date().toISOString().split('T')[0];
     
     // Calculate number of days in the selected period
     const startDateObj = new Date(startDate);
@@ -609,10 +631,13 @@ analyticsRouter.get('/chart', zValidator('query', analyticsQuerySchema), async (
       hour: 'hour ASC'
     };
     
-    const metrics = await chQuery(metricsBuilder.getSql());
-    const hourlyDistribution = await chQuery(hourlyBuilder.getSql());
+    // Execute queries
+    const [metrics, hourlyDistribution] = await Promise.all([
+      chQuery(metricsBuilder.getSql()),
+      chQuery(hourlyBuilder.getSql())
+    ]);
     
-    // Format the metrics data
+    // Format the base metrics data 
     const formattedMetrics = metrics.map(entry => ({
       date: entry[intervalName],
       pageviews: entry.pageviews || 0,
@@ -624,28 +649,113 @@ analyticsRouter.get('/chart', zValidator('query', analyticsQuerySchema), async (
       avg_session_duration_formatted: formatTime(entry.avg_session_duration || 0)
     }));
     
-    return c.json({
-      success: true,
+    // Get today's data if needed
+    if (today >= startDate && today <= endDate) {
+      const todayBuilder = createTodayBuilder(params.website_id);
+      const todayByHourBuilder = createTodayByHourBuilder(params.website_id);
+      
+      const [todayResults, todayHourlyData] = await Promise.all([
+        chQuery(todayBuilder.getSql()),
+        chQuery(todayByHourBuilder.getSql())
+      ]);
+      
+      // Calculate accurate todaySummary from hourly data
+      const todaySummary = {
+        pageviews: 0,
+        visitors: 0,
+        sessions: 0,
+        bounce_rate: 0
+      };
+      
+      // Sum up all the pageviews, visitors, and sessions from today's hourly data
+      let todayTotalSessions = 0;
+      let todayBounceRateSum = 0;
+      
+      todayHourlyData.forEach(hour => {
+        if (hour.pageviews > 0) {
+          todaySummary.pageviews += hour.pageviews;
+          todaySummary.visitors += hour.unique_visitors || 0;
+          todaySummary.sessions += hour.sessions || 0;
+          
+          // Track total sessions and weighted bounce rate
+          if (hour.sessions > 0 && hour.bounce_rate > 0) {
+            todayTotalSessions += hour.sessions;
+            todayBounceRateSum += (hour.sessions * hour.bounce_rate);
+          }
+        }
+      });
+      
+      // Calculate weighted bounce rate
+      if (todayTotalSessions > 0) {
+        todaySummary.bounce_rate = todayBounceRateSum / todayTotalSessions;
+      }
+      
+      // Merge today's data with metrics based on interval type
+      const updatedMetrics = formattedMetrics.map(entry => {
+        const entryDate = entry.date?.toString() || '';
+        
+        // Check if this entry corresponds to today based on interval type
+        const isToday = 
+          (intervalName === 'date' && entryDate === today) || 
+          (intervalName === 'week' && new Date(entryDate).getTime() <= new Date(today).getTime() && 
+            new Date(entryDate).getTime() > new Date(today).getTime() - 7 * 24 * 60 * 60 * 1000) ||
+          (intervalName === 'month' && entryDate.startsWith(today.substring(0, 7)));
+        
+        if (isToday) {
+          const pageviews = (entry.pageviews || 0) + (todaySummary.pageviews || 0);
+          const visitors = (entry.visitors || 0) + (todaySummary.visitors || 0);
+          const sessions = (entry.sessions || 0) + (todaySummary.sessions || 0);
+          
+          // Calculate weighted bounce rate
+          let bounceRate = entry.bounce_rate || 0;
+          if (sessions > 0 && todaySummary.bounce_rate !== undefined) {
+            bounceRate = calculateWeightedBounceRate(
+              entry.sessions || 0,
+              entry.bounce_rate || 0,
+              todaySummary.sessions || 0,
+              todaySummary.bounce_rate
+            );
+          }
+          
+          return {
+            ...entry,
+            pageviews,
+            visitors,
+            sessions,
+            bounce_rate: Math.round(bounceRate * 10) / 10,
+            bounce_rate_pct: `${Math.round(bounceRate * 10) / 10}%`
+          };
+        }
+        
+        return entry;
+      });
+      
+      return c.json(createSuccessResponse({
+        website_id: params.website_id,
+        date_range: { start_date: startDate, end_date: endDate },
+        interval: intervalName,
+        metrics: updatedMetrics,
+        hourly_distribution: hourlyDistribution,
+        total_days: daysDiff
+      }));
+    }
+    
+    // Return without today's data
+    return c.json(createSuccessResponse({
       website_id: params.website_id,
-      date_range: {
-        start_date: startDate,
-        end_date: endDate
-      },
+      date_range: { start_date: startDate, end_date: endDate },
       interval: intervalName,
       metrics: formattedMetrics,
       hourly_distribution: hourlyDistribution,
       total_days: daysDiff
-    });
+    }));
   } catch (error) {
     logger.error('Error retrieving chart analytics data', { 
       error,
       website_id: params.website_id
     });
     
-    return c.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred'
-    }, 500);
+    return c.json(createErrorResponse(error), 500);
   }
 });
 
@@ -672,7 +782,7 @@ analyticsRouter.get('/pages', zValidator('query', analyticsQuerySchema), async (
       path: 'path',
       pageviews: 'COUNT(*) as pageviews',
       visitors: 'COUNT(DISTINCT anonymous_id) as visitors',
-      avg_time_on_page: 'AVG(CASE WHEN time_on_page > 0 THEN time_on_page ELSE NULL END) as avg_time_on_page'
+      avg_time_on_page: 'AVG(CASE WHEN time_on_page > 0 AND time_on_page IS NOT NULL THEN time_on_page / 1000 ELSE NULL END) as avg_time_on_page'
     };
     
     pagesBuilder.sb.where = {
@@ -1277,8 +1387,8 @@ analyticsRouter.get('/devices', zValidator('query', analyticsQuerySchema), async
     
     // Process browser data to extract browser version from user_agent
     const browser_versions = browserResults.map(browser => {
-      const userAgentInfo = parseUserAgent(browser.browser);
-      const version = extractBrowserVersion(browser.browser) || 'Unknown';
+      const userAgentInfo = parseUserAgent(browser.user_agent);
+      const version = extractBrowserVersion(browser.user_agent) || 'Unknown';
       
       return {
         browser: userAgentInfo.browser || 'Unknown',

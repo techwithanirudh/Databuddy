@@ -120,7 +120,7 @@ export async function setActiveOrganization(
 export async function inviteToOrganization(
   email: string,
   role: string | string[],
-  options?: {
+  options: {
     organizationId: string;
     teamId?: string;
     onSuccess?: () => void;
@@ -128,17 +128,21 @@ export async function inviteToOrganization(
   }
 ) {
   try {
+    if (!options.organizationId) {
+      throw new Error("organizationId is required to invite users");
+    }
+
     const result = await authClient.organization.inviteMember({
       email,
       role: role as "member" | "admin" | "owner",
-      organizationId: options?.organizationId,
-      teamId: options?.teamId
+      organizationId: options.organizationId,
+      teamId: options.teamId
     });
     
-    options?.onSuccess?.();
+    options.onSuccess?.();
     return { success: true, data: result };
   } catch (error) {
-    options?.onError?.(error);
+    options.onError?.(error);
     return { success: false, error };
   }
 }
@@ -179,22 +183,26 @@ export async function acceptInvitation(
  */
 export async function createTeam(
   name: string,
-  options?: {
+  options: {
     organizationId: string;
     onSuccess?: (team: Team) => void;
     onError?: (error: any) => void;
   }
 ) {
   try {
+    if (!options.organizationId) {
+      throw new Error("organizationId is required to create a team");
+    }
+
     const result = await authClient.organization.createTeam({
       name,
-      organizationId: options?.organizationId
+      organizationId: options.organizationId
     });
     
-    options?.onSuccess?.(result.data as Team);
+    options.onSuccess?.(result.data as Team);
     return { success: true, data: result.data };
   } catch (error) {
-    options?.onError?.(error);
+    options.onError?.(error);
     return { success: false, error };
   }
 }
@@ -204,22 +212,26 @@ export async function createTeam(
  */
 export async function removeMember(
   memberIdOrEmail: string,
-  options?: {
+  options: {
     organizationId: string;
     onSuccess?: () => void;
     onError?: (error: any) => void;
   }
 ) {
   try {
+    if (!options.organizationId) {
+      throw new Error("organizationId is required to remove members");
+    }
+
     await authClient.organization.removeMember({
       memberIdOrEmail,
-      organizationId: options?.organizationId
+      organizationId: options.organizationId
     });
     
-    options?.onSuccess?.();
+    options.onSuccess?.();
     return { success: true };
   } catch (error) {
-    options?.onError?.(error);
+    options.onError?.(error);
     return { success: false, error };
   }
 }
@@ -230,23 +242,27 @@ export async function removeMember(
 export async function updateMemberRole(
   memberId: string,
   role: string | string[],
-  options?: {
+  options: {
     organizationId: string;
     onSuccess?: () => void;
     onError?: (error: any) => void;
   }
 ) {
   try {
+    if (!options.organizationId) {
+      throw new Error("organizationId is required to update member roles");
+    }
+
     await authClient.organization.updateMemberRole({
       memberId,
       role: role as "member" | "admin" | "owner",
-      organizationId: options?.organizationId
+      organizationId: options.organizationId
     });
     
-    options?.onSuccess?.();
+    options.onSuccess?.();
     return { success: true };
   } catch (error) {
-    options?.onError?.(error);
+    options.onError?.(error);
     return { success: false, error };
   }
 }
@@ -256,21 +272,25 @@ export async function updateMemberRole(
  */
 export async function hasPermission(
   permission: Record<string, string[]>,
-  options?: {
+  options: {
     organizationId: string;
     onSuccess?: (hasPermission: boolean) => void;
     onError?: (error: any) => void;
   }
 ) {
   try {
+    if (!options.organizationId) {
+      throw new Error("organizationId is required to check permissions");
+    }
+
     const result = await authClient.organization.hasPermission({
       permission,
-      organizationId: options?.organizationId
+      organizationId: options.organizationId
     })
-    options?.onSuccess?.(result.data?.success || false);
+    options.onSuccess?.(result.data?.success || false);
     return { success: true, hasPermission: result.data?.success || false };
   } catch (error) {
-    options?.onError?.(error);
+    options.onError?.(error);
     return { success: false, error, hasPermission: false };
   }
 }
@@ -287,7 +307,9 @@ export function useOrganizationPermission(permission: Record<string, string[]>) 
       return false;
     }
     
-    const { hasPermission: hasAccess } = await hasPermission(permission);
+    const { hasPermission: hasAccess } = await hasPermission(permission, {
+      organizationId: activeOrganization.id
+    });
     return hasAccess;
   };
   
@@ -340,22 +362,26 @@ export async function updateOrganization(
     slug?: string;
     metadata?: Record<string, any>;
   },
-  options?: {
+  options: {
     organizationId: string;
     onSuccess?: () => void;
     onError?: (error: any) => void;
   }
 ) {
   try {
+    if (!options.organizationId) {
+      return { success: false, error: "organizationId is required to update an organization" };
+    }
+    
     await authClient.organization.update({
       data,
-      organizationId: options?.organizationId
+      organizationId: options.organizationId
     });
     
-    options?.onSuccess?.();
+    options.onSuccess?.();
     return { success: true };
   } catch (error) {
-    options?.onError?.(error);
+    options.onError?.(error);
     return { success: false, error };
   }
 }
@@ -364,21 +390,25 @@ export async function updateOrganization(
  * Delete an organization
  */
 export async function deleteOrganization(
-  options?: {
+  options: {
     organizationId: string;
     onSuccess?: () => void;
     onError?: (error: any) => void;
   }
 ) {
   try {
+    if (!options.organizationId) {
+      return { success: false, error: "organizationId is required to delete an organization" };
+    }
+    
     await authClient.organization.delete({
-      organizationId: options?.organizationId
+      organizationId: options.organizationId
     });
     
-    options?.onSuccess?.();
+    options.onSuccess?.();
     return { success: true };
   } catch (error) {
-    options?.onError?.(error);
+    options.onError?.(error);
     return { success: false, error };
   }
 } 

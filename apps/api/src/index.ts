@@ -49,6 +49,7 @@ app.use('*', cors({
     'databuddy-client-id',
     'databuddy-sdk-name',
     'databuddy-sdk-version',
+    'x-user-timezone'
   ],
   allowMethods: ['POST', 'OPTIONS', 'GET'],
   credentials: true,

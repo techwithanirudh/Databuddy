@@ -9,6 +9,7 @@ import { TwoFactorForm } from "@/components/settings/two-factor-form";
 import { SessionsForm } from "@/components/settings/sessions-form";
 import { AccountDeletion } from "@/components/settings/account-deletion";
 import { ProfileForm } from "@/components/settings/profile-form";
+import TimezonePreferences from "@/components/settings/timezone-preferences";
 import { Separator } from "@/components/ui/separator";
 import { 
   ShieldOff, 
@@ -18,7 +19,8 @@ import {
   Lock, 
   Bell, 
   Settings,
-  Info
+  Info,
+  Clock
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -189,6 +191,18 @@ export default function SettingsPage() {
                 </CardHeader>
                 <CardContent>
                   <PasswordForm />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Timezone Preferences</CardTitle>
+                  <CardDescription>
+                    Update your timezone preferences
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <TimezonePreferences />
                 </CardContent>
               </Card>
 

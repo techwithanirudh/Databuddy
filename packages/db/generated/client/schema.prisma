@@ -66,6 +66,9 @@ model User {
   twoFactorEnabled Boolean?
   twofactors       TwoFactor[]
 
+  // User preferences relation
+  preferences UserPreference?
+
   @@map("user")
 }
 
@@ -475,4 +478,18 @@ model Jwks {
   createdAt  DateTime
 
   @@map("jwks")
+}
+
+// User preferences model
+model UserPreference {
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  timezone   String   @default("auto") // "auto" will use browser timezone, or specify an IANA timezone
+  dateFormat String   @default("MMM D, YYYY") // Default date format
+  timeFormat String   @default("h:mm a") // Default time format 
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("user_preferences")
 }

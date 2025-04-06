@@ -376,6 +376,16 @@ exports.Prisma.JwksScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.UserPreferenceScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  timezone: 'timezone',
+  dateFormat: 'dateFormat',
+  timeFormat: 'timeFormat',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -480,7 +490,8 @@ exports.Prisma.ModelName = {
   Client: 'Client',
   AuditLog: 'AuditLog',
   TwoFactor: 'TwoFactor',
-  Jwks: 'Jwks'
+  Jwks: 'Jwks',
+  UserPreference: 'UserPreference'
 };
 
 /**

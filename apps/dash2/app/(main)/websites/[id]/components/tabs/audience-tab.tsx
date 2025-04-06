@@ -280,7 +280,7 @@ export function WebsiteAudienceTab({
                         
                         {/* Screen content simulation */}
                         <div 
-                          className="absolute inset-2 bg-gradient-to-br from-background to-muted/60 rounded opacity-80"
+                          className="absolute inset-2 rounded opacity-80"
                           style={{ transform: 'translateZ(2px)' }}
                         />
                         

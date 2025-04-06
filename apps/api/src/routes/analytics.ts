@@ -200,7 +200,6 @@ analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async
       chQuery(performanceBuilder.getSql())
     ]);
 
-    console.log(summaryData);
     
     // Process today's hourly data to make sure we have accurate "today" summary
     const todaySummary = {

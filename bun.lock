@@ -450,6 +450,16 @@
         "typescript": "^5.3.3",
       },
     },
+    "packages/shared": {
+      "name": "@databuddy/shared",
+      "version": "0.1.0",
+      "dependencies": {
+        "dayjs": "^1.11.13",
+      },
+      "devDependencies": {
+        "typescript": "^5.0.4",
+      },
+    },
     "packages/trpc": {
       "name": "@databuddy/trpc",
       "version": "0.1.0",
@@ -576,6 +586,8 @@
     "@databuddy/queue": ["@databuddy/queue@workspace:packages/queue"],
 
     "@databuddy/redis": ["@databuddy/redis@workspace:packages/redis"],
+
+    "@databuddy/shared": ["@databuddy/shared@workspace:packages/shared"],
 
     "@databuddy/trpc": ["@databuddy/trpc@workspace:packages/trpc"],
 

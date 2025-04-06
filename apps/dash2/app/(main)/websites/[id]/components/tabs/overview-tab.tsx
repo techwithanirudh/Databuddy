@@ -397,7 +397,10 @@ export function WebsiteOverviewTab({
         <div className="">
           <MetricsChart 
             data={chartData} 
-            isLoading={isLoading}
+            isLoading={isLoading} 
+            height={350}
+            title="Traffic Overview"
+            description="Website performance metrics over time"
           />
         </div>
       </div>

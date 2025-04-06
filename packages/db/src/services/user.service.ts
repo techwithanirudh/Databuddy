@@ -10,6 +10,7 @@ type UserWithRelations = User & {
   memberships: any[];
   projectAccess: any[];
   websites: any[];
+  preferences?: any;
 };
 
 export class UserService {
@@ -36,6 +37,7 @@ export class UserService {
           memberships: true,
           projectAccess: true,
           websites: true,
+          preferences: true,
         },
       });
     } catch (error) {
@@ -53,6 +55,7 @@ export class UserService {
           memberships: true,
           projectAccess: true,
           websites: true,
+          preferences: true,
         },
       });
     } catch (error) {
@@ -139,6 +142,58 @@ export class UserService {
       return user;
     } catch (error) {
       logger.error('Failed to verify user email', { error, id });
+      throw error;
+    }
+  }
+
+  /**
+   * Get user preferences or create default preferences if none exist
+   */
+  static async getUserPreferences(userId: string) {
+    try {
+      // Try to find existing preferences
+      let preferences = await prisma.userPreference.findUnique({
+        where: { userId },
+      });
+      
+      // Create default preferences if none exist
+      if (!preferences) {
+        preferences = await prisma.userPreference.create({
+          data: {
+            userId,
+            timezone: "auto",
+            dateFormat: "MMM D, YYYY",
+            timeFormat: "h:mm a"
+          }
+        });
+      }
+      
+      return preferences;
+    } catch (error) {
+      logger.error('Failed to get user preferences', { error, userId });
+      throw error;
+    }
+  }
+
+  /**
+   * Update user preferences
+   */
+  static async updateUserPreferences(userId: string, data: {
+    timezone?: string;
+    dateFormat?: string;
+    timeFormat?: string;
+  }) {
+    try {
+      // Ensure preferences exist
+      await this.getUserPreferences(userId);
+      
+      // Update preferences
+      return await prisma.userPreference.update({
+        where: { userId },
+        data
+      });
+    } catch (error) {
+      logger.error('Failed to update user preferences', { error, userId });
       throw error;
     }
   }

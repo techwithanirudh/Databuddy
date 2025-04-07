@@ -90,11 +90,16 @@ const createRedisClient = (
 let redisCache: ExtendedRedis;
 export function getRedisCache() {
   if (!redisCache) {
-    if (!process.env.REDIS_URL) {
+    // Access environment variables properly in both Node.js and Cloudflare Workers
+    const redisUrl = process.env.REDIS_URL || 
+                     (typeof globalThis.process !== 'undefined' ? globalThis.process.env?.REDIS_URL : null) || 
+                     (typeof globalThis !== 'undefined' && 'REDIS_URL' in globalThis ? globalThis.REDIS_URL : null);
+    
+    if (!redisUrl) {
       logger.error('REDIS_URL environment variable is not set');
       throw new Error('REDIS_URL environment variable is required');
     }
-    redisCache = createRedisClient(process.env.REDIS_URL, options);
+    redisCache = createRedisClient(redisUrl, options);
   }
 
   return redisCache;
@@ -103,11 +108,16 @@ export function getRedisCache() {
 let redisSub: ExtendedRedis;
 export function getRedisSub() {
   if (!redisSub) {
-    if (!process.env.REDIS_URL) {
+    // Access environment variables properly in both Node.js and Cloudflare Workers
+    const redisUrl = process.env.REDIS_URL || 
+                     (typeof globalThis.process !== 'undefined' ? globalThis.process.env?.REDIS_URL : null) || 
+                     (typeof globalThis !== 'undefined' && 'REDIS_URL' in globalThis ? globalThis.REDIS_URL : null);
+    
+    if (!redisUrl) {
       logger.error('REDIS_URL environment variable is not set');
       throw new Error('REDIS_URL environment variable is required');
     }
-    redisSub = createRedisClient(process.env.REDIS_URL, options);
+    redisSub = createRedisClient(redisUrl, options);
   }
 
   return redisSub;
@@ -116,11 +126,16 @@ export function getRedisSub() {
 let redisPub: ExtendedRedis;
 export async function getRedisPub() {
   if (!redisPub) {
-    if (!process.env.REDIS_URL) {
+    // Access environment variables properly in both Node.js and Cloudflare Workers
+    const redisUrl = process.env.REDIS_URL || 
+                     (typeof globalThis.process !== 'undefined' ? globalThis.process.env?.REDIS_URL : null) || 
+                     (typeof globalThis !== 'undefined' && 'REDIS_URL' in globalThis ? globalThis.REDIS_URL : null);
+    
+    if (!redisUrl) {
       logger.error('REDIS_URL environment variable is not set');
       throw new Error('REDIS_URL environment variable is required');
     }
-    redisPub = createRedisClient(process.env.REDIS_URL, options);
+    redisPub = createRedisClient(redisUrl, options);
   }
 
   return redisPub;
@@ -129,8 +144,13 @@ export async function getRedisPub() {
 let redisQueue: ExtendedRedis;
 export async function getRedisQueue() {
   if (!redisQueue) {
-    // Use different redis for queues (self-hosting will re-use the same redis instance)
-    const queueRedisUrl = process.env.QUEUE_REDIS_URL || process.env.REDIS_URL;
+    // Access environment variables properly in both Node.js and Cloudflare Workers
+    const queueRedisUrl = process.env.QUEUE_REDIS_URL || 
+                         (typeof globalThis.process !== 'undefined' ? globalThis.process.env?.QUEUE_REDIS_URL : null) || 
+                         (typeof globalThis !== 'undefined' && 'QUEUE_REDIS_URL' in globalThis ? globalThis.QUEUE_REDIS_URL : null) || 
+                         process.env.REDIS_URL || 
+                         (typeof globalThis.process !== 'undefined' ? globalThis.process.env?.REDIS_URL : null) || 
+                         (typeof globalThis !== 'undefined' && 'REDIS_URL' in globalThis ? globalThis.REDIS_URL : null);
     
     if (!queueRedisUrl) {
       logger.error('Neither QUEUE_REDIS_URL nor REDIS_URL environment variable is set');

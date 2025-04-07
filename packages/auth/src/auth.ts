@@ -5,6 +5,19 @@ import { getSessionCookie } from "better-auth/cookies";
 import { db } from "@databuddy/db";
 // import { Resend } from "resend";
 
+// Helper function to access environment variables in both Node.js and Cloudflare Workers
+function getEnv(key: string) {
+  return process.env[key] || 
+         (typeof globalThis.process !== 'undefined' ? globalThis.process.env?.[key] : null) || 
+         (typeof globalThis !== 'undefined' && key in globalThis ? (globalThis as any)[key] : null);
+}
+
+// Helper to check NODE_ENV
+function isProduction() {
+  const nodeEnv = getEnv('NODE_ENV');
+  return nodeEnv === 'production';
+}
+
 export const canManageUsers = (role: string) => {
   return role === 'ADMIN'
 }
@@ -24,26 +37,18 @@ export const auth = betterAuth({
     }),
     appName: "databuddy.cc",
     cookie: {
-        domain: process.env.NODE_ENV === 'production' ? ".databuddy.cc" : undefined,
-        secure: process.env.NODE_ENV === 'production',
+        domain: isProduction() ? ".databuddy.cc" : undefined,
+        secure: isProduction(),
         sameSite: "lax"
     },
     socialProviders: {
         google: {
-            clientId: process.env.GOOGLE_CLIENT_ID as string,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-            mapProfileToUser: async (...args: any[]) => {
-                console.log(args);
-                if (args[1]) {
-                    return args[1];
-                }
-                return null;
-            }
+            clientId: getEnv('GOOGLE_CLIENT_ID') as string,
+            clientSecret: getEnv('GOOGLE_CLIENT_SECRET') as string,
         },
         github: {
-            clientId: process.env.GITHUB_CLIENT_ID as string,
-            
-            clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
+            clientId: getEnv('GITHUB_CLIENT_ID') as string,
+            clientSecret: getEnv('GITHUB_CLIENT_SECRET') as string,
         },
     },
     emailAndPassword: {
@@ -82,6 +87,9 @@ export const auth = betterAuth({
         jwks: {
             disablePrivateKeyEncryption: true
         }
+    },
+    jwks: {
+        disablePrivateKeyEncryption: true
     },
     api: {
         enabled: true,

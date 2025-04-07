@@ -4,6 +4,13 @@ import { z } from 'zod';
 
 const logger = createLogger('ip-geo');
 
+// Helper function to access environment variables in both Node.js and Cloudflare Workers
+function getEnv(key: string) {
+  return process.env[key] || 
+         (typeof globalThis.process !== 'undefined' ? globalThis.process.env?.[key] : null) || 
+         (typeof globalThis !== 'undefined' && key in globalThis ? (globalThis as any)[key] : null);
+}
+
 const GeoLocationSchema = z.object({
   ip: z.string(),
   city: z.string().optional(),
@@ -29,7 +36,7 @@ const DEFAULT_GEO: GeoLocation = {
 const ignore = ['127.0.0.1', '::1'];
 
 function urlConstructor(ip: string) {
-  return `https://ipinfo.io/${ip}?token=${process.env.IPINFO_TOKEN}`;
+  return `https://ipinfo.io/${ip}?token=${getEnv('IPINFO_TOKEN')}`;
 }
 
 async function fetchIpGeo(ip: string): Promise<GeoLocation> {

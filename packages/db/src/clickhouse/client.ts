@@ -65,7 +65,9 @@ class CustomLogger implements Logger {
   };
 
   export const clickHouseOG = createClient({
-    url: process.env.CLICKHOUSE_URL,
+    url: process.env.CLICKHOUSE_URL || 
+         (typeof globalThis.process !== 'undefined' ? globalThis.process.env?.CLICKHOUSE_URL : null) || 
+         (typeof globalThis !== 'undefined' && 'CLICKHOUSE_URL' in globalThis ? globalThis.CLICKHOUSE_URL : null),
     ...CLICKHOUSE_OPTIONS,
   });
 

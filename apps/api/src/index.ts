@@ -33,19 +33,24 @@ app.use('*', logger());
 app.use('*', cors({
   origin: (origin) => {
     // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return null;
+    if (!origin) return '*';
     
     const allowedOrigins = [
       'https://dashboard.databuddy.cc',
+      'https://app.databuddy.cc',
       'http://localhost:3000',
       'http://localhost:4000',
-      'https://api.databuddy.cc'
+      'https://api.databuddy.cc',
+      'https://databuddy.cc',
+      'https://www.databuddy.cc'
     ];
     
     return allowedOrigins.includes(origin) ? origin : null;
   },
   allowHeaders: [
     'Content-Type',
+    'Authorization',
+    'Cookie',
     'databuddy-client-id',
     'databuddy-sdk-name',
     'databuddy-sdk-version',
@@ -53,13 +58,25 @@ app.use('*', cors({
   ],
   allowMethods: ['POST', 'OPTIONS', 'GET'],
   credentials: true,
-  exposeHeaders: ['Content-Type'],
+  exposeHeaders: ['Content-Type', 'Set-Cookie'],
   maxAge: 600,
 }));
 
 // Mount auth routes first
-app.on(['POST', 'GET', 'OPTIONS'], '/api/auth/*', (c) => {
-  return auth.handler(c.req.raw);
+app.on(['POST', 'GET', 'OPTIONS'], '/api/auth/*', async (c) => {
+  try {
+    const response = await auth.handler(c.req.raw);
+    return response;
+  } catch (error: any) {
+    console.error('[Auth Handler Error]:', error);
+    return new Response(JSON.stringify({ 
+      error: 'Authentication error', 
+      message: error?.message || 'An error occurred in the authentication service' 
+    }), { 
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
 });
 
 // Health check route
@@ -138,32 +155,15 @@ function mapTRPCErrorToStatus(code: string): number {
   }
 }
 
-// // Development server
-// if (process.env.NODE_ENV !== 'production') {
-//   const port = process.env.PORT || 3001;
-//   console.log(`Server is running on port ${port}`);
-  
-//   const server = Bun.serve({
-//     port: Number(port),
-//     fetch: app.fetch,
-//   });
-
-//   // Handle graceful shutdown
-//   process.on('SIGINT', () => {
-//     console.log('Shutting down server...');
-//     server.stop();
-//     process.exit(0);
-//   });
-
-//   process.on('SIGTERM', () => {
-//     console.log('Shutting down server...');
-//     server.stop();
-//     process.exit(0);
-//   });
-// }
+// Helper function to access environment variables in both Node.js and Cloudflare Workers
+function getEnv(key: string) {
+  return process.env[key] || 
+         (typeof globalThis.process !== 'undefined' ? globalThis.process.env?.[key] : null) || 
+         (typeof globalThis !== 'undefined' && key in globalThis ? (globalThis as any)[key] : null);
+}
 
 // Export the app for Cloudflare Workers - DONT ENABLE.
 export default {
   fetch: app.fetch,
-  port: process.env.PORT || 3001,
+  port: getEnv('PORT') || 3001,
 };

@@ -21,7 +21,7 @@
 wrangler.jsonc
 .env
 .wrangler
-bun.lockb
+# bun.lockb
 .dist
 
 # debug

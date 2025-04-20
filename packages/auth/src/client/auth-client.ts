@@ -1,8 +1,7 @@
 import { createAuthClient } from "better-auth/react"
-import { customSessionClient, twoFactorClient, organizationClient, emailOTPClient } from "better-auth/client/plugins";
+import { customSessionClient, twoFactorClient, organizationClient, emailOTPClient, magicLinkClient, multiSessionClient } from "better-auth/client/plugins";
 import type { auth } from "../auth";
 import type { AuthUser } from "../types";
-import { multiSession } from "better-auth/plugins";
 
 // Define a type for the auth client configuration
 export type AuthClientConfig = {
@@ -17,13 +16,14 @@ const defaultConfig: AuthClientConfig = {
 };
 
 // Create a singleton instance with the default configuration
-let _authClient = createAuthClient({
+export const authClient = createAuthClient({
   baseURL: defaultConfig.baseURL,
   plugins: [
     customSessionClient<typeof auth>(),
     twoFactorClient(),
-    multiSession(),
+    multiSessionClient(),
     emailOTPClient(),
+    magicLinkClient(),
     organizationClient({
       teams: {
         enabled: true
@@ -32,49 +32,13 @@ let _authClient = createAuthClient({
   ],
 });
 
-// Function to initialize or reconfigure the auth client
-export function initAuthClient(config: AuthClientConfig = {}) {
-  const mergedConfig = { ...defaultConfig, ...config };
-  
-  _authClient = createAuthClient({
-    baseURL: mergedConfig.baseURL,
-    plugins: [
-      customSessionClient<typeof auth>(),
-      twoFactorClient(),
-      multiSession(),
-      emailOTPClient(),
-      organizationClient({
-        teams: {
-          enabled: true
-        }
-      })
-    ],
-  });
-  
-  return _authClient;
-}
+const signIn = authClient.signIn;
+const signUp = authClient.signUp;
+const signOut = authClient.signOut;
+const useSession = authClient.useSession;
+const getSession = authClient.getSession;
 
-// Export the auth client instance
-export const authClient = _authClient;
-
-// Export individual functions directly from the client
-// These are properly typed and will be available for import
-export const signIn = _authClient.signIn;
-export const signUp = _authClient.signUp;
-export const signOut = _authClient.signOut;
-export const useSession = _authClient.useSession;
-export const getSession = _authClient.getSession;
-
-// Export a hook to get the current user with proper typing
-export function useUser() {
-  const { data, isPending, error } = useSession();
-  
-  return {
-    user: data?.user as AuthUser | undefined,
-    isLoading: isPending,
-    error,
-  };
-}
+export { signIn, signUp, signOut, useSession, getSession };
 
 // Export a helper to check if the user has a specific role
 export function hasRole(user: AuthUser | null | undefined, role: string | string[]) {

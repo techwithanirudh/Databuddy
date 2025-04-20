@@ -126,6 +126,11 @@ export function Sidebar() {
         <div 
           className="fixed inset-0 bg-background/80 backdrop-blur-sm z-30 md:hidden"
           onClick={() => setIsMobileOpen(false)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              setIsMobileOpen(false);
+            }
+          }}
         />
       )}
 

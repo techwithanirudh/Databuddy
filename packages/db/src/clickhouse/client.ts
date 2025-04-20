@@ -1,7 +1,7 @@
 import { createLogger } from '@databuddy/logger';
 import type { LogParams, ErrorLogParams, WarnLogParams, Logger, ResponseJSON } from '@clickhouse/client';
 import { ClickHouseLogLevel, createClient } from '@clickhouse/client';
-import { NodeClickHouseClientConfigOptions } from '@clickhouse/client/dist/config';
+import type { NodeClickHouseClientConfigOptions } from '@clickhouse/client/dist/config';
 
 export { createClient };
 
@@ -175,7 +175,7 @@ class CustomLogger implements Logger {
     skipTime = false,
   ): string {
     if (skipTime) {
-      return new Date(date).toISOString().split('T')[0]!;
+      return new Date(date).toISOString().split('T')[0] ?? '';
     }
     return new Date(date).toISOString().replace('T', ' ').replace(/Z+$/, '');
   }

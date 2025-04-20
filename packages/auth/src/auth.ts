@@ -1,14 +1,14 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { customSession, multiSession, twoFactor, organization, emailOTP } from "better-auth/plugins";
+import { customSession, multiSession, twoFactor, organization, emailOTP, magicLink } from "better-auth/plugins";
 import { getSessionCookie } from "better-auth/cookies";
 import { db } from "@databuddy/db";
 import { Resend } from "resend";
+import { getRedisCache } from "@databuddy/redis";
 
 // Helper to check NODE_ENV
 function isProduction() {
-  const nodeEnv = process.env.NODE_ENV;
-  return nodeEnv === 'production';
+  return process.env.NODE_ENV === 'production';
 }
 
 export const canManageUsers = (role: string) => {
@@ -23,12 +23,19 @@ export const getSession = async (request: any) => {
   return sessionCookie;
 }
 
-
 export const auth = betterAuth({
     database: prismaAdapter(db, {
         provider: "postgresql",
     }),
     appName: "databuddy.cc",
+    user: {
+        deleteUser: {
+            enabled: true,
+            beforeDelete: async (user) => {
+                // Add any cleanup logic here
+            },
+        },
+    },
     cookie: {
         domain: isProduction() ? ".databuddy.cc" : undefined,
         secure: isProduction(),
@@ -80,6 +87,19 @@ export const auth = betterAuth({
             maxAge: 5 * 60 // 5 minutes
         }
     },
+    secondaryStorage: {
+        get: async (key) => {
+            const value = await getRedisCache().get(key);
+            return value ? value : null;
+        },
+        set: async (key, value, ttl) => {
+            if (ttl) await getRedisCache().setex(key, ttl, value);
+            else await getRedisCache().set(key, value);
+        },
+        delete: async (key) => {
+            await getRedisCache().del(key);
+        },
+    },
     plugins: [
         customSession(async ({ user, session }) => {
             // Fetch the user's role from the database
@@ -119,6 +139,17 @@ export const auth = betterAuth({
                 })
             },
         }),
+        magicLink({
+            sendMagicLink: async ({ email, token }) => {
+                const resend = new Resend(process.env.RESEND_API_KEY as string);
+                await resend.emails.send({
+                    from: 'noreply@databuddy.cc',
+                    to: email,
+                    subject: 'Login to Databuddy',
+                    html: `<p>Click <a href="${process.env.BETTER_AUTH_URL}/login?token=${token}">here</a> to login to Databuddy</p>`,
+                });
+            },
+        }),
         twoFactor(),
         multiSession(),
         organization({
@@ -135,3 +166,5 @@ export const auth = betterAuth({
         // })
     ]
 })
+
+export type User = (typeof auth)["$Infer"]["Session"]["user"];

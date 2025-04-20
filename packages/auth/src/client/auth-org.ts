@@ -1,6 +1,6 @@
 "use client"
 
-import { authClient, useUser } from './auth-client';
+import { authClient, useSession } from './auth-client';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
@@ -299,11 +299,11 @@ export async function hasPermission(
  * Component hook for checking organization permissions
  */
 export function useOrganizationPermission(permission: Record<string, string[]>) {
-  const { user } = useUser();
+  const { data: session } = useSession();
   const { activeOrganization } = useActiveOrganization();
   
   const checkPermission = async () => {
-    if (!user || !activeOrganization) {
+    if (!session || !activeOrganization) {
       return false;
     }
     
@@ -315,8 +315,8 @@ export function useOrganizationPermission(permission: Record<string, string[]>) 
   
   return {
     checkPermission,
-    isLoading: !user || !activeOrganization,
-    user,
+    isLoading: !session || !activeOrganization,
+    session,
     activeOrganization
   };
 }

@@ -91,10 +91,7 @@ let redisCache: ExtendedRedis;
 export function getRedisCache() {
   if (!redisCache) {
     // Access environment variables properly in both Node.js and Cloudflare Workers
-    const redisUrl = process.env.REDIS_URL || 
-                     (typeof globalThis.process !== 'undefined' ? globalThis.process.env?.REDIS_URL : null) || 
-                     (typeof globalThis !== 'undefined' && 'REDIS_URL' in globalThis ? (globalThis as Record<string, any>).REDIS_URL : null);
-    
+    const redisUrl = process.env.REDIS_URL
     if (!redisUrl) {
       logger.error('REDIS_URL environment variable is not set');
       throw new Error('REDIS_URL environment variable is required');

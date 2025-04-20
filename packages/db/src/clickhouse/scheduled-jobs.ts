@@ -17,7 +17,7 @@ const logger = createLogger('clickhouse:scheduled-jobs');
  * 
  * @param daysLookback Number of days to look back for active clients
  */
-async function getActiveClientIds(daysLookback: number = 30): Promise<string[]> {
+async function getActiveClientIds(daysLookback = 30): Promise<string[]> {
   try {
     const startDate = format(subDays(new Date(), daysLookback), 'yyyy-MM-dd');
     
@@ -42,7 +42,7 @@ async function getActiveClientIds(daysLookback: number = 30): Promise<string[]> 
  * 
  * @param daysLookback Number of days to look back for aggregation
  */
-export async function runDailyAggregation(daysLookback: number = 7) {
+export async function runDailyAggregation(daysLookback = 7) {
   try {
     logger.info('Starting daily aggregation job');
     const startTime = Date.now();
@@ -117,7 +117,7 @@ export async function runDailyAggregation(daysLookback: number = 7) {
  * 
  * @param daysLookback Number of days to look back for missing data
  */
-export async function runMissingDataCheck(daysLookback: number = 30) {
+export async function runMissingDataCheck(daysLookback = 30) {
   try {
     logger.info('Starting missing data check job');
     const startTime = Date.now();

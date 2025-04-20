@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { ChevronDown, Plus, Building2, Users } from "lucide-react";
-import { useOrganizationSelector } from "@databuddy/auth";
+import { useOrganizationSelector } from "@databuddy/auth/client";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 

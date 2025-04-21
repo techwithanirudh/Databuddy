@@ -22,6 +22,10 @@
         "STRIPE_SECRET_KEY"
       ]
     },
+    "start": {
+      "dependsOn": ["^start", "db:generate"],
+      "cache": false
+    },
     "db:generate": {
       "cache": false
     },
@@ -37,7 +41,6 @@
       "dependsOn": ["^check-types"]
     },
     "dev": {
-      "dependsOn": ["^dev", "db:generate"],
       "cache": false,
       "persistent": true
     },

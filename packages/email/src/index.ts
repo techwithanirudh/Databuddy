@@ -1,6 +1,6 @@
 // Export email functionality
-export { sendEmail } from './client';
-export { type TemplateKey, type Templates } from './emails';
+// export { sendEmail } from './client';
+// export type { TemplateKey, Templates } from './emails';
 
 /**
  * Example usage:

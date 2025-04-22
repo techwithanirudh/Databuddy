@@ -4,13 +4,14 @@ import type { NextConfig } from "next";
 
 import { PrismaPlugin } from '@prisma/nextjs-monorepo-workaround-plugin';
 
+
 const nextConfig: NextConfig = {
   /* config options here */
   images: {
-    domains: ['qdpxznrqyzyebbrmqvpi.supabase.co'],
+    domains: ['qdpxznrqyzyebbrmqvpi.supabase.co', 'localhost'],
 },
 webpack: (config, { isServer }) => {
-    if (isServer) {
+    if (isServer && process.env.NODE_ENV === 'production') {
         config.plugins = [...config.plugins, new PrismaPlugin()];
     }
     return config;

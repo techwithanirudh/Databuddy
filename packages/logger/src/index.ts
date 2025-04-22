@@ -159,8 +159,8 @@
 // // Export default logger
 // export default logger; 
 
-export function createLogger(name: string) {
+function createLogger(name: string) {
   return console;
 }
 
-export default createLogger;
+export { createLogger };

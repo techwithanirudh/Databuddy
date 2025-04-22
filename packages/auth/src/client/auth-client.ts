@@ -24,11 +24,6 @@ export const authClient = createAuthClient({
     multiSessionClient(),
     emailOTPClient(),
     magicLinkClient(),
-    organizationClient({
-      teams: {
-        enabled: true
-      }
-    })
   ],
 });
 

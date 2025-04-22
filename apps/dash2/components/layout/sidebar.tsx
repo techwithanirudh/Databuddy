@@ -17,11 +17,9 @@ import {
   ChevronLeft,
   Menu
 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useTheme } from "next-themes";
+import { useState } from "react";
 import { TopHeader } from "./top-header";
 import { useWebsites } from "@/hooks/use-websites";
-import { OrganizationSelector } from "./organization-selector";
 
 interface NavigationItem {
   name: string;
@@ -71,8 +69,6 @@ const websiteNavigation: NavigationSection[] = [
 export function Sidebar() {
   const pathname = usePathname();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
   const { websites, isLoading } = useWebsites();
 
   // Check if we're on a specific website page
@@ -84,10 +80,6 @@ export function Sidebar() {
   const currentWebsite = isInWebsiteContext 
     ? websites?.find(site => site.id === currentWebsiteId) 
     : null;
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const renderNavigationItems = (items: NavigationItem[], currentPath: string) => {
     return items.map((item) => {
@@ -141,7 +133,6 @@ export function Sidebar() {
           isMobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <OrganizationSelector />
         <ScrollArea className="h-[calc(100vh-4rem)]">
           <div className="p-4">
             {isInWebsiteContext ? (

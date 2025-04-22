@@ -1,8 +1,6 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
-import { createLogger } from '@databuddy/logger';
-// import { highlightMiddleware } from '@highlight-run/hono'
 import { appRouter } from '@databuddy/trpc';
 import { trpcServer } from '@hono/trpc-server'
 import { authMiddleware } from './middleware/auth'
@@ -92,31 +90,9 @@ app.route('/admin', adminRouter);
 // Mount analytics routes with auth middleware
 app.route('/analytics', analyticsRouter);
 
-// Add auth middleware for protected routes
-app.use('/trpc/*', authMiddleware);
-
 app.get('/session', (c) => {
   return c.json({ session: c.get('session') });
 });
-
-// Mount tRPC routes
-app.use('/trpc/*', trpcServer({
-  router: appRouter,
-  createContext: async (opts) => {
-    const c = opts.req as any;
-    return {
-      user: c.user,
-      session: c.session
-    };
-  },
-  onError: ({ error, path }) => {
-    if (error instanceof TRPCError) {
-      console.error(`[tRPC] Error in ${path}:`, error.message);
-      return;
-    }
-    console.error(`[tRPC] Unknown error in ${path}:`, error);
-  }
-}));
 
 // Error handling
 app.onError((err, c) => {

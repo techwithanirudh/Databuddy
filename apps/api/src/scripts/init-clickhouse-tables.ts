@@ -38,17 +38,17 @@ async function initTables() {
         message: result.message,
         details: result.details
       };
-    } else {
-      logger.error('-----------------------------------------------');
-      logger.error(`Failed: ${result.message}`);
-      logger.error(`Error: ${result.error || 'Unknown error'}`);
-      
-      return {
-        success: false,
-        message: result.message,
-        error: result.error
-      };
     }
+    
+    logger.error('-----------------------------------------------');
+    logger.error(`Failed: ${result.message}`);
+    logger.error(`Error: ${result.error || 'Unknown error'}`);
+    
+    return {
+      success: false,
+      message: result.message,
+      error: result.error
+    };
   } catch (error) {
     logger.error('-----------------------------------------------');
     logger.error('Unhandled error during initialization:', error);

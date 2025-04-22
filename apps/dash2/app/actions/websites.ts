@@ -5,8 +5,8 @@ import { db } from "@databuddy/db";
 import { auth } from "@databuddy/auth";
 import { headers } from "next/headers";
 import { cache } from "react";
-import dns from "dns";
-import { promisify } from "util";
+import dns from "node:dns";
+import { promisify } from "node:util";
 
 // Promisify DNS lookup
 const dnsLookup = promisify(dns.lookup);
@@ -254,15 +254,14 @@ export async function checkDomainVerification(id: string) {
             message: "Domain verified successfully. Your website is now active." 
           } 
         };
-      } else {
-        console.log(`[Verification] Failed: ${website.domain} - token not found`);
-        return { 
-          data: { 
+      }
+      console.log(`[Verification] Failed: ${website.domain} - token not found`);
+      return { 
+        data: { 
             verified: false, 
             message: "Verification token not found in DNS records. Your website will remain inactive until verified." 
           } 
-        };
-      }
+      };
     } catch (error) {
       console.error("[Verification] DNS lookup error:", error);
       return { 

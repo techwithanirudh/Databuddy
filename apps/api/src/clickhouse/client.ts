@@ -1,4 +1,4 @@
-import { createLogger } from '@databuddy/logger';
+// import { createLogger } from '@databuddy/logger';
 import type { LogParams, ErrorLogParams, WarnLogParams, Logger, ResponseJSON } from '@clickhouse/client';
 import { ClickHouseLogLevel, createClient } from '@clickhouse/client';
 import type { NodeClickHouseClientConfigOptions } from '@clickhouse/client/dist/config';
@@ -19,7 +19,8 @@ export const TABLE_NAMES = {
   performance_stats: 'analytics.performance_stats'
 };
 
-const logger = createLogger('clickhouse');
+// const logger = createLogger('clickhouse');
+const logger = console;
 
 class CustomLogger implements Logger {
     trace({ message, args }: LogParams) {

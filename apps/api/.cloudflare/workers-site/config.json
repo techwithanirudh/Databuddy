@@ -1,6 +1,0 @@
-{
-  "main": "_worker.js",
-  "site": {
-    "bucket": "../dist"
-  }
-} 

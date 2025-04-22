@@ -53,26 +53,23 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      // Use authClient.signUp.email to register the user
       const result = await authClient.signUp.email({
         email: formData.email,
         password: formData.password,
-        name: formData.name
+        name: formData.name,
+        fetchOptions: {
+          onSuccess: () => {
+            toast.success("Account created! Please check your email to verify your account.");
+            router.push(`/verify?email=${encodeURIComponent(formData.email)}`);
+          },
+        }
       });
 
-      if (result.error) {
+      if (result?.error) {
         toast.error(result.error.message || "Failed to create account");
-        return;
       }
-
-      toast.success("Account created! Please check your email to verify your account.");
-      router.push(`/verify?email=${encodeURIComponent(formData.email)}`);
     } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message);
-      } else {
-        toast.error("Something went wrong");
-      }
+      toast.error("Something went wrong");
     } finally {
       setIsLoading(false);
     }
@@ -85,7 +82,11 @@ export default function RegisterPage() {
         provider: provider, 
         fetchOptions: {
           onSuccess: () => {
+            toast.success("Login successful!");
             router.push("/home");
+          },
+          onError: () => {
+            toast.error("Login failed. Please try again.");
           }
         } 
       });
@@ -119,22 +120,20 @@ export default function RegisterPage() {
             <div className="grid grid-cols-2 gap-4">
               <Button
                 variant="outline"
-                className="bg-slate-700/50 border-slate-600 hover:bg-slate-700/80 hover:text-white text-slate-100 transition-colors duration-200 group relative cursor-pointer"
+                className="bg-slate-700/50 border-slate-600 hover:bg-slate-700/80 hover:text-white text-slate-100"
                 onClick={() => handleSocialLogin("github")}
                 disabled={isLoading}
-                aria-label="Sign up with Github"
               >
-                <Github className="mr-2 h-4 w-4 transition-transform group-hover:scale-110" />
+                <Github className="mr-2 h-4 w-4" />
                 Github
               </Button>
               <Button
                 variant="outline"
-                className="bg-slate-700/50 border-slate-600 hover:bg-slate-700/80 hover:text-white text-slate-100 transition-colors duration-200 group relative cursor-pointer"
+                className="bg-slate-700/50 border-slate-600 hover:bg-slate-700/80 hover:text-white text-slate-100"
                 onClick={() => handleSocialLogin("google")}
                 disabled={isLoading}
-                aria-label="Sign up with Google"
               >
-                <Mail className="mr-2 h-4 w-4 transition-transform group-hover:scale-110" />
+                <Mail className="mr-2 h-4 w-4" />
                 Google
               </Button>
             </div>
@@ -159,10 +158,9 @@ export default function RegisterPage() {
                   required
                   value={formData.name}
                   onChange={handleChange}
-                  className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 focus:border-sky-400 focus:ring-sky-400/10 transition-colors duration-200"
+                  className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 focus:border-sky-400 focus:ring-sky-400/10"
                   disabled={isLoading}
                   autoComplete="name"
-                  aria-label="Full name"
                 />
               </div>
               <div className="space-y-2">
@@ -175,10 +173,9 @@ export default function RegisterPage() {
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 focus:border-sky-400 focus:ring-sky-400/10 transition-colors duration-200"
+                  className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 focus:border-sky-400 focus:ring-sky-400/10"
                   disabled={isLoading}
                   autoComplete="email"
-                  aria-label="Email address"
                 />
               </div>
               <div className="space-y-2">
@@ -203,10 +200,9 @@ export default function RegisterPage() {
                   minLength={8}
                   value={formData.password}
                   onChange={handleChange}
-                  className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 focus:border-sky-400 focus:ring-sky-400/10 transition-colors duration-200"
+                  className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 focus:border-sky-400 focus:ring-sky-400/10"
                   disabled={isLoading}
                   autoComplete="new-password"
-                  aria-label="Password"
                 />
               </div>
               <div className="space-y-2">
@@ -219,10 +215,9 @@ export default function RegisterPage() {
                   minLength={8}
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 focus:border-sky-400 focus:ring-sky-400/10 transition-colors duration-200"
+                  className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 focus:border-sky-400 focus:ring-sky-400/10"
                   disabled={isLoading}
                   autoComplete="new-password"
-                  aria-label="Confirm password"
                 />
               </div>
               <VisuallyHidden>
@@ -242,34 +237,39 @@ export default function RegisterPage() {
                   onCheckedChange={(checked) => setAcceptTerms(checked as boolean)}
                   disabled={isLoading}
                   className="border-slate-600 data-[state=checked]:bg-sky-500 data-[state=checked]:border-sky-500"
-                  aria-label="Accept terms and conditions"
                 />
                 <Label
                   htmlFor="terms"
                   className="text-sm font-medium leading-none text-slate-400 cursor-pointer peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
                   I agree to the{" "}
-                  <Link href="/terms" className="text-sky-400 hover:text-sky-300 transition-colors duration-200">
+                  <Link href="/terms" className="text-sky-400 hover:text-sky-300">
                     terms and conditions
                   </Link>
                 </Label>
               </div>
               <Button
                 type="submit"
-                className="w-full mt-6 bg-sky-600 hover:bg-sky-700 text-white transition-colors duration-200"
+                className="w-full"
                 disabled={isLoading}
               >
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Create Account
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating account...
+                  </>
+                ) : (
+                  "Create account"
+                )}
               </Button>
             </form>
           </CardContent>
-          <CardFooter className="flex justify-center border-t border-slate-700/50 pt-4">
-            <div className="text-sm text-slate-400">
+          <CardFooter>
+            <div className="text-center w-full text-sm text-slate-400">
               Already have an account?{" "}
-              <Link
-                href="/login"
-                className="text-sky-400 hover:text-sky-300 transition-colors duration-200"
+              <Link 
+                href="/login" 
+                className="text-sky-400 hover:text-sky-300"
               >
                 Sign in
               </Link>

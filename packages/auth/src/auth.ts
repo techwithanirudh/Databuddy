@@ -5,6 +5,7 @@ import { getSessionCookie } from "better-auth/cookies";
 import { db } from "@databuddy/db";
 import { Resend } from "resend";
 import { getRedisCache } from "@databuddy/redis";
+import { nextCookies } from "better-auth/next-js";
 
 // Helper to check NODE_ENV
 function isProduction() {
@@ -152,19 +153,13 @@ export const auth = betterAuth({
         }),
         twoFactor(),
         multiSession(),
-        organization({
-            teams: {
-                enabled: true,
-            },
-            allowUserToCreateOrganization: true,
-            organizationLimit: 1,
-            membershipLimit: 100,
-        }),
         // captcha({
         //     provider: "cloudflare-turnstile",
         //     secretKey: process.env.RECAPTCHA_SECRET_KEY as string,
         // })
+        nextCookies()
     ]
 })
 
 export type User = (typeof auth)["$Infer"]["Session"]["user"];
+export type Session = (typeof auth)["$Infer"]["Session"];

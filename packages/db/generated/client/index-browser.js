@@ -260,35 +260,6 @@ exports.Prisma.SubscriptionScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
-exports.Prisma.OrganizationScalarFieldEnum = {
-  id: 'id',
-  name: 'name',
-  description: 'description',
-  logo: 'logo',
-  website: 'website',
-  email: 'email',
-  phone: 'phone',
-  address: 'address',
-  createdByUserId: 'createdByUserId',
-  deleteAt: 'deleteAt',
-  deletedAt: 'deletedAt',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-};
-
-exports.Prisma.MemberScalarFieldEnum = {
-  id: 'id',
-  role: 'role',
-  email: 'email',
-  userId: 'userId',
-  organizationId: 'organizationId',
-  invitedById: 'invitedById',
-  meta: 'meta',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-  deletedAt: 'deletedAt'
-};
-
 exports.Prisma.ProjectAccessScalarFieldEnum = {
   id: 'id',
   projectId: 'projectId',
@@ -299,26 +270,12 @@ exports.Prisma.ProjectAccessScalarFieldEnum = {
   deletedAt: 'deletedAt'
 };
 
-exports.Prisma.InviteScalarFieldEnum = {
-  id: 'id',
-  email: 'email',
-  organizationId: 'organizationId',
-  role: 'role',
-  token: 'token',
-  expires: 'expires',
-  createdById: 'createdById',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-  acceptedAt: 'acceptedAt'
-};
-
 exports.Prisma.ProjectScalarFieldEnum = {
   id: 'id',
   name: 'name',
   slug: 'slug',
   description: 'description',
   type: 'type',
-  organizationId: 'organizationId',
   clientId: 'clientId',
   startDate: 'startDate',
   endDate: 'endDate',
@@ -344,7 +301,6 @@ exports.Prisma.ClientScalarFieldEnum = {
   email: 'email',
   phone: 'phone',
   type: 'type',
-  organizationId: 'organizationId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   deletedAt: 'deletedAt'
@@ -474,10 +430,7 @@ exports.Prisma.ModelName = {
   Website: 'Website',
   Account: 'Account',
   Subscription: 'Subscription',
-  Organization: 'Organization',
-  Member: 'Member',
   ProjectAccess: 'ProjectAccess',
-  Invite: 'Invite',
   Project: 'Project',
   EventMeta: 'EventMeta',
   Client: 'Client',

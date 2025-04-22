@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useSession, signOut } from "@databuddy/auth/client";
-import { useOrganizationSelector } from "@databuddy/auth";
 import { toast } from "sonner";
 import { 
   Menu, 

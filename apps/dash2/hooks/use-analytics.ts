@@ -227,25 +227,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 export function useWebsiteAnalytics(
   websiteId: string,
   dateRange: DateRange,
-  options?: {
-    trendsInterval?: TimeInterval;
-    trendsLimit?: number;
-    pagesLimit?: number;
-    referrersLimit?: number;
-    deviceLimit?: number;
-    locationLimit?: number;
-  }
 ) {
-  // Set defaults for options
-  const {
-    trendsInterval = 'day',
-    trendsLimit = 30,
-    pagesLimit = 10,
-    referrersLimit = 10,
-    deviceLimit = 10,
-    locationLimit = 10
-  } = options || {};
-
   // Memoize the date range to ensure stable query keys
   const memoizedDateRange = useMemo(() => dateRange, [dateRange.start_date, dateRange.end_date, dateRange.granularity]);
   
@@ -449,7 +431,7 @@ export function useAnalyticsTrends(
   websiteId: string, 
   interval: TimeInterval = 'day',
   dateRange?: DateRange,
-  limit: number = 30
+  limit = 30
 ) {
   return useQuery({
     queryKey: ['analytics', 'trends', websiteId, interval, dateRange, limit],
@@ -498,7 +480,7 @@ export function useAnalyticsTrends(
 export function useAnalyticsPages(
   websiteId: string,
   dateRange?: DateRange,
-  limit: number = 10
+  limit = 10
 ) {
   return useQuery({
     queryKey: ['analytics', 'pages', websiteId, dateRange, limit],
@@ -545,7 +527,7 @@ export function useAnalyticsPages(
 export function useAnalyticsReferrers(
   websiteId: string,
   dateRange?: DateRange,
-  limit: number = 10
+  limit = 10
 ) {
   return useQuery({
     queryKey: ['analytics', 'referrers', websiteId, dateRange, limit],
@@ -592,7 +574,7 @@ export function useAnalyticsReferrers(
 export function useAnalyticsDevices(
   websiteId: string,
   dateRange?: DateRange,
-  limit: number = 10
+  limit = 10
 ) {
   return useQuery({
     queryKey: ['analytics', 'devices', websiteId, dateRange, limit],
@@ -641,7 +623,7 @@ export function useAnalyticsDevices(
 export function useAnalyticsLocations(
   websiteId: string,
   dateRange?: DateRange,
-  limit: number = 10
+  limit = 10
 ) {
   return useQuery({
     queryKey: ['analytics', 'locations', websiteId, dateRange, limit],
@@ -689,7 +671,7 @@ export function useAnalyticsLocations(
 export function useAnalyticsSessions(
   websiteId: string,
   dateRange?: DateRange,
-  limit: number = 20
+  limit = 20
 ) {
   return useQuery({
     queryKey: ['analytics', 'sessions', websiteId, dateRange, limit],
@@ -751,7 +733,7 @@ export function useAnalyticsSessions(
 export function useAnalyticsSessionDetails(
   websiteId: string,
   sessionId: string,
-  enabled: boolean = true
+  enabled = true
 ) {
   return useQuery({
     queryKey: ['analytics', 'session', websiteId, sessionId],
@@ -797,7 +779,7 @@ export function useAnalyticsSessionDetails(
 export function useAnalyticsProfiles(
   websiteId: string,
   dateRange?: DateRange,
-  limit: number = 50
+  limit = 50
 ) {
   return useQuery({
     queryKey: ['analytics', 'profiles', websiteId, dateRange, limit],
@@ -860,8 +842,8 @@ export function useAnalyticsProfiles(
 export function useWebsiteErrors(
   websiteId: string,
   dateRange?: DateRange,
-  limit: number = 50,
-  page: number = 1
+  limit = 50,
+  page = 1
 ) {
   return useQuery({
     queryKey: ['analytics', 'errors', websiteId, dateRange, limit, page],

@@ -37,6 +37,11 @@ export const auth = betterAuth({
             },
         },
     },
+    advanced: {
+        crossSubDomainCookies: {
+            enabled: true,
+        }
+    },
     cookie: {
         domain: isProduction() ? ".databuddy.cc" : undefined,
         secure: isProduction(),

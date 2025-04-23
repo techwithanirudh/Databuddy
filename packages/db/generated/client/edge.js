@@ -450,7 +450,7 @@ const config = {
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
-    "rootEnvPath": "../../.env",
+    "rootEnvPath": null,
     "schemaEnvPath": "../../../../apps/dash2/.env"
   },
   "relativePath": "../../prisma",

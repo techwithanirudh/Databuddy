@@ -66,11 +66,11 @@ export default function Contact() {
         if (response.details) {
           const fieldErrors: Record<string, string> = {}
           
-          Object.entries(response.details).forEach(([field, error]) => {
+          for (const [field, error] of Object.entries(response.details)) {
             if (field !== '_errors' && Array.isArray(error._errors) && error._errors.length > 0) {
               fieldErrors[field] = error._errors[0]
             }
-          })
+          }
           
           setErrors(fieldErrors)
           
@@ -121,9 +121,9 @@ export default function Contact() {
   return (
     <section id="contact" className="py-16 sm:py-24 relative">
       {/* Background elements */}
-      <div className="absolute inset-0 bg-gradient-to-b from-slate-950 to-slate-900 pointer-events-none"></div>
-      <div className="absolute -top-px left-0 right-0 h-px bg-gradient-to-r from-transparent via-slate-800 to-transparent"></div>
-      <div className="absolute -bottom-px left-0 right-0 h-px bg-gradient-to-r from-transparent via-slate-800 to-transparent"></div>
+      <div className="absolute inset-0 bg-gradient-to-b from-slate-950 to-slate-900 pointer-events-none"/>
+      <div className="absolute -top-px left-0 right-0 h-px bg-gradient-to-r from-transparent via-slate-800 to-transparent"/>
+      <div className="absolute -bottom-px left-0 right-0 h-px bg-gradient-to-r from-transparent via-slate-800 to-transparent"/>
       
       <div className="container px-4 mx-auto relative z-10">
         <div className="text-center mb-10 sm:mb-16">

@@ -211,7 +211,7 @@ function WebsiteDetailsPage() {
       
       // Add missing domain property
       return { 
-        data: result.data ? {
+        data: result.data ? { 
           ...result.data,
           domain: data?.domain || ''
         } : undefined 

@@ -43,7 +43,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
           const dataPoint = entry.payload;
           
           // Format the value based on its type
-          let displayValue;
+          let displayValue: string;
           if (entry.name.toLowerCase().includes('bounce rate')) {
             displayValue = `${entry.value.toFixed(1)}%`;
           } else if (entry.name.toLowerCase().includes('session duration')) {
@@ -53,7 +53,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
           }
           
           return (
-            <div key={`item-${index}`} className="flex items-center gap-2">
+            <div key={`item-${entry.name}`} className="flex items-center gap-2">
               <div 
                 className="w-2.5 h-2.5 rounded-full" 
                 style={{ backgroundColor: entry.color }}
@@ -114,7 +114,7 @@ export function MetricsChart({
   if (isLoading) {
     return <SkeletonChart height={height} title={title} className="w-full" />;
   }
-
+  
   // Empty state
   if (!chartData.length) {
     return (
@@ -237,7 +237,7 @@ export function MetricsChart({
                   dataKey="pageviews" 
                   stroke={METRIC_COLORS.pageviews} 
                   fillOpacity={1} 
-                  fill={`url(#colorPageviews)`} 
+                  fill="url(#colorPageviews)" 
                   strokeWidth={1.5}
                   activeDot={{ r: 4, strokeWidth: 1 }}
                   name="Pageviews"
@@ -251,7 +251,7 @@ export function MetricsChart({
                   dataKey="visitors" 
                   stroke={METRIC_COLORS.visitors} 
                   fillOpacity={1} 
-                  fill={`url(#colorVisitors)`} 
+                  fill="url(#colorVisitors)" 
                   strokeWidth={1.5}
                   activeDot={{ r: 4, strokeWidth: 1 }}
                   name="Visitors"
@@ -265,7 +265,7 @@ export function MetricsChart({
                   dataKey="unique_visitors" 
                   stroke={METRIC_COLORS.unique_visitors} 
                   fillOpacity={1} 
-                  fill={`url(#colorUniqueVisitors)`} 
+                  fill="url(#colorUniqueVisitors)" 
                   strokeWidth={1.5}
                   activeDot={{ r: 4, strokeWidth: 1 }}
                   name="Unique visitors"
@@ -279,7 +279,7 @@ export function MetricsChart({
                   dataKey="sessions" 
                   stroke={METRIC_COLORS.sessions} 
                   fillOpacity={1} 
-                  fill={`url(#colorSessions)`} 
+                  fill="url(#colorSessions)" 
                   strokeWidth={1.5}
                   activeDot={{ r: 4, strokeWidth: 1 }}
                   name="Sessions"
@@ -293,7 +293,7 @@ export function MetricsChart({
                   dataKey="bounce_rate" 
                   stroke={METRIC_COLORS.bounce_rate} 
                   fillOpacity={1} 
-                  fill={`url(#colorBounceRate)`} 
+                  fill="url(#colorBounceRate)" 
                   strokeWidth={1.5}
                   activeDot={{ r: 4, strokeWidth: 1 }}
                   name="Bounce rate"
@@ -307,7 +307,7 @@ export function MetricsChart({
                   dataKey="avg_session_duration" 
                   stroke={METRIC_COLORS.avg_session_duration} 
                   fillOpacity={1} 
-                  fill={`url(#colorAvgSessionDuration)`} 
+                  fill="url(#colorAvgSessionDuration)" 
                   strokeWidth={1.5}
                   activeDot={{ r: 4, strokeWidth: 1 }}
                   name="Avg session duration"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useWebsitesStore } from '@/stores/use-websites-store';
 import { toast } from 'sonner';
 import { 
@@ -9,7 +9,7 @@ import {
   getUserWebsites,
   updateWebsite as updateWebsiteAction,
 } from "@/app/actions/websites";
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 export interface Website {
   id: string;
@@ -35,146 +35,156 @@ interface UpdateWebsiteData {
   domainId?: string | null;
 }
 
+// Query keys
+export const websiteKeys = {
+  all: ['websites'] as const,
+  lists: () => [...websiteKeys.all, 'list'] as const,
+  list: (filters: string) => [...websiteKeys.lists(), { filters }] as const,
+  details: () => [...websiteKeys.all, 'detail'] as const,
+  detail: (id: string) => [...websiteKeys.details(), id] as const,
+};
+
 export function useWebsites() {
   const store = useWebsitesStore();
-  const storeRef = useRef(store);
+  const queryClient = useQueryClient();
+  const previousDataRef = useRef<Website[] | null>(null);
   
-  // Update the ref when store changes
+  // Fetch websites with React Query
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: websiteKeys.lists(),
+    queryFn: async () => {
+      try {
+        const result = await getUserWebsites();
+        if (result.error) throw new Error(result.error);
+        return result.data || [];
+      } catch (error) {
+        console.error('Error fetching websites:', error);
+        throw error;
+      }
+    },
+    staleTime: 30000, // 30 seconds
+    refetchOnWindowFocus: false,
+  });
+  
+  // Update store when data changes, but only if data has actually changed
   useEffect(() => {
-    storeRef.current = store;
-  }, [store]);
-  
-  const fetchWebsites = useCallback(async () => {
-    const currentStore = storeRef.current;
-    currentStore.setIsLoading(true);
-    currentStore.setIsError(false);
-    
-    try {
-      const result = await getUserWebsites();
-      if (result.error) {
-        toast.error(result.error);
-        currentStore.setIsError(true);
-        return;
-      }
-      currentStore.setWebsites(result.data || []);
-    } catch (error) {
-      console.error('Error fetching websites:', error);
-      currentStore.setIsError(true);
-    } finally {
-      currentStore.setIsLoading(false);
+    if (data && JSON.stringify(data) !== JSON.stringify(previousDataRef.current)) {
+      previousDataRef.current = data;
+      store.setWebsites(data);
     }
-  }, []); // No dependencies needed
+  }, [data, store]);
+  
+  // Show toast on error, but don't update the store here to avoid loop
+  useEffect(() => {
+    if (isError) {
+      toast.error('Failed to fetch websites');
+    }
+  }, [isError]);
 
-  const createWebsite = async (data: CreateWebsiteData) => {
-    store.setIsCreating(true);
-    
-    try {
+  // Create website mutation
+  const createMutation = useMutation({
+    mutationFn: async (data: CreateWebsiteData) => {
       const result = await createWebsiteAction(data);
-      if (result.error) {
-        toast.error(result.error);
-        return;
-      }
-      
+      if (result.error) throw new Error(result.error);
+      return result.data;
+    },
+    onMutate: () => {
+      store.setIsCreating(true);
+    },
+    onSuccess: () => {
       toast.success("Website created successfully");
-      await fetchWebsites();
-    } catch (error) {
-      console.error('Error creating website:', error);
-      toast.error("Failed to create website");
-    } finally {
+      queryClient.invalidateQueries({ queryKey: websiteKeys.lists() });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to create website');
+    },
+    onSettled: () => {
       store.setIsCreating(false);
     }
-  };
+  });
 
-  const updateWebsite = async ({ id, data }: { id: string; data: UpdateWebsiteData }) => {
-    store.setIsUpdating(true);
-    
-    try {
+  // Update website mutation
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: UpdateWebsiteData }) => {
       const result = await updateWebsiteAction(id, data);
-      if (result.error) {
-        toast.error(result.error);
-        return;
-      }
-      
+      if (result.error) throw new Error(result.error);
+      return result.data;
+    },
+    onMutate: () => {
+      store.setIsUpdating(true);
+    },
+    onSuccess: () => {
       toast.success("Website updated successfully");
-      await fetchWebsites();
-    } catch (error) {
-      console.error('Error updating website:', error);
-      toast.error("Failed to update website");
-    } finally {
+      queryClient.invalidateQueries({ queryKey: websiteKeys.lists() });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update website');
+    },
+    onSettled: () => {
       store.setIsUpdating(false);
     }
-  };
+  });
 
-  const deleteWebsite = async (id: string) => {
-    store.setIsDeleting(true);
-    
-    try {
+  // Delete website mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
       const result = await deleteWebsiteAction(id);
-      if (result.error) {
-        toast.error(result.error);
-        return;
-      }
-      
+      if (result.error) throw new Error(result.error);
+      return result.data;
+    },
+    onMutate: () => {
+      store.setIsDeleting(true);
+    },
+    onSuccess: () => {
       toast.success("Website deleted successfully");
-      await fetchWebsites();
-    } catch (error) {
-      console.error('Error deleting website:', error);
-      toast.error("Failed to delete website");
-    } finally {
+      queryClient.invalidateQueries({ queryKey: websiteKeys.lists() });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to delete website');
+    },
+    onSettled: () => {
       store.setIsDeleting(false);
     }
-  };
-
-  // Fetch websites on mount
-  useEffect(() => {
-    fetchWebsites();
-  }, [fetchWebsites]);
+  });
 
   return {
-    // Data
-    websites: store.websites,
+    // Data directly from React Query
+    websites: data || [],
     selectedWebsite: store.selectedWebsite,
     
     // UI States
-    isLoading: store.isLoading,
-    isError: store.isError,
-    isCreating: store.isCreating,
-    isUpdating: store.isUpdating,
-    isDeleting: store.isDeleting,
+    isLoading,
+    isError,
+    isCreating: createMutation.isPending,
+    isUpdating: updateMutation.isPending,
+    isDeleting: deleteMutation.isPending,
     
     // Actions
     setSelectedWebsite: store.setSelectedWebsite,
-    createWebsite,
-    updateWebsite,
-    deleteWebsite,
-    refetch: fetchWebsites,
+    createWebsite: createMutation.mutate,
+    updateWebsite: updateMutation.mutate,
+    deleteWebsite: deleteMutation.mutate,
+    refetch,
   };
 }
 
 // Hook to get a single website by ID
 export function useWebsite(id: string) {
-  const { websites } = useWebsites();
+  const queryClient = useQueryClient();
   
-  const websiteQuery = useQuery({
-    queryKey: ["website", id],
+  return useQuery({
+    queryKey: websiteKeys.detail(id),
     queryFn: async () => {
       if (!id) return null;
       
       // First check if we already have the website data in cache
-      const cachedWebsite = websites.find(website => website.id === id);
+      const websitesData = queryClient.getQueryData<Website[]>(websiteKeys.lists());
+      const cachedWebsite = websitesData?.find(website => website.id === id);
       if (cachedWebsite) return cachedWebsite;
       
-      // If not cached, we could fetch it directly (in a real app) 
-      // by implementing a 'getWebsite' action to fetch from the backend
-      // For now, we'll just return null if not found
+      // If not found in cache, could implement a getWebsiteById fetch here
       return null;
     },
-    enabled: !!id, // Only run if id is provided
+    enabled: !!id,
   });
-
-  return {
-    data: websiteQuery.data,
-    isLoading: websiteQuery.isLoading,
-    isError: websiteQuery.isError,
-  };
 } 

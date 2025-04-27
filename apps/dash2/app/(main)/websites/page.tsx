@@ -14,6 +14,7 @@ import { WebsiteCard } from "@/components/websites/website-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import Link from "next/link";
+import type { Website } from "@databuddy/db";
 
 function WebsitesPage() {
   const searchParams = useSearchParams();
@@ -134,7 +135,7 @@ function WebsitesPage() {
       {/* Show website grid */}
       {!isLoading && websites.length > 0 && (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {websites.map((website) => (
+          {websites.map((website: Website) => (
             <WebsiteCard
               key={website.id}
               website={website}

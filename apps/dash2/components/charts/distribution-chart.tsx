@@ -148,9 +148,9 @@ export function DistributionChart({
                 onMouseEnter={onPieEnter}
                 onMouseLeave={onPieLeave}
               >
-                {chartData.map((entry, index) => (
+                {chartData.map((entry) => (
                   <Cell 
-                    key={`cell-${index}`} 
+                    key={`cell-${entry.name}`} 
                     fill={entry.color} 
                     stroke="var(--background)"
                     strokeWidth={1}

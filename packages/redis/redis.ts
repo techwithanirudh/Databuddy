@@ -89,24 +89,16 @@ const createRedisClient = (
   return client;
 };
 
-let redisCache: ExtendedRedis;
-let isConnecting = false;
-
-export function getRedisCache() {
-  if (!redisCache && !isConnecting) {
-    const redisUrl = getEnv('REDIS_URL');
+export function getRedisCache(url?: string) {
+    const redisUrl = url || getEnv('REDIS_URL');
     if (!redisUrl) {
       logger.error('REDIS_URL environment variable is not set');
       throw new Error('REDIS_URL environment variable is required');
     }
     
-    isConnecting = true;
-    redisCache = createRedisClient(redisUrl, options);
-    isConnecting = false;
-  }
-
-  return redisCache;
+    return createRedisClient(redisUrl, options);
 }
+
 
 export async function getLock(key: string, value: string, timeout: number) {
   const lock = await getRedisCache().set(key, value, 'PX', timeout, 'NX');

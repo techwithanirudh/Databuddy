@@ -1,5 +1,0 @@
-[phases.setup]
-nixPkgs = ["bun"]
-
-[phases.start]
-cmd = "bun apps/api/src/index.ts"

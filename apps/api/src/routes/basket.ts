@@ -13,9 +13,9 @@ import { UAParser } from 'ua-parser-js';
 import { parseIp, anonymizeIp } from '../utils/ip-geo';
 import { parseReferrer } from '../utils/referrer';
 import bots from '../lists/bots';
+import { logger } from '../lib/logger';
 
 // Initialize logger
-const logger = console;
 
 // Helper function to check if user agent matches any bot patterns
 function isBot(userAgent: string): boolean {

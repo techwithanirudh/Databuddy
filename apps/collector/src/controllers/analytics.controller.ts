@@ -5,7 +5,7 @@
  */
 
 import type { Context } from 'hono';
-import { clickHouse } from '@databuddy/db';
+import { clickHouse } from '../clickhouse/client';
 import { parseUserAgent } from '../utils/user-agent';
 import { getGeoData } from '../utils/ip-geo';
 

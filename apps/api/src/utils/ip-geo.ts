@@ -107,7 +107,7 @@ export function anonymizeIp(ip: string): string {
     return ip.replace(/\.\d+$/, '.0');
   } 
   // Handle IPv6
-  else if (ip.includes(':')) {
+  if (ip.includes(':')) {
     // Keep first 48 bits (first 3 groups), zero out the rest
     const parts = ip.split(':');
     const anonymized = parts.slice(0, 3).concat(Array(parts.length - 3).fill('0000')).join(':');

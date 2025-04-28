@@ -15,3 +15,7 @@ export enum LogLevel {
     INFO = 'info',
     DEBUG = 'debug'
 }
+
+export const log = (level: LogLevel, message: string, data?: any) => {
+    logger.log(level, message, data);
+};

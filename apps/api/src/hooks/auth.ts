@@ -6,12 +6,10 @@
  */
 
 import type { MiddlewareHandler } from 'hono';
-import { dbEdge as prisma, WebsiteStatus, type Website } from '@databuddy/db';
+import { prisma, WebsiteStatus, type Website } from '@databuddy/db';
 import { cacheable } from '@databuddy/redis';
 import type { AppVariables } from '../types';
-
-// Initialize logger
-const logger = console;
+import { logger } from '../lib/logger';
 
 // Cache the website lookup for 5 minutes
 export const getWebsiteById = cacheable(
@@ -138,7 +136,7 @@ export const websiteAuthHook = (): MiddlewareHandler<{
       
       // Check if domain is verified or localhost (localhost domains are exempt from verification)
       const isLocalhostDomain = isLocalhost(website.domain);
-      const isVerified = website.verificationStatus === 'VERIFIED' || isLocalhostDomain;
+      const isVerified = website.status === WebsiteStatus.ACTIVE || isLocalhostDomain;
       
       if (!isVerified) {
         logger.warn('Unverified domain', { clientId, domain: website.domain });
@@ -163,7 +161,7 @@ export const websiteAuthHook = (): MiddlewareHandler<{
         id: website.id,
         name: website.name,
         domain: website.domain,
-        status: website.status,
+        status: website.status as WebsiteStatus,
         userId: website.userId,
         projectId: website.projectId,
         createdAt: website.createdAt,

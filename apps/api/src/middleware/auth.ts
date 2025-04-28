@@ -1,6 +1,6 @@
 import { createMiddleware } from 'hono/factory'
 import { auth } from "@databuddy/auth"
-
+import { logger } from '../lib/logger';
 export const authMiddleware = createMiddleware(async (c, next) => {
   try {
     const session = await auth.api.getSession({ 
@@ -17,7 +17,7 @@ export const authMiddleware = createMiddleware(async (c, next) => {
     c.set('session', session);
     return next();
   } catch (error) {
-    console.error('Auth middleware error:', error);
+    logger.error('Auth middleware error:', { error });
     return new Response('Authentication service error', { 
       status: 500,
       headers: { 'Content-Type': 'application/json' }

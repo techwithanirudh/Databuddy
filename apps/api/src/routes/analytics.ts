@@ -7,11 +7,10 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
-import { chQuery, createSqlBuilder } from '@databuddy/db';
+import { chQuery, createSqlBuilder } from '../clickhouse/client';
 import type { AppVariables } from '../types';
 import { authMiddleware } from '../middleware/auth';
 import { UAParser } from 'ua-parser-js';
-import { format } from 'date-fns';
 import { 
   formatTime, 
   formatPerformanceMetric, 

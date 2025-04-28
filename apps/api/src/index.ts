@@ -4,7 +4,6 @@ import { logger } from 'hono/logger';
 import { authMiddleware } from './middleware/auth'
 import { auth, type AuthUser, type SessionData } from '@databuddy/auth';
 import basketRouter from './routes/basket';
-import adminRouter from './routes/admin';
 import analyticsRouter from './routes/analytics';
 
 // Define the Hono app with typed context
@@ -22,7 +21,7 @@ const app = new Hono<AppVariables>();
 //   projectID: 'ney0p09d'
 // }));
 
-app.use('*', logger());
+// app.use('*', logger());
 
 // Configure CORS - must be before auth routes
 app.use('*', cors({
@@ -80,9 +79,6 @@ app.get('/', (c) => c.json({ status: 'ok', version: '1.0.0' }));
 // Mount analytics basket endpoint (no auth required)
 app.route('/basket', basketRouter);
 
-// Mount admin routes with auth middleware
-app.use('/admin/*', authMiddleware);
-app.route('/admin', adminRouter);
 
 // Mount analytics routes with auth middleware
 app.route('/analytics', analyticsRouter);

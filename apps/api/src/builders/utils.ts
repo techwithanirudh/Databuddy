@@ -4,7 +4,7 @@
  * Shared utilities and helpers for building analytics SQL queries.
  */
 
-import { createSqlBuilder } from '@databuddy/db';
+import { createSqlBuilder } from '../clickhouse/client';
 import { parseReferrer } from '../utils/referrer';
 import { anonymizeIp } from '../utils/ip-geo';
 

@@ -1,5 +1,4 @@
 import { PrismaClient } from "../generated/client";
-// import { createAuditMiddleware } from './middleware';
 
 export * from '../generated/client';
 
@@ -23,9 +22,6 @@ const getPrismaClient = () => {
   const client = new PrismaClient({
     // log: ['error'],
   });
-  
-  // Add audit middleware
-  // client.$use(createAuditMiddleware());
   
   return client;
 };

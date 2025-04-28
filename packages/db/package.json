@@ -6,18 +6,17 @@
     "exports": {
         ".": "./src/index.ts",
         "./client": "./src/client.ts",
-        "./generated/*": "./generated/*",
-        "./services/*": "./src/services/*",
-        "./clickhouse/*": "./src/clickhouse/*",
-        "./edge/*": "./src/edge/index.ts",
-        "./edge": "./src/edge/client.ts"
+        "./edge/*": "./src/edge/*",
+        "./edge": "./src/edge/client.ts",
+        "./src/edge/client": "./src/edge/client.ts"
     },
     "dependencies": {
         "@clickhouse/client": "^1.11.0",
+        "@prisma/adapter-pg": "^6.6.0",
         "@prisma/client": "^6.5.0",
         "dotenv": "^16.5.0",
         "drizzle-orm": "^0.42.0",
-        "pg": "^8.14.1"
+        "pg": "^8.15.6"
     },
     "devDependencies": {
         "@types/pg": "^8.11.13",

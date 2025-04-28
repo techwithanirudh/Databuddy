@@ -5,26 +5,11 @@
  */
 
 import type { Context } from 'hono';
-import { clickHouse } from '@databuddy/db';
-import { AppVariables } from '../types';
+import { clickHouse } from '../clickhouse/client';
 import { parseUserAgent } from '../utils/user-agent';
 import { getGeoData } from '../utils/ip-geo';
-import { parseReferrer } from '../utils/referrer';
-import { cacheable, getRedisCache } from '@databuddy/redis';
-
-// Initialize logger
-const logger = console;
-
-/**
- * Extract version from user agent string
- */
-function extractVersion(ua: string, browser: string): string {
-  if (!ua || !browser) return '';
-  
-  const match = ua.match(new RegExp(`${browser}\\/([\\d.]+)`)) || 
-                ua.match(new RegExp(`${browser} ([\\d.]+)`));
-  return match ? match[1] : '';
-}
+import { getRedisCache } from '@databuddy/redis';
+import { logger } from '../lib/logger';
 
 /**
  * Redis client wrapper for recent events cache
@@ -189,7 +174,7 @@ export async function processEvent(c: Context) {
 
     return c.json({ status: 'success' });
   } catch (error) {
-    logger.error('Error processing event:', error);
+    logger.error('Error processing event:', { error });
     return c.json({ status: 'error', message: 'Failed to process event' }, 500);
   }
 }

@@ -26,15 +26,17 @@ function getResourceIcon(resourceType: string) {
   
   if (type.includes('document') || type.includes('file')) {
     return <FileText className="h-4 w-4 text-primary" />;
-  } else if (type.includes('database') || type.includes('db')) {
+  } 
+  if (type.includes('database') || type.includes('db')) {
     return <Database className="h-4 w-4 text-primary" />;
-  } else if (type.includes('table')) {
-    return <Table className="h-4 w-4 text-primary" />;
-  } else if (type.includes('folder') || type.includes('directory')) {
-    return <Folder className="h-4 w-4 text-primary" />;
-  } else {
-    return <Activity className="h-4 w-4 text-primary" />;
   }
+  if (type.includes('table')) {
+    return <Table className="h-4 w-4 text-primary" />;
+  }
+  if (type.includes('folder') || type.includes('directory')) {
+    return <Folder className="h-4 w-4 text-primary" />;
+  }
+  
 }
 
 // Helper function to format percentage
@@ -115,7 +117,7 @@ export function NotificationItem({ notification }: NotificationItemProps) {
               {notification.details.changes && notification.details.changes.length > 0 && (
                 <div className="mt-1 space-y-0.5">
                   {notification.details.changes.map((change, i) => (
-                    <p key={i} className="flex items-center gap-1">
+                    <p key={notification.id} className="flex items-center gap-1">
                       <span className="font-medium">{change.field}:</span>
                       {change.oldValue && (
                         <>

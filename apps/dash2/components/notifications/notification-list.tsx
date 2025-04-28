@@ -1,8 +1,8 @@
 import { NotificationItem } from "./notification-item";
-import { Notification } from "./types";
+import type { AuditNotification } from "./types";
 
 interface NotificationListProps {
-  notifications: Notification[];
+  notifications: AuditNotification[];
 }
 
 export function NotificationList({ notifications }: NotificationListProps) {

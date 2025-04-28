@@ -1,8 +1,6 @@
 import { create } from 'zustand';
 import type { Domain } from '@databuddy/db';
 
-export type { Domain };
-
 interface DomainsState {
   // Data
   domains: Domain[];

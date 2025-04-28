@@ -14,7 +14,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 // Use the Domain type from the store
-import type { Domain } from '@/stores/use-domains-store';
+import type { Domain } from '@databuddy/db';
 
 // Query keys
 export const domainKeys = {

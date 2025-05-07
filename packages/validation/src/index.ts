@@ -1,5 +1,9 @@
 import { z } from 'zod';
-import { Role, UserStatus } from '@databuddy/db';
+import { role, userStatus, type websiteStatus } from '@databuddy/db';
+
+type Role = typeof role.enumValues[number];
+type UserStatus = typeof userStatus.enumValues[number];
+type WebsiteStatus = typeof websiteStatus.enumValues[number];
 
 // User schemas
 export const zUserCreate = z.object({
@@ -7,16 +11,16 @@ export const zUserCreate = z.object({
   password: z.string().min(8),
   firstName: z.string().min(1),
   lastName: z.string().min(1),
-  role: z.nativeEnum(Role).default('USER'),
-  status: z.nativeEnum(UserStatus).default('ACTIVE'),
+  role: z.enum(role.enumValues).default('USER'),
+  status: z.enum(userStatus.enumValues).default('ACTIVE'),
 });
 
 export const zUserUpdate = z.object({
   email: z.string().email().optional(),
   firstName: z.string().min(1).optional(),
   lastName: z.string().min(1).optional(),
-  role: z.nativeEnum(Role).optional(),
-  status: z.nativeEnum(UserStatus).optional(),
+  role: z.enum(role.enumValues).optional(),
+  status: z.enum(userStatus.enumValues).optional(),
 });
 
 // Organization schemas
@@ -69,7 +73,7 @@ export const zClientUpdate = z.object({
 export const zInviteCreate = z.object({
   email: z.string().email(),
   organizationId: z.string().uuid(),
-  role: z.nativeEnum(Role),
+  role: z.enum(role.enumValues),
   expires: z.date().optional().default(() => new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
 });
 
@@ -77,11 +81,11 @@ export const zInviteCreate = z.object({
 export const zMemberCreate = z.object({
   organizationId: z.string().uuid(),
   userId: z.string().uuid(),
-  role: z.nativeEnum(Role).default('USER'),
+  role: z.enum(role.enumValues).default('USER'),
 });
 
 export const zMemberUpdate = z.object({
-  role: z.nativeEnum(Role),
+  role: z.enum(role.enumValues),
 });
 
 // Blog schemas

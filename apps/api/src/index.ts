@@ -74,13 +74,10 @@ app.get('/', (c) => c.json({ status: 'ok', version: '1.0.0' }));
 // Mount analytics basket endpoint (no auth required)
 app.route('/basket', basketRouter);
 
-
 // Mount analytics routes with auth middleware
 app.route('/analytics', analyticsRouter);
 
-app.get('/session', (c) => {
-  return c.json({ session: c.get('session') });
-});
+app.get('/health', (c) => c.json({ status: 'ok', version: '1.0.0' }));
 
 // Error handling
 app.onError((err, c) => {

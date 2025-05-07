@@ -1,4 +1,6 @@
-import type { WebsiteStatus } from '@databuddy/db';
+import type { websiteStatus } from '@databuddy/db';
+type WebsiteStatus = typeof websiteStatus.enumValues[number];
+
 
 export interface TrackingEvent {
   type: 'track' | 'alias' | 'increment' | 'decrement';

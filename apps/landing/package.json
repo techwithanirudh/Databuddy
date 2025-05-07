@@ -1,12 +1,14 @@
 {
   "name": "databuddy-new",
   "version": "0.1.0",
-  "packageManager": "bun@1.2.3",
+  "packageManager": "bun@1.2.10",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
     "start": "next start",
-    "lint": "next lint"
+    "build": "next build",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@databuddy/db": "../../packages/db",

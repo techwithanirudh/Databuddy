@@ -22,10 +22,10 @@
         "tsx": "^4.19.3"
     },
     "scripts": {
-        "db:generate": "drizzle-kit generate:pg",
-        "db:push": "drizzle-kit push:pg",
+        "db:generate": "drizzle-kit generate",
+        "db:push": "drizzle-kit push",
         "db:studio": "drizzle-kit studio",
-        "db:migrate": "drizzle-kit generate:pg && tsx src/migrate.ts",
+        "db:migrate": "drizzle-kit generate && tsx src/migrate.ts",
         "db:deploy": "tsx src/migrate.ts"
     }
 }

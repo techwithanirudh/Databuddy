@@ -137,13 +137,12 @@ class CustomLogger implements Logger {
       data: json.data.map((item) => {
         return keys.reduce((acc, key) => {
           const meta = json.meta?.find((m) => m.name === key);
-          return {
-            ...acc,
+          return Object.assign(acc, {
             [key]:
               item[key] && meta?.type.includes('Int')
                 ? Number.parseFloat(item[key] as string)
                 : item[key],
-          };
+          });
         }, {} as T);
       }),
     };

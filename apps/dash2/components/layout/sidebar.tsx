@@ -16,7 +16,8 @@ import {
   Plug, 
   ChevronLeft,
   Menu,
-  Link as LinkIcon
+  Link as LinkIcon,
+  Map as MapIcon
 } from "lucide-react";
 import { useState } from "react";
 import { TopHeader } from "./top-header";
@@ -27,6 +28,7 @@ interface NavigationItem {
   icon: React.ReactNode;
   href: string;
   rootLevel?: boolean;
+  external?: boolean;
 }
 
 interface NavigationSection {
@@ -44,6 +46,8 @@ const mainNavigation: NavigationSection[] = [
       // { name: "Analytics", icon: <BarChart className="h-4 w-4" />, href: "/analytics", rootLevel: true },
       { name: "Settings", icon: <Settings className="h-4 w-4" />, href: "/settings", rootLevel: true },
       { name: "Billing", icon: <CreditCard className="h-4 w-4" />, href: "/billing", rootLevel: true },
+      { name: "Roadmap (Trello)", icon: <MapIcon className="h-4 w-4" />, href: "https://trello.com/b/SOUXD4wE/databuddy", rootLevel: true, external: true },
+
     ],
   },
 ];
@@ -84,10 +88,13 @@ export function Sidebar() {
             ? pathname === `/websites/${currentWebsiteId}` 
             : pathname === fullPath);
       
+      const LinkComponent = item.external ? 'a' : Link;
+      const linkProps = item.external ? { href: item.href, target: "_blank", rel: "noopener noreferrer" } : { href: fullPath };
+      
       return (
-        <Link
+        <LinkComponent
           key={item.name}
-          href={fullPath}
+          {...linkProps}
           className={cn(
             "flex items-center gap-x-3 px-3 py-2 text-sm rounded-md transition-all cursor-pointer",
             isActive
@@ -97,7 +104,7 @@ export function Sidebar() {
         >
           {item.icon}
           <span>{item.name}</span>
-        </Link>
+        </LinkComponent>
       );
     });
   };

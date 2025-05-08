@@ -5,13 +5,6 @@ import Redis from 'ioredis';
 // Initialize logger
 const logger = console;
 
-// Helper function to access environment variables in both Node.js and Cloudflare Workers
-function getEnv(key: string) {
-  return process.env[key] || 
-         (typeof globalThis.process !== 'undefined' ? globalThis.process.env?.[key] : null) || 
-         (typeof globalThis !== 'undefined' && key in globalThis ? (globalThis as Record<string, any>)[key] : null);
-}
-
 const options: RedisOptions = {
   connectTimeout: 10000,
   retryStrategy: (times) => {
@@ -90,7 +83,7 @@ const createRedisClient = (
 };
 
 export function getRedisCache(url?: string) {
-    const redisUrl = url || getEnv('REDIS_URL');
+    const redisUrl = url || process.env.REDIS_URL;
     if (!redisUrl) {
       logger.error('REDIS_URL environment variable is not set');
       throw new Error('REDIS_URL environment variable is required');

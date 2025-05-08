@@ -2,12 +2,6 @@ import { cacheable } from '@databuddy/redis';
 import { z } from 'zod';
 import { logger } from '../lib/logger';
 
-// Helper function to access environment variables in both Node.js and Cloudflare Workers
-function getEnv(key: string) {
-  return process.env[key] || 
-         (typeof globalThis.process !== 'undefined' ? globalThis.process.env?.[key] : null) || 
-         (typeof globalThis !== 'undefined' && key in globalThis ? (globalThis as Record<string, any>)[key] : null);
-}
 
 const GeoLocationSchema = z.object({
   ip: z.string(),
@@ -33,8 +27,10 @@ const DEFAULT_GEO: GeoLocation = {
 
 const ignore = ['127.0.0.1', '::1'];
 
+const IPINFO_TOKEN = process.env.IPINFO_TOKEN;
+
 function urlConstructor(ip: string) {
-  return `https://ipinfo.io/${ip}?token=${getEnv('IPINFO_TOKEN')}`;
+  return `https://ipinfo.io/${ip}?token=${IPINFO_TOKEN}`;
 }
 
 async function fetchIpGeo(ip: string): Promise<GeoLocation> {

@@ -334,7 +334,7 @@ basketRouter.post('/batch', async (c) => {
     c.set('event', mappedEvent);
     try {
       const result = await processEvent(c);
-      const resultData = await result.json();
+      const resultData = await result.json() as { status: string };
       results.push({
         status: resultData.status, 
         eventName: event.payload.name,

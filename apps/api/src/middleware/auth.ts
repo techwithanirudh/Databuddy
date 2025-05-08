@@ -46,9 +46,10 @@ async function logAuditEvent(event: {
 }) {
   try {
     // Log to console for now - implement proper audit logging later
-    logger.info('Audit event:', {
+    logger.info({
+      message: 'Audit event',
+      name: 'authMiddleware',
       ...event,
-      timestamp: new Date().toISOString()
     });
   } catch (error) {
     logger.error('Error logging audit event:', { error, event });

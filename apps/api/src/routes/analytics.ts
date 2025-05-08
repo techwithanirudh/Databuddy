@@ -2161,6 +2161,7 @@ analyticsRouter.post('/basket', zValidator('json', analyticsEventSchema), async 
     return c.json({ success: true });
   } catch (error) {
     logger.error('Error processing analytics event:', { error });
+    console.error('Error processing analytics event:', { error });
     return c.json({ success: false, error: 'Failed to process event' }, 500);
   }
 });

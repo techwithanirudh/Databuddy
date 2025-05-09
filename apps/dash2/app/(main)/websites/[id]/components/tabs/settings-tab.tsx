@@ -52,17 +52,17 @@ interface TrackingOptions {
 
 // Define the library defaults as a constant so we can reuse it
 const LIBRARY_DEFAULTS: TrackingOptions = {
-  trackErrors: false,
-  trackPerformance: false,
+  trackErrors: true,
+  trackPerformance: true,
   trackWebVitals: false,
   trackOutgoingLinks: false,
-  trackScreenViews: true, // Default is true
+  trackScreenViews: true,
   trackSessions: false,
   trackInteractions: false,
-  samplingRate: 1.0,     // 100% sampling by default
-  enableRetries: true,   // Retries enabled by default
-  maxRetries: 3,         // 3 retries by default
-  initialRetryDelay: 500 // 500ms initial delay by default
+  samplingRate: 1.0,
+  enableRetries: true,
+  maxRetries: 3,
+  initialRetryDelay: 500
 };
 
 export function WebsiteSettingsTab({
@@ -91,13 +91,24 @@ export function WebsiteSettingsTab({
   
   // Generate tracking code based on selected options and library defaults
   const generateScriptTag = useCallback(() => {
+    const isLocalhost = process.env.NODE_ENV === 'development';
+    const scriptUrl = isLocalhost ? "http://localhost:3000/databuddy.js" : "https://app.databuddy.cc/databuddy.js";
+    const apiUrl = isLocalhost ? "http://localhost:4000" : "https://api.databuddy.cc";
+    
     // Only include options that differ from defaults
     const options = Object.entries(trackingOptions)
       .filter(([key, value]) => value !== LIBRARY_DEFAULTS[key as keyof TrackingOptions])
       .map(([key, value]) => `data-${key.replace(/([A-Z])/g, '-$1').toLowerCase()}="${value}"`)
       .join(" ");
     
-    return `<script src="${process.env.NEXT_PUBLIC_APP_URL || 'https://app.databuddy.cc'}/api/tracking" data-client-id="${websiteId}" ${options} async></script>`;
+    return `<script
+    src="${scriptUrl}"
+    data-client-id="${websiteId}"
+    data-api-url="${apiUrl}"
+    ${options}
+    strategy="afterInteractive"
+    defer
+  ></script>`;
   }, [trackingOptions, websiteId]);
   
   // Generate NPM init code based on selected options
@@ -318,7 +329,7 @@ export function WebsiteSettingsTab({
                         </div>
                         <div className="flex items-center gap-2 py-2 px-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/20 rounded text-amber-700 dark:text-amber-400 text-xs">
                           <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
-                          <span>The script tag contains only options that differ from the defaults. Ensure this matches your setup. For advanced customizations, check the documentation.</span>
+                          <span>The script tag contains only options that differ from the defaults. For development, use localhost URLs. For production, use the default URLs.</span>
                         </div>
                       </div>
                     </TabsContent>

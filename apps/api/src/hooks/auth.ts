@@ -105,6 +105,13 @@ export const websiteAuthHook = (): MiddlewareHandler<{
   Variables: AppVariables;
 }> => {
   return async (c, next) => {
+    // Bypass auth logic for OPTIONS preflight requests
+    if (c.req.method === 'OPTIONS') {
+      await next();
+      return;
+    }
+
+    // const currentLogger = c.executionCtx ? logger.withExecutionContext(c.executionCtx as any) : logger;
     // First try to get client ID from header
     let clientId = c.req.header('databuddy-client-id');
     const origin = c.req.header('origin') || '';

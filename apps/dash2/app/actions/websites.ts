@@ -1,22 +1,20 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { db, websites, domains, projectAccess, eq, and, or, inArray, sql } from "@databuddy/db";
+import { db, websites, domains, projectAccess, eq, and, or, inArray } from "@databuddy/db";
 import { auth } from "@databuddy/auth";
 import { headers } from "next/headers";
 import { cache } from "react";
 import { nanoid } from "nanoid";
+import { z } from "zod";
 
 // Types
-type WebsiteData = {
-  domain: string;
+type CreateWebsiteData = {
   name: string;
-  domainId?: string | null;
-  userId?: string | null;
-  projectId?: string | null;
+  domainId: string;
+  domain: string;
+  subdomain?: string;
 };
-
-type WebsiteUpdateData = Partial<WebsiteData>;
 
 type ApiResponse<T> = 
   | { data: T; error?: never }
@@ -29,27 +27,6 @@ const getUser = cache(async () => {
   });
   return session?.user ?? null;
 });
-
-// Helper to normalize a domain (remove protocol, www, and trailing slash)
-function normalizeDomain(domain: string): string {
-  if (!domain) return '';
-  return domain.trim().toLowerCase()
-    .replace(/^(https?:\/\/)?(www\.)?/i, '')
-    .replace(/\/+$/, '');
-}
-
-// Get normalized variations of a domain for duplicate checking
-function getDomainVariations(domain: string): string[] {
-  const normalized = normalizeDomain(domain);
-  return [
-    normalized,
-    `www.${normalized}`,
-    `http://${normalized}`,
-    `https://${normalized}`,
-    `http://www.${normalized}`,
-    `https://www.${normalized}`
-  ];
-}
 
 // Get project IDs where user has access
 async function getUserProjectIds(userId: string): Promise<string[]> {
@@ -94,20 +71,15 @@ async function checkWebsiteAccess(id: string, userId: string) {
 }
 
 // Verify domain ownership and verification status
-async function verifyDomainAccess(domainId: string, ownerId: string | null, isProject = false): Promise<boolean> {
-  if (!domainId || !ownerId) return false;
+async function verifyDomainAccess(domainId: string, userId: string): Promise<boolean> {
+  if (!domainId || !userId) return false;
   
   try {
     const domain = await db.query.domains.findFirst({
       where: and(
         eq(domains.id, domainId),
-        or(
-          eq(domains.verificationStatus, "VERIFIED"),
-          sql`${domains.name} LIKE '%localhost%' OR ${domains.name} LIKE '%127.0.0.1%'`
-        ),
-        isProject ? 
-          eq(domains.projectId, ownerId) : 
-          eq(domains.userId, ownerId)
+        eq(domains.verificationStatus, "VERIFIED"),
+        eq(domains.userId, userId)
       )
     });
 
@@ -124,122 +96,100 @@ function handleError(context: string, error: unknown): ApiResponse<never> {
   return { error: `Failed to ${context.toLowerCase()}. Please try again later.` };
 }
 
-// Create website
-export async function createWebsite(data: WebsiteData): Promise<ApiResponse<any>> {
+export async function createWebsite(data: CreateWebsiteData) {
   const user = await getUser();
   if (!user) return { error: "Unauthorized" };
 
   try {
-    // Require domainId for all new websites
-    if (!data.domainId) {
-      return { error: "A verified domain is required" };
-    }
-
-    // Verify domain access
-    const ownerId = data.userId || data.projectId || user.id;
-    const isProject = !!data.projectId;
+    console.log("[Website] Creating website with data:", { ...data, userId: user.id });
     
-    if (!(await verifyDomainAccess(data.domainId, ownerId, isProject))) {
+    // Verify domain access
+    const hasAccess = await verifyDomainAccess(data.domainId, user.id);
+    if (!hasAccess) {
       return { error: "Domain not found or not verified" };
     }
 
-    // Get the verified domain
-    const domain = await db.query.domains.findFirst({
-      where: eq(domains.id, data.domainId)
-    });
+    // Check for existing websites with the same domain
+    const fullDomain = data.subdomain 
+      ? `${data.subdomain}.${data.domain}`
+      : data.domain;
 
-    if (!domain) {
-      return { error: "Domain not found" };
-    }
-
-    // Combine subdomain with verified domain
-    const normalizedDomain = normalizeDomain(data.domain);
-    const baseDomain = normalizeDomain(domain.name);
-    
-    // Check for existing website with this domain
     const existingWebsite = await db.query.websites.findFirst({
-      where: or(...getDomainVariations(normalizedDomain).map(domain => eq(websites.domain, domain)))
+      where: eq(websites.domain, fullDomain)
     });
 
     if (existingWebsite) {
-      return { error: "Website already exists with this domain" };
+      return { error: `A website with the domain "${fullDomain}" already exists` };
     }
 
-    // Determine ownership
-    const ownerData: Record<string, string> = {};
-    if (data.userId) {
-      ownerData.userId = data.userId;
-    } else if (data.projectId) {
-      ownerData.projectId = data.projectId;
-    } else {
-      ownerData.userId = user.id;
-    }
+    const [website] = await db
+      .insert(websites)
+      .values({
+        id: nanoid(),
+        name: data.name,
+        domain: fullDomain,
+        domainId: data.domainId,
+        userId: user.id,
+      })
+      .returning();
 
-    // Create website with a unique nanoid ID
-    const websiteId = nanoid();
-    
-    await db.insert(websites).values({
-      id: websiteId,
-      domain: normalizedDomain,
-      name: data.name,
-      domainId: data.domainId,
-      ...ownerData
-    });
-    
-    // Fetch the newly created website
-    const website = await db.query.websites.findFirst({
-      where: eq(websites.id, websiteId)
-    });
-    
-    if (!website) {
-      return { error: "Failed to create website. Database operation succeeded but couldn't retrieve the new website." };
-    }
-    
-    // Fetch domain information
-    const result: any = { ...website };
-    result.domainData = domain;
-    result.domain = website.domain;
+    console.log("[Website] Successfully created website:", website);
 
     revalidatePath("/websites");
-    
-    return { data: result };
+    return { success: true, data: website };
   } catch (error) {
-    return handleError("create website", error);
+    console.error("[Website] Error creating website:", error);
+    if (error instanceof Error) {
+      return { error: `Failed to create website: ${error.message}` };
+    }
+    return { error: "Failed to create website" };
   }
 }
 
-// Get all websites for current user with Redis caching
-export const getUserWebsites = async (userId?: string | null): Promise<ApiResponse<any>> => {
-    const user = userId ? { id: userId } : await getUser();
-    if (!user) return { error: "Unauthorized" };
+export async function updateWebsite(id: string, name: string) {
+  const user = await getUser();
+  if (!user) return { error: "Unauthorized" };
 
-    try {
-      const userWebsites = await db.query.websites.findMany({
-        where: eq(websites.userId, user.id),
-        orderBy: (websites, { desc }) => [desc(websites.createdAt)]
-      });
-      
-      // Fetch domain information for websites with domainId
-      const websitesData = await Promise.all(
-        userWebsites.map(async (website) => {
-          const result: any = { ...website };
-          
-          if (website.domainId) {
-            const domainRecord = await db.query.domains.findFirst({
-              where: eq(domains.id, website.domainId)
-            });
-            
-            if (domainRecord) {
-              result.domainData = domainRecord;
-              result.domain = website.domain;
-            }
-          }
-          
-          return result;
-        })
-      );
-      
-      return { data: websitesData };
+  try {
+    console.log("[Website] Updating website name:", { id, name, userId: user.id });
+
+    const website = await checkWebsiteAccess(id, user.id);
+    if (!website) {
+      console.log("[Website] Website not found or no access:", id);
+      return { error: "Website not found" };
+    }
+
+    const [updatedWebsite] = await db
+      .update(websites)
+      .set({ name })
+      .where(eq(websites.id, id))
+      .returning();
+
+    console.log("[Website] Successfully updated website:", updatedWebsite);
+
+    revalidatePath("/websites");
+    return { success: true, data: updatedWebsite };
+  } catch (error) {
+    console.error("[Website] Error updating website:", error);
+    if (error instanceof Error) {
+      return { error: `Failed to update website: ${error.message}` };
+    }
+    return { error: "Failed to update website" };
+  }
+}
+
+// Get all websites for current user
+export const getUserWebsites = async (userId?: string | null): Promise<ApiResponse<any>> => {
+  const user = userId ? { id: userId } : await getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  try {
+    const userWebsites = await db.query.websites.findMany({
+      where: eq(websites.userId, user.id),
+      orderBy: (websites, { desc }) => [desc(websites.createdAt)]
+    });
+    
+    return { data: userWebsites };
   } catch (error) {
     return handleError("fetch user websites", error);
   }
@@ -247,176 +197,63 @@ export const getUserWebsites = async (userId?: string | null): Promise<ApiRespon
 
 // Get all websites for a project
 export async function getProjectWebsites(projectId: string): Promise<ApiResponse<any>> {
-    const user = await getUser();
-    if (!user) return { error: "Unauthorized" };
-
-    try {
-      // Check if user has access to the project
-      const projectAccessRecord = await db.query.projectAccess.findFirst({
-        where: and(
-          eq(projectAccess.projectId, projectId),
-          eq(projectAccess.userId, user.id)
-        )
-      });
-
-      if (!projectAccessRecord) {
-        return { error: "You don't have access to this project" };
-      }
-
-      const projectWebsites = await db.query.websites.findMany({
-        where: eq(websites.projectId, projectId),
-        orderBy: (websites, { desc }) => [desc(websites.createdAt)]
-      });
-      
-      // Fetch domain information for websites with domainId
-      const websitesData = await Promise.all(
-        projectWebsites.map(async (website) => {
-          const result: any = { ...website };
-          
-          if (website.domainId) {
-            const domainRecord = await db.query.domains.findFirst({
-              where: eq(domains.id, website.domainId)
-            });
-            
-            if (domainRecord) {
-                result.domainData = domainRecord;
-              result.domain = website.domain;
-            }
-          }
-          
-          return result;
-        })
-      );
-      
-      return { data: websitesData };
-    } catch (error) {
-      return handleError("fetch project websites", error);
-    }
-}
-
-// Get single website by ID
-export async function getWebsiteById(id: string): Promise<ApiResponse<any>> {
-    const user = await getUser();
-    if (!user) return { error: "Unauthorized" };
-
-    try {
-      const projectIds = await getUserProjectIds(user.id);
-      
-      const website = await db.query.websites.findFirst({
-        where: or(
-          and(
-            eq(websites.id, id),
-            eq(websites.userId, user.id)
-          ),
-          and(
-            eq(websites.id, id),
-            projectIds.length > 0 ? 
-              inArray(websites.projectId, projectIds) : 
-              eq(websites.id, "impossible-match")
-          )
-        )
-      });
-      
-      if (!website) {
-        return { error: "Website not found" };
-      }
-      
-      // Fetch domain information if domainId exists
-      const result: any = { ...website };
-      
-      if (website.domainId) {
-        const domainRecord = await db.query.domains.findFirst({
-          where: eq(domains.id, website.domainId)
-        });
-        
-        if (domainRecord) {
-          // Ensure domain is stored correctly - in both properties
-          result.domainData = domainRecord;
-          // Make sure domain property is a string
-          result.domain = website.domain;
-        }
-      }
-      
-      return { data: result };
-    } catch (error) {
-      return handleError("fetch website", error);
-    }
-}
-
-// Update website
-export async function updateWebsite(id: string, data: WebsiteUpdateData): Promise<ApiResponse<any>> {
   const user = await getUser();
   if (!user) return { error: "Unauthorized" };
 
   try {
-    const website = await checkWebsiteAccess(id, user.id);
+    // Check if user has access to the project
+    const projectAccessRecord = await db.query.projectAccess.findFirst({
+      where: and(
+        eq(projectAccess.projectId, projectId),
+        eq(projectAccess.userId, user.id)
+      )
+    });
+
+    if (!projectAccessRecord) {
+      return { error: "You don't have access to this project" };
+    }
+
+    const projectWebsites = await db.query.websites.findMany({
+      where: eq(websites.projectId, projectId),
+      orderBy: (websites, { desc }) => [desc(websites.createdAt)]
+    });
+    
+    return { data: projectWebsites };
+  } catch (error) {
+    return handleError("fetch project websites", error);
+  }
+}
+
+// Get single website by ID
+export async function getWebsiteById(id: string): Promise<ApiResponse<any>> {
+  const user = await getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  try {
+    const projectIds = await getUserProjectIds(user.id);
+    
+    const website = await db.query.websites.findFirst({
+      where: or(
+        and(
+          eq(websites.id, id),
+          eq(websites.userId, user.id)
+        ),
+        and(
+          eq(websites.id, id),
+          projectIds.length > 0 ? 
+            inArray(websites.projectId, projectIds) : 
+            eq(websites.id, "impossible-match")
+        )
+      )
+    });
+    
     if (!website) {
       return { error: "Website not found" };
     }
-
-    // Verify domain if provided
-    if (data.domainId) {
-      const ownerId = website.userId || website.projectId;
-      const isProject = !!website.projectId;
-      
-      if (!(await verifyDomainAccess(data.domainId, ownerId, isProject))) {
-        return { error: "Domain not found or not verified" };
-      }
-    }
-
-    // Prepare update data
-    const updateData: Record<string, any> = {
-      name: data.name,
-      domainId: data.domainId
-    };
-
-    if (data.domain) {
-      updateData.domain = normalizeDomain(data.domain);
-    }
     
-    // Remove undefined fields
-    for (const key of Object.keys(updateData)) {
-      if (updateData[key] === undefined) {
-        delete updateData[key];
-      }
-    }
-    
-    // Update website
-    await db.update(websites)
-      .set(updateData)
-      .where(eq(websites.id, id));
-      
-    // Fetch the updated website
-    const updatedWebsite = await db.query.websites.findFirst({
-      where: eq(websites.id, id)
-    });
-    
-    if (!updatedWebsite) {
-      return { error: "Failed to update website. Database operation succeeded but couldn't retrieve the updated website." };
-    }
-
-    // Fetch domain information if domainId exists
-    const result: any = { ...updatedWebsite };
-    
-    if (updatedWebsite.domainId) {
-      const domainRecord = await db.query.domains.findFirst({
-        where: eq(domains.id, updatedWebsite.domainId)
-      });
-      
-      if (domainRecord) {
-        // Ensure domain is stored correctly - in both properties
-        result.domainData = domainRecord;
-        // Make sure domain property is a string
-        result.domain = updatedWebsite.domain;
-      }
-    }
-
-    revalidatePath("/websites");
-    revalidatePath(`/websites/${id}`);
-    
-    return { data: result };
+    return { data: website };
   } catch (error) {
-    return handleError("update website", error);
+    return handleError("fetch website", error);
   }
 }
 
@@ -431,7 +268,6 @@ export async function deleteWebsite(id: string): Promise<ApiResponse<{ success: 
       return { error: "Website not found" };
     }
 
-    // Delete website
     await db.delete(websites)
       .where(eq(websites.id, id));
 

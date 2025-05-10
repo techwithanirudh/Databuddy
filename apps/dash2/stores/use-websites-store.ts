@@ -57,6 +57,7 @@ interface WebsitesState {
   setWebsites: (websites: Website[]) => void;
   setSelectedWebsite: (website: Website | null) => void;
   setShowVerificationDialog: (show: boolean) => void;
+  deleteWebsite: (id: string) => void;
   reset: () => void;
   
   // Loading States
@@ -89,6 +90,10 @@ export const useWebsitesStore = create<WebsitesState>((set) => ({
   setWebsites: (websites) => set({ websites }),
   setSelectedWebsite: (website) => set({ selectedWebsite: website }),
   setShowVerificationDialog: (show) => set({ showVerificationDialog: show }),
+  deleteWebsite: (id) => set((state) => ({
+    websites: state.websites.filter(website => website.id !== id),
+    selectedWebsite: state.selectedWebsite?.id === id ? null : state.selectedWebsite
+  })),
   reset: () => set({
     websites: [],
     selectedWebsite: null,

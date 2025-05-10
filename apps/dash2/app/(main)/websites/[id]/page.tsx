@@ -163,26 +163,6 @@ function WebsiteDetailsPage() {
     websiteIdRef.current = id as string;
   }, [id]);
 
-  // Handle website update
-  const updateWebsiteMutation = useMutation({
-    mutationFn: async (data: { name?: string; domain?: string }) => {
-      return updateWebsite(id as string, data);
-    },
-    onSuccess: (result) => {
-      if (result.error) {
-        toast.error(result.error);
-        return;
-      }
-      toast.success("Website updated successfully");
-      queryClient.invalidateQueries({ queryKey: ["website", id] });
-      queryClient.invalidateQueries({ queryKey: ["websites"] });
-    },
-    onError: (error) => {
-      toast.error("Failed to update website");
-      console.error(error);
-    },
-  });
-
   // Handle errors
   useEffect(() => {
     if (isError) {
@@ -193,8 +173,7 @@ function WebsiteDetailsPage() {
 
   // After the data query, check if the website is verified:
   const isLocalhost = data?.domain?.includes('localhost') || data?.domain?.includes('127.0.0.1');
-  const isVerified = isLocalhost || 
-    (data?.domainData?.verificationStatus === "VERIFIED" && data?.domainData?.verifiedAt);
+  const isVerified = isLocalhost || data?.domainData?.verificationStatus === "VERIFIED" || data?.domainId;
   
   // Modified implementation of regenerateToken to fix typing issues
   const regenerateToken = async (websiteId: string) => {

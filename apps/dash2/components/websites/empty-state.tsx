@@ -61,7 +61,6 @@ export function EmptyState({
       <WebsiteDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        onSubmit={onCreateWebsite}
         isLoading={isCreating}
         verifiedDomains={verifiedDomains}
       />

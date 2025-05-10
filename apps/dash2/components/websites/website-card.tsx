@@ -1,7 +1,6 @@
 "use client";
 
 import { MoreVertical } from "lucide-react";
-import { toast } from "sonner";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -19,33 +18,32 @@ import { WebsiteDialog } from "@/components/website-dialog";
 import type { Website } from "@/hooks/use-websites";
 import { useWebsitesStore } from "@/stores/use-websites-store";
 
+type VerifiedDomain = {
+  id: string;
+  name: string;
+  verificationStatus: "PENDING" | "VERIFIED" | "FAILED";
+};
+
 interface WebsiteCardProps {
   website: Website;
-  onUpdate: (id: string, data: { domain?: string }) => void;
+  onUpdate: (id: string, name: string) => void;
   isUpdating: boolean;
+  verifiedDomains: VerifiedDomain[];
 }
 
 export function WebsiteCard({
   website,
   onUpdate,
   isUpdating,
+  verifiedDomains,
 }: WebsiteCardProps) {
   const setSelectedWebsite = useWebsitesStore(state => state.setSelectedWebsite);
   const [dialogOpen, setDialogOpen] = useState(false);
   
-  // Enhanced domain value extraction logic
-  let domainValue = '';
-  if (typeof website.domain === 'string') {
-    domainValue = website.domain;
-  } else if (website.domain && typeof website.domain === 'object') {
-    // If domain is an object, try to get its name property if it exists
-    const domainObj = website.domain as any;
-    domainValue = domainObj.name || JSON.stringify(website.domain);
-  } else if (website.domainData?.name) {
-    // Fallback to domainData if available
-    domainValue = website.domainData.name;
-  }
-  
+  const domainValue = typeof website.domain === 'string' 
+    ? website.domain 
+    : website.domain?.name || '';
+
   const isLocalhost = domainValue.includes('localhost') || domainValue.includes('127.0.0.1');
 
   const handleOpenDialog = (e: React.MouseEvent) => {
@@ -94,10 +92,9 @@ export function WebsiteCard({
       
       <WebsiteDialog
         website={website}
-        verifiedDomains={[]}
+        verifiedDomains={verifiedDomains}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        onSubmit={(data) => onUpdate(website.id, data)}
         isLoading={isUpdating}
       />
     </Card>

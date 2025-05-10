@@ -51,14 +51,9 @@ export interface Website {
 
 interface CreateWebsiteData {
   name: string;
+  domainId: string;
   domain: string;
-  domainId?: string;
-}
-
-interface UpdateWebsiteData {
-  name?: string;
-  domain?: string;
-  domainId?: string | null;
+  subdomain?: string;
 }
 
 // Query keys
@@ -131,8 +126,8 @@ export function useWebsites() {
 
   // Update website mutation
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: UpdateWebsiteData }) => {
-      const result = await updateWebsiteAction(id, data);
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      const result = await updateWebsiteAction(id, name);
       if (result.error) throw new Error(result.error);
       return result.data;
     },
@@ -161,9 +156,12 @@ export function useWebsites() {
     onMutate: () => {
       store.setIsDeleting(true);
     },
-    onSuccess: () => {
+    onSuccess: (_, id) => {
       toast.success("Website deleted successfully");
-      queryClient.invalidateQueries({ queryKey: websiteKeys.lists() });
+      // Update the store first
+      store.deleteWebsite(id);
+      // Then invalidate all website-related queries
+      queryClient.invalidateQueries({ queryKey: websiteKeys.all });
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to delete website');

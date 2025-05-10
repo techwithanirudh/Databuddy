@@ -138,8 +138,9 @@ function WebsitesPage() {
             <WebsiteCard
               key={website.id}
               website={website}
-              onUpdate={(id, data) => updateWebsite({ id, data })}
+              onUpdate={(id: string, name: string) => updateWebsite({ id, name })}
               isUpdating={isUpdating}
+              verifiedDomains={verifiedDomains}
             />
           ))}
         </div>
@@ -149,7 +150,6 @@ function WebsitesPage() {
       <WebsiteDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        onSubmit={createWebsite}
         isLoading={isCreating}
         verifiedDomains={verifiedDomains}
         initialValues={initialValues}

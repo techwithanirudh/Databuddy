@@ -30,6 +30,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useWebsitesStore } from "@/stores/use-websites-store";
 
 interface WebsiteFormData {
   name?: string;
@@ -155,6 +156,9 @@ export function WebsiteSettingsTab({
       }
       
       toast.success("Website deleted successfully");
+      
+      // Update the store
+      useWebsitesStore.getState().deleteWebsite(websiteId);
       
       // Invalidate queries and redirect
       queryClient.invalidateQueries({ queryKey: ["websites"] });

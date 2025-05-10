@@ -3,7 +3,7 @@ type WebsiteStatus = typeof websiteStatus.enumValues[number];
 
 
 export interface TrackingEvent {
-  type: 'track' | 'alias' | 'increment' | 'decrement';
+  type: 'track';
   payload: {
     name?: string;
     anonymousId?: string;

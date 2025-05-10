@@ -29,22 +29,10 @@ const isBot = (userAgent: string): boolean => {
 
 const basketRouter = new Hono<{ Variables: AppVariables & { enriched?: any } }>();
 
-basketRouter.use('*', async (c, next) => {
-  const website = c.get('website');
-  logger.info('CORS middleware invoked', { 
-    websiteId: website?.id,
-    websiteDomain: website?.domain,
-    requestOrigin: c.req.header('origin'),
-    method: c.req.method,
-    path: c.req.path
-  });
-  await next();
-});
-
 basketRouter.use(websiteAuthHook());
 
 const eventSchema = z.object({
-  type: z.enum(['track', 'alias', 'increment', 'decrement']),
+  type: z.enum(['track']),
   payload: z.object({
     name: z.string().optional(),
     anonymousId: z.string().optional(),

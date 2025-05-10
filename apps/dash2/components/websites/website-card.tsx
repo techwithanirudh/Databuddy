@@ -94,6 +94,7 @@ export function WebsiteCard({
       
       <WebsiteDialog
         website={website}
+        verifiedDomains={[]}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         onSubmit={(data) => onUpdate(website.id, data)}

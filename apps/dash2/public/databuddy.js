@@ -539,21 +539,7 @@
                 return null;
             }
         }
-        
-        async increment(data) {
-            return this.send({
-                type: "increment",
-                payload: data
-            });
-        }
-        
-        async decrement(data) {
-            return this.send({
-                type: "decrement",
-                payload: data
-            });
-        }
-        
+
         clear() {
             this.anonymousId = this.generateAnonymousId();
             if (typeof window !== 'undefined' && window.localStorage) {

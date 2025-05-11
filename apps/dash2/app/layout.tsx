@@ -38,7 +38,7 @@ export const metadata: Metadata = {
     "performance monitoring",
     "user behavior"
   ],
-  authors: [{ name: "Databuddy", url: 'https://databuddy.cc' }],
+  authors: [{ name: "Databuddy", url: 'https://www.databuddy.cc' }],
   creator: "Databuddy",
   publisher: "Databuddy",
   openGraph: {

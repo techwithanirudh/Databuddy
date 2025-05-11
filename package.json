@@ -25,6 +25,7 @@
     "packages/*"
   ],
   "dependencies": {
+    "@tanstack/react-table": "^8.21.3",
     "@types/ua-parser-js": "^0.7.39",
     "compressorjs": "^1.2.1",
     "dayjs": "^1.11.13",

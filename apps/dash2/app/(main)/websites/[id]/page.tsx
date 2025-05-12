@@ -17,10 +17,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { WebsiteDialog } from "@/components/website-dialog";
-import { getWebsiteById, updateWebsite } from "@/app/actions/websites";
+import { getWebsiteById } from "@/app/actions/websites";
 import { checkDomainVerification, regenerateVerificationToken } from "@/app/actions/domains";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/app/providers";
 import { format, subDays, subHours, differenceInDays } from "date-fns";
 import type { DateRange as DayPickerRange } from "react-day-picker";
@@ -35,17 +34,14 @@ import { WebsiteAudienceTab } from "./components/tabs/audience-tab";
 import { WebsiteContentTab } from "./components/tabs/content-tab";
 import { WebsitePerformanceTab } from "./components/tabs/performance-tab";
 import { WebsiteSettingsTab } from "./components/tabs/settings-tab";
-import { WebsiteSessionsTab } from "./components/tabs/sessions-tab";
-import { WebsiteProfilesTab } from "./components/tabs/profiles-tab";
 import { WebsiteErrorsTab } from "./components/tabs/errors-tab";
 
 // Shared types
 import type { DateRange as BaseDateRange } from "@/hooks/use-analytics";
-import type { FullTabProps, WebsiteDataTabProps } from "./components/utils/types";
 import React from "react";
 
 // Add type for tab ID
-type TabId = 'overview' | 'audience' | 'content' | 'performance' | 'settings' | 'sessions' | 'profiles' | 'errors';
+type TabId = 'overview' | 'audience' | 'content' | 'performance' | 'settings' | 'errors';
 
 // Tab definition structure
 type TabDefinition = {
@@ -269,10 +265,6 @@ function WebsiteDetailsPage() {
         return <WebsitePerformanceTab key={`performance-${websiteIdRef.current}-${dateRange.start_date}`} {...stableTabProps} />;
       case "settings":
         return <WebsiteSettingsTab key={`settings-${websiteIdRef.current}`} {...stableSettingsProps} />;
-      case "sessions":
-        return <WebsiteSessionsTab key={`sessions-${websiteIdRef.current}-${dateRange.start_date}`} {...stableTabProps} />;
-      case "profiles":
-        return <WebsiteProfilesTab key={`profiles-${websiteIdRef.current}-${dateRange.start_date}`} {...stableTabProps} />;
       case "errors":
         return <WebsiteErrorsTab key={`errors-${websiteIdRef.current}-${dateRange.start_date}`} {...stableTabProps} />;
     }
@@ -284,8 +276,6 @@ function WebsiteDetailsPage() {
     { id: "audience", label: "Audience", component: WebsiteAudienceTab },
     { id: "content", label: "Content", component: WebsiteContentTab },
     { id: "performance", label: "Performance", component: WebsitePerformanceTab },
-    { id: "sessions", label: "Sessions", component: WebsiteSessionsTab },
-    { id: "profiles", label: "Profiles", component: WebsiteProfilesTab },
     { id: "errors", label: "Errors", component: WebsiteErrorsTab },
     { id: "settings", label: "Settings", component: WebsiteSettingsTab, props: "settings" },
   ];

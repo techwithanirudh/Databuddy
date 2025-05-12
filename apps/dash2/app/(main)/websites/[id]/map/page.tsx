@@ -9,10 +9,11 @@ import { useWebsites } from "@/hooks/use-websites";
 import { useParams } from "next/navigation";
 import { useAnalyticsLocations } from "@/hooks/use-analytics";
 import { CalendarDateRangePicker } from "@/components/date-range-picker";
+import { HelpCircle } from "lucide-react";
 import type { DateRange } from "react-day-picker";
 
 function WebsiteMapPage() {
-  const { websiteId } = useParams<{ websiteId: string }>();
+  const { id } = useParams<{ id: string }>();
   const { websites } = useWebsites();
   const { setSelectedWebsite } = useWebsitesStore();
   const [mode, setMode] = useState<"total" | "perCapita">("total");
@@ -29,17 +30,17 @@ function WebsiteMapPage() {
 
   // Set the selected website based on URL params
   useEffect(() => {
-    if (websiteId && websites) {
-      const website = websites.find((site: any) => site.id === websiteId);
+    if (id && websites) {
+      const website = websites.find((site: any) => site.id === id);
       if (website) {
         setSelectedWebsite(website);
       }
     }
-  }, [websiteId, websites, setSelectedWebsite]);
+  }, [id, websites, setSelectedWebsite]);
   
   // Pass the date range to the analytics hook to get real data
   const { data: locationData, isLoading } = useAnalyticsLocations(
-    websiteId || "",
+    id,
     dateRange
   );
 
@@ -113,16 +114,25 @@ function WebsiteMapPage() {
               ) : topCountries.length > 0 ? (
                 <div className="space-y-2">
                   {topCountries.map((country) => (
-                    <div key={country.country} className="flex justify-between items-center">
+                    <div key={country.country || "unknown"} className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
-                        <div className="w-5 h-4 relative overflow-hidden rounded-sm bg-muted">
-                          <img 
-                            src={`https://purecatamphetamine.github.io/country-flag-icons/3x2/${country.country.toUpperCase()}.svg`}
-                            alt={country.country}
-                            className="absolute inset-0 w-full h-full object-cover"
-                          />
-                        </div>
-                        <span>{country.country}</span>
+                        {country.country ? (
+                          <div className="w-5 h-4 relative overflow-hidden rounded-sm bg-muted">
+                            <img 
+                              src={`https://purecatamphetamine.github.io/country-flag-icons/3x2/${country.country.toUpperCase()}.svg`}
+                              alt={country.country}
+                              className="absolute inset-0 w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none';
+                              }}
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-5 h-4 flex items-center justify-center rounded-sm bg-muted">
+                            <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                          </div>
+                        )}
+                        <span>{country.country ? country.country : "Unknown"}</span>
                       </div>
                       <span className="font-semibold">{country.visitors.toLocaleString()}</span>
                     </div>

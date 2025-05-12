@@ -535,7 +535,7 @@ function LoginPage() {
               <Button
                 type="button"
                 variant="link"
-                className="w-full text-primary hover:text-primary/80 font-medium flex items-center justify-center"
+                className="w-full text-primary hover:text-primary/80 font-medium flex items-center justify-center cursor-pointer"
                 onClick={() => setView("magic")}
               >
                 <Sparkles className="mr-2 h-4 w-4" />
@@ -652,8 +652,8 @@ function LoginPage() {
           />
         </div>
         
-        <Button variant="outline" className="relative z-10 bg-white/20 text-white border-white/10 hover:bg-white/30">
-          <ChevronLeft className="mr-2 h-4 w-4" />
+        <Button variant="outline" className="relative z-10 bg-white/20 text-white border-white/10 hover:bg-white/20 group scale-100 hover:scale-105 transition-all duration-200 cursor-pointer">
+          <ChevronLeft className="h-4 w-4 group-hover:translate-x-[-4px] transition-all duration-200" />
           Back
         </Button>
         

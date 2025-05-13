@@ -31,7 +31,7 @@ export function MiniChart({
     isLoading: internalLoading, 
     isError: internalError 
   } = useMiniChartData(websiteId, { 
-    enabled: !data // Only run query if external data is not provided
+    enabled: !data && !externalLoading && !externalError // Fully disable when external data is handled
   });
   
   const { theme } = useTheme();

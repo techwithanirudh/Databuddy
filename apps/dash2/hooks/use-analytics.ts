@@ -499,18 +499,19 @@ export function useMiniChartData(websiteId: string, options?: { enabled?: boolea
  * @returns Object with data for each website ID, loading states, and error states
  */
 export function useBatchedMiniCharts(websiteIds: string[]) {
+  // Ensure stable query key by sorting IDs
+  const sortedIds = useMemo(() => [...websiteIds].sort(), [websiteIds]);
+  const idsString = useMemo(() => sortedIds.join(','), [sortedIds]);
+  
   const query = useQuery({
-    queryKey: ['analytics', 'batch-mini-charts', websiteIds.sort().join(',')],
+    queryKey: ['analytics', 'batch-mini-charts', idsString],
     queryFn: async () => {
       if (!websiteIds.length) return { data: {} };
       
       // Build URL with comma-separated IDs
-      const idsParam = websiteIds.join(',');
+      const url = `${API_BASE_URL}/analytics/batch-mini-charts?ids=${idsString}`;
       
-      // Make a single request for all websites
-      const url = `${API_BASE_URL}/analytics/batch-mini-charts?ids=${idsParam}`;
-      
-      console.log('[DataBuddy] Fetching batch mini charts:', url);
+      console.log('[DataBuddy] Fetching batch mini charts with a single request for', websiteIds.length, 'websites');
       
       const response = await fetch(url, { 
         credentials: 'include',
@@ -527,7 +528,10 @@ export function useBatchedMiniCharts(websiteIds: string[]) {
     },
     ...defaultQueryOptions,
     staleTime: 10 * 60 * 1000, // 10 minutes for mini charts
-    enabled: websiteIds.length > 0
+    enabled: websiteIds.length > 0,
+    meta: {
+      batchSize: websiteIds.length
+    }
   });
   
   // Process the results into a more usable format

@@ -293,11 +293,6 @@ function WebsiteDetailsPage() {
         total: 1 
       });
       
-      // Allow the active component to handle its own refresh via isRefreshing prop
-      // We don't need to execute any refetch logic here - each tab component has its own useEffect
-      // that will detect isRefreshing=true and call its own refetch() function
-      await new Promise(r => setTimeout(r, 1000)); // Give component time to react
-      
       // Success message
       toast.success(`${activeTabDef?.label || "Dashboard"} data refreshed`);
     } catch (error) {

@@ -33,14 +33,12 @@ function LoginPage() {
 
   const verifyMagicLink = async (token: string) => {
     try {
-      const { error } = await authClient.magicLink.verify({
+      const response = await authClient.magicLink.verify({
         query: { token },
         fetchOptions: {
-          onSuccess: (ctx) => {
-            const authToken = ctx.response.headers.get("set-auth-token")
-            if (authToken) {
-              localStorage.setItem("authToken", authToken);
-            }
+          onSuccess: () => {
+            toast.success("Login successful!");
+            router.push("/home");
           },
           onError: () => {
             toast.error("Failed to verify magic link. Please try again.");
@@ -48,17 +46,8 @@ function LoginPage() {
           }
         }
       });
-
-      if (error) {
-        toast.error("Invalid or expired magic link. Please try again.");
-        router.push("/login");
-      } else {
-        toast.success("Login successful!");
-        router.push("/home");
-      }
     } catch (error) {
       toast.error("Failed to verify magic link. Please try again.");
-      router.push("/login");
     } finally {
       setVerifyingToken(false);
     }
@@ -70,12 +59,8 @@ function LoginPage() {
       provider: "google",
       callbackURL: "/home",
       fetchOptions: {
-        onSuccess: (ctx) => {
+        onSuccess: () => {
           toast.success("Login successful!");
-          const authToken = ctx.response.headers.get("set-auth-token")
-          if (authToken) {
-            localStorage.setItem("authToken", authToken);
-          }
         },
         onError: () => {
           setIsLoading(false);
@@ -91,12 +76,8 @@ function LoginPage() {
       provider: "github",
       callbackURL: "/home",
       fetchOptions: {
-        onSuccess: (ctx) => {
+        onSuccess: () => {
           toast.success("Login successful!");
-          const authToken = ctx.response.headers.get("set-auth-token")
-          if (authToken) {
-            localStorage.setItem("authToken", authToken);
-          }
         },
         onError: () => {
           setIsLoading(false);
@@ -120,19 +101,15 @@ function LoginPage() {
         password,
         callbackURL: "/home",
         fetchOptions: {
-          onSuccess: (ctx) => {
+          onSuccess: () => {
             toast.success("Login successful!");
-            const authToken = ctx.response.headers.get("set-auth-token")
-            if (authToken) {
-              localStorage.setItem("authToken", authToken);
-            }
           },
-          onError: (error: any) => {
+          onError: (error) => {
             setIsLoading(false);
-            if (error?.code === "EMAIL_NOT_VERIFIED" || error?.message?.toLowerCase().includes("not verified")) {
+            if (error?.error?.code === "EMAIL_NOT_VERIFIED" || error?.error?.message?.toLowerCase().includes("not verified")) {
               setView("verification-needed");
             } else {
-              toast.error(error?.message || "Login failed. Please check your credentials and try again.");
+              toast.error(error?.error?.message || "Login failed. Please check your credentials and try again.");
             }
           },
         },
@@ -185,11 +162,7 @@ function LoginPage() {
         email,
         callbackURL: "/home",
         fetchOptions: {
-          onSuccess: (ctx) => {
-            const authToken = ctx.response.headers.get("set-auth-token")
-            if (authToken) {
-              localStorage.setItem("authToken", authToken);
-            }
+          onSuccess: () => {
             setIsLoading(false);
             toast.success("Magic link sent! Please check your email.");
             setView("magic-sent");
@@ -265,7 +238,7 @@ function LoginPage() {
               <Button
                 className="w-full bg-blue-500 hover:bg-blue-600 text-white"
                 disabled={isLoading}
-                onClick={(e: React.MouseEvent) => handleMagicLinkLogin(e as any)}
+                onClick={(e: React.MouseEvent) => handleMagicLinkLogin(e)}
               >
                 {isLoading ? (
                   <>

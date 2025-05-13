@@ -6,22 +6,25 @@ export function LoadingState() {
   const loadingRowIds = ['loading-row-1', 'loading-row-2', 'loading-row-3'];
   
   return (
-    <div className="rounded-md border overflow-hidden bg-card">
+    <div className="rounded-md border overflow-hidden bg-card shadow-sm">
       <Table className="table-modern">
         <TableHeader>
-          <TableRow className="bg-muted/40 hover:bg-muted/40">
-            <TableHead className="w-[40%] text-foreground/70 text-xs">WEBSITE</TableHead>
-            <TableHead className="w-[40%] text-foreground/70 text-xs">TRAFFIC</TableHead>
-            <TableHead className="text-right text-foreground/70 text-xs">ACTIONS</TableHead>
+          <TableRow className="bg-secondary/80 hover:bg-secondary/80">
+            <TableHead className="w-[40%] text-secondary-foreground text-xs font-medium">WEBSITE</TableHead>
+            <TableHead className="w-[40%] text-secondary-foreground text-xs font-medium">TRAFFIC</TableHead>
+            <TableHead className="text-right text-secondary-foreground text-xs font-medium">ACTIONS</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {loadingRowIds.map((id, index) => (
-            <TableRow key={id} style={{ 
-              animationDelay: `${index * 100}ms`,
-              opacity: 0,
-              animation: 'fadeIn 0.5s ease forwards'
-            }}>
+            <TableRow key={id} 
+              className="border-b last:border-0"
+              style={{ 
+                animationDelay: `${index * 100}ms`,
+                opacity: 0,
+                animation: 'fadeIn 0.5s ease forwards'
+              }}
+            >
               <TableCell className="py-3.5">
                 <div className="flex flex-col space-y-2">
                   <div className="flex items-center gap-2">

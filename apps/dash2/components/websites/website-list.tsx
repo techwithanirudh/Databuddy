@@ -48,13 +48,13 @@ export function WebsiteList({
   verifiedDomains
 }: WebsiteListProps) {
   return (
-    <div className="rounded-md border overflow-hidden bg-card">
+    <div className="rounded-md border overflow-hidden bg-card shadow-sm">
       <Table className="table-modern">
         <TableHeader>
-          <TableRow className="bg-muted/40 hover:bg-muted/40">
-            <TableHead className="w-[40%] text-foreground/70 text-xs">WEBSITE</TableHead>
-            <TableHead className="w-[40%] text-foreground/70 text-xs">TRAFFIC</TableHead>
-            <TableHead className="text-right text-foreground/70 text-xs">ACTIONS</TableHead>
+          <TableRow className="bg-secondary/80 hover:bg-secondary/80">
+            <TableHead className="w-[40%] text-secondary-foreground text-xs font-medium">WEBSITE</TableHead>
+            <TableHead className="w-[40%] text-secondary-foreground text-xs font-medium">TRAFFIC</TableHead>
+            <TableHead className="text-right text-secondary-foreground text-xs font-medium">ACTIONS</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -152,17 +152,17 @@ function WebsiteRow({
 
   const status = getVerificationStatus();
   const badgeClass = {
-    success: "bg-[color-mix(in_oklch,var(--background),var(--success)_15%)] text-[var(--success)]",
-    destructive: "bg-[color-mix(in_oklch,var(--background),var(--destructive)_15%)] text-[var(--destructive)]",
-    warning: "bg-[color-mix(in_oklch,var(--background),var(--warning)_15%)] text-[var(--warning)]",
-    outline: "bg-[color-mix(in_oklch,var(--background),var(--muted-foreground)_10%)] text-muted-foreground"
+    success: "bg-[color-mix(in_oklch,var(--background),var(--success)_20%)] text-[var(--success)]",
+    destructive: "bg-[color-mix(in_oklch,var(--background),var(--destructive)_20%)] text-[var(--destructive)]",
+    warning: "bg-[color-mix(in_oklch,var(--background),var(--warning)_20%)] text-[var(--warning)]",
+    outline: "bg-[color-mix(in_oklch,var(--background),var(--muted-foreground)_15%)] text-muted-foreground"
   };
 
   const viewAnalyticsLink = `/websites/${website.id}`;
 
   return (
     <>
-      <TableRow className="table-row-hover cursor-pointer group transition-colors">
+      <TableRow className="table-row-hover border-b last:border-0 cursor-pointer group transition-colors">
         <TableCell className="py-3.5">
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5">
@@ -170,7 +170,7 @@ function WebsiteRow({
                 {website.name || 'Unnamed Website'}
               </span>
               <div className={cn(
-                "text-[0.65rem] py-0.5 px-1.5 h-4 rounded-full flex items-center gap-1",
+                "text-[0.65rem] py-0.5 px-1.5 h-4 rounded-full flex items-center gap-1 font-medium",
                 badgeClass[status.variant]
               )}>
                 {status.icon && <span>{status.icon}</span>}

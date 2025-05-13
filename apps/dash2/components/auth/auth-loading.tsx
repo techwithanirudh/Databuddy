@@ -9,8 +9,11 @@ export interface AuthLoadingProps {
 
 export function AuthLoading({ className }: AuthLoadingProps) {
   return (
-    <div className={cn("flex min-h-[400px] items-center justify-center", className)}>
-      <Loader2 className="h-8 w-8 animate-spin text-sky-500" />
+    <div className={cn("flex min-h-screen items-center justify-center bg-background", className)}>
+      <div className="flex flex-col items-center gap-4">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground">Loading...</p>
+      </div>
     </div>
   );
-} 
+}

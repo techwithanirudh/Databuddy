@@ -12,12 +12,10 @@ export default function MainLayout({
 }) {
   const { session, isLoading } = useAuthSession();
 
-  // Show loading state while session is being fetched
   if (isLoading) {
     return <AuthLoading />;
   }
 
-  // Redirect to login if no session
   if (!session) {
     return <RedirectToSignIn />;
   }

@@ -17,7 +17,8 @@ import {
   ChevronLeft,
   Menu,
   Link as LinkIcon,
-  Map as MapIcon
+  Map as MapIcon,
+  MessageCircle
 } from "lucide-react";
 import { useState } from "react";
 import { TopHeader } from "./top-header";
@@ -47,6 +48,7 @@ const mainNavigation: NavigationSection[] = [
       { name: "Settings", icon: <Settings className="h-4 w-4" />, href: "/settings", rootLevel: true },
       { name: "Billing", icon: <CreditCard className="h-4 w-4" />, href: "/billing", rootLevel: true },
       { name: "Roadmap (Trello)", icon: <MapIcon className="h-4 w-4" />, href: "https://trello.com/b/SOUXD4wE/databuddy", rootLevel: true, external: true },
+      { name: "Feedback", icon: <MessageCircle className="h-4 w-4" />, href: "https://databuddy.featurebase.app/", rootLevel: true, external: true },
 
     ],
   },

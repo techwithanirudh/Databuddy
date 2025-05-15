@@ -1,11 +1,10 @@
 "use client";
 
-import { useMeasure } from "@uidotdev/usehooks";
 import { scalePow } from "d3-scale";
 import type { Feature, GeoJsonObject } from "geojson";
 import type { Layer } from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { GeoJSON, MapContainer, useMapEvent } from "react-leaflet";
 import { useCountries, useSubdivisions } from "@/lib/geo";
 import { CountryFlag } from "./icons/CountryFlag";
@@ -26,6 +25,7 @@ interface TooltipPosition {
   y: number;
 }
 
+type MeasureRef = (node: HTMLDivElement | null) => void;
 
 const roundToTwo = (num: number): number => {
   return Math.round((num + Number.EPSILON) * 100) / 100;
@@ -254,7 +254,20 @@ export function MapComponent({
 
   const isLoading = isLocationsLoading || isLocationsFetching;
 
-  const [ref, { height: resolvedHeight }] = useMeasure();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [resolvedHeight, setResolvedHeight] = useState<number>(0);
+  
+  useEffect(() => {
+    const updateHeight = () => {
+      if (containerRef.current) {
+        setResolvedHeight(containerRef.current.clientHeight);
+      }
+    };
+    
+    updateHeight();
+    window.addEventListener('resize', updateHeight);
+    return () => window.removeEventListener('resize', updateHeight);
+  }, []);
 
   const zoom = resolvedHeight ? Math.log2(resolvedHeight / 400) + 1 : 1;
 
@@ -271,7 +284,7 @@ export function MapComponent({
       style={{
         height: height,
       }}
-      ref={ref}
+      ref={containerRef}
       className="relative"
     >
       {isLoading && (

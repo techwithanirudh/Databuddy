@@ -17,6 +17,7 @@ import { getRedisCache } from '@databuddy/redis';
 
 const redis = getRedisCache();
 
+
 const isBot = (userAgent: string): boolean => {
   if (!userAgent) return false;
   const ua = userAgent.toLowerCase();
@@ -93,7 +94,14 @@ basketRouter.use('*', async (c, next) => {
   const language = c.req.header('accept-language')?.split(',')[0] || '';
 
   if (isBot(userAgent)) {
-    redis.incr('bot_requests');
+    const botRequests = await redis.incr('bot_requests');
+    redis.publish('bot_requests', JSON.stringify({
+      userAgent,
+      referrer,
+      url,
+      language,
+      botRequests
+    }));
     logger.info('Skipping bot request', { userAgent });
     return c.json({ status: 'skipped', message: 'Bot request' }, 200);
   }

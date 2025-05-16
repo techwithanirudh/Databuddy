@@ -61,7 +61,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Databuddy Dashboard',
     description: 'Powerful analytics dashboard for your websites. Track visitors, monitor performance, and gain insights into your audience.',
-    images: ['/og-image.jpg'],
+    images: ['/og-image.webp'],
     creator: '@databuddy',
   },
   robots: {

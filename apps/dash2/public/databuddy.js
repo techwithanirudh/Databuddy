@@ -129,7 +129,6 @@
             this.api = new c({
                 baseUrl: this.options.apiUrl,
                 defaultHeaders: headers,
-                // Pass retry config to HTTP client
                 maxRetries: this.options.enableRetries ? (this.options.maxRetries || 3) : 0,
                 initialRetryDelay: this.options.initialRetryDelay || 500
             });
@@ -153,7 +152,6 @@
             this.isTemporarilyHidden = false; // Track if we're just tabbed out or actually leaving
             this.visibilityChangeTimer = null; // Timer for tracking visibility changes
 
-            // Always set up exit tracking for page_exit events
             if (typeof window !== 'undefined') {
                 this.setupExitTracking();
             }
@@ -438,19 +436,13 @@
             };
             
             if (eventName === 'screen_view' || eventName === 'page_view') {
-                // Add performance metrics for page loads if enabled
                 if (!this.isServer() && this.options.trackPerformance) {
-                    // Collect performance timing metrics
                     const performanceData = this.collectNavigationTiming();
                     
-                    // Add them to properties
                     Object.assign(properties ?? {}, performanceData);
                     
-                    // Add vitals if enabled
                     if (this.options.trackWebVitals) {
-                        setTimeout(() => {
-                            this.collectWebVitals(eventName);
-                        }, 1000);
+                        this.initWebVitalsObservers(eventName);
                     }
                 }
             }
@@ -762,15 +754,12 @@
             }
         }
         
-        // Special method for sending exit events reliably
         async sendExitEventImmediately(exitEvent) {
             try {
-                // Try sendBeacon first (most reliable for exit events)
                 const beaconResult = await this.sendBeacon(exitEvent);
                 if (beaconResult) return beaconResult;
                 
-                // Fall back to fetch with keepalive
-                return this.api.fetch("/basket", exitEvent, {
+                return this.api.fetch("/", exitEvent, {
                     keepalive: true,
                 });
             } catch (e) {
@@ -778,79 +767,209 @@
             }
         }
 
-        collectWebVitals(eventName) {
+        initWebVitalsObservers(eventName) {
             if (this.isServer() || !this.options.trackWebVitals || 
-                typeof window.performance === 'undefined') {
+                typeof window.performance === 'undefined' || 
+                typeof PerformanceObserver === 'undefined') {
                 return;
             }
             
             try {
-                // Get FCP (First Contentful Paint)
-                const paintEntries = performance.getEntriesByType('paint');
-                let fcpTime = null;
+                // Store metrics data as they come in
+                const metrics = {
+                    fcp: null,
+                    lcp: null,
+                    cls: 0,
+                    fid: null,
+                    ttfb: null
+                };
+
+                // Only track each metric once per page view
+                let hasReportedVitals = false;
                 
-                for (const entry of paintEntries) {
-                    if (entry.name === 'first-contentful-paint') {
-                        fcpTime = Math.round(entry.startTime);
-                        break;
+                const reportWebVitals = () => {
+                    if (hasReportedVitals) return;
+                    
+                    // Only report if at least one vital has been measured
+                    if (metrics.fcp || metrics.lcp || metrics.cls > 0 || metrics.fid || metrics.ttfb) {
+                        hasReportedVitals = true;
+                        
+                        const pageContext = {
+                            __path: this.lastPath,
+                            __title: document.title,
+                            __referrer: this.global?.__referrer || document.referrer || 'direct'
+                        };
+                        
+                        const viewportInfo = {
+                            screen_resolution: `${window.screen.width}x${window.screen.height}`,
+                            viewport_size: `${window.innerWidth}x${window.innerHeight}`
+                        };
+                        
+                        const timezoneInfo = {
+                            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                            language: navigator.language
+                        };
+                        
+                        const connectionInfo = this.getConnectionInfo();
+                        
+                        this.track('web_vitals', {
+                            __timestamp_ms: Date.now(),
+                            fcp: metrics.fcp,
+                            lcp: metrics.lcp,
+                            cls: metrics.cls ? metrics.cls.toFixed(3) : null,
+                            fid: metrics.fid,
+                            ttfb: metrics.ttfb,
+                            ...pageContext,
+                            ...viewportInfo,
+                            ...timezoneInfo,
+                            ...connectionInfo,
+                        });
+                    }
+                };
+                
+                // TTFB (Time to First Byte)
+                if (window.performance?.getEntriesByType) {
+                    const navEntries = window.performance.getEntriesByType('navigation');
+                    if (navEntries && navEntries.length > 0) {
+                        metrics.ttfb = Math.round(navEntries[0].responseStart);
                     }
                 }
                 
-                // Get LCP (Largest Contentful Paint) if possible
-                let lcpTime = null;
-                if (PerformanceObserver.supportedEntryTypes?.includes('largest-contentful-paint')) {
-                    const lcpEntries = performance.getEntriesByType('largest-contentful-paint');
-                    if (lcpEntries && lcpEntries.length > 0) {
-                        lcpTime = Math.round(lcpEntries[lcpEntries.length - 1].startTime);
-                    }
-                }
-                
-                // Get CLS (Cumulative Layout Shift) if possible
-                let cls = null;
-                if (PerformanceObserver.supportedEntryTypes?.includes('layout-shift')) {
-                    const layoutShifts = performance.getEntriesByType('layout-shift');
-                    if (layoutShifts && layoutShifts.length > 0) {
-                        cls = layoutShifts.reduce((sum, entry) => sum + entry.value, 0).toFixed(3);
-                    }
-                }
-                
-                // Get viewport and screen information
-                const viewportInfo = {
-                    screen_resolution: `${window.screen.width}x${window.screen.height}`,
-                    viewport_size: `${window.innerWidth}x${window.innerHeight}`
-                };
-
-                // Get timezone information
-                const timezoneInfo = {
-                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                    language: navigator.language
-                };
-
-                // Get connection information
-                const connectionInfo = this.getConnectionInfo();
-
-                // Get current page context
-                const pageContext = {
-                    __path: this.lastPath,
-                    __title: document.title,
-                    __referrer: this.global?.__referrer || document.referrer || 'direct'
-                };
-                
-                // Send vitals if we have at least one metric
-                if (fcpTime || lcpTime || cls !== null) {
-                    this.track('web_vitals', {
-                        __timestamp_ms: Date.now(),
-                        fcp: fcpTime,
-                        lcp: lcpTime,
-                        cls: cls,
-                        ...pageContext,
-                        ...viewportInfo,
-                        ...timezoneInfo,
-                        ...connectionInfo,
+                // FCP (First Contentful Paint)
+                if (PerformanceObserver.supportedEntryTypes?.includes('paint')) {
+                    const fcpObserver = new PerformanceObserver((entryList) => {
+                        for (const entry of entryList.getEntries()) {
+                            if (entry.name === 'first-contentful-paint') {
+                                metrics.fcp = Math.round(entry.startTime);
+                                // Report after FCP is available
+                                setTimeout(reportWebVitals, 0);
+                                fcpObserver.disconnect();
+                            }
+                        }
                     });
+                    
+                    fcpObserver.observe({ type: 'paint', buffered: true });
+                } else {
+                    // Fallback for FCP
+                    const paintEntries = performance.getEntriesByType('paint');
+                    for (const entry of paintEntries) {
+                        if (entry.name === 'first-contentful-paint') {
+                            metrics.fcp = Math.round(entry.startTime);
+                            break;
+                        }
+                    }
                 }
+                
+                // LCP (Largest Contentful Paint)
+                if (PerformanceObserver.supportedEntryTypes?.includes('largest-contentful-paint')) {
+                    const lcpObserver = new PerformanceObserver((entryList) => {
+                        const entries = entryList.getEntries();
+                        // Take the latest LCP entry
+                        const lcpEntry = entries[entries.length - 1];
+                        if (lcpEntry) {
+                            metrics.lcp = Math.round(lcpEntry.startTime);
+                            // Report after LCP is available
+                            setTimeout(reportWebVitals, 0);
+                        }
+                    });
+                    
+                    lcpObserver.observe({ type: 'largest-contentful-paint', buffered: true });
+                    
+                    // LCP should be finalized when the page is backgrounded or unloaded
+                    for (const type of ['visibilitychange', 'pagehide']) {
+                        document.addEventListener(type, () => {
+                            if (document.visibilityState === 'hidden' || type === 'pagehide') {
+                                lcpObserver.disconnect();
+                                // Final report when page is hidden
+                                reportWebVitals();
+                            }
+                        }, { once: true, capture: true });
+                    }
+                }
+                
+                // CLS (Cumulative Layout Shift)
+                if (PerformanceObserver.supportedEntryTypes?.includes('layout-shift')) {
+                    let clsValue = 0;
+                    let clsEntries = [];
+                    let sessionValue = 0;
+                    let sessionEntries = [];
+                    let sessionStart = 0;
+                    
+                    const clsObserver = new PerformanceObserver((entryList) => {
+                        for (const entry of entryList.getEntries()) {
+                            // Only count CLS if the user wasn't interacting
+                            if (!entry.hadRecentInput) {
+                                const now = entry.startTime;
+                                
+                                // If this is a new session or continuing the current one
+                                if (sessionValue === 0 || now - sessionStart < 1000) {
+                                    sessionValue += entry.value;
+                                    sessionEntries.push(entry);
+                                    sessionStart = now;
+                                } else {
+                                    // This is a new session
+                                    // Check if this session is larger than the current max
+                                    if (sessionValue > clsValue) {
+                                        clsValue = sessionValue;
+                                        clsEntries = sessionEntries;
+                                    }
+                                    
+                                    // Reset for new session
+                                    sessionValue = entry.value;
+                                    sessionEntries = [entry];
+                                    sessionStart = now;
+                                }
+                            }
+                        }
+                        
+                        // Update current max value
+                        if (sessionValue > clsValue) {
+                            clsValue = sessionValue;
+                            clsEntries = sessionEntries;
+                        }
+                        
+                        metrics.cls = clsValue;
+                    });
+                    
+                    clsObserver.observe({ type: 'layout-shift', buffered: true });
+                    
+                    // Report final CLS when page is hidden or unloaded
+                    for (const type of ['visibilitychange', 'pagehide']) {
+                        document.addEventListener(type, () => {
+                            if (document.visibilityState === 'hidden' || type === 'pagehide') {
+                                clsObserver.disconnect();
+                                // Update latest value and report
+                                metrics.cls = clsValue;
+                                reportWebVitals();
+                            }
+                        }, { once: true, capture: true });
+                    }
+                }
+                
+                // FID (First Input Delay)
+                if (PerformanceObserver.supportedEntryTypes?.includes('first-input')) {
+                    const fidObserver = new PerformanceObserver((entryList) => {
+                        const entry = entryList.getEntries()[0];
+                        if (entry) {
+                            // FID is the delta between when input received and processing started
+                            metrics.fid = Math.round(entry.processingStart - entry.startTime);
+                            fidObserver.disconnect();
+                            // Report after FID is available
+                            setTimeout(reportWebVitals, 0);
+                        }
+                    });
+                    
+                    fidObserver.observe({ type: 'first-input', buffered: true });
+                }
+                
+                // Ensure we send a report even if not all metrics are collected
+                // Set a final timeout to capture whatever metrics we have
+                setTimeout(() => {
+                    reportWebVitals();
+                }, 10000); // 10 seconds is a reasonable upper limit
+
             } catch (e) {
-                // Ignore errors
+                // Silently fail if there's an error with performance monitoring
             }
         }
 
@@ -865,29 +984,24 @@
         trackCustomEvent(eventName, properties = {}) {
             if (this.isServer()) return;
             
-            // Get current page context
             const pageContext = {
                 __path: window.location.href,
                 __title: document.title,
                 __referrer: this.global?.__referrer || document.referrer || 'direct'
             };
 
-            // Get viewport and screen information
             const viewportInfo = {
                 screen_resolution: `${window.screen.width}x${window.screen.height}`,
                 viewport_size: `${window.innerWidth}x${window.innerHeight}`
             };
 
-            // Get timezone information
             const timezoneInfo = {
                 timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
                 language: navigator.language
             };
 
-            // Get connection information
             const connectionInfo = this.getConnectionInfo();
 
-            // Track the custom event with all context
             this.track(eventName, {
                 __timestamp_ms: Date.now(),
                 ...properties,
@@ -913,18 +1027,15 @@
             
             if (this.isServer()) return;
             
-            // Set global properties with configurable anonymized flag
             this.setGlobalProperties({
                 __anonymized: t.anonymized !== false // Default to true unless explicitly set to false
             });
             
-            // Set up screen view tracking if enabled
             if (this.options.trackScreenViews) {
                 this.trackScreenViews();
                 setTimeout(() => this.screenView(), 0);
             }
             
-            // Set up other tracking capabilities if enabled
             if (this.options.trackOutgoingLinks) {
                 this.trackOutgoingLinks();
             }
@@ -933,7 +1044,6 @@
                 this.trackAttributes();
             }
             
-            // Initialize the tracker
             this.init();
         }
         debounce(t, r) {
@@ -1075,27 +1185,20 @@
             return scripts[scripts.length - 1];
         })();
         
-        // Get configuration from various sources
         function getConfig() {
-            // Check if a global configuration object exists
             const globalConfig = window.databuddyConfig || {};
             
-            // If no current script found, return global config
             if (!currentScript) {
                 return globalConfig;
             }
             
-            // Get all data attributes
             const dataAttributes = {};
             for (const attr of currentScript.attributes) {
                 if (attr.name.startsWith('data-')) {
-                    // Convert kebab-case to camelCase
                     const key = attr.name.substring(5).replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
                     
-                    // Get the raw value
                     const value = attr.value;
                     
-                    // Only convert to number if it's a numeric string
                     if (value === 'true') {
                         dataAttributes[key] = true;
                     } else if (value === 'false') {
@@ -1108,14 +1211,12 @@
                 }
             }
             
-            // Extract URL parameters from script src
             const urlParams = {};
             try {
                 const srcUrl = new URL(currentScript.src);
                 const params = new URLSearchParams(srcUrl.search);
                 
                 params.forEach((value, key) => {
-                    // Only convert to number if it's a numeric string
                     if (value === 'true') {
                         urlParams[key] = true;
                     } else if (value === 'false') {
@@ -1127,47 +1228,38 @@
                     }
                 });
             } catch (e) {
-                // Ignore URL parsing errors
             }
             
-            // Handle specific numeric configurations with range validation
             const config = {
                 ...globalConfig,
                 ...urlParams,
                 ...dataAttributes
             };
             
-            // Ensure sampling rate is a valid proportion between 0 and 1
             if (config.samplingRate !== undefined) {
                 if (config.samplingRate < 0) config.samplingRate = 0;
                 if (config.samplingRate > 1) config.samplingRate = 1;
             }
             
-            // Ensure maxRetries is non-negative
             if (config.maxRetries !== undefined && config.maxRetries < 0) {
                 config.maxRetries = 0;
             }
             
-            // Ensure initialRetryDelay is reasonable (50-10000ms)
             if (config.initialRetryDelay !== undefined) {
                 if (config.initialRetryDelay < 50) config.initialRetryDelay = 50;
                 if (config.initialRetryDelay > 10000) config.initialRetryDelay = 10000;
             }
             
-            // Validate batching configuration
             if (config.batchSize !== undefined) {
-                // Keep batch size between 1 and 50
                 if (config.batchSize < 1) config.batchSize = 1;
                 if (config.batchSize > 50) config.batchSize = 50;
             }
             
             if (config.batchTimeout !== undefined) {
-                // Keep batch timeout between 100ms and 30000ms (30 seconds)
                 if (config.batchTimeout < 100) config.batchTimeout = 100;
                 if (config.batchTimeout > 30000) config.batchTimeout = 30000;
             }
 
-            // Validate API URL
             if (!config.apiUrl) {
                 config.apiUrl = "https://basket.databuddy.cc";
             } else {
@@ -1181,14 +1273,11 @@
             return config;
         }
         
-        // Extract client ID from config or data-* attributes
         function getClientId(config) {
-            // First check for clientId in merged config
             if (config.clientId) {
                 return config.clientId;
             }
             
-            // Then check for data-client-id attr directly (for backwards compatibility)
             if (currentScript?.getAttribute('data-client-id')) {
                 return currentScript.getAttribute('data-client-id');
             }
@@ -1197,20 +1286,16 @@
         }
         
         function init() {
-            // Get merged configuration
             const config = getConfig();
             const clientId = getClientId(config);
             
-            // Don't initialize without a client ID
             if (!clientId) return;
             
-            // Initialize the tracker with the merged configuration
             window.databuddy = new d({
                 ...config,
                 clientId
             });
             
-            // Expose API to window.db function
             window.db = (method, ...args) => {
                 if (window.databuddy && typeof window.databuddy[method] === 'function') {
                     return window.databuddy[method](...args);
@@ -1218,7 +1303,6 @@
             };
         }
         
-        // Initialize immediately or on DOM ready
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', init);
         } else {
@@ -1226,28 +1310,22 @@
         }
     }
     
-    // Auto-initialize when script is loaded
     initializeDatabuddy();
     
-    // Export library for module use cases
     if (typeof window !== 'undefined') {
         window.Databuddy = d;
     } else if (typeof exports === 'object') {
         module.exports = d;
     }
 
-    // When page is being unloaded, flush any pending batches
     let visibilityChangeTimeout;
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'hidden' && window.databuddy) {
-            // Clear any existing timeout
             if (visibilityChangeTimeout) {
                 clearTimeout(visibilityChangeTimeout);
             }
             
-            // Set a new timeout to check if we're still hidden after a delay
             visibilityChangeTimeout = setTimeout(() => {
-                // Only flush batches, don't track exit
                 if (document.visibilityState === 'hidden') {
                     if (window.databuddy.options.enableBatching) {
                         window.databuddy.flushBatch();
@@ -1255,18 +1333,15 @@
                 }
             }, 1000);
             
-            // Mark as temporarily hidden
             if (window.databuddy) {
                 window.databuddy.isTemporarilyHidden = true;
             }
         } else if (document.visibilityState === 'visible' && window.databuddy) {
-            // User came back to the page, clear the timeout
             if (visibilityChangeTimeout) {
                 clearTimeout(visibilityChangeTimeout);
                 visibilityChangeTimeout = null;
             }
             
-            // Reset temporarily hidden flag
             if (window.databuddy) {
                 window.databuddy.isTemporarilyHidden = false;
             }
@@ -1275,7 +1350,6 @@
 
     window.addEventListener('pagehide', () => {
         if (window.databuddy) {
-            // Clear any pending visibility change timeout
             if (visibilityChangeTimeout) {
                 clearTimeout(visibilityChangeTimeout);
             }
@@ -1284,14 +1358,12 @@
                 window.databuddy.flushBatch();
             }
             
-            // Mark as actually leaving the page, not just tabbing out
             if (window.databuddy) {
                 window.databuddy.isTemporarilyHidden = false;
             }
         }
     });
     
-    // Also handle the beforeunload event as a last resort
     window.addEventListener('beforeunload', () => {
         if (window.databuddy) {
             // Clear any pending visibility change timeout

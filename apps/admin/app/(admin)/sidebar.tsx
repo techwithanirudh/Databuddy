@@ -9,12 +9,14 @@ import {
   Settings,
   LayoutDashboard,
   UserCircle,
+  Activity,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const navLinks = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/events", label: "Events", icon: Activity },
   { href: "/users", label: "Users", icon: Users },
   { href: "/websites", label: "Websites", icon: Globe },
   { href: "/domains", label: "Domains", icon: Network },

@@ -80,7 +80,8 @@ export function getClientIp(req: Request): string | undefined {
 // Main function to get geo location from request
 export async function parseIp(req: Request): Promise<GeoLocation> {
   const ip = getClientIp(req);
-  return getGeoLocation(ip || '');
+  const anonymizedIp = anonymizeIp(ip || '');
+  return getGeoLocation(anonymizedIp);
 }
 
 /**
@@ -111,7 +112,7 @@ export function anonymizeIp(ip: string): string {
 export async function getGeoData(ip: string): Promise<GeoLocation> {
   const geo = await getGeoLocation(ip);
   return {
-    ip: geo.ip,
+    ip: anonymizeIp(ip),
     city: geo.city,
     region: geo.region,
     country: geo.country,

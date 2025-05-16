@@ -1169,11 +1169,12 @@
 
             // Validate API URL
             if (!config.apiUrl) {
+                config.apiUrl = "https://basket.databuddy.cc";
             } else {
                 try {
                     new URL(config.apiUrl);
                 } catch (e) {
-                    config.apiUrl = undefined;
+                    config.apiUrl = "https://basket.databuddy.cc";
                 }
             }
             

@@ -25,7 +25,7 @@ const DEFAULT_GEO: GeoLocation = {
   timezone: undefined,
 };
 
-const ignore = ['127.0.0.1', '::1'];
+const ignore = ['127.0.0.1', '::1', '0.0.0.0', '192.168.0.0/16', '172.16.0.0/12', '10.0.0.0/8', 'localhost', 'local'];
 
 const IPINFO_TOKEN = process.env.IPINFO_TOKEN;
 

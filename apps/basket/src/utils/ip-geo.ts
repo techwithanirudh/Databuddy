@@ -2,7 +2,6 @@ import { cacheable } from '@databuddy/redis';
 import { z } from 'zod';
 import { logger } from '../lib/logger';
 
-
 const GeoLocationSchema = z.object({
   ip: z.string(),
   city: z.string().optional(),
@@ -25,27 +24,50 @@ const DEFAULT_GEO: GeoLocation = {
   timezone: undefined,
 };
 
-const ignore = ['127.0.0.1', '::1', '0.0.0.0', '192.168.0.0/16', '172.16.0.0/12', '10.0.0.0/8', 'localhost', 'local'];
+const PRIVATE_IPS = [
+  '127.0.0.1',
+  '::1',
+  '0.0.0.0',
+  '192.168.0.0/16',
+  '172.16.0.0/12', 
+  '10.0.0.0/8',
+  'localhost',
+  'local'
+];
 
 const IPINFO_TOKEN = process.env.IPINFO_TOKEN;
+const IPINFO_TIMEOUT = 4000;
+const CACHE_DURATION = 60 * 60 * 24; // 24 hours
+const STALE_TIME = 60 * 60 * 12; // 12 hours
 
-function urlConstructor(ip: string) {
+function constructIpInfoUrl(ip: string): string {
+  if (!IPINFO_TOKEN) {
+    throw new Error('IPINFO_TOKEN is not configured');
+  }
   return `https://ipinfo.io/${ip}?token=${IPINFO_TOKEN}`;
 }
 
 async function fetchIpGeo(ip: string): Promise<GeoLocation> {
-  if (!ip || ignore.includes(ip)) {
+  if (!ip || PRIVATE_IPS.includes(ip)) {
     return DEFAULT_GEO;
   }
 
   try {
-    const url = urlConstructor(ip);
+    const url = constructIpInfoUrl(ip);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), IPINFO_TIMEOUT);
+
     const response = await fetch(url, {
-      signal: AbortSignal.timeout(4000),
+      signal: controller.signal
     });
 
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
-      logger.warn('Failed to fetch geo location', { status: response.status });
+      logger.warn('Failed to fetch geo location', { 
+        status: response.status,
+        ip 
+      });
       return DEFAULT_GEO;
     }
 
@@ -53,63 +75,63 @@ async function fetchIpGeo(ip: string): Promise<GeoLocation> {
     const parsed = GeoLocationSchema.safeParse(data);
 
     if (!parsed.success) {
-      logger.warn('Invalid geo location data', { error: parsed.error });
+      logger.warn('Invalid geo location data', { 
+        error: parsed.error,
+        ip
+      });
       return DEFAULT_GEO;
     }
 
     return parsed.data;
   } catch (error) {
-    logger.error('Error fetching geo location', { error });
+    logger.error('Error fetching geo location', { 
+      error,
+      ip 
+    });
     return DEFAULT_GEO;
   }
 }
 
-// Cache geo location data for 24 hours
 export const getGeoLocation = cacheable(fetchIpGeo, {
-  expireInSec: 60 * 60 * 24,
+  expireInSec: CACHE_DURATION,
   prefix: 'geo',
   staleWhileRevalidate: true,
-  staleTime: 60 * 60 * 12, // Start revalidating after 12 hours
+  staleTime: STALE_TIME,
 });
 
-// Helper to get client IP from request
 export function getClientIp(req: Request): string | undefined {
-  return req.headers.get('cf-connecting-ip') || undefined;
+  const ip = req.headers.get('cf-connecting-ip') || 
+             req.headers.get('x-forwarded-for')?.split(',')[0] ||
+             req.headers.get('x-real-ip');
+  return ip || undefined;
 }
 
-// Main function to get geo location from request
-export async function parseIp(req: Request): Promise<GeoLocation> {
-  const ip = getClientIp(req);
-  const anonymizedIp = anonymizeIp(ip || '');
-  return getGeoLocation(anonymizedIp);
-}
-
-/**
- * Anonymizes an IP address by removing the last octet for IPv4 
- * or the last 80 bits for IPv6
- */
 export function anonymizeIp(ip: string): string {
-  if (!ip) {
-    return '';
-  }
+  if (!ip) return '';
 
-  // Check if it's IPv4
   if (ip.includes('.')) {
-    // Replace last octet with zeros
     return ip.replace(/\.\d+$/, '.0');
-  } 
-  // Handle IPv6
+  }
+  
   if (ip.includes(':')) {
-    // Keep first 48 bits (first 3 groups), zero out the rest
     const parts = ip.split(':');
-    const anonymized = parts.slice(0, 3).concat(Array(parts.length - 3).fill('0000')).join(':');
-    return anonymized;
+    return parts.slice(0, 3).concat(Array(parts.length - 3).fill('0000')).join(':');
   }
   
   return ip;
 }
 
+export async function parseIp(req: Request): Promise<GeoLocation> {
+  const ip = getClientIp(req);
+  if (!ip) return DEFAULT_GEO;
+  
+  const anonymizedIp = anonymizeIp(ip);
+  return getGeoLocation(anonymizedIp);
+}
+
 export async function getGeoData(ip: string): Promise<GeoLocation> {
+  if (!ip) return DEFAULT_GEO;
+  
   const geo = await getGeoLocation(ip);
   return {
     ip: anonymizeIp(ip),
@@ -121,4 +143,3 @@ export async function getGeoData(ip: string): Promise<GeoLocation> {
     timezone: geo.timezone,
   };
 }
-

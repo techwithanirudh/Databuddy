@@ -86,11 +86,11 @@ export function StatCard({
       <Card className={cn("overflow-hidden", className)}>
         <div className="p-2">
           <div className="flex items-center justify-between">
-            <Skeleton className="h-3 w-16" />
-            {Icon && <Skeleton className="h-3 w-3 rounded-full" />}
+            <Skeleton className="h-4 w-20" />
+            {Icon && <Skeleton className="h-4 w-4 rounded-full" />}
           </div>
-          <Skeleton className="h-5 w-12 mt-1.5" />
-          <Skeleton className="h-2.5 w-16 mt-1" />
+          <Skeleton className="h-7 w-20 mt-2" />
+          <Skeleton className="h-3 w-16 mt-2" />
         </div>
       </Card>
     );
@@ -103,19 +103,19 @@ export function StatCard({
     <Card className={cn("overflow-hidden transition-all hover:shadow-md py-1 sm:py-2", getVariantClasses(), className)}>
       <div className="p-1 sm:p-2">
         <div className="flex items-center justify-between">
-          <p className="text-[9px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-tight line-clamp-1">{title}</p>
+          <p className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-tight line-clamp-1">{title}</p>
           {Icon && (
-            <Icon className="h-3 w-3 text-muted-foreground ml-1 flex-shrink-0" />
+            <Icon className="h-4 w-4 text-muted-foreground ml-1 flex-shrink-0" />
           )}
         </div>
         <div className={cn(
           "font-bold leading-none mt-1 sm:mt-1.5",
-          isTimeValue ? "text-xs sm:text-sm" : "text-sm sm:text-base",
-          typeof value === 'string' && value.length > 8 ? "text-xs" : ""
+          isTimeValue ? "text-sm sm:text-base" : "text-lg sm:text-xl",
+          typeof value === 'string' && value.length > 8 ? "text-sm sm:text-base" : ""
         )}>
           {formatValue(value)}
         </div>
-        <div className="flex items-center text-[9px] sm:text-[10px] mt-1 leading-none">
+        <div className="flex items-center text-[10px] sm:text-xs mt-1 leading-none">
           {trend !== undefined && !Number.isNaN(trend) && (
             <span className={cn("font-medium whitespace-nowrap", getTrendColor())}>
               {trend > 0 ? "↑" : trend < 0 ? "↓" : "→"} {Math.abs(trend)}%

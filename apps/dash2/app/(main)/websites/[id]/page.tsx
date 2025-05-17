@@ -6,11 +6,8 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { 
   ArrowLeft, 
-  ExternalLink, 
-  Pencil, 
   RefreshCw,
   Calendar,
-  ChevronDown,
   AlertTriangle
 } from "lucide-react";
 
@@ -441,31 +438,6 @@ function WebsiteDetailsPage() {
     <div className="p-3 max-w-[1600px] mx-auto">
       {/* Compact header */}
       <header className="border-b pb-3">
-        {/* <div className="flex justify-between items-center mb-2.5">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => router.push("/websites")}
-              className="h-8 w-8 cursor-pointer hover:bg-gray-100 -ml-1"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div>
-              <h1 className="text-xl font-semibold leading-tight">{data.name || "Unnamed Website"}</h1>
-              <a
-                href={data.domain}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 cursor-pointer"
-              >
-                {data.domain}
-                <ExternalLink className="h-3 w-3" />
-              </a>
-            </div>
-          </div>
-        </div> */}
-        
         {/* Controls */}
         <div className="flex items-center gap-3 flex-wrap mt-3 bg-muted/30 rounded-lg p-2.5 border">
           {/* Time granularity toggle */}

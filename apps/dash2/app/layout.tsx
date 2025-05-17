@@ -7,8 +7,6 @@ import { Toaster } from "sonner";
 import Providers from "./providers";
 import Script from "next/script";
 
-import { Databuddy } from "@databuddy/sdk";
-
 const inter = Inter({
   subsets: ["latin"],
   display: "swap",
@@ -109,14 +107,8 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className={`${inter.variable} ${jetbrainsMono.variable} h-full`}>
       <head />
-      <Databuddy 
-        clientId={isLocalhost ? "5ced32e5-0219-4e75-a18a-ad9826f85698" : "3ed1fce1-5a56-4cb6-a977-66864f6d18e3"} 
-        trackScreenViews 
-        trackPerformance 
-        trackErrors 
-        batchSize={20}
-      /> 
-      {/* <Script
+      <Databuddy/>
+      <Script
         src={isLocalhost ? "http://localhost:3000/databuddy.js" : "https://app.databuddy.cc/databuddy.js"}
         data-client-id={isLocalhost ? "5ced32e5-0219-4e75-a18a-ad9826f85698" : "3ed1fce1-5a56-4cb6-a977-66864f6d18e3"}
         // data-api-url={isLocalhost ? "https://basket.databuddy.cc" : "https://basket.databuddy.cc"}
@@ -128,7 +120,7 @@ export default function RootLayout({
         // data-batch-timeout="5000"
         strategy="afterInteractive"
         defer
-      /> */}
+      />
       <body className="antialiased h-full min-h-screen bg-background text-foreground flex flex-col">
         <Providers>
           <NextTopLoader 

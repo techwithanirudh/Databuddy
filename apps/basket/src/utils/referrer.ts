@@ -5,6 +5,7 @@
  */
 
 import referrers from '../lists/referrers';
+import { parse } from 'tldts';
 
 export interface ReferrerInfo {
   type: string;
@@ -13,101 +14,94 @@ export interface ReferrerInfo {
   domain: string;
 }
 
-/**
- * Parse a referrer URL to identify its source
- */
-export function parseReferrer(referrerUrl: string | null | undefined): ReferrerInfo {
-  if (!referrerUrl) {
-    return {
-      type: 'direct',
-      name: 'Direct',
-      url: '',
-      domain: '',
-    };
-  }
-  
-  try {
-    // Parse URL to get hostname
-    const url = new URL(referrerUrl);
-    const hostname = url.hostname;
-    
-    // Try to match against known referrers
-    const referrerMatch = getReferrerByDomain(hostname);
-    
-    if (referrerMatch) {
-      return {
-        type: referrerMatch.type,
-        name: referrerMatch.name,
-        url: referrerUrl,
-        domain: hostname,
-      };
-    }
-    
-    // Try to identify type by URL pattern
-    if (url.searchParams.has('q') || url.searchParams.has('query') || url.searchParams.has('search')) {
-      return {
-        type: 'search',
-        name: hostname,
-        url: referrerUrl,
-        domain: hostname,
-      };
-    }
-    
-    // Default to unknown with domain name
-    return {
-      type: 'unknown',
-      name: hostname,
-      url: referrerUrl,
-      domain: hostname,
-    };
-  } catch (error) {
-    // If URL is invalid, treat as direct traffic
-    return {
-      type: 'direct',
-      name: 'Direct',
-      url: referrerUrl,
-      domain: '',
-    };
-  }
+const SEARCH_PARAMS = ['q', 'query', 'search', 'p', 's', 'search_query', 'wd', 'text'];
+
+// Ensures URL has a protocol for tldts parsing
+function normalizeUrl(url: string): string {
+  return url.startsWith('http') ? url : `https://${url}`;
 }
 
-/**
- * Find a referrer by domain in the referrers database
- */
-function getReferrerByDomain(domain: string): { type: string; name: string } | null {
-  // Check exact match first
-  if (domain in referrers) {
-    return referrers[domain];
+export function parseReferrer(referrerUrl: string | null | undefined): ReferrerInfo {
+  if (!referrerUrl) {
+    return { type: 'direct', name: 'Direct', url: '', domain: '' };
   }
-  
-  // Try to match with domain parts (e.g., subdomain.example.com might match example.com)
-  const domainParts = domain.split('.');
-  for (let i = 1; i < domainParts.length - 1; i++) {
-    const partialDomain = domainParts.slice(i).join('.');
-    if (partialDomain in referrers) {
-      return referrers[partialDomain];
+
+  try {
+    const normalizedUrl = normalizeUrl(referrerUrl);
+    const parsedResult = parse(normalizedUrl);
+
+    // Extract hostname and domain, convert to lowercase for consistent matching
+    // tldts should provide Punycode for IDNs in these fields.
+    const tldtsHostname = parsedResult.hostname ? parsedResult.hostname.toLowerCase() : null;
+    const tldtsDomain = parsedResult.domain ? parsedResult.domain.toLowerCase() : null;
+
+    if (!tldtsHostname) {
+      // If tldts cannot extract a hostname, treat as unknown with original URL string
+      return { type: 'unknown', name: referrerUrl, url: referrerUrl, domain: referrerUrl };
     }
+
+    // Special case for inputs like "example.com:" that tldts might "fix" to "example.com"
+    // The tests expect the original string in these cases.
+    const originalHostnamePart = referrerUrl.includes('://') 
+      ? referrerUrl.substring(referrerUrl.indexOf('://') + 3)
+      : referrerUrl;
+    
+    const isSimpleHostWithColon = originalHostnamePart.endsWith(':') && 
+                                  !originalHostnamePart.substring(0, originalHostnamePart.length - 1).includes('/') && 
+                                  !originalHostnamePart.substring(0, originalHostnamePart.length - 1).includes('?');
+
+    if (isSimpleHostWithColon && tldtsHostname && !tldtsHostname.endsWith(':')) {
+      return { type: 'unknown', name: referrerUrl, url: referrerUrl, domain: referrerUrl };
+    }
+    
+    // Check if it's a known referrer (full hostname match takes precedence)
+    if (tldtsHostname && tldtsHostname in referrers) {
+      return { ...referrers[tldtsHostname], url: referrerUrl, domain: tldtsHostname };
+    }
+    // Check if it's a known referrer by base domain
+    if (tldtsDomain && tldtsDomain in referrers) {
+      return { ...referrers[tldtsDomain], url: referrerUrl, domain: tldtsHostname }; // Use full hostname for domain
+    }
+    
+    // Check for search parameters in the original normalized URL
+    const hasSearchParams = SEARCH_PARAMS.some(param => 
+      normalizedUrl.toLowerCase().includes(`?${param.toLowerCase()}=`) || 
+      normalizedUrl.toLowerCase().includes(`&${param.toLowerCase()}=`)
+    );
+    
+    if (hasSearchParams) {
+      return {
+        type: 'search',
+        name: tldtsHostname, // Full hostname for name
+        url: referrerUrl,
+        domain: tldtsDomain || tldtsHostname, // Base domain for search, fallback to full
+      };
+    }
+    
+    // Default to unknown
+    return {
+      type: 'unknown',
+      name: tldtsHostname, // Full hostname for name
+      url: referrerUrl,
+      domain: tldtsDomain || tldtsHostname, // Base domain for unknown, fallback to full
+    };
+  } catch (e) {
+    // Catch-all for any errors during parsing
+    return { type: 'unknown', name: referrerUrl, url: referrerUrl, domain: referrerUrl };
   }
-  
-  return null;
 }
 
 /**
  * Categorize referrer sources into main categories
  */
-export function categorizeReferrer(referrerInfo: ReferrerInfo): string {
-  switch (referrerInfo.type) {
-    case 'search':
-      return 'Search Engine';
-    case 'social':
-      return 'Social Media';
-    case 'email':
-      return 'Email';
-    case 'ads':
-      return 'Advertising';
-    case 'direct':
-      return 'Direct';
-    default:
-      return 'Other';
-  }
+export function categorizeReferrer({ type }: ReferrerInfo): string {
+  const categories: Record<string, string> = {
+    search: 'Search Engine',
+    social: 'Social Media',
+    email: 'Email',
+    ads: 'Advertising',
+    direct: 'Direct'
+  };
+  
+  return categories[type] || 'Other';
 } 

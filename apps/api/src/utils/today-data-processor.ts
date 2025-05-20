@@ -47,95 +47,71 @@ export function mergeTodayDataIntoSummary(
  */
 export function updateEventsWithTodayData(
   eventsByDate: any[],
-  todayData: TodayData | null,
+  todayData: TodayData | null, // This is the daily summary
   granularity: 'hourly' | 'daily' = 'daily'
 ): any[] {
+  // If granularity is hourly, we trust the eventsByDate from the hourly builder.
+  // The daily summary (todayData) should not be used to alter granular hourly data.
+  if (granularity === 'hourly') {
+    // The createEventsByDateBuilder('hourly') should provide a complete
+    // and accurate list of hourly data points, including zeros for inactive hours,
+    // for the specified date range. We return this list as is, by returning a copy.
+    return [...eventsByDate];
+  }
+
+  // Daily granularity logic (largely the same as before):
+  // Update the single 'today' entry in eventsByDate using the daily todayData.
   if (!todayData) {
-    return eventsByDate;
+    return [...eventsByDate]; // Return copy if no todayData for daily processing
   }
 
   const updatedEvents = [...eventsByDate];
-  const today = new Date().toISOString().split('T')[0];
-  const currentHour = getCurrentHourFormatted();
+  const todayDateString = new Date().toISOString().split('T')[0];
+  const todayIndex = updatedEvents.findIndex(day => day.date?.substring(0, 10) === todayDateString);
 
-  // For hourly granularity, we need to update each hour separately
-  if (granularity === 'hourly') {
-    // Only update the current hour with real-time data
-    const currentHourIndex = updatedEvents.findIndex(entry => 
-      entry.date === currentHour
-    );
+  const dailyStats = {
+    date: todayDateString,
+    pageviews: todayData.pageviews || 0,
+    unique_visitors: todayData.visitors || 0, // todayData.visitors is used for unique_visitors field
+    visitors: todayData.visitors || 0,
+    sessions: todayData.sessions || 0,
+    bounce_rate: todayData.bounce_rate || 0,
+    bounce_rate_pct: `${Math.round((todayData.bounce_rate || 0) * 10) / 10}%`,
+    avg_session_duration: todayData.avg_session_duration || 0,
+    avg_session_duration_formatted: formatAvgSessionDuration(todayData.avg_session_duration || 0)
+  };
 
-    // Create hourly stats object
-    const hourlyStats = {
-      date: currentHour,
-      pageviews: todayData.pageviews || 0,
-      unique_visitors: todayData.visitors || 0,
-      visitors: todayData.visitors || 0,
-      sessions: todayData.sessions || 0,
-      bounce_rate: todayData.bounce_rate || 0,
-      bounce_rate_pct: `${Math.round((todayData.bounce_rate || 0) * 10) / 10}%`,
-      avg_session_duration: todayData.avg_session_duration || 0,
-      avg_session_duration_formatted: formatAvgSessionDuration(todayData.avg_session_duration || 0)
-    };
-
-    if (currentHourIndex >= 0) {
-      // Replace the current hour's entry with our real-time data
-      updatedEvents[currentHourIndex] = hourlyStats;
-    } else {
-      // Add current hour if it doesn't exist
-      updatedEvents.push(hourlyStats);
-    }
+  if (todayIndex >= 0) {
+    updatedEvents[todayIndex] = dailyStats;
   } else {
-    // For daily granularity, update/add just today's entry
-    const todayIndex = updatedEvents.findIndex(day => day.date?.substring(0, 10) === today);
-
-    // Create daily stats object
-    const dailyStats = {
-      date: today,
-      pageviews: todayData.pageviews || 0,
-      unique_visitors: todayData.visitors || 0,
-      visitors: todayData.visitors || 0,
-      sessions: todayData.sessions || 0,
-      bounce_rate: todayData.bounce_rate || 0,
-      bounce_rate_pct: `${Math.round((todayData.bounce_rate || 0) * 10) / 10}%`,
-      avg_session_duration: todayData.avg_session_duration || 0,
-      avg_session_duration_formatted: formatAvgSessionDuration(todayData.avg_session_duration || 0)
-    };
-
-    if (todayIndex >= 0) {
-      // Replace existing entry with today's data
-      updatedEvents[todayIndex] = dailyStats;
-    } else {
-      // Add today if it doesn't exist
-      updatedEvents.push(dailyStats);
-    }
+    // If today's entry doesn't exist in eventsByDate, add it.
+    updatedEvents.push(dailyStats);
   }
-
   return updatedEvents;
 }
 
 /**
  * Merge today's data into trend data results
- * We need to replace today's entry, not add to it
+ * We need to replace today's entry, not add to it, for daily.
+ * For hourly, we preserve the original hourly trend data.
  */
 export function mergeTodayIntoTrends(
   trendData: any[],
-  todayData: TodayData | null,
+  todayData: TodayData | null, // Daily summary
   granularity: 'hourly' | 'daily'
 ): any[] {
   if (!todayData) {
-    return trendData;
+    // If no todayData, return a copy of the original trendData.
+    return trendData.map(entry => ({ ...entry }));
   }
+
+  // const currentHour = getCurrentHourFormatted(); // Not strictly needed with the revised logic
 
   return trendData.map(entry => {
     const entryDateString = entry.date.toString();
-    const currentHour = getCurrentHourFormatted();
     
-    // Check if this entry corresponds to today
-    if ((granularity === 'daily' && isToday(entryDateString)) ||
-        (granularity === 'hourly' && entryDateString === currentHour)) {
-      
-      // Replace with today's data, not add to it
+    // For daily trends, if the entry is for today, replace its metrics with todayData (daily summary).
+    if (granularity === 'daily' && isToday(entryDateString)) {
       return {
         ...entry,
         pageviews: todayData.pageviews || 0,
@@ -149,6 +125,9 @@ export function mergeTodayIntoTrends(
       };
     }
     
-    return entry;
+    // For hourly trends, or for daily trends not matching today,
+    // we return a copy of the original entry.
+    // The daily `todayData` is not used to modify granular hourly trend data.
+    return { ...entry };
   });
 }

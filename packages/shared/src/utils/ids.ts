@@ -1,4 +1,5 @@
-import { randomUUID } from 'node:crypto';
+
+import { randomUUID } from 'crypto';
 import { nanoid } from 'nanoid';
 
 export type IdType = 'UUID' | 'NANOID';

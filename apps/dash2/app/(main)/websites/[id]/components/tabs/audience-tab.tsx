@@ -11,18 +11,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Globe, Laptop, Smartphone, Tablet, Monitor, HelpCircle, Languages, Wifi, WifiOff } from 'lucide-react';
 import { getLanguageName } from "@databuddy/shared";
 
-// Define the structure for API entries (mirroring overview-tab.tsx)
-interface ApiBrowserVersionEntry {
-  browser_name?: string;
-  browser?: string;
-  browser_version?: string;
-  version?: string;
-  os_name?: string;
-  os_version?: string;
-  count: number;
-  visitors: number;
-}
-
 interface DeviceTypeEntry {
   device_type: string;
   device_brand: string;

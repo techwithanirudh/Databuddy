@@ -7,7 +7,8 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
-import { chQuery, createSqlBuilder } from '../clickhouse/client';
+import { chQuery } from '@databuddy/db';
+import { createSqlBuilder } from '../clickhouse/client';
 import type { AppVariables } from '../types';
 import { authMiddleware } from '../middleware/auth';
 import { UAParser } from 'ua-parser-js';
@@ -214,7 +215,7 @@ analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async
     const todayUniqueVisitorsBuilder = createSqlBuilder('events');
     
     todayUniqueVisitorsBuilder.sb.select = {
-      unique_visitors: 'COUNT(DISTINCT anonymous_id) as unique_visitors'
+      unique_visitors: 'uniqExact(anonymous_id) as unique_visitors'
     };
     
     todayUniqueVisitorsBuilder.sb.where = {
@@ -700,7 +701,7 @@ analyticsRouter.get('/profiles', zValidator('query', analyticsQuerySchema), asyn
     const visitorIdsBuilder = createSqlBuilder();
     visitorIdsBuilder.sb.select = {
       visitor_id: 'anonymous_id as visitor_id',
-      session_count: 'COUNT(DISTINCT session_id) as session_count',
+      session_count: 'uniqExact(session_id) as session_count',
       first_visit: 'MIN(time) as first_visit',
       last_visit: 'MAX(time) as last_visit'
     };
@@ -740,7 +741,7 @@ analyticsRouter.get('/profiles', zValidator('query', analyticsQuerySchema), asyn
     // Get the count of all visitors and returning visitors
     const visitorStatsBuilder = createSqlBuilder();
     visitorStatsBuilder.sb.select = {
-      total_visitors: 'COUNT(DISTINCT anonymous_id) as total_visitors',
+      total_visitors: 'uniqExact(anonymous_id) as total_visitors',
       returning_visitors: 'countIf(sessions > 1) as returning_visitors'
     };
     visitorStatsBuilder.sb.from = `(

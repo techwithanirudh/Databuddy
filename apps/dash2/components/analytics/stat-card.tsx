@@ -67,13 +67,13 @@ export function StatCard({
     );
   }
 
-  // Check if value is a time string (like "5h 9m 23s")
-  const isTimeValue = typeof value === 'string' && /\d+[hm]\s+\d+[ms]/.test(value);
+  // Check if value is a time string (like "1.75s", "500ms")
+  const isTimeValue = typeof value === 'string' && /\\d+(\\.\\d+)?(s|ms)$/.test(value);
 
   // Use formatMetricNumber for value display, unless it's a pre-formatted string (like time or already has %)
-  const displayValue = (typeof value === 'number' || (typeof value === 'string' && !value.endsWith('%') && !isTimeValue))
-    ? formatMetricNumber(Number(value)) // Ensure value is number for formatMetricNumber
-    : value.toString();
+  const displayValue = (typeof value === 'string' && (value.endsWith('%') || isTimeValue)) || typeof value !== 'number'
+    ? value.toString()
+    : formatMetricNumber(value);
 
   return (
     <Card className={cn("overflow-hidden transition-all hover:shadow-md py-1 sm:py-2", getVariantClasses(), className)} id={id}>

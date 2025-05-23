@@ -175,3 +175,28 @@ export const PERFORMANCE_THRESHOLDS = {
   lcp: { good: 2500, average: 4000, unit: 'ms' },
   cls: { good: 0.1, average: 0.25, unit: '' }
 }; 
+
+/**
+ * Checks if analytics data indicates no tracking is set up (all key metrics are zero)
+ */
+export function isTrackingNotSetup(analytics: any): boolean {
+  if (!analytics?.summary) return true;
+
+  const { summary, events_by_date, top_pages, top_referrers } = analytics;
+  
+  // Check core metrics
+  const hasData = (summary.pageviews || 0) > 0 || 
+                  (summary.visitors || summary.unique_visitors || 0) > 0 || 
+                  (summary.sessions || 0) > 0;
+
+  // Check events by date
+  const hasEvents = events_by_date?.some((event: any) => 
+    (event.pageviews || 0) > 0 || (event.visitors || event.unique_visitors || 0) > 0
+  );
+
+  // Check top pages and referrers
+  const hasPages = top_pages?.some((page: any) => (page.pageviews || 0) > 0);
+  const hasReferrers = top_referrers?.some((ref: any) => (ref.visitors || 0) > 0);
+
+  return !(hasData || hasEvents || hasPages || hasReferrers);
+} 

@@ -11,7 +11,7 @@ import {
   LayoutDashboard
 } from "lucide-react";
 import { differenceInDays } from "date-fns";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { StatCard } from "@/components/analytics/stat-card";
 import { MetricsChart } from "@/components/charts/metrics-chart";
@@ -26,7 +26,8 @@ import {
   groupBrowserData,
   formatDomainLink,
   getColorVariant,
-  calculatePercentChange
+  calculatePercentChange,
+  isTrackingNotSetup
 } from "../utils/analytics-helpers";
 import { MetricToggles, ExternalLinkButton, BORDER_RADIUS } from "../utils/ui-components";
 import type { FullTabProps, MetricPoint } from "../utils/types";
@@ -35,6 +36,7 @@ import { Card, CardHeader, CardContent, CardDescription, CardTitle } from "@/com
 import type { ColumnDef, CellContext } from "@tanstack/react-table";
 import { ReferrerSourceCell, type ReferrerSourceCellData } from "@/components/atomic/ReferrerSourceCell";
 import { PageLinkCell, type PageLinkCellData } from "@/components/atomic/PageLinkCell";
+import { TrackingSetupOverlay } from "../tracking-setup-overlay";
 
 // Define trend calculation return type
 interface TrendCalculation {
@@ -110,6 +112,9 @@ export function WebsiteOverviewTab({
   isRefreshing,
   setIsRefreshing,
 }: FullTabProps) {
+  const searchParams = useSearchParams();
+  const currentTab = searchParams.get('tab') || 'overview';
+  
   // Fetch analytics data
   const { analytics, loading, error, refetch } = useWebsiteAnalytics(websiteId, dateRange);
 
@@ -120,10 +125,50 @@ export function WebsiteOverviewTab({
     sessions: false,
   });
   
+  // State for tracking setup overlay with localStorage
+  const [showTrackingOverlay, setShowTrackingOverlay] = useState(false);
+  
+  // Check if overlay was dismissed
+  const overlayDismissedKey = `tracking-overlay-dismissed-${websiteId}`;
+  const isOverlayDismissed = typeof window !== 'undefined' ? localStorage.getItem(overlayDismissedKey) === 'true' : false;
+  
   // Toggle metric visibility
   const toggleMetric = useCallback((metric: string) => {
     setVisibleMetrics(prev => ({ ...prev, [metric]: !prev[metric] }));
   }, []);
+
+  // Check if tracking is not set up
+  const trackingNotSetup = useMemo(() => {
+    if (loading.summary || !analytics || currentTab === 'settings' || isOverlayDismissed) {
+      return false;
+    }
+    
+    const result = isTrackingNotSetup(analytics);
+    
+    // Fallback check for zero data
+    const summary = analytics.summary;
+    const directCheck = summary && 
+      (summary.pageviews || 0) === 0 && 
+      (summary.visitors || summary.unique_visitors || 0) === 0 && 
+      (summary.sessions || 0) === 0;
+    
+    return result || directCheck;
+  }, [analytics, loading.summary, currentTab, isOverlayDismissed]);
+
+  // Show tracking overlay when data loads and no tracking is detected
+  useEffect(() => {
+    if (trackingNotSetup && !showTrackingOverlay && !isOverlayDismissed) {
+      setShowTrackingOverlay(true);
+    }
+  }, [trackingNotSetup, showTrackingOverlay, isOverlayDismissed]);
+
+  // Handle overlay close
+  const handleOverlayClose = () => {
+    setShowTrackingOverlay(false);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(overlayDismissedKey, 'true');
+    }
+  };
 
   // Handle refresh
   useEffect(() => {
@@ -512,6 +557,15 @@ export function WebsiteOverviewTab({
             />
         </div>
       </div>
+
+      {/* Tracking Setup Overlay */}
+      {showTrackingOverlay && websiteData && (
+        <TrackingSetupOverlay 
+          websiteId={websiteId}
+          websiteData={websiteData}
+          onClose={handleOverlayClose}
+        />
+      )}
     </div>
   );
 } 

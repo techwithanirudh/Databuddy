@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback, Suspense, useRef } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useEffect, useState, useMemo, useCallback, Suspense } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import dynamic from "next/dynamic";
+import { useQueryState } from "nuqs";
 import { 
   ArrowLeft, 
   RefreshCw,
@@ -17,7 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getWebsiteById } from "@/app/actions/websites";
 import { useQuery } from "@tanstack/react-query";
-import { format, subDays, subHours, differenceInDays } from "date-fns";
+import { format, subDays, subHours } from "date-fns";
 import type { DateRange as DayPickerRange } from "react-day-picker";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -29,10 +30,8 @@ import {
   formattedDateRangeAtom,
 } from "@/stores/jotai/filterAtoms";
 
-import type React from "react";
 import type { FullTabProps, WebsiteDataTabProps } from "./components/utils/types";
 
-// Add type for tab ID
 type TabId = 'overview' | 'audience' | 'content' | 'performance' | 'settings' | 'errors';
 
 // Dynamic imports with proper loading states and error boundaries
@@ -94,7 +93,7 @@ type TabDefinition = {
 };
 
 function WebsiteDetailsPage() {
-  const [activeTab, setActiveTab] = useState<TabId>("overview");
+  const [activeTab, setActiveTab] = useQueryState('tab', { defaultValue: 'overview' as TabId });
   const { id } = useParams();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshDetails, setRefreshDetails] = useState({
@@ -172,41 +171,32 @@ function WebsiteDetailsPage() {
     retryDelay: 3000, // Add delay between retries
   });
 
-  // Add a stable reference to website ID to prevent unnecessary re-renders
-  const websiteIdRef = useRef(id);
-  useEffect(() => {
-    websiteIdRef.current = id as string;
-  }, [id]);
-
-  // Create stable versions of the props objects before using in dependencies
-  const stableTabProps = useMemo(() => ({
-    websiteId: id as string,
-    dateRange: memoizedDateRangeForTabs,
-    websiteData: data,
-    isRefreshing,
-    setIsRefreshing: (value: boolean) => {
-      setIsRefreshing(value);
-    }
-  }), [id, memoizedDateRangeForTabs, data, isRefreshing]);
-
-  const stableSettingsProps: WebsiteDataTabProps = useMemo(() => ({
-    websiteId: id as string,
-    dateRange: memoizedDateRangeForTabs,
-    websiteData: data
-  }), [id, memoizedDateRangeForTabs, data]);
-
   // Function to render tab content with stable props and lazy loading
   const renderTabContent = useCallback((tabId: TabId) => {
     // Only render if this tab is active
     if (tabId !== activeTab) return null;
 
     // Settings tab uses different props (no refresh functionality)
-    const key = `${tabId}-${websiteIdRef.current}-${tabId === "settings" ? "static" : memoizedDateRangeForTabs.start_date}`;
+    const key = `${tabId}-${id}-${tabId === "settings" ? "static" : memoizedDateRangeForTabs.start_date}`;
+
+    const tabProps: FullTabProps = {
+      websiteId: id as string,
+      dateRange: memoizedDateRangeForTabs,
+      websiteData: data,
+      isRefreshing,
+      setIsRefreshing,
+    };
+
+    const settingsProps: WebsiteDataTabProps = {
+      websiteId: id as string,
+      dateRange: memoizedDateRangeForTabs,
+      websiteData: data
+    };
 
     if (tabId === "settings") {
       return (
         <Suspense fallback={<TabLoadingSkeleton />}>
-          <WebsiteSettingsTab key={key} {...stableSettingsProps} />
+          <WebsiteSettingsTab key={key} {...settingsProps} />
         </Suspense>
       );
     }
@@ -233,10 +223,10 @@ function WebsiteDetailsPage() {
 
     return (
       <Suspense fallback={<TabLoadingSkeleton />}>
-        <TabComponent key={key} {...stableTabProps} />
+        <TabComponent key={key} {...tabProps} />
       </Suspense>
     );
-  }, [activeTab, stableTabProps, stableSettingsProps, memoizedDateRangeForTabs.start_date]);
+  }, [activeTab, id, memoizedDateRangeForTabs, data, isRefreshing]);
 
   // Define all tabs
   const tabs: TabDefinition[] = [
@@ -350,7 +340,7 @@ function WebsiteDetailsPage() {
               <Button
                 variant="ghost"
                 size="sm"
-                className={`h-8 text-xs px-2 sm:px-3 rounded-none touch-manipulation ${currentGranularity === 'daily' ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground'}`}
+                className={`h-8 text-xs px-2 sm:px-3 rounded-none cursor-pointer touch-manipulation ${currentGranularity === 'daily' ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground'}`}
                 onClick={() => setCurrentGranularityAtomState('daily')}
                 title="View daily aggregated data"
               >
@@ -359,7 +349,7 @@ function WebsiteDetailsPage() {
               <Button
                 variant="ghost"
                 size="sm"
-                className={`h-8 text-xs px-2 sm:px-3 rounded-none touch-manipulation ${currentGranularity === 'hourly' ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground'}`}
+                className={`h-8 text-xs px-2 sm:px-3 rounded-none cursor-pointer touch-manipulation ${currentGranularity === 'hourly' ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground'}`}
                 onClick={() => setCurrentGranularityAtomState('hourly')}
                 title="View hourly data (best for 24h periods)"
               >
@@ -371,7 +361,7 @@ function WebsiteDetailsPage() {
             <Button
               variant="outline"
               size="sm"
-              className="h-8 text-xs gap-1.5 bg-background shadow-sm font-medium touch-manipulation"
+              className="h-8 text-xs gap-1.5 bg-background shadow-sm font-medium touch-manipulation cursor-pointer"
               onClick={handleRefresh}
               disabled={isRefreshing || isLoading}
             >
@@ -399,7 +389,7 @@ function WebsiteDetailsPage() {
                   key={range.value}
                   variant={isActive ? 'default' : 'ghost'} 
                   size="sm" 
-                  className={`h-6 text-xs whitespace-nowrap px-2 sm:px-2.5 touch-manipulation ${isActive ? 'shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                  className={`h-6 cursor-pointer text-xs whitespace-nowrap px-2 sm:px-2.5 touch-manipulation ${isActive ? 'shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                   onClick={() => handleQuickRangeSelect(range.value)}
                   title={range.fullLabel}
                 >
@@ -479,17 +469,17 @@ function WebsiteDetailsPage() {
         className="space-y-4"
       >
         <div className="border-b relative">
-          <TabsList className="h-10 bg-transparent p-0 w-full justify-start gap-0.5 sm:gap-1 overflow-x-auto">
+          <TabsList className="h-10 bg-transparent p-0 w-full justify-start overflow-x-auto">
             {tabs.map((tab) => (
               <TabsTrigger 
                 key={tab.id} 
                 value={tab.id} 
-                className="text-xs sm:text-sm h-10 px-2 sm:px-4 rounded-none touch-manipulation hover:bg-muted/50 relative transition-colors whitespace-nowrap"
+                className="text-xs sm:text-sm h-10 px-2 sm:px-4 rounded-none touch-manipulation hover:bg-muted/50 relative transition-colors whitespace-nowrap cursor-pointer"
                 onClick={() => setActiveTab(tab.id)}
               >
                 {tab.label}
                 {activeTab === tab.id && (
-                  <div className="absolute bottom-0 left-0 w-full h-[2px] bg-primary animate-slideIn" />
+                  <div className="absolute bottom-0 left-0 w-full h-[2px] bg-primary" />
                 )}
               </TabsTrigger>
             ))}

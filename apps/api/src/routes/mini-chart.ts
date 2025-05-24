@@ -20,12 +20,8 @@ miniChartRouter.use('*', timezoneMiddleware);
  */
 miniChartRouter.get('/:website_id', async (c) => {
     const websiteId = c.req.param('website_id');
-    const user = c.get('user');
     const timezoneInfo = useTimezone(c);
-    
-    if (!user) {
-      return c.json({ error: 'Authentication required' }, 401);
-    }
+
   
     try {
       const miniChartBuilder = createMiniChartBuilder(websiteId);

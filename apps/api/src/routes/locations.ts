@@ -24,11 +24,6 @@ const analyticsQuerySchema = z.object({
 
 locationsRouter.get('/', zValidator('query', analyticsQuerySchema), async (c) => {
     const params = c.req.valid('query');
-    const user = c.get('user');
-    
-    if (!user) {
-      return c.json({ error: 'Authentication required' }, 401);
-    }
   
     try {
       const endDate = params.end_date || new Date().toISOString().split('T')[0];

@@ -85,7 +85,7 @@ function createErrorDetailsBuilder(websiteId: string, startDate: string, endDate
     error_type: 'COALESCE(error_type, \'Unknown\') as error_type',
     error_message: 'COALESCE(error_message, \'\') as error_message',
     error_stack: 'COALESCE(error_stack, \'\') as error_stack',
-    page_url: 'COALESCE(page_url, \'\') as page_url',
+    page_url: 'COALESCE(url, \'\') as page_url',
     user_agent: 'COALESCE(user_agent, \'\') as user_agent',
     session_id: 'session_id',
     anonymous_id: 'anonymous_id',
@@ -130,11 +130,6 @@ function parseUserAgentDetails(userAgent: string) {
 
 errorsRouter.get('/', zValidator('query', analyticsQuerySchema), async (c) => {
   const params = c.req.valid('query');
-  const user = c.get('user');
-  
-  if (!user) {
-    return c.json({ error: 'Authentication required' }, 401);
-  }
 
   try {
     const endDate = params.end_date || new Date().toISOString().split('T')[0];

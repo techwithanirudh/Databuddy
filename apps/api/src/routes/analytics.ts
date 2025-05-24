@@ -91,15 +91,10 @@ analyticsRouter.use('*', timezoneMiddleware);
  */
 analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async (c) => {
   const params = c.req.valid('query');
-  const user = c.get('user');
   const website = c.get('website');
 
   if (!website || !website.id) {
     return c.json({ error: 'Website not found' }, 404);
-  }
-  
-  if (!user) {
-    return c.json({ error: 'Authentication required' }, 401);
   }
 
   try {

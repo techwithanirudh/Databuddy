@@ -28,12 +28,8 @@ const analyticsQuerySchema = z.object({
 // GET /analytics/profiles - retrieves visitor profiles with their sessions
 profilesRouter.get('/', zValidator('query', analyticsQuerySchema), async (c) => {
     const params = c.req.valid('query');
-    const user = c.get('user');
     const timezoneInfo = useTimezone(c);
     
-    if (!user) {
-      return c.json({ success: false, error: 'Authentication required' }, 401);
-    }
   
     try {
       // Set default date range if not provided

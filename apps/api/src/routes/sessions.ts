@@ -49,12 +49,8 @@ const formatSessionObject = (session: any, visitorSessionCount: number) => {
 
 sessionsRouter.get('/', zValidator('query', analyticsQuerySchema), async (c) => {
   const params = c.req.valid('query');
-  const user = c.get('user');
   const timezoneInfo = useTimezone(c);
   
-  if (!user) {
-    return c.json({ success: false, error: 'Authentication required' }, 401);
-  }
 
   try {
     const endDate = params.end_date || new Date().toISOString().split('T')[0];

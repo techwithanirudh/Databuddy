@@ -4,6 +4,8 @@ import Iridescence from "@/components/bits/Iridiscence";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
+import { Suspense } from "react";
+import { Loader2 } from "lucide-react";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -34,7 +36,11 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       </div>
       {/* Auth form side - Right column */}
       <div className="w-full md:w-1/2 flex items-center justify-center p-6 md:p-12 bg-background overflow-auto">
-        <div className="w-full max-w-md pt-12">{children}</div>
+        <div className="w-full max-w-md pt-12">
+          <Suspense fallback={<div className="flex h-40 items-center justify-center"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>}>
+            {children}
+          </Suspense>
+        </div>
       </div>
     </div>
   );

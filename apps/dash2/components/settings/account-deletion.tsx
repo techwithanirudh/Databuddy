@@ -58,7 +58,7 @@ export function AccountDeletion() {
     },
   });
 
-  async function onSubmit(data: any) {
+  async function onSubmit(data: z.infer<typeof formSchema>) {
     if (data.email !== session?.user?.email) {
       toast.error("Email doesn't match your account email");
       return;

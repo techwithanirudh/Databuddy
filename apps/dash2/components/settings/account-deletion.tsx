@@ -37,9 +37,7 @@ import { Separator } from "@/components/ui/separator";
 const formSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(1, "Password is required"),
-  confirmText: z.string().refine(val => val === "DELETE", {
-    message: "Please type DELETE to confirm"
-  })
+  confirmText: z.literal("DELETE")
 });
 
 export function AccountDeletion() {
@@ -49,7 +47,7 @@ export function AccountDeletion() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
-  const form = useForm({
+  const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: "",

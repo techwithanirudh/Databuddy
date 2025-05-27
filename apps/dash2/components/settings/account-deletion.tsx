@@ -42,8 +42,6 @@ const formSchema = z.object({
   })
 });
 
-type FormValues = z.infer<typeof formSchema>;
-
 export function AccountDeletion() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -51,16 +49,16 @@ export function AccountDeletion() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
-  const form = useForm<FormValues>({
+  const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: "",
       password: "",
-      confirmText: "" as "DELETE"
+      confirmText: "DELETE"
     },
   });
 
-  async function onSubmit(data: FormValues) {
+  async function onSubmit(data: any) {
     if (data.email !== session?.user?.email) {
       toast.error("Email doesn't match your account email");
       return;

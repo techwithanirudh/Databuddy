@@ -36,12 +36,10 @@ const formSchema = z
     path: ["confirmPassword"],
   });
 
-type FormValues = z.infer<typeof formSchema>;
-
 export function PasswordForm() {
   const [isLoading, setIsLoading] = useState(false);
 
-  const form = useForm<FormValues>({
+  const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       currentPassword: "",
@@ -51,7 +49,7 @@ export function PasswordForm() {
     },
   });
 
-  async function onSubmit(data: FormValues) {
+  async function onSubmit(data: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
       const response = await authClient.changePassword({

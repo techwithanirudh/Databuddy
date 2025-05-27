@@ -28,11 +28,8 @@ const setupFormSchema = z.object({
 
 const verifyFormSchema = z.object({
   code: z.string().min(6, "Code is required").max(6, "Code should be 6 digits"),
-  trustDevice: z.boolean().default(false),
+  trustDevice: z.boolean(),
 });
-
-type SetupFormValues = z.infer<typeof setupFormSchema>;
-type VerifyFormValues = z.infer<typeof verifyFormSchema>;
 
 export function TwoFactorForm() {
   const { data: session } = useSession();
@@ -45,7 +42,7 @@ export function TwoFactorForm() {
   const otpInputRef = useRef<HTMLInputElement>(null);
 
   // Setup form for entering password
-  const setupForm = useForm<SetupFormValues>({
+  const setupForm = useForm({
     resolver: zodResolver(setupFormSchema),
     defaultValues: {
       password: "",
@@ -53,7 +50,7 @@ export function TwoFactorForm() {
   });
 
   // Verify form for entering 2FA code
-  const verifyForm = useForm<VerifyFormValues>({
+  const verifyForm = useForm({
     resolver: zodResolver(verifyFormSchema),
     defaultValues: {
       code: "",
@@ -93,7 +90,7 @@ export function TwoFactorForm() {
   }, [setupStep]);
 
   // Handle setup 2FA (Step 1: Enter password)
-  const onSetupSubmit = async (data: SetupFormValues) => {
+  const onSetupSubmit = async (data: any) => {
     setIsLoading(true);
     try {
       const result = await enableTwoFactor(data.password, {
@@ -120,7 +117,7 @@ export function TwoFactorForm() {
   };
 
   // Handle verify code (Step 2: Enter 2FA code)
-  const onVerifySubmit = async (data: VerifyFormValues) => {
+  const onVerifySubmit = async (data: any) => {
     setIsLoading(true);
     try {
       const result = await verifyTwoFactorCode(data.code, {
@@ -215,11 +212,12 @@ export function TwoFactorForm() {
     if (!backupCodes || backupCodes.length === 0) return;
     
     const fileName = "databuddy-backup-codes.txt";
-    const content = 
-      "Databuddy Two-Factor Authentication Backup Codes\n" +
-      "Save these codes in a safe place. Each code can only be used once.\n\n" +
-      backupCodes.join('\n') + 
-      "\n\nGenerated on: " + new Date().toLocaleString();
+    const content = `
+      Databuddy Two-Factor Authentication Backup Codes
+      Save these codes in a safe place. Each code can only be used once.
+      ${backupCodes.join('\n')}
+      Generated on: ${new Date().toLocaleString()}
+    `;
     
     const element = document.createElement('a');
     const file = new Blob([content], {type: 'text/plain'});
@@ -273,7 +271,7 @@ export function TwoFactorForm() {
         </div>
         <div className="grid grid-cols-2 gap-2">
           {backupCodes.map((code, index) => (
-            <code key={index} className="p-1 text-xs bg-muted rounded">
+            <code key={index + code} className="p-1 text-xs bg-muted rounded">
               {code}
             </code>
           ))}

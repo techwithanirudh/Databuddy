@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Link from "next/link";
-import { useSession, signOut } from "@databuddy/auth/client";
+import { useSession, authClient } from "@databuddy/auth/client";
 import { toast } from "sonner";
 import { LayoutDashboard, LogOut, User } from "lucide-react";
 import { redirect } from "next/navigation";
@@ -32,14 +32,17 @@ export function UserMenu() {
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
-    try {
-      await signOut();
-      redirect("/login");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to log out");
-    } finally {
-      setIsLoggingOut(false);
-    }
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          redirect("/login");
+        },
+        onError: (error) => {
+          toast.error(error.error.message || "Failed to log out");
+        },
+      },
+    });
+    setIsLoggingOut(false);
   };
 
   if (isSessionPending) {

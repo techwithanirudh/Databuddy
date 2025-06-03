@@ -127,7 +127,10 @@ export default function PrivacyPolicyPage() {
             "Technical information: Browser type, operating system, device type, and screen resolution",
             "Geographic location: Country and region only (derived from anonymized IP address)",
             "Session data: Time spent on site, bounce rate, and navigation patterns (anonymized)",
-            "User preferences: Dark/light mode, language settings (if available)"
+            "User preferences: Dark/light mode, language settings (if available)",
+            "Performance metrics: Page load times, Core Web Vitals (FCP, LCP, CLS), and connection performance data",
+            "User interaction data: Scroll depth, interaction counts, and exit intent detection (anonymized)",
+            "Error information: JavaScript errors and technical issues to help website owners improve their sites"
           ],
           note: "Important: We immediately anonymize IP addresses using a one-way hash function. We never store IP addresses in their original form, and it's impossible for us to identify individual users from the data we collect."
         }
@@ -174,7 +177,9 @@ export default function PrivacyPolicyPage() {
             "Generate aggregated analytics reports for website owners",
             "Provide insights about website performance and user experience",
             "Help website owners understand their audience demographics (country/region level only)",
-            "Monitor our service performance and detect technical issues"
+            "Monitor our service performance and detect technical issues",
+            "Help website owners identify and fix technical problems through error tracking",
+            "Provide performance optimization insights through Core Web Vitals and loading metrics"
           ],
           note: "End user data is never used for advertising, marketing, or any purpose other than providing analytics insights to website owners."
         }

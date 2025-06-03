@@ -1,15 +1,13 @@
 import { cacheable } from '@databuddy/redis';
 import { z } from 'zod';
 import { logger } from '../lib/logger';
+import { createHash } from 'node:crypto';
 
 
 const GeoLocationSchema = z.object({
   ip: z.string(),
-  city: z.string().optional(),
   region: z.string().optional(),
   country: z.string().optional(),
-  loc: z.string().optional(),
-  org: z.string().optional(),
   timezone: z.string().optional(),
 });
 
@@ -17,11 +15,8 @@ type GeoLocation = z.infer<typeof GeoLocationSchema>;
 
 const DEFAULT_GEO: GeoLocation = {
   ip: '',
-  city: undefined,
   region: undefined,
   country: undefined,
-  loc: undefined,
-  org: undefined,
   timezone: undefined,
 };
 
@@ -84,39 +79,36 @@ export async function parseIp(req: Request): Promise<GeoLocation> {
 }
 
 /**
- * Anonymizes an IP address by removing the last octet for IPv4 
- * or the last 80 bits for IPv6
+ * Anonymizes an IP address using a one-way hash function
+ * This ensures IP addresses cannot be reverse-engineered
  */
 export function anonymizeIp(ip: string): string {
   if (!ip) {
     return '';
   }
 
-  // Check if it's IPv4
-  if (ip.includes('.')) {
-    // Replace last octet with zeros
-    return ip.replace(/\.\d+$/, '.0');
-  } 
-  // Handle IPv6
-  if (ip.includes(':')) {
-    // Keep first 48 bits (first 3 groups), zero out the rest
-    const parts = ip.split(':');
-    const anonymized = parts.slice(0, 3).concat(Array(parts.length - 3).fill('0000')).join(':');
-    return anonymized;
-  }
+  // Use a static salt for consistent hashing across requests
+  const salt = process.env.IP_HASH_SALT || 'databuddy-ip-anonymization-salt-2024';
   
-  return ip;
+  try {
+    // Hash the full IP with salt for complete anonymization
+    const hash = createHash('sha256');
+    hash.update(`${ip}${salt}`);
+    
+    // Return first 12 characters of hash for storage efficiency
+    return hash.digest('hex').substring(0, 12);
+  } catch (error) {
+    // Fallback to empty string if hashing fails
+    return '';
+  }
 }
 
 export async function getGeoData(ip: string): Promise<GeoLocation> {
   const geo = await getGeoLocation(ip);
   return {
     ip: anonymizeIp(geo.ip),
-    city: geo.city,
     region: geo.region,
     country: geo.country,
-    loc: geo.loc,
-    org: geo.org,
     timezone: geo.timezone,
   };
 }

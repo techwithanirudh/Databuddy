@@ -126,7 +126,6 @@ export async function processEvent(c: Context) {
       time_on_page: properties.timeOnPage || properties.time_on_page || properties.timeSpent || enriched.time_on_page || null,
       country: geo.country || enriched.country || '',
       region: geo.region || enriched.region || '',
-      city: geo.city || enriched.city || '',
       utm_source: properties.utmSource || properties.utm_source || (properties.utmParams?.utm_source) || enriched.utm_source || '',
       utm_medium: properties.utmMedium || properties.utm_medium || (properties.utmParams?.utm_medium) || enriched.utm_medium || '',
       utm_campaign: properties.utmCampaign || properties.utm_campaign || (properties.utmParams?.utm_campaign) || enriched.utm_campaign || '',

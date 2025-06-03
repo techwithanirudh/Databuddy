@@ -89,7 +89,12 @@ errorsRouter.get('/', zValidator('query', analyticsQuerySchema), async (c) => {
       const alias = typeName.replace(/[^a-zA-Z0-9_]/g, '') || 'UnknownType';
       pivotedTimelineSelects[alias] = `countIf(error_type = \'${typeName.replace(/'/g, "''")}\') as ${alias}`;
     }
-    pivotedTimelineSelects.OtherErrors = `countIf(error_type NOT IN (${topTypeNames.map(t => `'${t.replace(/'/g, "''").replace(/\\/g, "\\\\")}'`).join(',')})) as OtherErrors`;
+    // Handle "Other Errors" - use NOT (error_type IN (...)) syntax instead of NOT IN
+    if (topTypeNames.length > 0) {
+             pivotedTimelineSelects.OtherErrors = `countIf(NOT (error_type IN (${topTypeNames.map(t => `'${t.replace(/'/g, "''").replace(/\\/g, "\\\\")}'`).join(',')}))) as OtherErrors`;
+     } else {
+       pivotedTimelineSelects.OtherErrors = 'COUNT(*) as OtherErrors';
+    }
 
     const timelinePivotedBuilder = createSqlBuilder('events');
     timelinePivotedBuilder.sb.select = pivotedTimelineSelects;

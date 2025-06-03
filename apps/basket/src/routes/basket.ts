@@ -171,7 +171,6 @@ basketRouter.use('*', async (c, next) => {
     ip: anonymizeIp(geo.ip || ''),
     country: sanitizeString(geo.country, VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH),
     region: sanitizeString(geo.region, VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH),
-    city: sanitizeString(geo.city, VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH),
     referrer: referrerInfo.url,
     utm_source: validateUtmParameter(urlParams.get('utm_source')),
     utm_medium: validateUtmParameter(urlParams.get('utm_medium')),

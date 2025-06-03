@@ -54,38 +54,36 @@ locationsRouter.get('/', zValidator('query', analyticsQuerySchema), async (c) =>
       
       countryBuilder.sb.limit = params.limit;
       
-      // Create SQL builder for city data - directly from events table
-      const cityBuilder = createSqlBuilder('events');
+      // Create SQL builder for region data - directly from events table
+      const regionBuilder = createSqlBuilder('events');
       
-      cityBuilder.sb.select = {
+      regionBuilder.sb.select = {
         country: 'COALESCE(country, \'Unknown\') as country',
         region: 'COALESCE(region, \'Unknown\') as region',
-        city: 'COALESCE(city, \'Unknown\') as city',
         visitors: 'COUNT(DISTINCT anonymous_id) as visitors',
         pageviews: 'COUNT(*) as pageviews'
       };
       
-      cityBuilder.sb.where = {
+      regionBuilder.sb.where = {
         client_filter: `client_id = '${params.website_id}'`,
         date_filter: `time >= parseDateTimeBestEffort('${startDate}') AND time <= parseDateTimeBestEffort('${endDate} 23:59:59')`,
-        city_filter: `city != ''`,
+        region_filter: `region != ''`,
         event_filter: "event_name = 'screen_view'"
       };
       
-      cityBuilder.sb.groupBy = {
+      regionBuilder.sb.groupBy = {
         country: 'country',
-        region: 'region',
-        city: 'city'
+        region: 'region'
       };
       
-      cityBuilder.sb.orderBy = {
+      regionBuilder.sb.orderBy = {
         visitors: 'visitors DESC'
       };
       
-      cityBuilder.sb.limit = params.limit;
+      regionBuilder.sb.limit = params.limit;
       
       const countries = await chQuery(countryBuilder.getSql());
-      const cities = await chQuery(cityBuilder.getSql());
+      const regions = await chQuery(regionBuilder.getSql());
       
       return c.json({
         success: true,
@@ -95,7 +93,7 @@ locationsRouter.get('/', zValidator('query', analyticsQuerySchema), async (c) =>
           end_date: endDate
         },
         countries,
-        cities
+        regions
       });
     } catch (error) {
       logger.error('Error retrieving location analytics data', { 

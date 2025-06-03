@@ -7,5 +7,5 @@
         "esModuleInterop": true
     },
     "exclude": ["node_modules", "dist", ".next", "turbo"],
-    "include": ["apps/**/*", "packages/**/*"]
+    "include": ["apps/**/*", "packages/**/*", "lib"]
 }

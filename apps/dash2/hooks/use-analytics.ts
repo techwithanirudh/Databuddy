@@ -436,15 +436,10 @@ const defaultQueryOptions = {
     }
     return failureCount < 2;
   },
-  // Enable request deduplication
   networkMode: 'online' as const,
-  // Use background refetching for better UX
   refetchIntervalInBackground: false,
 };
 
-/**
- * Unified analytics hook for all data with optimized caching
- */
 export function useWebsiteAnalytics(websiteId: string, dateRange: DateRange) {
   const fetchData = useCallback(async ({ signal }: { signal?: AbortSignal }) => {
     return fetchAnalyticsData<SummaryResponse>('/analytics/summary', websiteId, dateRange, undefined, signal);

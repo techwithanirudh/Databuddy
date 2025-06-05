@@ -43,17 +43,35 @@ function WebsiteMapPage() {
         </div>
 
         <Tabs value={mode} onValueChange={(value) => setMode(value as "total" | "perCapita")}>
-          <TabsList>
-            <TabsTrigger value="total">Total</TabsTrigger>
-            <TabsTrigger value="perCapita">Per Capita</TabsTrigger>
-          </TabsList>
+          <div className="border-b relative">
+            <TabsList className="h-10 bg-transparent p-0 w-full justify-start overflow-x-auto">
+              <TabsTrigger 
+                value="total"
+                className="text-xs sm:text-sm h-10 px-2 sm:px-4 rounded-none touch-manipulation hover:bg-muted/50 relative transition-colors whitespace-nowrap cursor-pointer"
+              >
+                Total Visitors
+                {mode === "total" && (
+                  <div className="absolute bottom-0 left-0 w-full h-[2px] bg-primary" />
+                )}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="perCapita"
+                className="text-xs sm:text-sm h-10 px-2 sm:px-4 rounded-none touch-manipulation hover:bg-muted/50 relative transition-colors whitespace-nowrap cursor-pointer"
+              >
+                Per Capita
+                {mode === "perCapita" && (
+                  <div className="absolute bottom-0 left-0 w-full h-[2px] bg-primary" />
+                )}
+              </TabsTrigger>
+            </TabsList>
+          </div>
         </Tabs>
       </div>
 
       {/* Main Content */}
       <div className="flex-1 flex gap-4 overflow-hidden min-h-0">
         {/* Map */}
-        <Card className="flex-1 flex flex-col overflow-hidden min-h-0">
+        <Card className="flex-1 flex flex-col overflow-hidden min-h-0 rounded">
           <CardHeader className="pb-3 flex-shrink-0">
             <CardTitle className="flex items-center justify-between">
               <span className="flex items-center gap-2">
@@ -71,7 +89,7 @@ function WebsiteMapPage() {
         </Card>
         
         {/* Countries List */}
-        <Card className="w-72 flex flex-col overflow-hidden min-h-0">
+        <Card className="w-72 flex flex-col overflow-hidden min-h-0 rounded">
           <CardHeader className="pb-3 flex-shrink-0">
             <CardTitle className="flex items-center gap-2">
               <Globe className="h-4 w-4" />

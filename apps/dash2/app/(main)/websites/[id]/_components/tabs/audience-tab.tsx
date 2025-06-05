@@ -173,6 +173,7 @@ export function WebsiteAudienceTab({
     const languageGroups: Record<string, number> = {};
     
     for (const item of analytics.languages) {
+      if (!item.language) continue; // Skip items with undefined language
       const baseLanguage = item.language.split('-')[0]; // Get 'en' from 'en-US'
       languageGroups[baseLanguage] = (languageGroups[baseLanguage] || 0) + (item.visitors || 0);
     }
@@ -416,6 +417,7 @@ export function WebsiteAudienceTab({
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {analytics.screen_resolutions?.slice(0, 6).map((item, index) => {
+                if (!item.screen_resolution) return null; // Skip items with undefined screen_resolution
                 const [width, height] = item.screen_resolution.split('x').map(Number);
                 const isValid = !Number.isNaN(width) && !Number.isNaN(height);
                 

@@ -35,9 +35,18 @@ export function groupAndAggregate<T>(
 /**
  * Sort and limit data by a numeric field
  */
-export function sortAndLimit<T>(data: T[], sortKey: keyof T, limit: number): T[] {
+export function sortAndLimit<T>(
+  data: T[],
+  sortField: string,
+  limit: number,
+  descending = true
+): T[] {
   return data
-    .sort((a, b) => (b[sortKey] as number) - (a[sortKey] as number))
+    .sort((a, b) => {
+      const aVal = (a as any)[sortField];
+      const bVal = (b as any)[sortField];
+      return descending ? bVal - aVal : aVal - bVal;
+    })
     .slice(0, limit);
 }
 
@@ -45,8 +54,8 @@ export function sortAndLimit<T>(data: T[], sortKey: keyof T, limit: number): T[]
  * Filter and map data with type safety
  */
 export function filterAndMap<T, R>(
-  data: T[], 
-  filterFn: (item: T) => boolean, 
+  data: T[],
+  filterFn: (item: T) => boolean,
   mapFn: (item: T) => R
 ): R[] {
   return data.filter(filterFn).map(mapFn);

@@ -152,6 +152,12 @@ export function DataTable<TData extends RowData, TValue>(
   const table = useReactTable({
     data: tableData,
     columns: tableColumns,
+    getRowId: (row, index) => {
+      if ((row as any)._uniqueKey) {
+        return (row as any)._uniqueKey;
+      }
+      return activeTab ? `${activeTab}-${index}` : `row-${index}`;
+    },
     state: {
       sorting,
       globalFilter: showSearch ? globalFilter : '',
@@ -175,8 +181,9 @@ export function DataTable<TData extends RowData, TValue>(
     setIsTransitioning(true);
     setTimeout(() => {
       setActiveTab(tabId);
-      // Reset pagination when switching tabs
+      // Reset pagination and search when switching tabs to prevent state leakage
       setPagination(prev => ({ ...prev, pageIndex: 0 }));
+      setGlobalFilter('');
       setIsTransitioning(false);
     }, 150);
   }, [activeTab]);
@@ -327,6 +334,7 @@ export function DataTable<TData extends RowData, TValue>(
               </p>
               {globalFilter && (
                 <button
+                  type="button"
                   onClick={() => setGlobalFilter('')}
                   className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary hover:text-primary/80 bg-primary/10 hover:bg-primary/15 rounded-lg transition-colors"
                 >

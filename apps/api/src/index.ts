@@ -3,6 +3,7 @@ import { cors } from 'hono/cors';
 import { auth, type User, type Session } from '@databuddy/auth';
 import analyticsRouter from './routes/v1/analytics';
 import assistantRouter from './routes/v1/assistant';
+import queryRouter from './routes/v1/query';
 import { logger } from './lib/logger';
 import { logger as HonoLogger } from "hono/logger"
 import { sentry } from '@hono/sentry'
@@ -68,6 +69,7 @@ app.on(['POST', 'GET', 'OPTIONS'], '/api/auth/*', async (c) => {
 
 app.route('/v1/analytics', analyticsRouter);
 app.route('/v1/assistant', assistantRouter);
+app.route('/v1/query', queryRouter);
 
 app.get('/health', (c) => c.json({ status: 'ok', version: '1.0.0' }));
 app.get('/', (c) => c.json({ status: 'ok', version: '1.0.0' }));

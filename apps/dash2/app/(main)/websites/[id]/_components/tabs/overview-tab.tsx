@@ -11,37 +11,29 @@ import {
   LayoutDashboard,
 } from "lucide-react";
 import { differenceInDays } from "date-fns";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 import { StatCard } from "@/components/analytics/stat-card";
 import { MetricsChart } from "@/components/charts/metrics-chart";
 import { DataTable } from "@/components/analytics/data-table";
-import { useWebsiteAnalytics, type PageData } from "@/hooks/use-analytics";
+import { useWebsiteAnalytics } from "@/hooks/use-analytics";
 import { 
   formatDateByGranularity, 
-  formatDistributionData,
-  groupBrowserData,
   getColorVariant,
   calculatePercentChange,
-  isTrackingNotSetup
 } from "../utils/analytics-helpers";
 import { MetricToggles } from "../utils/ui-components";
 import type { FullTabProps, MetricPoint } from "../utils/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
-import type { ColumnDef } from "@tanstack/react-table";
 import { ReferrerSourceCell, type ReferrerSourceCellData } from "@/components/atomic/ReferrerSourceCell";
-import { PageLinkCell } from "@/components/atomic/PageLinkCell";
 import { 
   processDeviceData, 
   processBrowserData, 
   inferOperatingSystems,
   TechnologyIcon,
   PercentageBadge,
-  type TechnologyTableEntry,
-  type DeviceTypeEntry,
 } from "../utils/technology-helpers";
-
 
 // Types
 interface TrendCalculation {
@@ -53,26 +45,7 @@ interface TrendCalculation {
   pages_per_session?: number;
 }
 
-import { useTableTabs, type BaseTabItem } from "@/lib/table-tabs";
-
-interface ReferrerItem extends BaseTabItem {
-  referrer: string;
-  type?: string;
-  name?: string;
-  domain?: string;
-}
-
-interface UTMSourceItem extends BaseTabItem {
-  utm_source: string;
-}
-
-interface UTMMediumItem extends BaseTabItem {
-  utm_medium: string;
-}
-
-interface UTMCampaignItem extends BaseTabItem {
-  utm_campaign: string;
-}
+import { useTableTabs } from "@/lib/table-tabs";
 
 interface ChartDataPoint {
   date: string;
@@ -82,15 +55,10 @@ interface ChartDataPoint {
   [key: string]: unknown;
 }
 
-// Constants
 const MIN_PREVIOUS_SESSIONS_FOR_TREND = 5;
 const MIN_PREVIOUS_VISITORS_FOR_TREND = 5;
 const MIN_PREVIOUS_PAGEVIEWS_FOR_TREND = 10;
 
-
-
-
-// UnauthorizedAccessError component
 function UnauthorizedAccessError() {
   const router = useRouter();
   
@@ -104,21 +72,21 @@ function UnauthorizedAccessError() {
           <div>
             <CardTitle className="text-lg">Access Denied</CardTitle>
             <CardDescription className="mt-1">
-              You do not have permission to view this website's analytics.
+              You don't have permission to view this website's analytics.
             </CardDescription>
           </div>
         </div>
       </CardHeader>
       <CardContent className="pt-0">
         <p className="text-sm text-muted-foreground mb-5">
-          If you believe this is an error, please contact the website owner or your administrator.
+          Contact the website owner if you think this is an error.
         </p>
         <Button 
           onClick={() => router.push("/websites")}
           className="w-full sm:w-auto"
           variant="destructive"
         >
-          Return to My Websites
+          Back to Websites
         </Button>
       </CardContent>
     </Card>
@@ -175,134 +143,6 @@ export function WebsiteOverviewTab({
     return <UnauthorizedAccessError />;
   }
 
-  // Process data
-  const deviceData = useMemo(() => 
-    formatDistributionData(analytics.device_types?.map((item: DeviceTypeEntry) => {
-      let name = item.device_type || 'Unknown Type';
-      const brand = item.device_brand || 'Unknown';
-      const model = item.device_model || 'Unknown';
-
-      if (brand !== 'Unknown' && brand.toLowerCase() !== 'generic') {
-        name += ` - ${brand}`;
-        if (model !== 'Unknown' && model.toLowerCase() !== brand.toLowerCase()) {
-          name += ` ${model}`;
-        }
-      } else if (model !== 'Unknown') {
-        name += ` - ${model}`;
-      }
-      return {
-        ...item,
-        descriptiveName: name 
-      };
-    }) || [], 'descriptiveName'), 
-    [analytics.device_types]
-  );
-
-  const browserData = useMemo(() => 
-    groupBrowserData(analytics.browser_versions), 
-    [analytics.browser_versions]
-  );
-
-  const topPagesColumns = useMemo(() => [
-    {
-      id: 'path',
-      accessorKey: 'path',
-      header: 'Page',
-      cell: (info: any) => (
-        <PageLinkCell 
-          path={info.getValue() as string} 
-          websiteDomain={websiteData?.domain} 
-        />
-      )
-    },
-    {
-      id: 'pageviews',
-      accessorKey: 'pageviews',
-      header: 'Views',
-    },
-    {
-      id: 'visitors',
-      accessorKey: 'visitors',
-      header: 'Visitors',
-    },
-    {
-      id: 'percentage',
-      accessorKey: 'percentage',
-      header: 'Share',
-      cell: (info: any) => {
-        const percentage = info.getValue() as number;
-        return <PercentageBadge percentage={percentage} />;
-      },
-    },
-  ], [websiteData?.domain]);
-
-  const entryPagesColumns = useMemo(() => [
-    {
-      id: 'path',
-      accessorKey: 'path',
-      header: 'Page',
-      cell: (info: any) => (
-        <PageLinkCell 
-          path={info.getValue() as string} 
-          websiteDomain={websiteData?.domain} 
-        />
-      )
-    },
-    {
-      id: 'entries',
-      accessorKey: 'entries',
-      header: 'Entries',
-    },
-    {
-      id: 'visitors',
-      accessorKey: 'visitors',
-      header: 'Visitors',
-    },
-    {
-      id: 'percentage',
-      accessorKey: 'percentage',
-      header: 'Share',
-      cell: (info: any) => {
-        const percentage = info.getValue() as number;
-        return <PercentageBadge percentage={percentage} />;
-      },
-    },
-  ], [websiteData?.domain]);
-
-  const exitPagesColumns = useMemo(() => [
-    {
-      id: 'path',
-      accessorKey: 'path',
-      header: 'Page',
-      cell: (info: any) => (
-        <PageLinkCell 
-          path={info.getValue() as string} 
-          websiteDomain={websiteData?.domain} 
-        />
-      )
-    },
-    {
-      id: 'exits',
-      accessorKey: 'exits',
-      header: 'Exits',
-    },
-    {
-      id: 'visitors',
-      accessorKey: 'visitors',
-      header: 'Visitors',
-    },
-    {
-      id: 'percentage',
-      accessorKey: 'percentage',
-      header: 'Share',
-      cell: (info: any) => {
-        const percentage = info.getValue() as number;
-        return <PercentageBadge percentage={percentage} />;
-      },
-    },
-  ], [websiteData?.domain]);
-
-  // Custom cell for referrers (special case)
   const referrerCustomCell = useCallback((info: any) => {
     const cellData: ReferrerSourceCellData = info.row.original;
     return <ReferrerSourceCell {...cellData} />;
@@ -332,7 +172,6 @@ export function WebsiteOverviewTab({
     });
   }, [analytics.events_by_date, visibleMetrics, dateRange.granularity]);
 
-  // Process top pages with percentage calculations
   const processedTopPages = useMemo(() => {
     if (!analytics.top_pages?.length) return [];
     
@@ -344,29 +183,26 @@ export function WebsiteOverviewTab({
     }));
   }, [analytics.top_pages]);
 
-  // Process entry pages with percentages
   const processedEntryPages = useMemo(() => {
     if (!analytics.entry_pages?.length) return [];
     
     return analytics.entry_pages.map(page => ({
       ...page,
-      pageviews: page.entries, // Use entries as pageviews for consistency
+      pageviews: page.entries,
       visitors: page.visitors
     }));
   }, [analytics.entry_pages]);
 
-  // Process exit pages with percentages  
   const processedExitPages = useMemo(() => {
     if (!analytics.exit_pages?.length) return [];
     
     return analytics.exit_pages.map(page => ({
       ...page,
-      pageviews: page.exits, // Use exits as pageviews for consistency
+      pageviews: page.exits,
       visitors: page.visitors
     }));
   }, [analytics.exit_pages]);
 
-  // Simple tab configuration using utility
   const referrerTabs = useTableTabs({
     referrers: {
       data: analytics.top_referrers || [],
@@ -395,7 +231,6 @@ export function WebsiteOverviewTab({
     }
   });
 
-  // Combined pages tabs (top pages, entry pages, exit pages)
   const pagesTabs = useTableTabs({
     top_pages: {
       data: processedTopPages,
@@ -426,8 +261,6 @@ export function WebsiteOverviewTab({
     visitors: 'green-500',
     sessions: 'purple-500'
   };
-
-
 
   const calculateTrends = useMemo<TrendCalculation>(() => {
     if (!analytics.events_by_date?.length || analytics.events_by_date.length < 2) {
@@ -499,7 +332,6 @@ export function WebsiteOverviewTab({
     };
   }, [analytics.events_by_date]);
 
-  // Technology data processing
   const processedDeviceData = useMemo(() => 
     processDeviceData(analytics.device_types || []), 
     [analytics.device_types]
@@ -515,7 +347,6 @@ export function WebsiteOverviewTab({
     [analytics.device_types, analytics.browser_versions]
   );
 
-  // Technology table columns with enhanced styling
   const deviceColumns = useMemo(() => [
     {
       id: 'name',
@@ -611,7 +442,7 @@ export function WebsiteOverviewTab({
 
   return (
     <div className="space-y-6">
-      {/* Key metrics */}
+      {/* Metrics */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <StatCard 
           title="UNIQUE VISITORS"
@@ -636,7 +467,7 @@ export function WebsiteOverviewTab({
           className="h-full"
         />
         <StatCard 
-          title="PAGE VIEWS"
+          title="PAGEVIEWS"
           value={analytics.summary?.pageviews || 0}
           icon={Globe}
           description={`${analytics.today?.pageviews || 0} today`}
@@ -673,7 +504,7 @@ export function WebsiteOverviewTab({
           className="h-full"
         />
         <StatCard 
-          title="AVG. SESSION"
+          title="SESSION DURATION"
           value={analytics.summary?.avg_session_duration_formatted || '0s'}
           icon={Timer}
           isLoading={isLoading}
@@ -684,19 +515,18 @@ export function WebsiteOverviewTab({
         />
       </div>
 
-      {/* Visitor Trends */}
+      {/* Chart */}
       <div className="rounded-xl border shadow-sm">
         <div className="p-4 border-b flex flex-col sm:flex-row justify-between items-start gap-3">
           <div>
-            <h2 className="text-lg font-semibold tracking-tight">Visitor Trends</h2>
+            <h2 className="text-lg font-semibold tracking-tight">Traffic Trends</h2>
             <p className="text-sm text-muted-foreground">
-              Website performance metrics over time
-              {dateRange.granularity === 'hourly' ? ' (hourly data)' : ' (daily data)'}
+              {dateRange.granularity === 'hourly' ? 'Hourly' : 'Daily'} traffic data
             </p>
             {dateRange.granularity === 'hourly' && dateDiff > 7 && (
               <div className="mt-1 flex items-center text-amber-600 gap-1 text-xs">
                 <AlertTriangle className="h-3 w-3" />
-                <span>Showing hourly data for more than 7 days may affect performance</span>
+                <span>Large date ranges may affect performance</span>
               </div>
             )}
           </div>
@@ -716,12 +546,12 @@ export function WebsiteOverviewTab({
         </div>
       </div>
 
-      {/* Content Tables */}
+      {/* Tables */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <DataTable 
           tabs={referrerTabs}
           title="Traffic Sources"
-          description="Sources of your traffic and UTM data"
+          description="Referrers and campaign data"
           isLoading={isLoading}
           initialPageSize={7}
           minHeight={230}
@@ -730,20 +560,20 @@ export function WebsiteOverviewTab({
         <DataTable 
           tabs={pagesTabs}
           title="Pages"
-          description="Page views, entry points, and exit points"
+          description="Top pages and entry/exit points"
           isLoading={isLoading}
           initialPageSize={7}
           minHeight={230}
         />
       </div>
 
-      {/* Technology Breakdown Tables */}
+      {/* Technology */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <DataTable 
           data={processedDeviceData}
           columns={deviceColumns}
-          title="Device Types"
-          description="Visitors by device type"
+          title="Devices"
+          description="Device breakdown"
           isLoading={isLoading}
           initialPageSize={8}
           minHeight={200}
@@ -754,7 +584,7 @@ export function WebsiteOverviewTab({
           data={processedBrowserData}
           columns={browserColumns}
           title="Browsers"
-          description="Visitors by browser"
+          description="Browser breakdown"
           isLoading={isLoading}
           initialPageSize={8}
           minHeight={200}
@@ -765,7 +595,7 @@ export function WebsiteOverviewTab({
           data={processedOSData}
           columns={osColumns}
           title="Operating Systems"
-          description="Visitors by operating system"
+          description="OS breakdown"
           isLoading={isLoading}
           initialPageSize={8}
           minHeight={200}

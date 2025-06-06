@@ -18,9 +18,6 @@ import { processAnalyticsData } from '../../utils/analytics-processor';
 import { logger } from '../../lib/logger';
 import { websiteAuthHook } from '../../middleware/website';
 
-
-
-// Validation schema for analytics query parameters
 const analyticsQuerySchema = z.object({
   website_id: z.string().min(1),
   start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
@@ -100,11 +97,13 @@ import sessionsRouter from './sessions';
 import profilesRouter from './profiles';
 import { locationsRouter } from './locations';
 import { errorsRouter } from './errors';
+import queryRouter from './query';
 
 analyticsRouter.route('/mini-chart', miniChartRouter);
 analyticsRouter.route('/sessions', sessionsRouter);
 analyticsRouter.route('/profiles', profilesRouter);
 analyticsRouter.route('/locations', locationsRouter);
 analyticsRouter.route('/errors', errorsRouter);
+analyticsRouter.route('/query', queryRouter);
 
 export default analyticsRouter;

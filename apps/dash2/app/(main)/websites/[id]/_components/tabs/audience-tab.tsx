@@ -1,16 +1,15 @@
 "use client";
 
 import { useMemo, useEffect } from "react";
-// Import TanStack Table types
-import type { ColumnDef, CellContext } from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
 
-import { DistributionChart } from "@/components/charts/distribution-chart";
 import { DataTable } from "@/components/analytics/data-table";
 import { useWebsiteAnalytics } from "@/hooks/use-analytics";
-import { formatDistributionData, groupBrowserData } from "../utils/analytics-helpers";
+import { useEnhancedGeographicData } from "@/hooks/use-dynamic-query";
 import type { FullTabProps } from "../utils/types";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Globe, Laptop, Smartphone, Tablet, Monitor, HelpCircle, Languages, Wifi, WifiOff } from 'lucide-react';
+import { Card, CardHeader, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
+import { Globe, Laptop, Smartphone, Tablet, Monitor, HelpCircle, Languages, Wifi, WifiOff, MapPin, Clock } from 'lucide-react';
 import { getLanguageName } from "@databuddy/shared";
 import { 
   processDeviceData, 
@@ -20,26 +19,12 @@ import {
   type TechnologyTableEntry,
 } from "../utils/technology-helpers";
 
-interface DeviceTypeEntry {
-  device_type: string;
-  device_brand: string;
-  device_model: string;
+// Define types for geographic data with percentage
+interface GeographicEntry {
+  name: string;
   visitors: number;
   pageviews: number;
-}
-
-// Define types for table data
-interface TimezoneEntry {
-  timezone: string;
-  visitors: number;
-  pageviews: number;
-}
-
-interface CountryEntry {
-  country: string;
-  visitors: number;
-  pageviews: number;
-  // Potentially other fields from API if any
+  percentage: number;
 }
 
 interface ConnectionEntry extends TechnologyTableEntry {
@@ -49,19 +34,6 @@ interface ConnectionEntry extends TechnologyTableEntry {
 interface LanguageEntry extends TechnologyTableEntry {
   category: 'language';
 }
-
-// Helper function to get browser icon
-const getBrowserIcon = (browser: string): string => {
-  const browserLower = browser.toLowerCase();
-  if (browserLower.includes('chrome')) return '/icons/chrome.svg';
-  if (browserLower.includes('firefox')) return '/icons/firefox.svg';
-  if (browserLower.includes('safari')) return '/icons/safari.svg';
-  if (browserLower.includes('edge')) return '/icons/edge.svg';
-  if (browserLower.includes('opera')) return '/icons/opera.svg';
-  if (browserLower.includes('ie') || browserLower.includes('internet explorer')) return '/icons/ie.svg';
-  if (browserLower.includes('samsung')) return '/icons/samsung.svg';
-  return '/icons/browser.svg';
-};
 
 // Helper function to get connection icon
 const getConnectionIcon = (connection: string) => {
@@ -78,27 +50,19 @@ const getConnectionIcon = (connection: string) => {
   return <Globe className="h-4 w-4 text-primary" />;
 };
 
-// Helper function to get device icon
-const getDeviceIcon = (deviceType: string) => {
-  const typeLower = deviceType.toLowerCase();
-  if (!deviceType || deviceType === 'Unknown') return <HelpCircle className="h-4 w-4 text-muted-foreground" />;
-  if (typeLower.includes('mobile') || typeLower.includes('phone')) return <Smartphone className="h-4 w-4 text-blue-500" />;
-  if (typeLower.includes('tablet')) return <Tablet className="h-4 w-4 text-purple-500" />;
-  if (typeLower.includes('desktop')) return <Monitor className="h-4 w-4 text-green-500" />;
-  if (typeLower.includes('laptop')) return <Laptop className="h-4 w-4 text-amber-500" />;
-  if (typeLower.includes('tv')) return <Monitor className="h-4 w-4 text-red-500" />;
-  return <Laptop className="h-4 w-4 text-primary" />;
+// Helper function to calculate percentages
+const addPercentages = (data: any[], totalField: 'visitors' | 'pageviews' = 'visitors'): GeographicEntry[] => {
+  if (!data?.length) return [];
+  
+  const total = data.reduce((sum, item) => sum + (item[totalField] || 0), 0);
+  
+  return data.map(item => ({
+    name: item.name || 'Unknown',
+    visitors: item.visitors || 0,
+    pageviews: item.pageviews || 0,
+    percentage: total > 0 ? Math.round((item[totalField] / total) * 100) : 0,
+  }));
 };
-
-// Helper to create a column with optional cell and meta
-function col<T>(accessorKey: keyof T, header: string, cell?: (info: CellContext<T, unknown>) => React.ReactNode, meta?: object): ColumnDef<T, unknown> {
-  return {
-    accessorKey: accessorKey as string,
-    header,
-    ...(cell && { cell }),
-    ...(meta && { meta }),
-  };
-}
 
 export function WebsiteAudienceTab({
   websiteId,
@@ -107,21 +71,41 @@ export function WebsiteAudienceTab({
   isRefreshing,
   setIsRefreshing
 }: FullTabProps) {
-  // Fetch analytics data
+  // Fetch analytics data for legacy components
   const {
     analytics,
     loading,
-    refetch
+    refetch: refetchAnalytics
   } = useWebsiteAnalytics(websiteId, dateRange);
 
-  // Handle refresh
+  // Fetch enhanced geographic data using batch queries
+  const {
+    results: geographicResults,
+    isLoading: isLoadingGeographic,
+    refetch: refetchGeographic,
+    error: geographicError
+  } = useEnhancedGeographicData(websiteId, dateRange);
+
+  // Handle refresh - coordinate both data sources
   useEffect(() => {
     let isMounted = true;
     
     if (isRefreshing) {
       const doRefresh = async () => {
         try {
-          await refetch();
+          // Refresh both data sources simultaneously
+          const [analyticsResult, geographicResult] = await Promise.allSettled([
+            refetchAnalytics(),
+            refetchGeographic()
+          ]);
+          
+          // Log any specific failures for debugging
+          if (analyticsResult.status === 'rejected') {
+            console.error("Failed to refresh analytics data:", analyticsResult.reason);
+          }
+          if (geographicResult.status === 'rejected') {
+            console.error("Failed to refresh geographic data:", geographicResult.reason);
+          }
         } catch (error) {
           console.error("Failed to refresh data:", error);
         } finally {
@@ -137,7 +121,7 @@ export function WebsiteAudienceTab({
     return () => {
       isMounted = false;
     };
-  }, [isRefreshing, refetch, setIsRefreshing]);
+  }, [isRefreshing, refetchAnalytics, refetchGeographic, setIsRefreshing]);
 
   // Technology data processing using the same helpers as overview
   const processedDeviceData = useMemo(() => 
@@ -196,90 +180,343 @@ export function WebsiteAudienceTab({
       });
   }, [analytics.languages]);
 
-  // Combine loading states
-  const isLoading = loading.summary || isRefreshing;
+  // Process geographic data from batch query results
+  const processedGeographicData = useMemo(() => {
+    if (!geographicResults?.length) {
+      return {
+        countries: [],
+        regions: [],
+        cities: [],
+        timezones: [],
+        languages: []
+      };
+    }
 
-  // Technology table columns
-  const deviceColumns = useMemo((): ColumnDef<TechnologyTableEntry, unknown>[] => [
-    col<TechnologyTableEntry>('name', 'Device Type', (info) => {
-      const entry = info.row.original;
-      return (
-        <div className="flex items-center gap-3">
-          <TechnologyIcon entry={entry} size="md" />
-          <span className="font-medium">{entry.name}</span>
-        </div>
-      );
-    }),
-    col<TechnologyTableEntry>('visitors', 'Visitors'),
-    col<TechnologyTableEntry>('percentage', 'Share', (info) => {
-      const percentage = info.getValue() as number;
-      return <PercentageBadge percentage={percentage} />;
-    }),
-  ], []);
+    const countriesResult = geographicResults.find(r => r.queryId === 'countries');
+    const regionsResult = geographicResults.find(r => r.queryId === 'regions');
+    const timezonesResult = geographicResults.find(r => r.queryId === 'timezones');
+    const languagesResult = geographicResults.find(r => r.queryId === 'languages');
 
-  const browserColumns = useMemo((): ColumnDef<TechnologyTableEntry, unknown>[] => [
-    col<TechnologyTableEntry>('name', 'Browser', (info) => {
-      const entry = info.row.original;
-      return (
-        <div className="flex items-center gap-3">
-          <TechnologyIcon entry={entry} size="md" />
-          <span className="font-medium">{entry.name}</span>
-        </div>
-      );
-    }),
-    col<TechnologyTableEntry>('visitors', 'Visitors'),
-    col<TechnologyTableEntry>('percentage', 'Share', (info) => {
-      const percentage = info.getValue() as number;
-      return <PercentageBadge percentage={percentage} />;
-    }),
+    return {
+      countries: addPercentages(countriesResult?.data?.country || []),
+      regions: addPercentages(regionsResult?.data?.region || []),
+      timezones: addPercentages(timezonesResult?.data?.timezone || []),
+      languages: addPercentages(languagesResult?.data?.language || []),
+    };
+  }, [geographicResults]);
+
+  // Combine loading states - ensure all data sources are synchronized
+  const isLoading = loading.summary || isLoadingGeographic || isRefreshing;
+
+  // Technology table columns using modern approach
+  const technologyColumns = useMemo((): ColumnDef<TechnologyTableEntry, unknown>[] => [
+    {
+      id: 'name',
+      accessorKey: 'name',
+      header: 'Name',
+      cell: (info) => {
+        const entry = info.row.original;
+        return (
+          <div className="flex items-center gap-3">
+            <TechnologyIcon entry={entry} size="md" />
+            <span className="font-medium">{entry.name}</span>
+          </div>
+        );
+      }
+    },
+    {
+      id: 'visitors',
+      accessorKey: 'visitors',
+      header: 'Visitors'
+    },
+    {
+      id: 'percentage',
+      accessorKey: 'percentage',
+      header: 'Share',
+      cell: (info) => {
+        const percentage = info.getValue() as number;
+        return <PercentageBadge percentage={percentage} />;
+      }
+    },
   ], []);
 
   const connectionColumns = useMemo((): ColumnDef<ConnectionEntry, unknown>[] => [
-    col<ConnectionEntry>('name', 'Connection Type', (info) => {
-      const entry = info.row.original;
-      return (
-        <div className="flex items-center gap-3">
-          {entry.iconComponent}
-          <span className="font-medium">{entry.name}</span>
-        </div>
-      );
-    }),
-    col<ConnectionEntry>('visitors', 'Visitors'),
-    col<ConnectionEntry>('percentage', 'Share', (info) => {
-      const percentage = info.getValue() as number;
-      return <PercentageBadge percentage={percentage} />;
-    }),
+    {
+      id: 'name',
+      accessorKey: 'name',
+      header: 'Connection Type',
+      cell: (info) => {
+        const entry = info.row.original;
+        return (
+          <div className="flex items-center gap-3">
+            {entry.iconComponent}
+            <span className="font-medium">{entry.name}</span>
+          </div>
+        );
+      }
+    },
+    {
+      id: 'visitors',
+      accessorKey: 'visitors',
+      header: 'Visitors'
+    },
+    {
+      id: 'percentage',
+      accessorKey: 'percentage',
+      header: 'Share',
+      cell: (info) => {
+        const percentage = info.getValue() as number;
+        return <PercentageBadge percentage={percentage} />;
+      }
+    },
   ], []);
 
-  const languageColumns = useMemo((): ColumnDef<TechnologyTableEntry, unknown>[] => [
-    col<TechnologyTableEntry>('name', 'Language', (info) => {
-      const entry = info.row.original;
-      return (
-        <div className="flex items-center gap-3">
-          {entry.iconComponent}
-          <span className="font-medium">{entry.name}</span>
-        </div>
-      );
-    }),
-    col<TechnologyTableEntry>('visitors', 'Visitors'),
-    col<TechnologyTableEntry>('percentage', 'Share', (info) => {
-      const percentage = info.getValue() as number;
-      return <PercentageBadge percentage={percentage} />;
-    }),
+  // Geographic columns with percentage support
+  const geographicColumns = useMemo((): ColumnDef<GeographicEntry, unknown>[] => [
+    {
+      id: 'name',
+      accessorKey: 'name',
+      header: 'Location',
+      cell: (info) => {
+        const name = info.getValue() as string;
+        return (
+          <div className="flex items-center gap-2">
+            <Globe className="h-4 w-4 text-primary" />
+            <span className="font-medium">{name}</span>
+          </div>
+        );
+      }
+    },
+    {
+      id: 'visitors',
+      accessorKey: 'visitors',
+      header: 'Visitors'
+    },
+    {
+      id: 'pageviews',
+      accessorKey: 'pageviews',
+      header: 'Pageviews'
+    },
+    {
+      id: 'percentage',
+      accessorKey: 'percentage',
+      header: 'Share',
+      cell: (info) => {
+        const percentage = info.getValue() as number;
+        return <PercentageBadge percentage={percentage} />;
+      }
+    },
   ], []);
+
+  // Country specific columns with flag support
+  const countryColumns = useMemo((): ColumnDef<GeographicEntry, unknown>[] => [
+    {
+      id: 'name',
+      accessorKey: 'name',
+      header: 'Country',
+      cell: (info) => {
+        const countryCode = info.getValue() as string;
+        return (
+          <div className="flex items-center gap-2">
+            {countryCode && countryCode !== 'Unknown' ? (
+              <div className="w-5 h-4 relative overflow-hidden rounded-sm bg-muted">
+                <img 
+                  src={`https://purecatamphetamine.github.io/country-flag-icons/3x2/${countryCode.toUpperCase()}.svg`} 
+                  alt={countryCode}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                    const parent = (e.target as HTMLImageElement).parentElement;
+                    if (parent) {
+                      const helpCircle = parent.querySelector('.fallback-icon');
+                      if (helpCircle) (helpCircle as HTMLElement).style.display = 'flex';
+                    }
+                  }}
+                />
+                <div className="fallback-icon w-5 h-4 items-center justify-center rounded-sm bg-muted" style={{display: 'none'}}>
+                    <Globe className="h-3 w-3 text-muted-foreground" />
+                </div>
+              </div>
+            ) : (
+              <div className="w-5 h-4 flex items-center justify-center rounded-sm bg-muted">
+                <Globe className="h-3 w-3 text-muted-foreground" />
+              </div>
+            )}
+            <span className="font-medium">{countryCode || 'Unknown'}</span>
+          </div>
+        );
+      }
+    },
+    {
+      id: 'visitors',
+      accessorKey: 'visitors',
+      header: 'Visitors'
+    },
+    {
+      id: 'pageviews',
+      accessorKey: 'pageviews',
+      header: 'Pageviews'
+    },
+    {
+      id: 'percentage',
+      accessorKey: 'percentage',
+      header: 'Share',
+      cell: (info) => {
+        const percentage = info.getValue() as number;
+        return <PercentageBadge percentage={percentage} />;
+      }
+    },
+  ], []);
+
+  // Timezone specific columns with icon and current time
+  const timezoneColumns = useMemo((): ColumnDef<any, unknown>[] => [
+    {
+      id: 'name',
+      accessorKey: 'name',
+      header: 'Timezone',
+      cell: (info) => {
+        const entry = info.row.original;
+        const timezone = entry.name;
+        const currentTime = entry.current_time;
+        return (
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-primary" />
+            <div>
+              <div className="font-medium">{timezone}</div>
+              {currentTime && (
+                <div className="text-xs text-muted-foreground">{currentTime}</div>
+              )}
+            </div>
+          </div>
+        );
+      }
+    },
+    {
+      id: 'visitors',
+      accessorKey: 'visitors',
+      header: 'Visitors'
+    },
+    {
+      id: 'pageviews',
+      accessorKey: 'pageviews',
+      header: 'Pageviews'
+    },
+    {
+      id: 'percentage',
+      accessorKey: 'percentage',
+      header: 'Share',
+      cell: (info) => {
+        const percentage = info.getValue() as number;
+        return <PercentageBadge percentage={percentage} />;
+      }
+    },
+  ], []);
+
+  // Language specific columns with icon and code
+  const languageColumns = useMemo((): ColumnDef<any, unknown>[] => [
+    {
+      id: 'name',
+      accessorKey: 'name',
+      header: 'Language',
+      cell: (info) => {
+        const entry = info.row.original;
+        const language = entry.name;
+        const code = entry.code;
+        return (
+          <div className="flex items-center gap-2">
+            <Languages className="h-4 w-4 text-primary" />
+            <div>
+              <div className="font-medium">{language}</div>
+              {code && code !== language && (
+                <div className="text-xs text-muted-foreground">{code}</div>
+              )}
+            </div>
+          </div>
+        );
+      }
+    },
+    {
+      id: 'visitors',
+      accessorKey: 'visitors',
+      header: 'Visitors'
+    },
+    {
+      id: 'pageviews',
+      accessorKey: 'pageviews',
+      header: 'Pageviews'
+    },
+    {
+      id: 'percentage',
+      accessorKey: 'percentage',
+      header: 'Share',
+      cell: (info) => {
+        const percentage = info.getValue() as number;
+        return <PercentageBadge percentage={percentage} />;
+      }
+    },
+  ], []);
+
+  // Prepare tabs for enhanced geographic data with unique keys
+  const geographicTabs = useMemo(() => [
+    {
+      id: 'countries',
+      label: 'Countries',
+      data: processedGeographicData.countries.map((item, index) => ({
+        ...item,
+        _uniqueKey: `country-${item.name}-${index}` // Ensure unique row keys
+      })),
+      columns: countryColumns,
+    },
+    {
+      id: 'regions',
+      label: 'Regions',
+      data: processedGeographicData.regions.map((item, index) => ({
+        ...item,
+        _uniqueKey: `region-${item.name}-${index}` // Ensure unique row keys
+      })),
+      columns: geographicColumns,
+    },
+    {
+      id: 'timezones',
+      label: 'Timezones',
+      data: processedGeographicData.timezones.map((item, index) => ({
+        ...item,
+        _uniqueKey: `timezone-${item.name}-${index}` // Ensure unique row keys
+      })),
+      columns: timezoneColumns,
+    },
+    {
+      id: 'languages',
+      label: 'Languages',
+      data: processedGeographicData.languages.map((item, index) => ({
+        ...item,
+        _uniqueKey: `language-${item.name}-${index}` // Ensure unique row keys
+      })),
+      columns: languageColumns,
+    },
+  ], [
+    processedGeographicData.countries,
+    processedGeographicData.regions,
+    processedGeographicData.timezones,
+    processedGeographicData.languages,
+    countryColumns,
+    geographicColumns,
+    timezoneColumns,
+    languageColumns,
+  ]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div>
         <h2 className="text-lg font-semibold mb-2">Audience Insights</h2>
         <p className="text-sm text-muted-foreground">Detailed information about your website visitors</p>
       </div>
       
-      {/* Technology Breakdown Tables */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Technology Breakdown */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <DataTable 
           data={processedDeviceData}
-          columns={deviceColumns}
+          columns={technologyColumns}
           title="Device Types"
           description="Visitors by device type"
           isLoading={isLoading}
@@ -290,7 +527,7 @@ export function WebsiteAudienceTab({
         
         <DataTable 
           data={processedBrowserData}
-          columns={browserColumns}
+          columns={technologyColumns}
           title="Browsers"
           description="Visitors by browser"
           isLoading={isLoading}
@@ -300,8 +537,8 @@ export function WebsiteAudienceTab({
         />
       </div>
       
-      {/* Connection and Language Tables */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Connection and Language */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <DataTable 
           data={processedConnectionData}
           columns={connectionColumns}
@@ -315,7 +552,7 @@ export function WebsiteAudienceTab({
         
         <DataTable 
           data={processedLanguageData}
-          columns={languageColumns}
+          columns={technologyColumns}
           title="Languages"
           description="Visitors by preferred language"
           isLoading={isLoading}
@@ -324,79 +561,19 @@ export function WebsiteAudienceTab({
           showSearch={false}
         />
       </div>
-      
-      {/* Timezones */}
-      <div className="rounded-xl border shadow-sm">
+
+      {/* Enhanced Geographic Data */}
+      <div className="grid grid-cols-1 gap-4">
         <DataTable 
-          data={analytics.timezones?.map(item => ({ // Ensure data maps to TimezoneEntry
-            timezone: item.timezone,
-            visitors: item.visitors,
-            pageviews: item.pageviews
-          })) || []}
-          columns={useMemo((): ColumnDef<TimezoneEntry, unknown>[] => [
-            col<TimezoneEntry>('timezone', 'Timezone', (info) => (
-              <span className="font-medium">{info.getValue() as string || 'Unknown'}</span>
-            )),
-            col<TimezoneEntry>('visitors', 'Visitors'),
-            col<TimezoneEntry>('pageviews', 'Pageviews'),
-          ], [])}
-          title="Timezones"
-          description="Visitors by timezone"
-          isLoading={isLoading}
-          initialPageSize={10}
-        />
-      </div>
-      
-      {/* Countries with flags */}
-      <div className="rounded-xl border shadow-sm">
-        <DataTable 
-          data={analytics.countries?.map(item => ({ // Ensure data maps to CountryEntry
-            country: item.country,
-            visitors: item.visitors,
-            pageviews: item.pageviews
-          })) || []}
-          columns={useMemo((): ColumnDef<CountryEntry, unknown>[] => [
-            col<CountryEntry>('country', 'Country', (info) => {
-              const countryCode = info.getValue() as string;
-              return (
-                <div className="flex items-center gap-2">
-                  {countryCode ? (
-                    <div className="w-5 h-4 relative overflow-hidden rounded-sm bg-muted">
-                      <img 
-                        src={`https://purecatamphetamine.github.io/country-flag-icons/3x2/${countryCode.toUpperCase()}.svg`} 
-                        alt={countryCode}
-                        className="absolute inset-0 w-full h-full object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
-                          const parent = (e.target as HTMLImageElement).parentElement;
-                          if (parent) {
-                            const helpCircle = parent.querySelector('.fallback-icon');
-                            if (helpCircle) (helpCircle as HTMLElement).style.display = 'flex';
-                          }
-                        }}
-                      />
-                      <div className="fallback-icon w-5 h-4 items-center justify-center rounded-sm bg-muted" style={{display: 'none'}}>
-                          <HelpCircle className="h-3 w-3 text-muted-foreground" />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="w-5 h-4 flex items-center justify-center rounded-sm bg-muted">
-                      <HelpCircle className="h-3 w-3 text-muted-foreground" />
-                    </div>
-                  )}
-                  <span className="font-medium">{countryCode || 'Unknown'}</span>
-                </div>
-              );
-            }),
-            col<CountryEntry>('visitors', 'Visitors', undefined),
-            col<CountryEntry>('pageviews', 'Pageviews', undefined),
-          ], [])}
+          tabs={geographicTabs}
           title="Geographic Distribution"
-          description="Visitors by location"
+          description="Visitors by location, timezone, and language (limit: 100 per category)"
           isLoading={isLoading}
+          initialPageSize={8}
+          minHeight={400}
         />
       </div>
-      
+
       {/* Screen Resolutions */}
       <div className="rounded-xl border shadow-sm bg-card">
         <div className="px-3 pt-3 pb-0.5">
@@ -417,8 +594,9 @@ export function WebsiteAudienceTab({
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {analytics.screen_resolutions?.slice(0, 6).map((item, index) => {
-                if (!item.screen_resolution) return null; // Skip items with undefined screen_resolution
-                const [width, height] = item.screen_resolution.split('x').map(Number);
+                const resolution = (item as any).resolution || item.screen_resolution;
+                if (!resolution) return null; // Skip items with undefined resolution
+                const [width, height] = resolution.split('x').map(Number);
                 const isValid = !Number.isNaN(width) && !Number.isNaN(height);
                 
                 // Calculate percentage of total visitors
@@ -445,12 +623,12 @@ export function WebsiteAudienceTab({
                 
                 return (
                   <div 
-                    key={item.screen_resolution} 
+                    key={resolution} 
                     className="border rounded-lg p-4 flex flex-col"
                   >
                     <div className="flex justify-between items-start mb-3">
                       <div>
-                        <div className="font-medium">{item.screen_resolution}</div>
+                        <div className="font-medium">{resolution}</div>
                         <div className="text-xs text-muted-foreground">{deviceType}</div>
                       </div>
                     </div>

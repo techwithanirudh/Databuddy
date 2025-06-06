@@ -316,6 +316,7 @@ export function MinimalTable<TData extends RowData, TValue>(
               </p>
               {globalFilter && (
                 <button
+                  type="button"
                   onClick={() => setGlobalFilter('')}
                   className="mt-3 text-xs text-primary hover:text-primary/80 underline underline-offset-2"
                 >

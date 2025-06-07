@@ -12,7 +12,6 @@ import type { AppVariables } from '../../types';
 import { authMiddleware } from '../../middleware/auth';
 import { websiteAuthHook } from '../../middleware/website';
 import { logger } from '../../lib/logger';
-import { getRedisCache } from '@databuddy/redis';
 import OpenAI from 'openai';
 
 const openai = new OpenAI({
@@ -56,12 +55,12 @@ const chatRequestSchema = z.object({
 });
 
 const AIResponseJsonSchema = z.object({
-  sql: z.string().optional(),
-  chart_type: z.enum(['bar', 'line', 'pie', 'area', 'stacked_bar', 'multi_line']).optional(),
+  sql: z.string().nullable().optional(),
+  chart_type: z.enum(['bar', 'line', 'pie', 'area', 'stacked_bar', 'multi_line']).nullable().optional(),
   response_type: z.enum(['chart', 'text', 'metric']),
-  text_response: z.string().optional(),
-  metric_value: z.union([z.string(), z.number()]).optional(),
-  metric_label: z.string().optional()
+  text_response: z.string().nullable().optional(),
+  metric_value: z.union([z.string(), z.number()]).nullable().optional(),
+  metric_label: z.string().nullable().optional()
 });
 
 export interface StreamingUpdate {
@@ -343,19 +342,19 @@ assistantRouter.post('/stream', zValidator('json', chatRequestSchema), async (c)
 
         const aiStart = Date.now();
         const { context } = c.req.valid('json');
+        
+        const fullPrompt = enhancedAnalysisPrompt(message, website_id, websiteHostname, context?.previousMessages);
+        
         const completion = await openai.chat.completions.create({
           model: 'google/gemini-2.0-flash-001',
           messages: [
             {
               role: 'system',
-              content: enhancedAnalysisPrompt(message, website_id, websiteHostname, context?.previousMessages)
-            },
-            {
-              role: 'user',
-              content: message
+              content: fullPrompt
             }
           ],
           temperature: 0.1,
+          response_format: { type: 'json_object' }
         });
 
         const aiResponseText = completion.choices[0]?.message?.content || '';

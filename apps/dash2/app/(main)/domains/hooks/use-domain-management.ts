@@ -55,13 +55,13 @@ export const useDomainManagement = () => {
 
   // Initialize expanded domains for pending/failed domains
   useEffect(() => {
-    if (domains.length > 0 && state.expandedDomains.size === 0 && domainsNeedingVerification.length > 0) {
+    if (domains.length > 0 && domainsNeedingVerification.length > 0) {
       setState(prev => ({
         ...prev,
         expandedDomains: new Set(domainsNeedingVerification)
       }));
     }
-  }, [domains.length, state.expandedDomains.size, domainsNeedingVerification]);
+  }, [domains.length, domainsNeedingVerification]);
 
   // Fetch domains (now just refetch from the hook)
   const fetchDomains = useCallback(() => {

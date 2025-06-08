@@ -118,7 +118,7 @@ export default async function BlogPage(props: {
             {page.data.tags && page.data.tags.length > 0 && (
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs font-medium text-muted-foreground">Tags:</span>
-                {page.data.tags.map((tag) => (
+                {page.data.tags.map((tag: string) => (
                   <span
                     key={tag}
                     className="px-2.5 py-1 rounded-md bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground text-xs font-medium transition-colors cursor-pointer border border-border/50"

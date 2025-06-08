@@ -28,19 +28,32 @@ const AnalyticsSchema = {
     { name: 'title', type: 'String', description: 'Page title' },
     { name: 'referrer', type: 'String', description: 'Referrer URL' },
     { name: 'country', type: 'String', description: 'User country' },
+    { name: 'region', type: 'String', description: 'Geographic region or state (e.g., California)' },
+    { name: 'timezone', type: 'String', description: "User's timezone (e.g., America/New_York)" },
     { name: 'browser_name', type: 'String', description: 'Browser name' },
     { name: 'os_name', type: 'String', description: 'Operating system' },
     { name: 'device_type', type: 'String', description: 'Device type (desktop, mobile, tablet)' },
+    { name: 'language', type: 'String', description: 'Browser language code (e.g., en-US, fr-FR)' },
     { name: 'utm_source', type: 'String', description: 'UTM source parameter' },
     { name: 'utm_medium', type: 'String', description: 'UTM medium parameter' },
     { name: 'utm_campaign', type: 'String', description: 'UTM campaign parameter' },
+    { name: 'utm_term', type: 'String', description: 'UTM term parameter' },
+    { name: 'utm_content', type: 'String', description: 'UTM content parameter' },
     { name: 'session_id', type: 'String', description: 'User session identifier' },
     { name: 'anonymous_id', type: 'String', description: 'Anonymous user identifier' },
     { name: 'time_on_page', type: 'Float32', description: 'Time spent on page in seconds' },
     { name: 'scroll_depth', type: 'Float32', description: 'Page scroll depth percentage' },
     { name: 'is_bounce', type: 'UInt8', description: 'Whether this was a bounce (1) or not (0)' },
+    { name: 'exit_intent', type: 'UInt8', description: 'Whether an exit intent was detected (1) or not (0)' },
     { name: 'load_time', type: 'Int32', description: 'Page load time in milliseconds' },
-    { name: 'ttfb', type: 'Int32', description: 'Time to first byte in milliseconds' }
+    { name: 'ttfb', type: 'Int32', description: 'Time to first byte in milliseconds' },
+    { name: 'dom_ready_time', type: 'Int32', description: 'DOM ready time in milliseconds' },
+    { name: 'render_time', type: 'Int32', description: 'Page render time in milliseconds' },
+    { name: 'fcp', type: 'Int32', description: 'First Contentful Paint time in milliseconds' },
+    { name: 'lcp', type: 'Int32', description: 'Largest Contentful Paint time in milliseconds' },
+    { name: 'cls', type: 'Float32', description: 'Cumulative Layout Shift score' },
+    { name: 'error_message', type: 'String', description: 'Error message for error events' },
+    { name: 'error_stack', type: 'String', description: 'Error stack trace for error events' }
   ]
 };
 
@@ -173,7 +186,7 @@ ADVANCED QUERY PATTERNS:
    SQL: SELECT [DIMENSION_COLUMN] AS page, COUNT(*) AS pageviews FROM analytics.events WHERE client_id = '${websiteId}' AND event_name = 'screen_view' GROUP BY [DIMENSION_COLUMN] ORDER BY pageviews DESC LIMIT 10;
    Chart Type: "bar";
    Example for "Top 10 pages by traffic":
-     SQL: SELECT path, COUNT(*) AS pageviews FROM analytics.events WHERE client_id = '${websiteId}' AND event_name = 'screen_view' GROUP BY path ORDER BY pageviews DESC LIMIT 10;
+     SQL: SELECT path, COUNT(*) AS pageviews FROM analytics.events WHERE client_id = '${websiteId}' AND event_name = 'screen_view' AND path != '' GROUP BY path ORDER BY pageviews DESC LIMIT 10;
      Chart Type: "bar";
 
 2. Time series with categories (for multi-line or stacked_bar charts):
@@ -186,29 +199,76 @@ ADVANCED QUERY PATTERNS:
      SQL: SELECT toDate(time) AS date, device_type, COUNT(*) AS pageviews FROM analytics.events WHERE client_id = '${websiteId}' AND device_type IN ('mobile', 'desktop') AND event_name = 'screen_view' GROUP BY date, device_type ORDER BY date, device_type;
      Chart Type: "stacked_bar";
 
-3. Comparative analysis (typically bar - if not over time, or stacked_bar - if one dimension is time):
+3. Comparative analysis (typically bar):
    Example: "traffic sources by device" (not over time) → GROUP BY referrer, device_type (Could be complex; simplify or use a bar chart for top referrers, with device breakdown in explanation or a secondary chart if possible. If this implies a breakdown for *each* referrer by device, and there are many referrers, this is too complex for a single chart. Focus on top-level summary.);
    SQL for Top Referrers: SELECT referrer, COUNT(*) AS pageviews FROM analytics.events WHERE client_id = '${websiteId}' AND event_name='screen_view' AND referrer IS NOT NULL AND referrer != '' AND (domain(referrer) != '${websiteHostname}' AND NOT domain(referrer) ILIKE '%.${websiteHostname}') AND domain(referrer) NOT IN ('localhost', '127.0.0.1') GROUP BY referrer ORDER BY pageviews DESC LIMIT 10;
    Chart Type: "bar";
 
-4. Performance metrics:
-   Example: "average page load times daily" → AVG(load_time) GROUP BY toDate(time) (Chart: "line");
-   Example: "page load times by browser daily" → (Use pattern 2 above. Chart: "multi_line" or "stacked_bar" depending on number of browsers and desired emphasis);
-
-5. Trend analysis (single metric over time):
+4. Simple Trend analysis (single metric over time):
    Example: "hourly traffic patterns for today" → SELECT toHour(time) as hour, COUNT(*) as pageviews FROM analytics.events WHERE client_id = '${websiteId}' AND event_name='screen_view' AND toDate(time) = today() GROUP BY hour ORDER BY hour (Chart: "line");
 
+5. Geography Analysis:
+   Query: "Traffic by region in the US", "visitors by timezone";
+   SQL for regions: "SELECT region, uniq(anonymous_id) as visitors FROM analytics.events WHERE client_id = '${websiteId}' AND country = 'US' AND event_name = 'screen_view' AND region != '' GROUP BY region ORDER BY visitors DESC LIMIT 15";
+   Chart Type: "bar";
+   SQL for timezones: "SELECT timezone, uniq(anonymous_id) as visitors FROM analytics.events WHERE client_id = '${websiteId}' AND event_name = 'screen_view' AND timezone != '' GROUP BY timezone ORDER BY visitors DESC LIMIT 15";
+   Chart Type: "bar";
+
+6. Top Exit Pages:
+   Example: "top exit pages", "where are users leaving from?"
+   SQL: "SELECT path, COUNT(*) as exits FROM analytics.events WHERE client_id = '${websiteId}' AND event_name = 'screen_view' AND exit_intent = 1 AND path != '' GROUP BY path ORDER BY exits DESC LIMIT 10"
+   Chart Type: "bar";
+   
+7. UTM Campaign Analysis:
+   Query: "performance of my newsletter campaign", "traffic from utm_source google";
+   SQL for campaign: "SELECT utm_campaign, uniq(anonymous_id) as visitors, COUNT(*) as pageviews FROM analytics.events WHERE client_id = '${websiteId}' AND event_name = 'screen_view' AND utm_campaign != '' GROUP BY utm_campaign ORDER BY visitors DESC LIMIT 10";
+   Chart Type: "bar";
+
+PERFORMANCE ANALYSIS PATTERNS:
+8. Slowest Pages:
+    Query: "slowest pages", "which pages have bad load times?";
+    SQL: "SELECT path, avgIf(load_time, load_time > 0) as avg_load_time, avgIf(fcp, fcp > 0) as avg_fcp, avgIf(lcp, lcp > 0) as avg_lcp FROM analytics.events WHERE client_id = '${websiteId}' AND event_name = 'screen_view' AND load_time > 0 AND path != '' GROUP BY path ORDER BY avg_load_time DESC LIMIT 10";
+    Chart Type: "bar";
+
+9. Performance by Dimension:
+    Query: "page load times by browser", "performance by device type";
+    SQL for Browser: "SELECT browser_name, avgIf(load_time, load_time > 0) as avg_load_time FROM analytics.events WHERE client_id = '${websiteId}' AND event_name = 'screen_view' AND load_time > 0 AND browser_name != '' GROUP BY browser_name ORDER BY avg_load_time DESC";
+    Chart Type: "bar";
+    SQL for Device: "SELECT device_type, avgIf(load_time, load_time > 0) as avg_load_time FROM analytics.events WHERE client_id = '${websiteId}' AND event_name = 'screen_view' AND load_time > 0 AND device_type != '' GROUP BY device_type ORDER BY avg_load_time DESC";
+    Chart Type: "bar";
+
+10. Performance Trends Over Time:
+    Query: "daily average load time this month";
+    SQL: "SELECT toDate(time) as date, avgIf(load_time, load_time > 0) as avg_load_time FROM analytics.events WHERE client_id = '${websiteId}' AND event_name = 'screen_view' AND time >= date_trunc('month', today()) AND load_time > 0 GROUP BY date ORDER BY date";
+    Chart Type: "line";
+
+ERROR ANALYSIS PATTERNS:
+11. Top Error Types:
+    Query: "what are my most common errors?", "top javascript errors";
+    SQL: "SELECT error_message, COUNT(*) as total_occurrences, uniq(anonymous_id) as affected_users FROM analytics.events WHERE client_id = '${websiteId}' AND event_name = 'error' AND error_message != '' GROUP BY error_message ORDER BY total_occurrences DESC LIMIT 10";
+    Chart Type: "bar";
+
+12. Errors by Page:
+    Query: "which pages have the most errors?";
+    SQL: "SELECT path, COUNT(*) as total_errors FROM analytics.events WHERE client_id = '${websiteId}' AND event_name = 'error' AND path != '' AND error_message IS NOT NULL GROUP BY path ORDER BY total_errors DESC LIMIT 10";
+    Chart Type: "bar";
+
+13. Error Trends Over Time:
+    Query: "error count daily for last 14 days";
+    SQL: "SELECT toDate(time) as date, COUNT(*) as total_errors FROM analytics.events WHERE client_id = '${websiteId}' AND event_name = 'error' AND time >= today() - INTERVAL '14' DAY AND error_message IS NOT NULL GROUP BY date ORDER BY date";
+    Chart Type: "line";
+
 COMPLEX ANALYTICS CHART PATTERNS:
-6. Bounce rate analysis by entry page (advanced session tracking):
+14. Bounce rate analysis by entry page (advanced session tracking):
    Example: "bounce rate by entry page" → "WITH entry_pages AS (SELECT session_id, path, MIN(time) as entry_time FROM analytics.events WHERE client_id = '${websiteId}' AND event_name = 'screen_view' GROUP BY session_id, path QUALIFY ROW_NUMBER() OVER (PARTITION BY session_id ORDER BY entry_time) = 1), session_metrics AS (SELECT ep.path, ep.session_id, countIf(e.event_name = 'screen_view') as page_count FROM entry_pages ep LEFT JOIN analytics.events e ON ep.session_id = e.session_id WHERE e.client_id = '${websiteId}' GROUP BY ep.path, ep.session_id) SELECT path, COUNT(*) as sessions, (countIf(page_count = 1) / count()) * 100 as bounce_rate FROM session_metrics GROUP BY path HAVING sessions >= 10 ORDER BY sessions DESC LIMIT 15" (Chart: "bar");
 
-7. Session depth distribution (engagement analysis):
+15. Session depth distribution (engagement analysis):
    Example: "session depth distribution" → "WITH session_pages AS (SELECT session_id, countIf(event_name = 'screen_view') as page_count FROM analytics.events WHERE client_id = '${websiteId}' GROUP BY session_id), depth_buckets AS (SELECT CASE WHEN page_count = 1 THEN '1 page' WHEN page_count = 2 THEN '2 pages' WHEN page_count BETWEEN 3 AND 5 THEN '3-5 pages' WHEN page_count BETWEEN 6 AND 10 THEN '6-10 pages' ELSE '10+ pages' END as depth_bucket, count() as sessions FROM session_pages GROUP BY depth_bucket) SELECT depth_bucket, sessions FROM depth_buckets ORDER BY CASE depth_bucket WHEN '1 page' THEN 1 WHEN '2 pages' THEN 2 WHEN '3-5 pages' THEN 3 WHEN '6-10 pages' THEN 4 ELSE 5 END" (Chart: "pie");
 
-8. Time-based engagement patterns:
+16. Time-based engagement patterns:
    Example: "bounce rate trends by day" → "WITH daily_sessions AS (SELECT toDate(time) as date, session_id, countIf(event_name = 'screen_view') as page_count FROM analytics.events WHERE client_id = '${websiteId}' AND time >= today() - INTERVAL '30' DAY GROUP BY date, session_id) SELECT date, (countIf(page_count = 1) / count()) * 100 as bounce_rate FROM daily_sessions GROUP BY date ORDER BY date" (Chart: "line");
 
-9. Performance correlation analysis:
+17. Performance correlation analysis:
    Example: "bounce rate vs page load time" → "WITH page_performance AS (SELECT path, AVG(load_time) as avg_load_time FROM analytics.events WHERE client_id = '${websiteId}' AND load_time > 0 GROUP BY path), page_bounce AS (SELECT ep.path, (countIf(sm.page_count = 1) / count()) * 100 as bounce_rate FROM (SELECT session_id, path, MIN(time) as entry_time FROM analytics.events WHERE client_id = '${websiteId}' AND event_name = 'screen_view' GROUP BY session_id, path QUALIFY ROW_NUMBER() OVER (PARTITION BY session_id ORDER BY entry_time) = 1) ep LEFT JOIN (SELECT session_id, countIf(event_name = 'screen_view') as page_count FROM analytics.events WHERE client_id = '${websiteId}' GROUP BY session_id) sm ON ep.session_id = sm.session_id GROUP BY ep.path HAVING count() >= 20) SELECT pp.path, pp.avg_load_time, pb.bounce_rate FROM page_performance pp INNER JOIN page_bounce pb ON pp.path = pb.path WHERE pp.avg_load_time IS NOT NULL ORDER BY pp.avg_load_time" (Chart: "bar");
 
 METRIC RESPONSE EXAMPLES:

@@ -99,8 +99,8 @@
                 trackHashChanges: false,
                 trackAttributes: false,
                 trackOutgoingLinks: false,
-                trackSessions: false,
-                trackPerformance: false,
+                trackSessions: true,
+                trackPerformance: true,
                 trackWebVitals: false,
                 trackEngagement: false,
                 trackScrollDepth: false,
@@ -135,15 +135,18 @@
             this.sessionStartTime = this.getSessionStartTime();
             this.lastActivityTime = Date.now();
             
-            // Initialize tracking metrics to avoid undefined values
             this.maxScrollDepth = 0;
             this.interactionCount = 0;
             this.hasExitIntent = false;
             this.pageStartTime = Date.now();
-            this.pageEngagementStart = Date.now(); // Ensure this is initialized
+            this.pageEngagementStart = Date.now();
             this.utmParams = this.getUtmParams();
-            this.isTemporarilyHidden = false; // Track if we're just tabbed out or actually leaving
-            this.visibilityChangeTimer = null; // Timer for tracking visibility changes
+            this.isTemporarilyHidden = false;
+            this.visibilityChangeTimer = null;
+            this.webVitalObservers = [];
+            this.webVitalsReportTimeoutId = null;
+            this.webVitalsVisibilityChangeHandler = null;
+            this.webVitalsPageHideHandler = null;
 
             if (typeof window !== 'undefined') {
                 this.setupExitTracking();
@@ -225,7 +228,6 @@
                 this.anonymousId = this.getOrCreateAnonymousId();
             }
 
-            // Consolidated interaction tracking
             const interactionEvents = ['mousedown', 'keydown', 'scroll', 'touchstart', 'click', 'keypress', 'mousemove'];
             if (this.options.trackInteractions) {
                 for (const eventType of interactionEvents) {
@@ -284,35 +286,26 @@
         }
         
         async send(event) {
-            // Prepare event data
             const pEvent = this.prepareEventData(event);
-            // Skip sending if disabled or filtered out
             if (this.options.disabled || (this.options.filter && !this.options.filter(pEvent))) {
                 return Promise.resolve();
             }
-            // If batching is enabled, add to batch queue
             if (this.options.enableBatching && !event.isForceSend) {
                 return this.addToBatch(pEvent);
             }
-            // Add keepalive for more reliable delivery, especially near page unload
             const fetchOptions = {
                 keepalive: true,
             };
-            // Try to send directly to API with keepalive
             return this.api.fetch("/", pEvent, fetchOptions);
         }
         
         addToBatch(event) {
-            // Add event to batch queue
             this.batchQueue.push(event);
         
-            
-            // Set a timer to flush the batch if not already set
             if (this.batchTimer === null) {
                 this.batchTimer = setTimeout(() => this.flushBatch(), this.options.batchTimeout);
             }
             
-            // If batch queue has reached the max size, flush it immediately
             if (this.batchQueue.length >= this.options.batchSize) {
                 this.flushBatch();
             }
@@ -321,18 +314,15 @@
         }
         
         async flushBatch() {
-            // Clear the batch timer
             if (this.batchTimer) {
                 clearTimeout(this.batchTimer);
                 this.batchTimer = null;
             }
             
-            // If there are no events in the batch, do nothing
             if (this.batchQueue.length === 0) {
                 return;
             }
             
-            // Take current batch queue and reset
             const batchEvents = [...this.batchQueue];
             this.batchQueue = [];
             
@@ -364,12 +354,10 @@
             }
         }
         
-        // Send batch events using Beacon API
         async sendBatchBeacon(events) {
             if (this.isServer() || !navigator.sendBeacon) return null;
             
             try {
-                // Build URL with authentication parameters
                 const baseUrl = this.api.baseUrl;
                 const clientId = this.options.clientId;
                 const sdkName = this.options.sdk || "web";
@@ -398,15 +386,11 @@
         }
         
         async track(eventName, properties) {
-            // Skip tracking if disabled globally
             if (this.options.disabled) return;
             
-            // Apply sampling if configured (skip random events based on sampling rate)
             if (this.options.samplingRate < 1.0) {
-                // Generate random number between 0-1
                 const samplingValue = Math.random();
                 
-                // Skip event if random value exceeds sampling rate
                 if (samplingValue > this.options.samplingRate) {
                     return { sampled: false };
                 }
@@ -442,39 +426,31 @@
                 }
             };
 
-            // If batching is enabled, route through send method which handles batching
             if (this.options.enableBatching) {
                 return this.send(payload);
             }
             
-            // Otherwise, use sendBeacon for direct sending
             try {
                 const beaconResult = await this.sendBeacon(payload);
                 if (beaconResult) {
                     return beaconResult;
                 }
             } catch (e) {
-                // If beacon fails, fall back to regular send
             }
             
-            // Fallback to regular fetch
             return this.send(payload);
         }
         
-        // Special method for sending events using Beacon API (preferred for reliability)
         async sendBeacon(event) {
             if (this.isServer()) return null;
             
             try {
-                // Prepare event data
                 const pEvent = this.prepareEventData(event);
                 
-                // Skip sending if disabled or filtered out
                 if (this.options.disabled || (this.options.filter && !this.options.filter(pEvent))) {
                     return null;
                 }
                 
-                // Add client ID and SDK info as URL parameters since Beacon can't set headers
                 const baseUrl = this.options.apiUrl;
                 if (!baseUrl) {
                     return null;
@@ -485,7 +461,6 @@
                 const sdkName = this.options.sdk || "web";
                 const sdkVersion = this.options.sdkVersion || "1.0.0";
                 
-                // Build URL with query parameters for authentication
                 const url = new URL('/', baseUrl);
                 url.searchParams.set('client_id', clientId);
                 url.searchParams.set('sdk_name', sdkName);
@@ -529,19 +504,6 @@
         }
         
         flush() {
-            // Flush regular queue
-                for (const event of this.queue) {
-                this.send({
-                    ...event,
-                    payload: {
-                        ...event.payload,
-                        anonymousId: this.anonymousId
-                    }
-                });
-            }
-            this.queue = [];
-            
-            // Also flush batch queue if batching is enabled
             if (this.options.enableBatching) {
                 this.flushBatch();
             }
@@ -570,7 +532,6 @@
                     }
                 }
                 
-                // Fallback to older timing API if needed
                 if (window.performance?.timing) {
                     const timing = window.performance.timing;
                     const navigationStart = timing.navigationStart;
@@ -644,11 +605,8 @@
             }
 
             const exitHandler = (event) => {
-                // Flushes batch but doesn't track exit if we're just temporarily hidden (tabbed out)
                 if (this.options.enableBatching) this.flushBatch();
                 
-                // Only send actual exit event if we're really leaving the page
-                // and not just switching tabs or minimizing
                 if (!this.isInternalNavigation && !(window.databuddy?.isTemporarilyHidden)) {
                     this.trackExitData();
                 }
@@ -721,209 +679,145 @@
             }
         }
 
+        cleanupWebVitals() {
+            if (this.webVitalObservers) {
+                this.webVitalObservers.forEach(o => { try { o.disconnect() } catch (e) {} });
+                this.webVitalObservers = [];
+            }
+            if (this.webVitalsReportTimeoutId) {
+                clearTimeout(this.webVitalsReportTimeoutId);
+                this.webVitalsReportTimeoutId = null;
+            }
+            if (this.webVitalsVisibilityChangeHandler) {
+                document.removeEventListener('visibilitychange', this.webVitalsVisibilityChangeHandler);
+                this.webVitalsVisibilityChangeHandler = null;
+            }
+            if (this.webVitalsPageHideHandler) {
+                window.removeEventListener('pagehide', this.webVitalsPageHideHandler);
+                this.webVitalsPageHideHandler = null;
+            }
+        }
+
         initWebVitalsObservers(eventName) {
-            if (this.isServer() || !this.options.trackWebVitals || 
-                typeof window.performance === 'undefined' || 
+            if (this.isServer() || !this.options.trackWebVitals ||
+                typeof window.performance === 'undefined' ||
                 typeof PerformanceObserver === 'undefined') {
                 return;
             }
-            
+
             try {
-                // Store metrics data as they come in
                 const metrics = {
                     fcp: null,
                     lcp: null,
-                    cls: 0,
+                    cls: null,
                     fid: null,
+                    inp: null,
                     ttfb: null
                 };
 
-                let hasReportedVitals = false;
-                
                 const reportWebVitals = () => {
-                    if (hasReportedVitals) return;
+                    const hasMetrics = Object.values(metrics).some(m => m !== null);
+                    if (!hasMetrics) return;
+
+                    this.track('web_vitals', {
+                        __timestamp_ms: Date.now(),
+                        avg_fcp: metrics.fcp,
+                        avg_lcp: metrics.lcp,
+                        avg_cls: metrics.cls !== null ? Number(metrics.cls.toFixed(4)) : null,
+                        avg_fid: metrics.fid,
+                        avg_inp: metrics.inp,
+                        avg_ttfb: metrics.ttfb,
+                        __path: this.lastPath || window.location.pathname,
+                        __title: document.title,
+                        __referrer: this.global?.__referrer || document.referrer || 'direct',
+                        screen_resolution: `${window.screen.width}x${window.screen.height}`,
+                        viewport_size: `${window.innerWidth}x${window.innerHeight}`,
+                        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                        language: navigator.language,
+                        ...this.getConnectionInfo(),
+                    });
                     
-                    if (metrics.fcp || metrics.lcp || metrics.cls > 0 || metrics.fid || metrics.ttfb) {
-                        hasReportedVitals = true;
-                        
-                        const pageContext = {
-                            __path: this.lastPath,
-                            __title: document.title,
-                            __referrer: this.global?.__referrer || document.referrer || 'direct'
-                        };
-                        
-                        const viewportInfo = {
-                            screen_resolution: `${window.screen.width}x${window.screen.height}`,
-                            viewport_size: `${window.innerWidth}x${window.innerHeight}`
-                        };
-                        
-                        const timezoneInfo = {
-                            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                            language: navigator.language
-                        };
-                        
-                        const connectionInfo = this.getConnectionInfo();
-                        
-                        this.track('web_vitals', {
-                            __timestamp_ms: Date.now(),
-                            fcp: metrics.fcp,
-                            lcp: metrics.lcp,
-                            cls: metrics.cls ? metrics.cls.toFixed(3) : null,
-                            fid: metrics.fid,
-                            ttfb: metrics.ttfb,
-                            ...pageContext,
-                            ...viewportInfo,
-                            ...timezoneInfo,
-                            ...connectionInfo,
-                        });
+                    this.cleanupWebVitals();
+                };
+
+                try {
+                    const navEntries = window.performance.getEntriesByType('navigation');
+                    if (navEntries?.[0]) {
+                        metrics.ttfb = Math.round(navEntries[0].responseStart - navEntries[0].fetchStart);
+                    }
+                } catch (e) {}
+
+                const observe = (type, callback) => {
+                    try {
+                        if (PerformanceObserver.supportedEntryTypes?.includes(type)) {
+                            const observer = new PerformanceObserver((list) => {
+                                callback(list.getEntries());
+                            });
+                            observer.observe({ type, buffered: true });
+                            this.webVitalObservers.push(observer);
+                        }
+                    } catch (e) {}
+                };
+
+                observe('paint', (entries) => {
+                    for (const entry of entries) {
+                        if (entry.name === 'first-contentful-paint' && metrics.fcp === null) {
+                            metrics.fcp = Math.round(entry.startTime);
+                        }
+                    }
+                });
+
+                observe('largest-contentful-paint', (entries) => {
+                    const lcpEntry = entries[entries.length - 1];
+                    if (lcpEntry) {
+                        metrics.lcp = Math.round(lcpEntry.startTime);
+                    }
+                });
+                
+                observe('layout-shift', (entries) => {
+                    let clsValue = 0;
+                    for (const entry of entries) {
+                        if (!entry.hadRecentInput) {
+                            clsValue += entry.value;
+                        }
+                    }
+                    metrics.cls = clsValue;
+                });
+
+                observe('first-input', (entries) => {
+                    const entry = entries[0];
+                    if (entry && metrics.fid === null) {
+                        metrics.fid = Math.round(entry.processingStart - entry.startTime);
+                    }
+                });
+
+                observe('event', (entries) => {
+                    let maxInp = 0;
+                    for (const entry of entries) {
+                        if (entry.interactionId && entry.duration > maxInp) {
+                            maxInp = entry.duration;
+                        }
+                    }
+                    if (maxInp > 0) {
+                        metrics.inp = Math.round(maxInp);
+                    }
+                });
+
+                this.webVitalsVisibilityChangeHandler = () => {
+                    if (document.visibilityState === 'hidden') {
+                        reportWebVitals();
                     }
                 };
+                document.addEventListener('visibilitychange', this.webVitalsVisibilityChangeHandler, { once: true });
                 
-                // TTFB (Time to First Byte)
-                if (window.performance?.getEntriesByType) {
-                    const navEntries = window.performance.getEntriesByType('navigation');
-                    if (navEntries && navEntries.length > 0) {
-                        metrics.ttfb = Math.round(navEntries[0].responseStart);
-                    }
-                }
-                
-                // FCP (First Contentful Paint)
-                if (PerformanceObserver.supportedEntryTypes?.includes('paint')) {
-                    const fcpObserver = new PerformanceObserver((entryList) => {
-                        for (const entry of entryList.getEntries()) {
-                            if (entry.name === 'first-contentful-paint') {
-                                metrics.fcp = Math.round(entry.startTime);
-                                // Report after FCP is available
-                                setTimeout(reportWebVitals, 0);
-                                fcpObserver.disconnect();
-                            }
-                        }
-                    });
-                    
-                    fcpObserver.observe({ type: 'paint', buffered: true });
-                } else {
-                    // Fallback for FCP
-                    const paintEntries = performance.getEntriesByType('paint');
-                    for (const entry of paintEntries) {
-                        if (entry.name === 'first-contentful-paint') {
-                            metrics.fcp = Math.round(entry.startTime);
-                            break;
-                        }
-                    }
-                }
-                
-                // LCP (Largest Contentful Paint)
-                if (PerformanceObserver.supportedEntryTypes?.includes('largest-contentful-paint')) {
-                    const lcpObserver = new PerformanceObserver((entryList) => {
-                        const entries = entryList.getEntries();
-                        // Take the latest LCP entry
-                        const lcpEntry = entries[entries.length - 1];
-                        if (lcpEntry) {
-                            metrics.lcp = Math.round(lcpEntry.startTime);
-                            // Report after LCP is available
-                            setTimeout(reportWebVitals, 0);
-                        }
-                    });
-                    
-                    lcpObserver.observe({ type: 'largest-contentful-paint', buffered: true });
-                    
-                    // LCP should be finalized when the page is backgrounded or unloaded
-                    for (const type of ['visibilitychange', 'pagehide']) {
-                        document.addEventListener(type, () => {
-                            if (document.visibilityState === 'hidden' || type === 'pagehide') {
-                                lcpObserver.disconnect();
-                                // Final report when page is hidden
-                                reportWebVitals();
-                            }
-                        }, { once: true, capture: true });
-                    }
-                }
-                
-                // CLS (Cumulative Layout Shift)
-                if (PerformanceObserver.supportedEntryTypes?.includes('layout-shift')) {
-                    let clsValue = 0;
-                    let clsEntries = [];
-                    let sessionValue = 0;
-                    let sessionEntries = [];
-                    let sessionStart = 0;
-                    
-                    const clsObserver = new PerformanceObserver((entryList) => {
-                        for (const entry of entryList.getEntries()) {
-                            // Only count CLS if the user wasn't interacting
-                            if (!entry.hadRecentInput) {
-                                const now = entry.startTime;
-                                
-                                // If this is a new session or continuing the current one
-                                if (sessionValue === 0 || now - sessionStart < 1000) {
-                                    sessionValue += entry.value;
-                                    sessionEntries.push(entry);
-                                    sessionStart = now;
-                                } else {
-                                    // This is a new session
-                                    // Check if this session is larger than the current max
-                                    if (sessionValue > clsValue) {
-                                        clsValue = sessionValue;
-                                        clsEntries = sessionEntries;
-                                    }
-                                    
-                                    // Reset for new session
-                                    sessionValue = entry.value;
-                                    sessionEntries = [entry];
-                                    sessionStart = now;
-                                }
-                            }
-                        }
-                        
-                        // Update current max value
-                        if (sessionValue > clsValue) {
-                            clsValue = sessionValue;
-                            clsEntries = sessionEntries;
-                        }
-                        
-                        metrics.cls = clsValue;
-                    });
-                    
-                    clsObserver.observe({ type: 'layout-shift', buffered: true });
-                    
-                    // Report final CLS when page is hidden or unloaded
-                    for (const type of ['visibilitychange', 'pagehide']) {
-                        document.addEventListener(type, () => {
-                            if (document.visibilityState === 'hidden' || type === 'pagehide') {
-                                clsObserver.disconnect();
-                                // Update latest value and report
-                                metrics.cls = clsValue;
-                                reportWebVitals();
-                            }
-                        }, { once: true, capture: true });
-                    }
-                }
-                
-                // FID (First Input Delay)
-                if (PerformanceObserver.supportedEntryTypes?.includes('first-input')) {
-                    const fidObserver = new PerformanceObserver((entryList) => {
-                        const entry = entryList.getEntries()[0];
-                        if (entry) {
-                            // FID is the delta between when input received and processing started
-                            metrics.fid = Math.round(entry.processingStart - entry.startTime);
-                            fidObserver.disconnect();
-                            // Report after FID is available
-                            setTimeout(reportWebVitals, 0);
-                        }
-                    });
-                    
-                    fidObserver.observe({ type: 'first-input', buffered: true });
-                }
-                
-                // Ensure we send a report even if not all metrics are collected
-                // Set a final timeout to capture whatever metrics we have
-                setTimeout(() => {
-                    reportWebVitals();
-                }, 10000); // 10 seconds is a reasonable upper limit
+                this.webVitalsPageHideHandler = () => reportWebVitals();
+                window.addEventListener('pagehide', this.webVitalsPageHideHandler, { once: true });
 
-            } catch (e) {
-                // Silently fail if there's an error with performance monitoring
-            }
+                this.webVitalsReportTimeoutId = setTimeout(reportWebVitals, 10000);
+
+            } catch (e) {}
         }
+
 
         getConnectionInfo() {
             if (!navigator.connection) return {};
@@ -980,7 +874,7 @@
             if (this.isServer()) return;
             
             this.setGlobalProperties({
-                __anonymized: t.anonymized !== false // Default to true unless explicitly set to false
+                __anonymized: t.anonymized !== false
             });
             
             if (this.options.trackScreenViews) {
@@ -1020,7 +914,6 @@
                                 });
                             }
                         } catch (e) {
-                            // Invalid URL, ignore
                         }
                     }
                 }
@@ -1103,6 +996,9 @@
             }
             
             if (this.lastPath !== i) {
+                if (this.options.trackWebVitals) {
+                    this.cleanupWebVitals();
+                }
                 this.lastPath = i;
                 this.pageCount++;
                 
@@ -1128,10 +1024,10 @@
     ;
 
     function initializeDatabuddy() {
-        // Don't run in Node environment
-        if (typeof window === 'undefined') return;
+        if (typeof window === 'undefined' || window.databuddy) {
+            return;
+        }
             
-        // Get current script tag
         const currentScript = document.currentScript || (() => {
             const scripts = document.getElementsByTagName('script');
             return scripts[scripts.length - 1];
@@ -1238,6 +1134,8 @@
         }
         
         function init() {
+            if (window.databuddy) return;
+            
             const config = getConfig();
             const clientId = getClientId(config);
             
@@ -1247,10 +1145,13 @@
                 clientId
             });
             
-            window.db = (method, ...args) => {
-                if (window.databuddy && typeof window.databuddy[method] === 'function') {
-                    return window.databuddy[method](...args);
-                }
+            window.db = {
+                track: (...args) => window.databuddy?.track(...args),
+                screenView: (...args) => window.databuddy?.screenView(...args),
+                clear: () => window.databuddy?.clear(),
+                flush: () => window.databuddy?.flush(),
+                setGlobalProperties: (...args) => window.databuddy?.setGlobalProperties(...args),
+                trackCustomEvent: (...args) => window.databuddy?.trackCustomEvent(...args)
             };
         }
         

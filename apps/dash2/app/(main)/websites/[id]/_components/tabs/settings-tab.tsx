@@ -1,22 +1,18 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import type { WebsiteDataTabProps, TrackingOptions } from "../utils/types";
 import { Check, Clipboard, Code, ExternalLink, Globe, Info, Laptop, Settings2, Zap, HelpCircle, ChevronRight, AlertCircle, Pencil, FileCode, BookOpen, Activity, Sliders, BarChart, TableProperties, Server, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { WebsiteDialog } from "@/components/website-dialog";
-import { updateWebsite } from "@/app/actions/websites";
-import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
+
 import { Slider } from "@/components/ui/slider";
 import { useRouter } from "next/navigation";
 import {
@@ -47,6 +43,7 @@ import {
   enableAllOptimization,
   resetToDefaults
 } from "../utils/tracking-helpers";
+import Link from "next/link";
 
 
 export function WebsiteSettingsTab({
@@ -296,13 +293,20 @@ function SettingsNavigation({
 }) {
   // Count enabled features for status indicators
   const basicEnabled = [
+    !trackingOptions.disabled, // Inverted logic
     trackingOptions.trackScreenViews,
+    trackingOptions.trackHashChanges,
     trackingOptions.trackSessions,
     trackingOptions.trackInteractions,
+    trackingOptions.trackAttributes,
     trackingOptions.trackOutgoingLinks
   ].filter(Boolean).length;
 
   const advancedEnabled = [
+    trackingOptions.trackEngagement,
+    trackingOptions.trackScrollDepth,
+    trackingOptions.trackExitIntent,
+    trackingOptions.trackBounceRate,
     trackingOptions.trackErrors,
     trackingOptions.trackPerformance,
     trackingOptions.trackWebVitals
@@ -310,7 +314,9 @@ function SettingsNavigation({
 
   const optimizationConfigured = trackingOptions.samplingRate < 1.0 || 
     trackingOptions.maxRetries !== 3 || 
-    trackingOptions.initialRetryDelay !== 500;
+    trackingOptions.initialRetryDelay !== 500 ||
+    trackingOptions.enableBatching ||
+    !trackingOptions.enableRetries;
 
   return (
     <div className="col-span-12 lg:col-span-3">
@@ -347,10 +353,10 @@ function SettingsNavigation({
                 <span>Basic Tracking</span>
               </div>
               <Badge 
-                variant={basicEnabled > 2 ? "default" : basicEnabled > 0 ? "secondary" : "outline"} 
+                variant={basicEnabled > 4 ? "default" : basicEnabled > 2 ? "secondary" : "outline"} 
                 className="h-5 px-2 text-xs"
               >
-                {basicEnabled}/4
+                {basicEnabled}/7
               </Badge>
             </Button>
             
@@ -364,10 +370,10 @@ function SettingsNavigation({
                 <span>Advanced Features</span>
               </div>
               <Badge 
-                variant={advancedEnabled > 1 ? "default" : advancedEnabled > 0 ? "secondary" : "outline"} 
+                variant={advancedEnabled > 4 ? "default" : advancedEnabled > 2 ? "secondary" : "outline"} 
                 className="h-5 px-2 text-xs"
               >
-                {advancedEnabled}/3
+                {advancedEnabled}/7
               </Badge>
             </Button>
             
@@ -395,6 +401,7 @@ function SettingsNavigation({
                 </h3>
               </div>
               
+              <Link href="https://docs.databuddy.cc/docs" target="_blank">
               <Button 
                 variant="ghost" 
                 className="w-full justify-start gap-2 h-9 transition-all duration-200 hover:bg-muted/50"
@@ -403,7 +410,9 @@ function SettingsNavigation({
                 <span>Documentation</span>
                 <ChevronRight className="h-3 w-3 ml-auto" />
               </Button>
+              </Link>
               
+              <Link href="https://docs.databuddy.cc/docs/api" target="_blank">
               <Button 
                 variant="ghost" 
                 className="w-full justify-start gap-2 h-9 transition-all duration-200 hover:bg-muted/50"
@@ -412,6 +421,7 @@ function SettingsNavigation({
                 <span>API Reference</span>
                 <ChevronRight className="h-3 w-3 ml-auto" />
               </Button>
+              </Link>
             </div>
             
             <div className="pt-4 border-t">
@@ -636,11 +646,25 @@ function WebsiteInfoSection({ websiteData, websiteId }: any) {
 function BasicTrackingTab({ trackingOptions, onToggleOption }: any) {
   const trackingOptionsConfig = [
     {
+      key: "disabled",
+      title: "Enable Tracking",
+      description: "Master switch for all tracking functionality",
+      required: false,
+      inverted: true, // This option is inverted (checked when disabled is false)
+      data: ["Controls whether any tracking occurs", "When disabled, no data is collected", "Useful for privacy compliance or testing"]
+    },
+    {
       key: "trackScreenViews",
       title: "Page Views",
       description: "Track when users navigate to different pages",
       required: true,
       data: ["Page URL, title and referrer", "Timestamp", "User session ID"]
+    },
+    {
+      key: "trackHashChanges", 
+      title: "Hash Changes",
+      description: "Track navigation using URL hash changes (SPA routing)",
+      data: ["Hash fragment changes", "Previous and new hash values", "Useful for single-page applications"]
     },
     {
       key: "trackSessions", 
@@ -653,6 +677,12 @@ function BasicTrackingTab({ trackingOptions, onToggleOption }: any) {
       title: "Interactions", 
       description: "Track button clicks and form submissions",
       data: ["Element clicked (button, link, etc.)", "Element ID, class and text content", "Form submission success/failure"]
+    },
+    {
+      key: "trackAttributes",
+      title: "Data Attributes",
+      description: "Track events automatically using HTML data-* attributes",
+      data: ["Elements with data-track attributes", "All data-* attribute values converted to camelCase", "Automatic event generation from markup"]
     },
     {
       key: "trackOutgoingLinks",
@@ -675,6 +705,30 @@ function BasicTrackingTab({ trackingOptions, onToggleOption }: any) {
 
 function AdvancedTrackingTab({ trackingOptions, onToggleOption }: any) {
   const advancedOptionsConfig = [
+    {
+      key: "trackEngagement",
+      title: "Engagement Tracking",
+      description: "Track detailed user engagement metrics",
+      data: ["Time on page", "Scroll behavior", "Mouse movements", "Interaction patterns"]
+    },
+    {
+      key: "trackScrollDepth",
+      title: "Scroll Depth",
+      description: "Track how far users scroll on pages",
+      data: ["Maximum scroll percentage", "Scroll milestones (25%, 50%, 75%, 100%)", "Time spent at different scroll positions"]
+    },
+    {
+      key: "trackExitIntent",
+      title: "Exit Intent",
+      description: "Track when users are about to leave the page",
+      data: ["Mouse movement towards browser controls", "Exit intent events", "Time before exit detection"]
+    },
+    {
+      key: "trackBounceRate",
+      title: "Bounce Rate",
+      description: "Track bounce behavior and engagement quality",
+      data: ["Single page sessions", "Time spent before bounce", "Interaction before leaving"]
+    },
     {
       key: "trackErrors",
       title: "Error Tracking",
@@ -728,7 +782,9 @@ function TrackingOptionsGrid({ title, description, options, trackingOptions, onT
   );
 }
 
-function TrackingOptionCard({ title, description, data, enabled, onToggle, required }: any) {
+function TrackingOptionCard({ title, description, data, enabled, onToggle, required, inverted }: any) {
+  const isEnabled = inverted ? !enabled : enabled;
+  
   return (
     <div className="space-y-4 rounded-lg border p-4">
       <div className="flex justify-between items-start pb-2 border-b">
@@ -736,9 +792,9 @@ function TrackingOptionCard({ title, description, data, enabled, onToggle, requi
           <div className="font-medium">{title}</div>
           <div className="text-xs text-muted-foreground">{description}</div>
         </div>
-        <Switch checked={enabled} onCheckedChange={onToggle} />
+        <Switch checked={isEnabled} onCheckedChange={onToggle} />
       </div>
-      {required && !enabled && (
+      {required && !isEnabled && (
         <div className="text-xs bg-red-50 dark:bg-red-950/20 p-2 rounded text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800/20">
           <span className="font-medium flex items-center gap-1">
             <AlertCircle className="h-3 w-3" />
@@ -773,6 +829,11 @@ function OptimizationTab({ trackingOptions, setTrackingOptions }: any) {
         <SamplingRateSection 
           samplingRate={trackingOptions.samplingRate}
           onSamplingRateChange={(rate: number) => setTrackingOptions((prev: any) => ({ ...prev, samplingRate: rate }))}
+        />
+        
+        <BatchingSection
+          trackingOptions={trackingOptions} 
+          setTrackingOptions={setTrackingOptions}
         />
         
         <NetworkResilienceSection
@@ -822,6 +883,83 @@ function SamplingRateSection({ samplingRate, onSamplingRateChange }: any) {
             </p>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function BatchingSection({ trackingOptions, setTrackingOptions }: any) {
+  return (
+    <div className="rounded-lg border p-4">
+      <h4 className="font-medium mb-3">Batching</h4>
+      <div className="space-y-4">
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="enable-batching"
+            checked={trackingOptions.enableBatching}
+            onCheckedChange={(checked) => setTrackingOptions((prev: any) => ({
+              ...prev,
+              enableBatching: checked
+            }))}
+          />
+          <Label htmlFor="enable-batching">Enable batching</Label>
+        </div>
+        
+        {trackingOptions.enableBatching && (
+          <div className="grid grid-cols-2 gap-4 mt-2 pl-6">
+            <div className="space-y-2">
+              <Label htmlFor="batch-size" className="text-sm">Batch Size</Label>
+              <div className="flex space-x-2 items-center">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => setTrackingOptions((prev: any) => ({
+                    ...prev,
+                    batchSize: Math.max(1, prev.batchSize - 1)
+                  }))}
+                  disabled={trackingOptions.batchSize <= 1}
+                >
+                  -
+                </Button>
+                <span className="text-center w-8">{trackingOptions.batchSize}</span>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => setTrackingOptions((prev: any) => ({
+                    ...prev,
+                    batchSize: Math.min(10, prev.batchSize + 1)
+                  }))}
+                  disabled={trackingOptions.batchSize >= 10}
+                >
+                  +
+                </Button>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+                             <Label htmlFor="batch-timeout" className="text-sm">Batch Timeout (ms)</Label>
+               <input
+                 id="batch-timeout"
+                type="number"
+                min="100"
+                max="5000"
+                step="100"
+                                 value={trackingOptions.batchTimeout}
+                 onChange={(e) => setTrackingOptions((prev: any) => ({
+                   ...prev,
+                   batchTimeout: Number.parseInt(e.target.value)
+                 }))}
+                className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background"
+              />
+            </div>
+            
+            <div className="col-span-2 text-xs text-muted-foreground">
+              Batching helps reduce the number of requests sent to the server, improving performance.
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

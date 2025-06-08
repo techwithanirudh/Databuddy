@@ -1,65 +1,39 @@
 "use client";
 
-import { useState, useEffect, use, useMemo } from "react";
-import { useSearchParams } from "next/navigation";
-import { useWebsiteAnalytics } from "@/hooks/use-analytics"; // Ensure this path is correct
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"; // Ensure this path is correct
-import { Button } from "@/components/ui/button"; // Ensure this path is correct
-import { MinimalTable } from "./components/minimal-table";
+import { useState, use } from "react";
 import { 
-  TechnologyIcon,
-  PercentageBadge,
-  type TechnologyTableEntry,
-} from "../_components/utils/technology-helpers";
-import type { ColumnDef, CellContext } from "@tanstack/react-table";
+  useAvailableParameters,
+  useBatchDynamicQuery,
+  useDynamicQuery,
+  type DynamicQueryRequest
+} from "@/hooks/use-dynamic-query";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { SettingsIcon, ZapIcon } from "lucide-react";
+import { MinimalTable } from "./components/minimal-table";
+import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
+import { useMemo } from "react";
+import { BrowserIcon } from "@/components/icon";
 
-// Mock Website type. Replace with your actual Website type import.
-// e.g., import type { Website } from "@prisma/client";
-// or import type { Website } from "@/lib/types";
+// Simple percentage badge component
+const PercentageBadge = ({ percentage }: { percentage: number }) => (
+  <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
+    {percentage.toFixed(1)}%
+  </div>
+);
+
 type WebsitePlaceholder = {
   id: string;
   name: string;
   domain: string;
-  // Add other fields as necessary from your actual Website type
 };
 
-// Mock server action for fetching website data.
-// Replace this with your actual implementation (e.g., calling a server action or API route).
-async function fetchWebsiteDataById(id: string): Promise<WebsitePlaceholder | null> {
-  console.log(`%cMock fetch for website data, ID: ${id}`, "color: orange; font-weight: bold;");
-  // Example of what this function should do:
-  // try {
-  //   const website = await getRealWebsiteDataFromServer(id); // Your actual server action/API call
-  //   return website;
-  // } catch (error) {
-  //   console.error("Failed to fetch website data:", error);
-  //   return null;
-  // }
-
-  // For testing purposes, returning a mock object:
-  if (id) {
-    return {
-      id: id,
-      name: `Website ${id} (Mock Data)`,
-      domain: `${id}.mock-example.com`,
-    };
-  }
-  return null;
+interface TestPageParams {
+  id: string;
 }
 
-const initializeDateRange = (searchParams: URLSearchParams | null) => {
-  const start = searchParams?.get("start_date");
-  const end = searchParams?.get("end_date");
-  const granularity = (searchParams?.get("granularity") || "daily") as 'hourly' | 'daily';
-
-  if (start && end) {
-    return {
-      start_date: start,
-      end_date: end,
-      granularity: granularity,
-    };
-  }
-  // Default to last 30 days
+// Default date range for testing
+const getDefaultDateRange = () => {
   const today = new Date();
   const thirtyDaysAgo = new Date(today);
   thirtyDaysAgo.setDate(today.getDate() - 30);
@@ -70,465 +44,441 @@ const initializeDateRange = (searchParams: URLSearchParams | null) => {
   };
 };
 
-interface TestPageParams {
-  id: string; // This is websiteId from the route segment [id]
-}
+// Generic column helper
+const columnHelper = createColumnHelper<any>();
 
-// Helper function to create column definitions - copied exactly from overview-tab
-function col<T>(accessorKey: keyof T, header: string, cell?: (info: CellContext<T, unknown>) => React.ReactNode, meta?: object): ColumnDef<T, unknown> {
-  return {
-    accessorKey: accessorKey as string,
+// Reusable column templates
+const COLUMN_TEMPLATES = {
+  name: (header = 'Name') => columnHelper.accessor('name', {
     header,
-    ...(cell && { cell }),
-    ...(meta && { meta }),
-  };
-}
-
-// Mock browser data matching TechnologyTableEntry format
-const processedBrowserData: TechnologyTableEntry[] = [
-  { name: "Chrome", visitors: 7400, percentage: 45, icon: '/browsers/Chrome.svg', category: 'browser' },
-  { name: "Firefox", visitors: 2000, percentage: 12, icon: '/browsers/Firefox.svg', category: 'browser' },
-  { name: "Safari", visitors: 1800, percentage: 11, icon: '/browsers/Safari.svg', category: 'browser' },
-  { name: "Edge", visitors: 1600, percentage: 10, icon: '/browsers/Edge.svg', category: 'browser' },
-  { name: "Opera", visitors: 1600, percentage: 10, icon: '/browsers/Opera.svg', category: 'browser' },
-  { name: "Samsung Internet", visitors: 255, percentage: 2, icon: '/browsers/SamsungInternet.svg', category: 'browser' },
-];
-
-const processedDeviceData: TechnologyTableEntry[] = [
-  { name: "Desktop", visitors: 12500, percentage: 65, category: 'device' },
-  { name: "Mobile", visitors: 5800, percentage: 30, category: 'device' },
-  { name: "Tablet", visitors: 1200, percentage: 5, category: 'device' },
-];
-
-const processedOSData: TechnologyTableEntry[] = [
-  { name: "Windows", visitors: 8500, percentage: 50, icon: '/operating-systems/Windows.svg', category: 'os' },
-  { name: "Android", visitors: 5800, percentage: 34, icon: '/operating-systems/Android.svg', category: 'os' },
-  { name: "macOS", visitors: 2200, percentage: 13, icon: '/operating-systems/macOS.svg', category: 'os' },
-  { name: "iOS", visitors: 500, percentage: 3, icon: '/operating-systems/Apple.svg', category: 'os' },
-];
-
-// Mock data for Geography tables
-interface GeographyEntry {
-  name: string;
-  visitors: number;
-  percentage: number;
-  code?: string;
-}
-
-const countryData: GeographyEntry[] = [
-  { name: "United States", visitors: 8500, percentage: 42, code: "US" },
-  { name: "Canada", visitors: 3200, percentage: 16, code: "CA" },
-  { name: "United Kingdom", visitors: 2800, percentage: 14, code: "GB" },
-  { name: "Germany", visitors: 2200, percentage: 11, code: "DE" },
-  { name: "France", visitors: 1800, percentage: 9, code: "FR" },
-  { name: "Australia", visitors: 1600, percentage: 8, code: "AU" },
-];
-
-const cityData: GeographyEntry[] = [
-  { name: "New York", visitors: 3200, percentage: 18 },
-  { name: "London", visitors: 2800, percentage: 16 },
-  { name: "Toronto", visitors: 2200, percentage: 12 },
-  { name: "Los Angeles", visitors: 1900, percentage: 11 },
-  { name: "Berlin", visitors: 1600, percentage: 9 },
-  { name: "Paris", visitors: 1400, percentage: 8 },
-  { name: "Sydney", visitors: 1200, percentage: 7 },
-  { name: "Vancouver", visitors: 1000, percentage: 6 },
-];
-
-const regionData: GeographyEntry[] = [
-  { name: "North America", visitors: 12000, percentage: 55 },
-  { name: "Europe", visitors: 7500, percentage: 34 },
-  { name: "Asia-Pacific", visitors: 1800, percentage: 8 },
-  { name: "South America", visitors: 600, percentage: 3 },
-];
-
-// Mock data for Traffic Sources
-interface TrafficEntry {
-  name: string;
-  visitors: number;
-  percentage: number;
-  type?: string;
-}
-
-const referrerData: TrafficEntry[] = [
-  { name: "Google", visitors: 8500, percentage: 45, type: "Search Engine" },
-  { name: "Direct", visitors: 4200, percentage: 22, type: "Direct" },
-  { name: "Facebook", visitors: 2800, percentage: 15, type: "Social" },
-  { name: "Twitter", visitors: 1600, percentage: 8, type: "Social" },
-  { name: "LinkedIn", visitors: 1200, percentage: 6, type: "Social" },
-  { name: "Other", visitors: 800, percentage: 4, type: "Other" },
-];
-
-const socialData: TrafficEntry[] = [
-  { name: "Facebook", visitors: 2800, percentage: 40, type: "Social Network" },
-  { name: "Twitter", visitors: 1600, percentage: 23, type: "Social Network" },
-  { name: "LinkedIn", visitors: 1200, percentage: 17, type: "Professional" },
-  { name: "Instagram", visitors: 800, percentage: 11, type: "Visual" },
-  { name: "YouTube", visitors: 400, percentage: 6, type: "Video" },
-  { name: "TikTok", visitors: 200, percentage: 3, type: "Video" },
-];
-
-const searchData: TrafficEntry[] = [
-  { name: "Google", visitors: 8500, percentage: 75, type: "Search Engine" },
-  { name: "Bing", visitors: 1800, percentage: 16, type: "Search Engine" },
-  { name: "Yahoo", visitors: 600, percentage: 5, type: "Search Engine" },
-  { name: "DuckDuckGo", visitors: 300, percentage: 3, type: "Search Engine" },
-  { name: "Yandex", visitors: 150, percentage: 1, type: "Search Engine" },
-];
-
-// Mock data for Time Analytics
-interface TimeEntry {
-  period: string;
-  visitors: number;
-  percentage: number;
-  pageviews?: number;
-}
-
-const hourlyData: TimeEntry[] = [
-  { period: "09:00", visitors: 1200, percentage: 15, pageviews: 2400 },
-  { period: "10:00", visitors: 1400, percentage: 17, pageviews: 2800 },
-  { period: "11:00", visitors: 1300, percentage: 16, pageviews: 2600 },
-  { period: "14:00", visitors: 1500, percentage: 18, pageviews: 3000 },
-  { period: "15:00", visitors: 1100, percentage: 14, pageviews: 2200 },
-  { period: "16:00", visitors: 900, percentage: 11, pageviews: 1800 },
-  { period: "20:00", visitors: 700, percentage: 9, pageviews: 1400 },
-];
-
-const dailyData: TimeEntry[] = [
-  { period: "Monday", visitors: 3200, percentage: 18, pageviews: 6400 },
-  { period: "Tuesday", visitors: 3800, percentage: 21, pageviews: 7600 },
-  { period: "Wednesday", visitors: 3600, percentage: 20, pageviews: 7200 },
-  { period: "Thursday", visitors: 3400, percentage: 19, pageviews: 6800 },
-  { period: "Friday", visitors: 2800, percentage: 16, pageviews: 5600 },
-  { period: "Saturday", visitors: 600, percentage: 3, pageviews: 1200 },
-  { period: "Sunday", visitors: 500, percentage: 3, pageviews: 1000 },
-];
-
-const weeklyData: TimeEntry[] = [
-  { period: "Week 1", visitors: 18000, percentage: 28, pageviews: 36000 },
-  { period: "Week 2", visitors: 16500, percentage: 26, pageviews: 33000 },
-  { period: "Week 3", visitors: 15200, percentage: 24, pageviews: 30400 },
-  { period: "Week 4", visitors: 14300, percentage: 22, pageviews: 28600 },
-];
-
-export default function TestComponentsPage({ params: paramsPromise }: { params: Promise<TestPageParams> }) {
-  const params = use(paramsPromise); // Unwrap the promise using React.use()
-  const websiteId = params.id;      // Access id from the resolved object
-
-  const searchParams = useSearchParams();
-
-  const [dateRange, setDateRange] = useState(() => initializeDateRange(searchParams));
-  const [websiteData, setWebsiteData] = useState<WebsitePlaceholder | null>(null);
-  const [isLoadingWebsite, setIsLoadingWebsite] = useState(true);
-  const [errorWebsite, setErrorWebsite] = useState<string | null>(null);
-
-  const [isRefreshingAnalytics, setIsRefreshingAnalytics] = useState(false);
-
-  useEffect(() => {
-    async function loadWebsiteData() {
-      if (!websiteId) {
-        setErrorWebsite("No Website ID provided.");
-        setIsLoadingWebsite(false);
-        return;
+    cell: info => <span className="font-medium">{info.getValue()}</span>,
+  }),
+  browser: () => columnHelper.accessor('name', {
+    header: 'Browser & Version',
+    cell: info => {
+      const fullName = info.getValue();
+      if (typeof fullName === 'string' && fullName.includes(' ')) {
+        const parts = fullName.split(' ');
+        const browserName = parts[0];
+        const version = parts.slice(1).join(' ');
+        return (
+          <div className="flex flex-col">
+            <span className="font-medium">{browserName}</span>
+            <span className="text-xs text-muted-foreground">v{version}</span>
+          </div>
+        );
       }
-      setIsLoadingWebsite(true);
-      setErrorWebsite(null);
-      try {
-        const data = await fetchWebsiteDataById(websiteId);
-        setWebsiteData(data);
-        if (!data) {
-          setErrorWebsite("Website not found or failed to load.");
-        }
-      } catch (err) {
-        setErrorWebsite(err instanceof Error ? err.message : "An unknown error occurred while loading website data.");
-      } finally {
-        setIsLoadingWebsite(false);
-      }
-    }
-    loadWebsiteData();
-  }, [websiteId]);
-
-  const {
-    analytics,
-    loading: loadingAnalyticsHook,
-    error: errorAnalyticsHook,
-    refetch: refetchAnalytics,
-  } = useWebsiteAnalytics(websiteId, dateRange);
-
-  const handleRefreshAnalytics = async () => {
-    setIsRefreshingAnalytics(true);
-    try {
-      await refetchAnalytics();
-    } catch (err) {
-      console.error("Failed to refresh analytics:", err);
-    } finally {
-      setIsRefreshingAnalytics(false);
-    }
-  };
-  
-  const isLoadingAnalytics = loadingAnalyticsHook.summary || isRefreshingAnalytics;
-
-  // Technology Table Columns
-  const deviceColumns = useMemo((): ColumnDef<TechnologyTableEntry, unknown>[] => [
-    col<TechnologyTableEntry>('name', 'Device Type', (info) => {
-      const entry = info.row.original;
-      return (
-        <div className="flex items-center gap-3">
-          <TechnologyIcon entry={entry} size="md" />
-          <span className="font-medium">{entry.name}</span>
-        </div>
-      );
-    }),
-    col<TechnologyTableEntry>('visitors', 'Visitors'),
-    col<TechnologyTableEntry>('percentage', 'Share', (info) => {
-      const percentage = info.getValue() as number;
-      return <PercentageBadge percentage={percentage} />;
-    }),
-  ], []);
-
-  const browserColumns = useMemo((): ColumnDef<TechnologyTableEntry, unknown>[] => [
-    col<TechnologyTableEntry>('name', 'Browser', (info) => {
-      const entry = info.row.original;
-      return (
-        <div className="flex items-center gap-3">
-          <TechnologyIcon entry={entry} size="md" />
-          <span className="font-medium">{entry.name}</span>
-        </div>
-      );
-    }),
-    col<TechnologyTableEntry>('visitors', 'Visitors'),
-    col<TechnologyTableEntry>('percentage', 'Share', (info) => {
-      const percentage = info.getValue() as number;
-      return <PercentageBadge percentage={percentage} />;
-    }),
-  ], []);
-
-  const osColumns = useMemo((): ColumnDef<TechnologyTableEntry, unknown>[] => [
-    col<TechnologyTableEntry>('name', 'Operating System', (info) => {
-      const entry = info.row.original;
-      return (
-        <div className="flex items-center gap-3">
-          <TechnologyIcon entry={entry} size="md" />
-          <span className="font-medium">{entry.name}</span>
-        </div>
-      );
-    }),
-    col<TechnologyTableEntry>('visitors', 'Visitors'),
-    col<TechnologyTableEntry>('percentage', 'Share', (info) => {
-      const percentage = info.getValue() as number;
-      return <PercentageBadge percentage={percentage} />;
-    }),
-  ], []);
-
-  // Geography Table Columns
-  const geographyColumns = useMemo((): ColumnDef<GeographyEntry, unknown>[] => [
-    col<GeographyEntry>('name', 'Location', (info) => {
-      const entry = info.row.original;
-      return (
-        <div className="flex items-center gap-3">
-          {entry.code && <span className="text-xs bg-muted px-2 py-1 rounded">{entry.code}</span>}
-          <span className="font-medium">{entry.name}</span>
-        </div>
-      );
-    }),
-    col<GeographyEntry>('visitors', 'Visitors'),
-    col<GeographyEntry>('percentage', 'Share', (info) => {
-      const percentage = info.getValue() as number;
-      return <PercentageBadge percentage={percentage} />;
-    }),
-  ], []);
-
-  // Traffic Sources Table Columns
-  const trafficColumns = useMemo((): ColumnDef<TrafficEntry, unknown>[] => [
-    col<TrafficEntry>('name', 'Source', (info) => {
-      const entry = info.row.original;
-      return (
-        <div className="flex items-center gap-3">
-          <span className="font-medium">{entry.name}</span>
-          {entry.type && <span className="text-xs text-muted-foreground">({entry.type})</span>}
-        </div>
-      );
-    }),
-    col<TrafficEntry>('visitors', 'Visitors'),
-    col<TrafficEntry>('percentage', 'Share', (info) => {
-      const percentage = info.getValue() as number;
-      return <PercentageBadge percentage={percentage} />;
-    }),
-  ], []);
-
-  // Time Analytics Table Columns
-  const timeColumns = useMemo((): ColumnDef<TimeEntry, unknown>[] => [
-    col<TimeEntry>('period', 'Period'),
-    col<TimeEntry>('visitors', 'Visitors'),
-    col<TimeEntry>('pageviews', 'Pageviews', (info) => (info.getValue() as number | undefined) || 'N/A'),
-    col<TimeEntry>('percentage', 'Share', (info) => {
-      const percentage = info.getValue() as number;
-      return <PercentageBadge percentage={percentage} />;
-    }),
-  ], []);
-
-  // Tab configurations for each table category
-  const technologyTabs = useMemo(() => [
-    {
-      id: 'devices',
-      label: 'Devices',
-      data: processedDeviceData,
-      columns: deviceColumns,
+      return <span className="font-medium">{fullName}</span>;
     },
-    {
-      id: 'browsers',
-      label: 'Browsers',
-      data: processedBrowserData,
-      columns: browserColumns,
-    },
-    {
-      id: 'os',
-      label: 'Operating Systems',
-      data: processedOSData,
-      columns: osColumns,
-    },
-  ], [deviceColumns, browserColumns, osColumns]);
+  }),
+  visitors: () => columnHelper.accessor('visitors', {
+    header: 'Visitors',
+    cell: info => <span className="text-muted-foreground">{info.getValue()?.toLocaleString()}</span>,
+  }),
+  pageviews: () => columnHelper.accessor('pageviews', {
+    header: 'Pageviews',
+    cell: info => <span className="text-muted-foreground">{info.getValue()?.toLocaleString()}</span>,
+  }),
+  path: () => columnHelper.accessor('name', {
+    header: 'Page Path',
+    cell: info => <span className="font-medium font-mono text-xs">{info.getValue()}</span>,
+  }),
+  exits: () => columnHelper.accessor('exits', {
+    header: 'Exits',
+    cell: info => <span className="text-muted-foreground">{info.getValue()?.toLocaleString() || 'N/A'}</span>,
+  }),
+  sessions: () => columnHelper.accessor('sessions', {
+    header: 'Sessions',
+    cell: info => <span className="text-muted-foreground">{info.getValue()?.toLocaleString() || 'N/A'}</span>,
+  }),
+  loadTime: () => columnHelper.accessor('avg_load_time', {
+    header: 'Avg Load Time (ms)',
+    cell: info => <span className="text-muted-foreground">{info.getValue()?.toFixed(2) || 'N/A'}</span>,
+  }),
+};
 
-  const geographyTabs = useMemo(() => [
-    {
-      id: 'countries',
-      label: 'Countries',
-      data: countryData,
-      columns: geographyColumns,
-    },
-    {
-      id: 'cities',
-      label: 'Cities',
-      data: cityData,
-      columns: geographyColumns,
-    },
-    {
-      id: 'regions',
-      label: 'Regions',
-      data: regionData,
-      columns: geographyColumns,
-    },
-  ], [geographyColumns]);
+// Tab configurations - easy to add new tabs
+const TAB_CONFIGS = [
+  {
+    id: 'devices',
+    label: 'Devices',
+    queries: ['device_type', 'os_name'],
+    columns: [COLUMN_TEMPLATES.name(), COLUMN_TEMPLATES.visitors(), COLUMN_TEMPLATES.pageviews()],
+  },
+  {
+    id: 'browsers',
+    label: 'Browsers',
+    queries: ['browser_name'],
+    columns: [COLUMN_TEMPLATES.browser(), COLUMN_TEMPLATES.visitors(), COLUMN_TEMPLATES.pageviews()],
+  },
+  {
+    id: 'geography',
+    label: 'Geography', 
+    queries: ['country'],
+    columns: [COLUMN_TEMPLATES.name('Location'), COLUMN_TEMPLATES.visitors(), COLUMN_TEMPLATES.pageviews()],
+  },
+  {
+    id: 'utm',
+    label: 'UTM Tracking',
+    queries: ['utm_source', 'utm_medium', 'utm_campaign'],
+    columns: [COLUMN_TEMPLATES.name(), COLUMN_TEMPLATES.visitors(), COLUMN_TEMPLATES.pageviews()],
+  },
+  {
+    id: 'pages',
+    label: 'Page Analytics',
+    queries: ['top_pages', 'exit_page'],
+    columns: [COLUMN_TEMPLATES.path(), COLUMN_TEMPLATES.pageviews(), COLUMN_TEMPLATES.visitors(), COLUMN_TEMPLATES.exits(), COLUMN_TEMPLATES.sessions()],
+  },
+  {
+    id: 'performance',
+    label: 'Performance',
+    queries: ['slow_pages'],
+    columns: [COLUMN_TEMPLATES.path(), COLUMN_TEMPLATES.loadTime(), COLUMN_TEMPLATES.pageviews()],
+  },
+  {
+    id: 'traffic',
+    label: 'Traffic Sources',
+    queries: ['referrer'],
+    columns: [COLUMN_TEMPLATES.name('Referrer'), COLUMN_TEMPLATES.visitors(), COLUMN_TEMPLATES.pageviews()],
+  },
+];
 
-  const trafficTabs = useMemo(() => [
-    {
-      id: 'referrers',
-      label: 'All Sources',
-      data: referrerData,
-      columns: trafficColumns,
-    },
-    {
-      id: 'social',
-      label: 'Social Media',
-      data: socialData,
-      columns: trafficColumns,
-    },
-    {
-      id: 'search',
-      label: 'Search Engines',
-      data: searchData,
-      columns: trafficColumns,
-    },
-  ], [trafficColumns]);
+function AvailableParametersExample({ websiteId }: { websiteId: string }) {
+  const { data: params, isLoading } = useAvailableParameters(websiteId);
 
-  const timeTabs = useMemo(() => [
-    {
-      id: 'hourly',
-      label: 'Hourly',
-      data: hourlyData,
-      columns: timeColumns,
-    },
-    {
-      id: 'daily',
-      label: 'Daily',
-      data: dailyData,
-      columns: timeColumns,
-    },
-    {
-      id: 'weekly',
-      label: 'Weekly',
-      data: weeklyData,
-      columns: timeColumns,
-    },
-  ], [timeColumns]);
-
-  if (isLoadingWebsite) {
-    return <div className="flex justify-center items-center h-screen p-4"><p className="text-lg">Loading...</p></div>;
-  }
-
-  if (!websiteData) {
-    return <div className="flex justify-center items-center h-screen p-4"><p className="text-lg">No website data found.</p></div>;
+  if (isLoading) {
+    return (
+      <Card className="border-0 shadow-sm bg-card/50 backdrop-blur-sm h-full">
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-amber-500/10">
+              <SettingsIcon className="w-4 h-4 text-amber-600" />
+            </div>
+            <div className="flex-1">
+              <CardTitle className="text-base font-semibold">Available Parameters</CardTitle>
+              <CardDescription className="text-sm text-muted-foreground">
+                All queryable parameters in the system
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-10 bg-muted/20 animate-pulse rounded-lg" />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
-    <div className="container mx-auto p-4 space-y-4">
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Analytics Dashboard</CardTitle>
-          <CardDescription className="text-xs">Tabbed tables with percentage visualizations</CardDescription>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <Button size="sm" onClick={handleRefreshAnalytics} disabled={isLoadingAnalytics}>
-            {isLoadingAnalytics ? "Refreshing..." : "Refresh"}
-          </Button>
-        </CardContent>
-      </Card>
+    <Card className="border-0 shadow-sm bg-card/50 backdrop-blur-sm h-full">
+      <CardHeader className="pb-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-amber-500/10">
+            <SettingsIcon className="w-4 h-4 text-amber-600" />
+          </div>
+          <div className="flex-1">
+            <CardTitle className="text-base font-semibold">Available Parameters</CardTitle>
+            <CardDescription className="text-sm text-muted-foreground">
+              All queryable parameters in the system
+            </CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {params && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Total Parameters</span>
+              <Badge variant="outline">{params.parameters.length}</Badge>
+            </div>
+            <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+              {params.parameters.slice(0, 15).map((param: string) => (
+                <Badge key={param} variant="secondary" className="text-xs">
+                  {param}
+                </Badge>
+              ))}
+              {params.parameters.length > 15 && (
+                <Badge variant="outline" className="text-xs">
+                  +{params.parameters.length - 15} more
+                </Badge>
+              )}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
-      {/* Analytics Grid Layout */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        {/* Technology Analytics */}
-        <MinimalTable 
-          tabs={technologyTabs}
-          title="Technology"
-          description="Devices, browsers, and operating systems"
-          isLoading={isLoadingAnalytics}
-          initialPageSize={5}
-          minHeight={220}
-          showSearch={false}
+function BrowserAnalysis({ websiteId, dateRange }: { websiteId: string, dateRange: any }) {
+  // Use the new grouped browser parameter directly from API
+  const { data: groupedData, isLoading, errors } = useDynamicQuery(
+    websiteId,
+    dateRange,
+    {
+      id: 'browsers-grouped',
+      parameters: ['browsers_grouped'],
+      limit: 50,
+    }
+  );
+
+  // Extract grouped browser data from API response
+  const groupedBrowserData = useMemo(() => {
+    const rawData = groupedData?.browsers_grouped || [];
+    
+    // Add market share calculation and format for UI
+    const totalVisitors = rawData.reduce((sum: number, browser: any) => sum + (browser.visitors || 0), 0);
+    
+    return rawData.map((browser: any) => {
+      const marketShare = totalVisitors > 0 
+        ? Math.round((browser.visitors / totalVisitors) * 100)
+        : 0;
+      
+      return {
+        id: browser.name,
+        browserName: browser.name,
+        name: browser.name,
+        version: `${browser.versions?.length || 0} versions`,
+        visitors: browser.visitors || 0,
+        pageviews: browser.pageviews || 0,
+        sessions: browser.sessions || 0,
+        marketShare: marketShare.toString(),
+        versions: (browser.versions || []).map((v: any) => ({
+          ...v,
+          name: v.version || 'Unknown Version'
+        }))
+      };
+    });
+  }, [groupedData]);
+
+  // Browser icon component
+  const getBrowserIcon = (browserName: string, size: "sm" | "md" | "lg" = "md") => {
+    return (
+      <BrowserIcon 
+        name={browserName}
+        size={size}
+        fallback={
+          <div className="w-5 h-5 rounded bg-muted flex items-center justify-center text-muted-foreground text-xs font-medium">
+            {browserName.charAt(0).toUpperCase()}
+          </div>
+        }
+      />
+    );
+  };
+
+
+
+  const browserColumns: ColumnDef<any>[] = [
+    columnHelper.accessor('browserName', {
+      header: 'Browser',
+      cell: info => (
+        <div className="flex items-center gap-3">
+          {getBrowserIcon(info.getValue() as string, "md")}
+          <div>
+            <div className="font-semibold text-foreground">{info.getValue() as string}</div>
+            <div className="text-xs text-muted-foreground">
+              {info.row.original.versions?.length || 0} versions detected
+            </div>
+          </div>
+        </div>
+      ),
+    }),
+    columnHelper.accessor('visitors', {
+      header: 'Visitors',
+      cell: info => (
+        <div>
+          <div className="font-medium">{info.getValue()?.toLocaleString()}</div>
+          <div className="text-xs text-muted-foreground">unique users</div>
+        </div>
+      ),
+    }),
+    columnHelper.accessor('pageviews', {
+      header: 'Pageviews',
+      cell: info => (
+        <div>
+          <div className="font-medium">{info.getValue()?.toLocaleString()}</div>
+          <div className="text-xs text-muted-foreground">total views</div>
+        </div>
+      ),
+    }),
+    columnHelper.accessor('marketShare', {
+      header: 'Share',
+      cell: info => {
+        const percentage = Number.parseInt(info.getValue() as string, 10);
+        return <PercentageBadge percentage={percentage} />;
+      },
+    }),
+  ];
+
+  return (
+    <Card className="border-0 shadow-sm bg-card/50 backdrop-blur-sm">
+      <CardHeader className="pb-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-blue-500/10">
+            <ZapIcon className="w-4 h-4 text-blue-600" />
+          </div>
+          <div className="flex-1">
+            <CardTitle className="text-base font-semibold">Browser Version Analysis</CardTitle>
+            <CardDescription className="text-sm text-muted-foreground">
+              Expandable browser breakdown showing all versions per browser
+            </CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {errors.length > 0 && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-sm text-red-600">
+              Errors: {errors.map(e => e.error).join(', ')}
+            </p>
+          </div>
+        )}
+        
+        <MinimalTable
+          data={groupedBrowserData}
+          columns={browserColumns}
+          title="Browser Versions"
+          description={`${groupedBrowserData.length} browsers with expandable version details`}
+          isLoading={isLoading}
+          initialPageSize={15}
+          showSearch={true}
+          emptyMessage="No browser data available"
+          className="border-0 shadow-none bg-transparent"
+          expandable={true}
+          getSubRows={(row) => row.versions}
+          renderSubRow={(subRow, parentRow, index) => {
+            const percentage = Math.round(((subRow.visitors || 0) / (parentRow.visitors || 1)) * 100);
+            const gradientConfig = percentage >= 40 ? {
+              bg: 'linear-gradient(90deg, rgba(34, 197, 94, 0.12) 0%, rgba(34, 197, 94, 0.06) 100%)',
+              border: 'rgba(34, 197, 94, 0.2)'
+            } : percentage >= 25 ? {
+              bg: 'linear-gradient(90deg, rgba(59, 130, 246, 0.12) 0%, rgba(59, 130, 246, 0.06) 100%)',
+              border: 'rgba(59, 130, 246, 0.2)'
+            } : percentage >= 10 ? {
+              bg: 'linear-gradient(90deg, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0.06) 100%)',
+              border: 'rgba(245, 158, 11, 0.2)'
+            } : {
+              bg: 'linear-gradient(90deg, rgba(107, 114, 128, 0.08) 0%, rgba(107, 114, 128, 0.04) 100%)',
+              border: 'rgba(107, 114, 128, 0.15)'
+            };
+            
+                          return (
+                <div 
+                  className="grid grid-cols-4 gap-3 py-1.5 px-4 text-sm border-l-2 transition-all duration-200"
+                  style={{ 
+                    background: gradientConfig.bg,
+                    borderLeftColor: gradientConfig.border
+                  }}
+                >
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+                    <span className="font-medium">{subRow.version || 'Unknown'}</span>
+                  </div>
+                  <div className="text-right font-medium">{subRow.visitors?.toLocaleString()}</div>
+                  <div className="text-right font-medium">{subRow.pageviews?.toLocaleString()}</div>
+                  <div className="text-right">
+                    <PercentageBadge percentage={percentage} />
+                  </div>
+                </div>
+              );
+          }}
         />
+      </CardContent>
+    </Card>
+  );
+}
 
-        {/* Geography Analytics */}
-        <MinimalTable 
-          tabs={geographyTabs}
-          title="Geography"
-          description="Locations and geographical distribution"
-          isLoading={isLoadingAnalytics}
-          initialPageSize={5}
-          minHeight={220}
-          showSearch={false}
-        />
+function AnalyticsTable({ websiteId, dateRange }: { websiteId: string, dateRange: any }) {
+  // Generate batch queries from tab configs
+  const batchQueries = TAB_CONFIGS.map(tab => ({
+    id: tab.id,
+    parameters: tab.queries,
+    limit: 50,
+  }));
 
-        {/* Traffic Sources */}
-        <MinimalTable 
-          tabs={trafficTabs}
-          title="Traffic Sources"
-          description="Referrers, social media, and search engines"
-          isLoading={isLoadingAnalytics}
-          initialPageSize={5}
-          minHeight={220}
-          showSearch={false}
-        />
+  const { results, isLoading, meta } = useBatchDynamicQuery(websiteId, dateRange, batchQueries);
 
-        {/* Time Analytics */}
-        <MinimalTable 
-          tabs={timeTabs}
-          title="Time Analytics"
-          description="Hourly, daily, and weekly patterns"
-          isLoading={isLoadingAnalytics}
-          initialPageSize={5}
-          minHeight={220}
-          showSearch={false}
-        />
-      </div>
+  // Convert results to tabs format
+  const tabs = TAB_CONFIGS.map(config => {
+    const result = results.find(r => r.queryId === config.id);
+    return {
+      id: config.id,
+      label: config.label,
+      data: result ? Object.values(result.data).flat() : [],
+      columns: config.columns,
+    };
+  });
 
-      {/* Empty State Example */}
+  return (
+    <div className="space-y-4">
+      {/* Batch Query Metrics */}
+      {meta && (
+        <Card className="border-0 shadow-sm bg-card/50 backdrop-blur-sm">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-emerald-500/10">
+                <ZapIcon className="w-4 h-4 text-emerald-600" />
+              </div>
+              <div className="flex-1">
+                <CardTitle className="text-base font-semibold">Batch Query Performance</CardTitle>
+                <CardDescription className="text-sm text-muted-foreground">
+                  {TAB_CONFIGS.length} analytics categories in a single request
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="text-center p-3 bg-background/50 rounded-lg">
+                <div className="text-lg font-bold text-emerald-600">{meta.total_queries}</div>
+                <div className="text-xs text-muted-foreground font-medium">Total Queries</div>
+              </div>
+              <div className="text-center p-3 bg-background/50 rounded-lg">
+                <div className="text-lg font-bold text-green-600">{meta.successful_queries}</div>
+                <div className="text-xs text-muted-foreground font-medium">Successful</div>
+              </div>
+              <div className="text-center p-3 bg-background/50 rounded-lg">
+                <div className="text-lg font-bold text-red-600">{meta.failed_queries}</div>
+                <div className="text-xs text-muted-foreground font-medium">Failed</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Analytics Table */}
       <MinimalTable
-        data={[]}
-        columns={deviceColumns}
-        title="Empty State"
-        description="No data available"
-        emptyMessage="No data yet"
+        tabs={tabs}
+        title="Analytics Dashboard"
+        description="Comprehensive analytics data across all categories"
+        isLoading={isLoading}
+        initialPageSize={10}
+        showSearch={true}
+        emptyMessage="No analytics data available"
       />
     </div>
   );
-} 
+}
+
+export default function TestComponentsPage({ params: paramsPromise }: { params: Promise<TestPageParams> }) {
+  const params = use(paramsPromise);
+  const websiteId = params.id;
+  const [dateRange] = useState(() => getDefaultDateRange());
+
+  return (
+    <div className="container mx-auto p-6 space-y-6 max-w-6xl">
+      {/* Parameters Overview */}
+      <AvailableParametersExample websiteId={websiteId} />
+      
+      {/* Browser Version Analysis */}
+      <BrowserAnalysis websiteId={websiteId} dateRange={dateRange} />
+      
+      {/* Analytics Dashboard */}
+      <AnalyticsTable websiteId={websiteId} dateRange={dateRange} />
+    </div>
+  );
+}

@@ -1,39 +1,99 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import type { Message } from "../types/message";
+import { getChatDB } from "../lib/chat-db";
 
 // StreamingUpdate interface to match API
 interface StreamingUpdate {
   type: 'thinking' | 'progress' | 'complete' | 'error';
   content: string;
-  data?: any;
+  data?: {
+    hasVisualization?: boolean;
+    chartType?: string;
+    data?: any[];
+    responseType?: 'chart' | 'text' | 'metric';
+    metricValue?: string | number;
+    metricLabel?: string;
+  };
   debugInfo?: Record<string, any>;
 }
 
 function generateWelcomeMessage(websiteName?: string): string {
   const examples = [
     "Show me page views over the last 7 days",
+    "How many visitors did I have yesterday?",
     "What are my top traffic sources?", 
-    "Which pages have the highest bounce rate?",
+    "What's my current bounce rate?",
     "How is my mobile vs desktop traffic?",
-    "Show me traffic by country",
-    "What's my average page load time?"
+    "Show me traffic by country"
   ];
 
-  return `Hello! I'm your analytics AI assistant for ${websiteName || 'your website'}. I can help you understand your data and create visualizations. Try asking me questions like:\n\n${examples.map((prompt: string) => `• "${prompt}"`).join('\n')}`;
+  return `Hello! I'm Nova, your AI analytics partner for ${websiteName || 'your website'}. I can help you understand your data with charts, single metrics, or detailed answers. Try asking me questions like:\n\n${examples.map((prompt: string) => `• "${prompt}"`).join('\n')}\n\nI'll automatically choose the best way to present your data - whether it's a chart, a single number, or a detailed explanation.`;
 }
 
 export function useChat(websiteId: string, websiteName?: string) {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      type: 'assistant',
-      content: generateWelcomeMessage(websiteName), 
-      timestamp: new Date(),
-    }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isRateLimited, setIsRateLimited] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const rateLimitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const chatDB = getChatDB();
+
+  // Initialize chat from IndexedDB
+  useEffect(() => {
+    let isMounted = true;
+
+    const initializeChat = async () => {
+      try {
+        // Load existing messages from IndexedDB
+        const existingMessages = await chatDB.getMessages(websiteId);
+        
+        if (isMounted) {
+          if (existingMessages.length === 0) {
+            // No existing chat, create welcome message
+            const welcomeMessage: Message = {
+              id: '1',
+              type: 'assistant',
+              content: generateWelcomeMessage(websiteName),
+              timestamp: new Date(),
+            };
+            
+            // Save welcome message to IndexedDB and set in state
+            await chatDB.saveMessage(welcomeMessage, websiteId);
+            setMessages([welcomeMessage]);
+          } else {
+            // Load existing messages
+            setMessages(existingMessages);
+          }
+          
+          // Update chat metadata
+          await chatDB.createOrUpdateChat(websiteId, websiteName);
+          setIsInitialized(true);
+        }
+      } catch (error) {
+        console.error('Failed to initialize chat from IndexedDB:', error);
+        
+        // Fallback to welcome message in memory only
+        if (isMounted) {
+          const welcomeMessage: Message = {
+            id: '1',
+            type: 'assistant',
+            content: generateWelcomeMessage(websiteName),
+            timestamp: new Date(),
+          };
+          setMessages([welcomeMessage]);
+          setIsInitialized(true);
+        }
+      }
+    };
+
+    initializeChat();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [websiteId, websiteName, chatDB]);
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => {
@@ -51,9 +111,18 @@ export function useChat(websiteId: string, websiteName?: string) {
     scrollToBottom();
   }, [messages.length]);
 
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (rateLimitTimeoutRef.current) {
+        clearTimeout(rateLimitTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const sendMessage = useCallback(async (content?: string) => {
     const messageContent = content || inputValue.trim();
-    if (!messageContent || isLoading) return;
+    if (!messageContent || isLoading || isRateLimited || !isInitialized) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -61,6 +130,13 @@ export function useChat(websiteId: string, websiteName?: string) {
       content: messageContent,
       timestamp: new Date(),
     };
+
+    // Save user message to IndexedDB immediately
+    try {
+      await chatDB.saveMessage(userMessage, websiteId);
+    } catch (error) {
+      console.error('Failed to save user message to IndexedDB:', error);
+    }
 
     setMessages(prev => [...prev, userMessage]);
     setInputValue("");
@@ -80,7 +156,7 @@ export function useChat(websiteId: string, websiteName?: string) {
 
     try {
       // Stream the AI response using the new single endpoint
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/assistant/stream`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/v1/assistant/stream`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -95,6 +171,34 @@ export function useChat(websiteId: string, websiteName?: string) {
       });
 
       if (!response.ok) {
+        // Handle rate limit specifically
+        if (response.status === 429) {
+          const errorData = await response.json();
+          if (errorData.code === 'RATE_LIMIT_EXCEEDED') {
+            setMessages(prev => prev.map(msg => 
+              msg.id === assistantId 
+                ? { 
+                    ...msg, 
+                    content: "⏱️ You've reached the rate limit. Please wait 60 seconds before sending another message."
+                  }
+                : msg
+            ));
+            setIsLoading(false);
+            setIsRateLimited(true);
+            
+            // Clear any existing timeout
+            if (rateLimitTimeoutRef.current) {
+              clearTimeout(rateLimitTimeoutRef.current);
+            }
+            
+            // Set a 60-second timeout to re-enable messaging
+            rateLimitTimeoutRef.current = setTimeout(() => {
+              setIsRateLimited(false);
+            }, 60000);
+            
+            return;
+          }
+        }
         throw new Error('Failed to start stream');
       }
 
@@ -132,24 +236,39 @@ export function useChat(websiteId: string, websiteName?: string) {
                           ...msg, 
                           content: update.content,
                           hasVisualization: update.data?.hasVisualization || false,
-                          chartType: update.data?.chartType,
-                          data: update.data?.queryData || update.data?.data,
+                          chartType: update.data?.chartType as any,
+                          data: update.data?.data,
+                          responseType: update.data?.responseType,
+                          metricValue: update.data?.metricValue,
+                          metricLabel: update.data?.metricLabel,
                         }
                       : msg
                   ));
                   scrollToBottom();
                 } else if (update.type === 'complete') {
+                  const completedMessage = {
+                    id: assistantId,
+                    type: 'assistant' as const,
+                    content: update.content,
+                    timestamp: new Date(),
+                    hasVisualization: update.data?.hasVisualization || false,
+                    chartType: update.data?.chartType as any,
+                    data: update.data?.data,
+                    responseType: update.data?.responseType,
+                    metricValue: update.data?.metricValue,
+                    metricLabel: update.data?.metricLabel,
+                    debugInfo: update.debugInfo,
+                  };
+
+                  // Save completed assistant message to IndexedDB
+                  try {
+                    await chatDB.saveMessage(completedMessage, websiteId);
+                  } catch (error) {
+                    console.error('Failed to save assistant message to IndexedDB:', error);
+                  }
+
                   setMessages(prev => prev.map(msg => 
-                    msg.id === assistantId 
-                      ? { 
-                          ...msg, 
-                          content: update.content,
-                          hasVisualization: update.data?.hasVisualization || false,
-                          chartType: update.data?.chartType,
-                          data: update.data?.data,
-                          debugInfo: update.debugInfo,
-                        }
-                      : msg
+                    msg.id === assistantId ? completedMessage : msg
                   ));
                   scrollToBottom();
                   break;
@@ -185,10 +304,10 @@ export function useChat(websiteId: string, websiteName?: string) {
             }
           : msg
       ));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [inputValue, isLoading, websiteId, messages, scrollToBottom]);
+          } finally {
+        setIsLoading(false);
+      }
+    }, [inputValue, isLoading, isRateLimited, isInitialized, websiteId, messages, scrollToBottom, chatDB]);
 
   const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -197,23 +316,53 @@ export function useChat(websiteId: string, websiteName?: string) {
     }
   }, [sendMessage]);
 
-  const resetChat = useCallback(() => {
-    setMessages([
-      {
+  const resetChat = useCallback(async () => {
+    try {
+      // Clear messages from IndexedDB
+      await chatDB.clearMessages(websiteId);
+      
+      // Create new welcome message
+      const welcomeMessage: Message = {
         id: '1',
         type: 'assistant',
         content: generateWelcomeMessage(websiteName),
         timestamp: new Date(),
-      }
-    ]);
+      };
+      
+      // Save welcome message to IndexedDB
+      await chatDB.saveMessage(welcomeMessage, websiteId);
+      
+      // Update state
+      setMessages([welcomeMessage]);
+    } catch (error) {
+      console.error('Failed to reset chat in IndexedDB:', error);
+      
+      // Fallback to memory-only reset
+      const welcomeMessage: Message = {
+        id: '1',
+        type: 'assistant',
+        content: generateWelcomeMessage(websiteName),
+        timestamp: new Date(),
+      };
+      setMessages([welcomeMessage]);
+    }
+    
     setInputValue("");
-  }, [websiteName]);
+    setIsRateLimited(false);
+    
+    // Clear any existing timeout
+    if (rateLimitTimeoutRef.current) {
+      clearTimeout(rateLimitTimeoutRef.current);
+    }
+  }, [websiteName, websiteId, chatDB]);
 
   return {
     messages,
     inputValue,
     setInputValue,
     isLoading,
+    isRateLimited,
+    isInitialized,
     scrollAreaRef,
     sendMessage,
     handleKeyPress,

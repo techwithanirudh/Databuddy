@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Bot, User, BarChart3, LineChart, PieChart, ChevronDown, ChevronRight, Bug, Clock } from "lucide-react";
+import { Bot, User, BarChart3, LineChart, PieChart, ChevronDown, ChevronRight, Bug, Clock, TrendingUp, Hash } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Message } from "../types/message";
 
@@ -25,16 +25,16 @@ export function MessageBubble({ message }: MessageBubbleProps) {
   return (
     <div
       className={cn(
-        "flex gap-3 max-w-[90%] animate-in fade-in-0 slide-in-from-bottom-2 duration-300",
-        message.type === 'user' ? "ml-auto flex-row-reverse" : ""
+        "flex gap-3 w-full animate-in fade-in-0 slide-in-from-bottom-2 duration-300",
+        message.type === 'user' ? "justify-end" : "justify-start"
       )}
     >
       {/* Avatar */}
       <div className={cn(
         "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1 shadow-sm",
         message.type === 'user' 
-          ? "bg-primary text-primary-foreground" 
-          : "bg-muted border"
+          ? "bg-primary text-primary-foreground order-2" 
+          : "bg-muted border order-1"
       )}>
         {message.type === 'user' ? (
           <User className="h-4 w-4" />
@@ -45,15 +45,36 @@ export function MessageBubble({ message }: MessageBubbleProps) {
       
       {/* Message Content */}
       <div className={cn(
-        "rounded px-4 py-3 max-w-full shadow-sm",
+        "rounded-lg px-4 py-3 shadow-sm min-w-0 max-w-[85%]",
         message.type === 'user'
-          ? "bg-primary text-primary-foreground ml-2"
-          : "bg-muted/70 mr-2 border"
+          ? "bg-primary text-primary-foreground order-1"
+          : "bg-muted/70 border order-2"
       )}>
         {/* Main message text */}
-        <div className="text-sm whitespace-pre-wrap break-words leading-relaxed">
+        <div className="text-sm whitespace-pre-wrap break-words leading-relaxed overflow-wrap-anywhere">
           {message.content}
         </div>
+        
+        {/* Metric Display */}
+        {message.responseType === 'metric' && message.metricValue !== undefined && message.type === 'assistant' && (
+          <div className="mt-4 p-4 bg-primary/5 border border-primary/20 rounded-lg">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Hash className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide truncate">
+                  {message.metricLabel || 'Result'}
+                </div>
+                <div className="text-2xl font-bold text-foreground mt-1 break-words">
+                  {typeof message.metricValue === 'number' 
+                    ? message.metricValue.toLocaleString() 
+                    : message.metricValue}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         
         {/* Thinking Steps */}
         {message.thinkingSteps && message.thinkingSteps.length > 0 && message.type === 'assistant' && (

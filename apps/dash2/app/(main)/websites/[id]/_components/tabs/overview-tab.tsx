@@ -11,35 +11,28 @@ import {
   LayoutDashboard,
 } from "lucide-react";
 import { differenceInDays } from "date-fns";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 import { StatCard } from "@/components/analytics/stat-card";
 import { MetricsChart } from "@/components/charts/metrics-chart";
 import { DataTable } from "@/components/analytics/data-table";
-import { useWebsiteAnalytics, type PageData } from "@/hooks/use-analytics";
+import { useWebsiteAnalytics } from "@/hooks/use-analytics";
 import { 
   formatDateByGranularity, 
-  formatDistributionData,
-  groupBrowserData,
   getColorVariant,
   calculatePercentChange,
-  isTrackingNotSetup
 } from "../utils/analytics-helpers";
 import { MetricToggles } from "../utils/ui-components";
 import type { FullTabProps, MetricPoint } from "../utils/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
-import type { ColumnDef, CellContext } from "@tanstack/react-table";
 import { ReferrerSourceCell, type ReferrerSourceCellData } from "@/components/atomic/ReferrerSourceCell";
-import { PageLinkCell } from "@/components/atomic/PageLinkCell";
 import { 
   processDeviceData, 
   processBrowserData, 
   inferOperatingSystems,
   TechnologyIcon,
   PercentageBadge,
-  type TechnologyTableEntry,
-  type DeviceTypeEntry,
 } from "../utils/technology-helpers";
 
 // Types
@@ -52,14 +45,7 @@ interface TrendCalculation {
   pages_per_session?: number;
 }
 
-interface ReferrerItem {
-  referrer: string;
-  visitors: number;
-  pageviews: number;
-  type?: string;
-  name?: string;
-  domain?: string;
-}
+import { useTableTabs } from "@/lib/table-tabs";
 
 interface ChartDataPoint {
   date: string;
@@ -69,23 +55,10 @@ interface ChartDataPoint {
   [key: string]: unknown;
 }
 
-// Constants
 const MIN_PREVIOUS_SESSIONS_FOR_TREND = 5;
 const MIN_PREVIOUS_VISITORS_FOR_TREND = 5;
 const MIN_PREVIOUS_PAGEVIEWS_FOR_TREND = 10;
 
-
-// Helper function to create column definitions
-function col<T>(accessorKey: keyof T, header: string, cell?: (info: CellContext<T, unknown>) => React.ReactNode, meta?: object): ColumnDef<T, unknown> {
-  return {
-    accessorKey: accessorKey as string,
-    header,
-    ...(cell && { cell }),
-    ...(meta && { meta }),
-  };
-}
-
-// UnauthorizedAccessError component
 function UnauthorizedAccessError() {
   const router = useRouter();
   
@@ -99,21 +72,21 @@ function UnauthorizedAccessError() {
           <div>
             <CardTitle className="text-lg">Access Denied</CardTitle>
             <CardDescription className="mt-1">
-              You do not have permission to view this website's analytics.
+              You don't have permission to view this website's analytics.
             </CardDescription>
           </div>
         </div>
       </CardHeader>
       <CardContent className="pt-0">
         <p className="text-sm text-muted-foreground mb-5">
-          If you believe this is an error, please contact the website owner or your administrator.
+          Contact the website owner if you think this is an error.
         </p>
         <Button 
           onClick={() => router.push("/websites")}
           className="w-full sm:w-auto"
           variant="destructive"
         >
-          Return to My Websites
+          Back to Websites
         </Button>
       </CardContent>
     </Card>
@@ -127,8 +100,6 @@ export function WebsiteOverviewTab({
   isRefreshing,
   setIsRefreshing,
 }: FullTabProps) {
-  const searchParams = useSearchParams();
-  const currentTab = searchParams.get('tab') || 'overview';
   
   const { analytics, loading, error, refetch } = useWebsiteAnalytics(websiteId, dateRange);
 
@@ -172,89 +143,10 @@ export function WebsiteOverviewTab({
     return <UnauthorizedAccessError />;
   }
 
-  // Process data
-  const deviceData = useMemo(() => 
-    formatDistributionData(analytics.device_types?.map((item: DeviceTypeEntry) => {
-      let name = item.device_type || 'Unknown Type';
-      const brand = item.device_brand || 'Unknown';
-      const model = item.device_model || 'Unknown';
-
-      if (brand !== 'Unknown' && brand.toLowerCase() !== 'generic') {
-        name += ` - ${brand}`;
-        if (model !== 'Unknown' && model.toLowerCase() !== brand.toLowerCase()) {
-          name += ` ${model}`;
-        }
-      } else if (model !== 'Unknown') {
-        name += ` - ${model}`;
-      }
-      return {
-        ...item,
-        descriptiveName: name 
-      };
-    }) || [], 'descriptiveName'), 
-    [analytics.device_types]
-  );
-
-  const browserData = useMemo(() => 
-    groupBrowserData(analytics.browser_versions), 
-    [analytics.browser_versions]
-  );
-
-  const topPagesColumns = useMemo((): ColumnDef<PageData, unknown>[] => [
-    {
-      accessorKey: 'path',
-      header: 'Page',
-      cell: (info: CellContext<PageData, unknown>) => (
-        <PageLinkCell 
-          path={info.getValue() as string} 
-          websiteDomain={websiteData?.domain} 
-        />
-      )
-    },
-    {
-      accessorKey: 'pageviews',
-      header: 'Views',
-    },
-    {
-      accessorKey: 'visitors',
-      header: 'Visitors',
-    },
-    {
-      accessorKey: 'percentage',
-      header: 'Share',
-      cell: (info: CellContext<PageData, unknown>) => {
-        const percentage = info.getValue() as number;
-        return <PercentageBadge percentage={percentage} />;
-      },
-    },
-  ], [websiteData?.domain]);
-
-  const referrerColumns = useMemo((): ColumnDef<ReferrerItem, unknown>[] => [
-    {
-      accessorKey: 'name',
-      header: 'Source',
-      cell: (info: CellContext<ReferrerItem, unknown>) => {
-        const cellData: ReferrerSourceCellData = info.row.original;
-        return <ReferrerSourceCell {...cellData} />;
-      }
-    },
-    {
-      accessorKey: 'visitors',
-      header: 'Visitors',
-    },
-    {
-      accessorKey: 'pageviews',
-      header: 'Views',
-    },
-    {
-      accessorKey: 'percentage',
-      header: 'Share',
-      cell: (info: CellContext<ReferrerItem, unknown>) => {
-        const percentage = info.getValue() as number;
-        return <PercentageBadge percentage={percentage} />;
-      },
-    },
-  ], []);
+  const referrerCustomCell = useCallback((info: any) => {
+    const cellData: ReferrerSourceCellData = info.row.original;
+    return <ReferrerSourceCell {...cellData} />;
+  }, []);
 
   const chartData = useMemo(() => {
     if (!analytics.events_by_date?.length) return [];
@@ -280,7 +172,6 @@ export function WebsiteOverviewTab({
     });
   }, [analytics.events_by_date, visibleMetrics, dateRange.granularity]);
 
-  // Process top pages with percentage calculations
   const processedTopPages = useMemo(() => {
     if (!analytics.top_pages?.length) return [];
     
@@ -292,17 +183,74 @@ export function WebsiteOverviewTab({
     }));
   }, [analytics.top_pages]);
 
-  // Process top referrers with percentage calculations
-  const processedTopReferrers = useMemo(() => {
-    if (!analytics.top_referrers?.length) return [];
+  const processedEntryPages = useMemo(() => {
+    if (!analytics.entry_pages?.length) return [];
     
-    const totalVisitors = analytics.top_referrers.reduce((sum, referrer) => sum + (referrer.visitors || 0), 0);
-    
-    return analytics.top_referrers.map(referrer => ({
-      ...referrer,
-      percentage: totalVisitors > 0 ? Math.round((referrer.visitors / totalVisitors) * 100) : 0
+    return analytics.entry_pages.map(page => ({
+      ...page,
+      pageviews: page.entries,
+      visitors: page.visitors
     }));
-  }, [analytics.top_referrers]);
+  }, [analytics.entry_pages]);
+
+  const processedExitPages = useMemo(() => {
+    if (!analytics.exit_pages?.length) return [];
+    
+    return analytics.exit_pages.map(page => ({
+      ...page,
+      pageviews: page.exits,
+      visitors: page.visitors
+    }));
+  }, [analytics.exit_pages]);
+
+  const referrerTabs = useTableTabs({
+    referrers: {
+      data: analytics.top_referrers || [],
+      label: 'Referrers',
+      primaryField: 'name',
+      primaryHeader: 'Source',
+      customCell: referrerCustomCell
+    },
+    utm_sources: {
+      data: analytics.utm_sources || [],
+      label: 'UTM Sources',
+      primaryField: 'utm_source',
+      primaryHeader: 'Source'
+    },
+    utm_mediums: {
+      data: analytics.utm_mediums || [],
+      label: 'UTM Mediums',
+      primaryField: 'utm_medium',
+      primaryHeader: 'Medium'
+    },
+    utm_campaigns: {
+      data: analytics.utm_campaigns || [],
+      label: 'UTM Campaigns',
+      primaryField: 'utm_campaign',
+      primaryHeader: 'Campaign'
+    }
+  });
+
+  const pagesTabs = useTableTabs({
+    top_pages: {
+      data: processedTopPages,
+      label: 'Top Pages',
+      primaryField: 'path',
+      primaryHeader: 'Page'
+    },
+    entry_pages: {
+      data: processedEntryPages,
+      label: 'Entry Pages',
+      primaryField: 'path',
+      primaryHeader: 'Page'
+    },
+    exit_pages: {
+      data: processedExitPages,
+      label: 'Exit Pages', 
+      primaryField: 'path',
+      primaryHeader: 'Page'
+    }
+  });
 
   const dateFrom = useMemo(() => new Date(dateRange.start_date), [dateRange.start_date]);
   const dateTo = useMemo(() => new Date(dateRange.end_date), [dateRange.end_date]);
@@ -384,7 +332,6 @@ export function WebsiteOverviewTab({
     };
   }, [analytics.events_by_date]);
 
-  // Technology data processing
   const processedDeviceData = useMemo(() => 
     processDeviceData(analytics.device_types || []), 
     [analytics.device_types]
@@ -400,61 +347,102 @@ export function WebsiteOverviewTab({
     [analytics.device_types, analytics.browser_versions]
   );
 
-  // Technology table columns with enhanced styling
-  const deviceColumns = useMemo((): ColumnDef<TechnologyTableEntry, unknown>[] => [
-    col<TechnologyTableEntry>('name', 'Device Type', (info) => {
-      const entry = info.row.original;
-      return (
-        <div className="flex items-center gap-3">
-          <TechnologyIcon entry={entry} size="md" />
-          <span className="font-medium">{entry.name}</span>
-        </div>
-      );
-    }),
-    col<TechnologyTableEntry>('visitors', 'Visitors'),
-    col<TechnologyTableEntry>('percentage', 'Share', (info) => {
-      const percentage = info.getValue() as number;
-      return <PercentageBadge percentage={percentage} />;
-    }),
+  const deviceColumns = useMemo(() => [
+    {
+      id: 'name',
+      accessorKey: 'name',
+      header: 'Device Type',
+      cell: (info: any) => {
+        const entry = info.row.original;
+        return (
+          <div className="flex items-center gap-3">
+            <TechnologyIcon entry={entry} size="md" />
+            <span className="font-medium">{entry.name}</span>
+          </div>
+        );
+      }
+    },
+    {
+      id: 'visitors',
+      accessorKey: 'visitors',
+      header: 'Visitors',
+    },
+    {
+      id: 'percentage',
+      accessorKey: 'percentage',
+      header: 'Share',
+      cell: (info: any) => {
+        const percentage = info.getValue() as number;
+        return <PercentageBadge percentage={percentage} />;
+      },
+    },
   ], []);
 
-  const browserColumns = useMemo((): ColumnDef<TechnologyTableEntry, unknown>[] => [
-    col<TechnologyTableEntry>('name', 'Browser', (info) => {
-      const entry = info.row.original;
-      return (
-        <div className="flex items-center gap-3">
-          <TechnologyIcon entry={entry} size="md" />
-          <span className="font-medium">{entry.name}</span>
-        </div>
-      );
-    }),
-    col<TechnologyTableEntry>('visitors', 'Visitors'),
-    col<TechnologyTableEntry>('percentage', 'Share', (info) => {
-      const percentage = info.getValue() as number;
-      return <PercentageBadge percentage={percentage} />;
-    }),
+  const browserColumns = useMemo(() => [
+    {
+      id: 'name',
+      accessorKey: 'name',
+      header: 'Browser',
+      cell: (info: any) => {
+        const entry = info.row.original;
+        return (
+          <div className="flex items-center gap-3">
+            <TechnologyIcon entry={entry} size="md" />
+            <span className="font-medium">{entry.name}</span>
+          </div>
+        );
+      }
+    },
+    {
+      id: 'visitors',
+      accessorKey: 'visitors',
+      header: 'Visitors',
+    },
+    {
+      id: 'percentage',
+      accessorKey: 'percentage',
+      header: 'Share',
+      cell: (info: any) => {
+        const percentage = info.getValue() as number;
+        return <PercentageBadge percentage={percentage} />;
+      },
+    },
   ], []);
 
-  const osColumns = useMemo((): ColumnDef<TechnologyTableEntry, unknown>[] => [
-    col<TechnologyTableEntry>('name', 'Operating System', (info) => {
-      const entry = info.row.original;
-      return (
-        <div className="flex items-center gap-3">
-          <TechnologyIcon entry={entry} size="md" />
-          <span className="font-medium">{entry.name}</span>
-        </div>
-      );
-    }),
-    col<TechnologyTableEntry>('visitors', 'Visitors'),
-    col<TechnologyTableEntry>('percentage', 'Share', (info) => {
-      const percentage = info.getValue() as number;
-      return <PercentageBadge percentage={percentage} />;
-    }),
+  const osColumns = useMemo(() => [
+    {
+      id: 'name',
+      accessorKey: 'name',
+      header: 'Operating System',
+      cell: (info: any) => {
+        const entry = info.row.original;
+        return (
+          <div className="flex items-center gap-3">
+            <TechnologyIcon entry={entry} size="md" />
+            <span className="font-medium">{entry.name}</span>
+          </div>
+        );
+      }
+    },
+    {
+      id: 'visitors',
+      accessorKey: 'visitors',
+      header: 'Visitors',
+    },
+    {
+      id: 'percentage',
+      accessorKey: 'percentage',
+      header: 'Share',
+      cell: (info: any) => {
+        const percentage = info.getValue() as number;
+        return <PercentageBadge percentage={percentage} />;
+      },
+    },
   ], []);
 
   return (
     <div className="space-y-6">
-      {/* Key metrics */}
+      {/* Metrics */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <StatCard 
           title="UNIQUE VISITORS"
@@ -479,7 +467,7 @@ export function WebsiteOverviewTab({
           className="h-full"
         />
         <StatCard 
-          title="PAGE VIEWS"
+          title="PAGEVIEWS"
           value={analytics.summary?.pageviews || 0}
           icon={Globe}
           description={`${analytics.today?.pageviews || 0} today`}
@@ -516,7 +504,7 @@ export function WebsiteOverviewTab({
           className="h-full"
         />
         <StatCard 
-          title="AVG. SESSION"
+          title="SESSION DURATION"
           value={analytics.summary?.avg_session_duration_formatted || '0s'}
           icon={Timer}
           isLoading={isLoading}
@@ -527,19 +515,18 @@ export function WebsiteOverviewTab({
         />
       </div>
 
-      {/* Visitor Trends */}
+      {/* Chart */}
       <div className="rounded-xl border shadow-sm">
         <div className="p-4 border-b flex flex-col sm:flex-row justify-between items-start gap-3">
           <div>
-            <h2 className="text-lg font-semibold tracking-tight">Visitor Trends</h2>
+            <h2 className="text-lg font-semibold tracking-tight">Traffic Trends</h2>
             <p className="text-sm text-muted-foreground">
-              Website performance metrics over time
-              {dateRange.granularity === 'hourly' ? ' (hourly data)' : ' (daily data)'}
+              {dateRange.granularity === 'hourly' ? 'Hourly' : 'Daily'} traffic data
             </p>
             {dateRange.granularity === 'hourly' && dateDiff > 7 && (
               <div className="mt-1 flex items-center text-amber-600 gap-1 text-xs">
                 <AlertTriangle className="h-3 w-3" />
-                <span>Showing hourly data for more than 7 days may affect performance</span>
+                <span>Large date ranges may affect performance</span>
               </div>
             )}
           </div>
@@ -559,36 +546,34 @@ export function WebsiteOverviewTab({
         </div>
       </div>
 
-      {/* Content Tables */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Tables */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <DataTable 
-          data={processedTopReferrers}
-          columns={referrerColumns}
-          title="Top Referrers"
-          description="Sources of your traffic"
+          tabs={referrerTabs}
+          title="Traffic Sources"
+          description="Referrers and campaign data"
           isLoading={isLoading}
           initialPageSize={7}
           minHeight={230}
         />
         
         <DataTable 
-          data={processedTopPages}
-          columns={topPagesColumns}
-          title="Top Pages"
-          description="Most viewed content"
+          tabs={pagesTabs}
+          title="Pages"
+          description="Top pages and entry/exit points"
           isLoading={isLoading}
           initialPageSize={7}
           minHeight={230}
         />
       </div>
 
-      {/* Technology Breakdown Tables */}
+      {/* Technology */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <DataTable 
           data={processedDeviceData}
           columns={deviceColumns}
-          title="Device Types"
-          description="Visitors by device type"
+          title="Devices"
+          description="Device breakdown"
           isLoading={isLoading}
           initialPageSize={8}
           minHeight={200}
@@ -599,7 +584,7 @@ export function WebsiteOverviewTab({
           data={processedBrowserData}
           columns={browserColumns}
           title="Browsers"
-          description="Visitors by browser"
+          description="Browser breakdown"
           isLoading={isLoading}
           initialPageSize={8}
           minHeight={200}
@@ -610,7 +595,7 @@ export function WebsiteOverviewTab({
           data={processedOSData}
           columns={osColumns}
           title="Operating Systems"
-          description="Visitors by operating system"
+          description="OS breakdown"
           isLoading={isLoading}
           initialPageSize={8}
           minHeight={200}

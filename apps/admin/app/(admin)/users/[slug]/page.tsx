@@ -28,6 +28,8 @@ import { format } from "date-fns";
 import { UserActions, RoleActions } from "./user-actions";
 import { DomainActions } from "./domain-actions";
 import { WebsiteActions } from "./website-actions";
+import { AddDomainForm } from "./add-domain-form";
+import { AddWebsiteForm } from "./add-website-form";
 import { Analytics } from "./analytics";
 
 interface UserWithRelations {
@@ -42,7 +44,7 @@ interface UserWithRelations {
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
-  role: 'USER' | 'ADMIN';
+  role: 'ADMIN' | 'USER' | 'EARLY_ADOPTER' | 'INVESTOR' | 'BETA_TESTER' | 'GUEST';
   twoFactorEnabled: boolean | null;
   domains: Array<{
     id: string;
@@ -138,10 +140,15 @@ export default async function UserProfilePage({
                     </>
                   )}
                 </Badge>
-                {userData.role === "ADMIN" && (
+                {userData.role !== "USER" && (
                   <Badge variant="default" className="gap-1">
                     <Shield className="h-3.5 w-3.5" />
-                    Admin
+                    {userData.role === 'ADMIN' ? 'Admin' : 
+                     userData.role === 'EARLY_ADOPTER' ? 'Early Adopter' :
+                     userData.role === 'INVESTOR' ? 'Investor' :
+                     userData.role === 'BETA_TESTER' ? 'Beta Tester' :
+                     userData.role === 'GUEST' ? 'Guest' : 
+                     userData.role}
                   </Badge>
                 )}
               </div>
@@ -193,6 +200,7 @@ export default async function UserProfilePage({
                     <CardTitle>Domains</CardTitle>
                     <CardDescription>Manage user's domains and DNS settings</CardDescription>
                   </div>
+                  <AddDomainForm userId={userData.id} />
                 </div>
               </CardHeader>
               <CardContent>
@@ -257,6 +265,7 @@ export default async function UserProfilePage({
                     <CardTitle>Websites</CardTitle>
                     <CardDescription>Manage user's websites and deployments</CardDescription>
                   </div>
+                  <AddWebsiteForm userId={userData.id} />
                 </div>
               </CardHeader>
               <CardContent>
@@ -270,6 +279,9 @@ export default async function UserProfilePage({
                             <div className="font-medium">{website.name || website.domain}</div>
                             <div className="text-sm text-muted-foreground">
                               {website.domain} • Added {format(new Date(website.createdAt), "MMM d, yyyy")}
+                              {website.domainId && (
+                                <span className="text-xs text-blue-600 ml-2">↗ Linked to domain</span>
+                              )}
                             </div>
                           </div>
                         </div>

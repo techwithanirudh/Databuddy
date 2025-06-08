@@ -23,13 +23,17 @@ export function NavigationItem({
   isRootLevel,
   isExternal,
   isHighlighted,
+  production,
   currentWebsiteId
 }: NavigationItemProps) {
   const router = useRouter();
   const fullPath = isRootLevel ? href : `/websites/${currentWebsiteId}${href}`;
   const LinkComponent = isExternal ? 'a' : Link;
+  
+  if (production === false && process.env.NODE_ENV === "production") {
+    return null;
+  }
 
-  // Pre-fetch the route when component mounts
   useEffect(() => {
     if (!isExternal) {
       router.prefetch(fullPath);

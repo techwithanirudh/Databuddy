@@ -2,12 +2,10 @@ import Link from "next/link";
 import { ChevronLeft, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { WebsiteBasic } from "@databuddy/shared";
 
 interface WebsiteHeaderProps {
-  website: {
-    name?: string;
-    domain: string;
-  } | null;
+  website: WebsiteBasic | null | undefined;
 }
 
 export function WebsiteHeader({ website }: WebsiteHeaderProps) {
@@ -35,10 +33,7 @@ export function WebsiteHeader({ website }: WebsiteHeaderProps) {
           )}
         </h2>
         <div className="text-xs text-muted-foreground truncate mt-1 pl-6">
-          {website ? 
-            website.domain : 
-            <Skeleton className="h-4 w-24" />
-          }
+          {website?.domain || <Skeleton className="h-4 w-24" />}
         </div>
       </div>
     </>

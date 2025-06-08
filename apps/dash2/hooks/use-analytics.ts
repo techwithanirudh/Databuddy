@@ -35,6 +35,20 @@ export interface PageData {
   avg_time_on_page_formatted: string;
 }
 
+export interface EntryPageData {
+  path: string;
+  entries: number;
+  visitors: number;
+  percentage: number;
+}
+
+export interface ExitPageData {
+  path: string;
+  exits: number;
+  visitors: number;
+  percentage: number;
+}
+
 export interface ReferrerData {
   referrer: string;
   visitors: number;
@@ -266,10 +280,27 @@ interface SummaryResponse extends ApiResponse {
   }>;
   top_pages: Array<PageData>;
   top_referrers: Array<ReferrerData>;
+  entry_pages: Array<EntryPageData>;
+  exit_pages: Array<ExitPageData>;
   screen_resolutions: Array<{
     screen_resolution: string;
     count: number;
     visitors: number;
+  }>;
+  utm_sources: Array<{
+    utm_source: string;
+    visitors: number;
+    pageviews: number;
+  }>;
+  utm_mediums: Array<{
+    utm_medium: string;
+    visitors: number;
+    pageviews: number;
+  }>;
+  utm_campaigns: Array<{
+    utm_campaign: string;
+    visitors: number;
+    pageviews: number;
   }>;
   events_by_date: Array<TrendData>;
 }
@@ -403,7 +434,7 @@ async function fetchAnalyticsData<T extends ApiResponse>(
   signal?: AbortSignal
 ): Promise<T> {
   const params = buildParams(websiteId, dateRange, additionalParams);
-  const url = `${API_BASE_URL}${endpoint}?${params}`;
+  const url = `${API_BASE_URL}/v1${endpoint}?${params}`;
   
   const response = await fetch(url, {
     credentials: 'include',
@@ -469,7 +500,12 @@ export function useWebsiteAnalytics(websiteId: string, dateRange: DateRange) {
       timezones: summaryQuery.data?.timezones,
       top_pages: summaryQuery.data?.top_pages,
       top_referrers: summaryQuery.data?.top_referrers,
+      entry_pages: summaryQuery.data?.entry_pages,
+      exit_pages: summaryQuery.data?.exit_pages,
       screen_resolutions: summaryQuery.data?.screen_resolutions,
+      utm_sources: summaryQuery.data?.utm_sources,
+      utm_mediums: summaryQuery.data?.utm_mediums,
+      utm_campaigns: summaryQuery.data?.utm_campaigns,
       events_by_date: summaryQuery.data?.events_by_date,
     },
     loading: {

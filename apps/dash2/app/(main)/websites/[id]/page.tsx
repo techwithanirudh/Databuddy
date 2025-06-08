@@ -11,8 +11,8 @@ import { RefreshCw, Calendar, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getWebsiteById } from "@/app/actions/websites";
 import { useQuery } from "@tanstack/react-query";
+import { useWebsite } from "@/hooks/use-websites";
 import { useWebsiteAnalytics } from "@/hooks/use-analytics";
 import { format, subDays, subHours } from "date-fns";
 import type { DateRange as DayPickerRange } from "react-day-picker";
@@ -49,10 +49,6 @@ const WebsitePerformanceTab = dynamic(
 );
 const WebsiteSettingsTab = dynamic(
   () => import("./_components/tabs/settings-tab").then(mod => ({ default: mod.WebsiteSettingsTab })),
-  { loading: () => <TabLoadingSkeleton />, ssr: false }
-);
-const WebsiteErrorsTab = dynamic(
-  () => import("./_components/tabs/errors-tab").then(mod => ({ default: mod.WebsiteErrorsTab })),
   { loading: () => <TabLoadingSkeleton />, ssr: false }
 );
 const WebsiteTrackingSetupTab = dynamic(
@@ -104,22 +100,7 @@ function WebsiteDetailsPage() {
     }
   }, [setDateRangeAction]);
 
-  const { data, isLoading, isError, error, refetch: refetchWebsiteData } = useQuery({
-    queryKey: ["website", id],
-    queryFn: async () => {
-      const result = await getWebsiteById(id as string);
-      if (result.error) {
-        throw new Error(result.error);
-      }
-      return result.data;
-    },
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    refetchInterval: false,
-    retry: 1,
-    retryDelay: 3000,
-  });
+  const { data, isLoading, isError, error, refetch: refetchWebsiteData } = useWebsite(id as string);
 
   // Always call the analytics hook with the websiteId to maintain hook order
   const { analytics: analyticsData, loading: analyticsLoading } = useWebsiteAnalytics(
@@ -171,7 +152,6 @@ function WebsiteDetailsPage() {
         case "audience": return <WebsiteAudienceTab {...tabProps} />;
         case "content": return <WebsiteContentTab {...tabProps} />;
         case "performance": return <WebsitePerformanceTab {...tabProps} />;
-        case "errors": return <WebsiteErrorsTab {...tabProps} />;
         case "settings": return <WebsiteSettingsTab {...settingsProps} />;
         case "tracking-setup": return <WebsiteTrackingSetupTab {...settingsProps} />;
         default: return null;
@@ -207,7 +187,6 @@ function WebsiteDetailsPage() {
     { id: "audience", label: "Audience" },
     { id: "content", label: "Content" },
     { id: "performance", label: "Performance" },
-    { id: "errors", label: "Errors" },
     { id: "settings", label: "Settings" },
   ] : [
     { id: "tracking-setup", label: "Setup Tracking" },

@@ -60,8 +60,8 @@ export function MiniChart({
     }
     if (newHalf.length === 0 && oldHalf.length === 0) return 0;
 
-    const oldAvg = oldHalf.reduce((sum, item) => sum + item.value, 0) / oldHalf.length;
-    const newAvg = newHalf.reduce((sum, item) => sum + item.value, 0) / newHalf.length;
+          const oldAvg = oldHalf.reduce((sum: number, item: any) => sum + item.value, 0) / oldHalf.length;
+      const newAvg = newHalf.reduce((sum: number, item: any) => sum + item.value, 0) / newHalf.length;
     
     if (oldAvg === 0) return newAvg > 0 ? 100 : (newAvg < 0 ? -100 : 0);
     return Math.round(((newAvg - oldAvg) / Math.abs(oldAvg)) * 100);

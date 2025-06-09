@@ -79,7 +79,7 @@ const addPercentages = (data: BaseDataItem[], totalField: 'visitors' | 'pageview
     name: item.name || 'Unknown',
     visitors: item.visitors || 0,
     pageviews: item.pageviews || 0,
-    percentage: total > 0 ? Math.round((item[totalField] / total) * 100) : 0,
+    percentage: total > 0 ? Math.round(((item[totalField] || 0) / total) * 100) : 0,
   }));
 };
 

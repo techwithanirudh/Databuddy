@@ -713,7 +713,7 @@ export function WebsiteAudienceTab({
                   const isValid = !Number.isNaN(width) && !Number.isNaN(height);
                   
                   const totalVisitors = processedData.device.screen_resolution?.reduce(
-                    (sum, item) => sum + item.visitors, 0) || 1;
+                    (sum: number, item: any) => sum + item.visitors, 0) || 1;
                   const percentage = Math.round((item.visitors / totalVisitors) * 100);
                   
                   let deviceType = "Unknown";

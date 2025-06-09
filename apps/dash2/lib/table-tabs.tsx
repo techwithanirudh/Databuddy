@@ -25,7 +25,7 @@ export interface TabConfig<T extends BaseTabItem> {
 export function addPercentages<T extends BaseTabItem>(data: T[]): T[] {
   if (!data?.length) return [];
   
-  const totalVisitors = data.reduce((sum, item) => sum + (item.visitors || 0), 0);
+  const totalVisitors = data.reduce((sum: number, item: any) => sum + (item.visitors || 0), 0);
   
   return data.map(item => ({
     ...item,

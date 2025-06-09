@@ -44,6 +44,7 @@ interface ConnectionDataItem extends BaseDataItem {
 interface BrowserDataItem {
   visitors: number;
   pageviews?: number;
+  sessions?: number;
   browser_name?: string;
   browser_version?: string;
   name?: string;
@@ -51,6 +52,7 @@ interface BrowserDataItem {
     version: string;
     visitors: number;
     pageviews?: number;
+    sessions?: number;
   }>;
 }
 

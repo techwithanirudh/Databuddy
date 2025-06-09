@@ -54,6 +54,28 @@ interface BrowserDataItem {
   }>;
 }
 
+interface ScreenResolutionItem {
+  name: string;
+  visitors: number;
+  pageviews?: number;
+}
+
+interface ProcessedBrowserData {
+  name?: string;
+  browserName?: string;
+  id?: string;
+  visitors: number;
+  pageviews?: number;
+  percentage: number;
+  marketShare?: string;
+  sessions?: number;
+  versions?: Array<{
+    version: string;
+    visitors: number;
+    pageviews?: number;
+  }>;
+}
+
 // Helper function to get connection icon
 const getConnectionIcon = (connection: string) => {
   const connectionLower = connection.toLowerCase();
@@ -182,7 +204,7 @@ export function WebsiteAudienceTab({
     if (rawData.length > 0 && rawData[0].versions) {
       const totalVisitors = rawData.reduce((sum: number, browser: BrowserDataItem) => sum + (browser.visitors || 0), 0);
       
-      return rawData.map((browser: BrowserDataItem) => {
+      return rawData.map((browser: BrowserDataItem): ProcessedBrowserData => {
         const marketShare = totalVisitors > 0 
           ? Math.round((browser.visitors / totalVisitors) * 100)
           : 0;
@@ -199,8 +221,8 @@ export function WebsiteAudienceTab({
     }
     
     // Fallback: Group browsers by name and aggregate versions (legacy format)
-    const browserGroups = rawData.reduce((acc: any, browser: any) => {
-      const browserName = browser.browser_name;
+    const browserGroups = rawData.reduce((acc: Record<string, BrowserDataItem>, browser: BrowserDataItem) => {
+      const browserName = browser.browser_name || 'Unknown';
       if (!acc[browserName]) {
         acc[browserName] = {
           name: browserName,
@@ -226,10 +248,10 @@ export function WebsiteAudienceTab({
     }, {});
 
     // Convert to array and add market share
-    const browserArray = Object.values(browserGroups);
-    const totalVisitors = browserArray.reduce((sum: number, browser: any) => sum + (browser.visitors || 0), 0);
+          const browserArray = Object.values(browserGroups);
+      const totalVisitors = browserArray.reduce((sum: number, browser: BrowserDataItem) => sum + (browser.visitors || 0), 0);
     
-    return browserArray.map((browser: any) => {
+          return browserArray.map((browser: BrowserDataItem): ProcessedBrowserData => {
       const marketShare = totalVisitors > 0 
         ? Math.round((browser.visitors / totalVisitors) * 100)
         : 0;
@@ -239,9 +261,9 @@ export function WebsiteAudienceTab({
         id: browser.name,
         percentage: marketShare,
         marketShare: marketShare.toString(),
-        versions: browser.versions.sort((a: any, b: any) => (b.visitors || 0) - (a.visitors || 0))
-      };
-    }).sort((a: any, b: any) => (b.visitors || 0) - (a.visitors || 0));
+        versions: browser.versions?.sort((a, b) => (b.visitors || 0) - (a.visitors || 0)) || []
+        };
+      }).sort((a, b) => (b.visitors || 0) - (a.visitors || 0));
   }, [processedData.browsers]);
 
   // Process connection types data with percentages
@@ -264,7 +286,7 @@ export function WebsiteAudienceTab({
   const isLoading = isBatchLoading || isRefreshing;
 
   // Browser table columns with expandable functionality
-  const browserColumns = useMemo((): ColumnDef<any, unknown>[] => [
+  const browserColumns = useMemo((): ColumnDef<ProcessedBrowserData, unknown>[] => [
     {
       id: 'browserName',
       accessorKey: 'browserName',
@@ -725,14 +747,14 @@ export function WebsiteAudienceTab({
           ) : (
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {processedData.device.screen_resolution?.slice(0, 6).map((item) => {
+                {processedData.device.screen_resolution?.slice(0, 6).map((item: ScreenResolutionItem) => {
                   const resolution = item.name;
                   if (!resolution) return null;
                   const [width, height] = resolution.split('x').map(Number);
                   const isValid = !Number.isNaN(width) && !Number.isNaN(height);
                   
                   const totalVisitors = processedData.device.screen_resolution?.reduce(
-                    (sum: number, item: any) => sum + item.visitors, 0) || 1;
+                    (sum: number, resItem: ScreenResolutionItem) => sum + resItem.visitors, 0) || 1;
                   const percentage = Math.round((item.visitors / totalVisitors) * 100);
                   
                   let deviceType = "Unknown";

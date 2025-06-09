@@ -467,40 +467,56 @@ interface DatabuddyConfig {
 
 ## 🎯 Custom Event Tracking
 
-Track custom business events using the global API:
+Track custom business events with detailed properties for comprehensive analytics:
 
 <Tabs items={['React/Next.js', 'Script Tag']}>
 <Tab value="React/Next.js">
 
-```tsx title="Custom Events in React"
+```tsx title="Custom Events with Properties"
 import { useEffect } from 'react';
 
 function ProductPage({ product }: { product: Product }) {
   useEffect(() => {
-    // Track product view
+    // Track product view with detailed properties
     window.databuddy?.track('product_viewed', {
       product_id: product.id,
       product_name: product.name,
       category: product.category,
-      price: product.price
+      price: product.price,
+      currency: 'USD',
+      brand: product.brand,
+      in_stock: product.availability > 0
     });
   }, [product]);
 
   const handlePurchase = () => {
-    // Track conversion
+    // Track conversion with purchase details
     window.databuddy?.track('purchase_completed', {
       product_id: product.id,
       revenue: product.price,
-      currency: 'USD'
+      currency: 'USD',
+      payment_method: 'credit_card',
+      shipping_method: 'standard',
+      coupon_used: false
+    });
+  };
+
+  const handleAddToCart = (quantity: number) => {
+    // Track cart actions with context
+    window.databuddy?.track('add_to_cart', {
+      product_id: product.id,
+      quantity: quantity,
+      value: product.price * quantity,
+      currency: 'USD',
+      source: 'product_page'
     });
   };
 
   return (
     <div>
       <h1>{product.name}</h1>
-      <button onClick={handlePurchase}>
-        Buy Now - ${product.price}
-      </button>
+      <button onClick={() => handleAddToCart(1)}>Add to Cart</button>
+      <button onClick={handlePurchase}>Buy Now - ${product.price}</button>
     </div>
   );
 }
@@ -509,7 +525,7 @@ function ProductPage({ product }: { product: Product }) {
 **Alternative Object Syntax:**
 
 ```tsx
-// Both syntaxes work
+// Both syntaxes work identically
 db.track('event_name', { key: 'value' });
 window.databuddy?.track('event_name', { key: 'value' });
 ```
@@ -517,36 +533,56 @@ window.databuddy?.track('event_name', { key: 'value' });
 </Tab>
 <Tab value="Script Tag">
 
-```html title="Custom Events with Script Tag"
+```html title="Custom Events with Rich Properties"
 <script>
-// Track user actions
-function trackSignup(plan) {
+// Track user actions with detailed context
+function trackSignup(plan, source) {
   db.track('signup_completed', {
     plan: plan,
-    source: 'pricing_page',
-    timestamp: Date.now()
+    source: source,
+    trial_days: plan === 'pro' ? 14 : 7,
+    referrer: document.referrer,
+    utm_source: new URLSearchParams(window.location.search).get('utm_source')
   });
 }
 
-function trackFeatureUsage(feature) {
+function trackFeatureUsage(feature, context) {
   db.track('feature_used', {
     feature: feature,
     page: window.location.pathname,
-    user_agent: navigator.userAgent
+    user_tier: context.userTier,
+    session_duration: context.sessionTime,
+    previous_action: context.lastAction
   });
 }
 
-// Track form interactions
-document.getElementById('contact-form').addEventListener('submit', () => {
+// Track complex interactions
+function trackVideoEngagement(videoId, action, timestamp) {
+  db.track('video_engagement', {
+    video_id: videoId,
+    action: action, // 'play', 'pause', 'complete', 'seek'
+    timestamp: timestamp,
+    duration: document.querySelector('#video').duration,
+    quality: document.querySelector('#video').videoQuality,
+    fullscreen: document.fullscreenElement !== null
+  });
+}
+
+// Track form interactions with validation context
+document.getElementById('contact-form').addEventListener('submit', (e) => {
+  const formData = new FormData(e.target);
   db.track('contact_form_submitted', {
     form_id: 'contact-form',
-    page: window.location.pathname
+    fields_completed: Array.from(formData.keys()).length,
+    inquiry_type: formData.get('inquiry_type'),
+    page: window.location.pathname,
+    time_to_complete: Date.now() - window.formStartTime
   });
 });
 </script>
 
-<button onclick="trackSignup('pro')">Upgrade to Pro</button>
-<button onclick="trackFeatureUsage('export')">Export Data</button>
+<button onclick="trackSignup('pro', 'pricing_page')">Upgrade to Pro</button>
+<button onclick="trackFeatureUsage('export', {userTier: 'premium'})">Export Data</button>
 ```
 
 </Tab>

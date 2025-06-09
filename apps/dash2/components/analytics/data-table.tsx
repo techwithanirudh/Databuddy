@@ -432,162 +432,163 @@ export function DataTable<TData extends { name: string | number }, TValue>(
             >
               <div className="overflow-x-auto">
                 <Table>
-                <TableHeader>
-                  {table.getHeaderGroups().map(headerGroup => (
-                    <TableRow key={headerGroup.id} className="bg-muted/20 border-border/30 sticky top-0 z-10">
-                      {headerGroup.headers.map(header => (
-                        <TableHead
-                          key={header.id}
-                          className={cn(
-                            "h-11 text-xs font-semibold px-2 sm:px-4 text-muted-foreground uppercase tracking-wide bg-muted/20 backdrop-blur-sm",
-                            (header.column.columnDef.meta as any)?.className,
-                            header.column.getCanSort()
-                              ? 'cursor-pointer hover:text-foreground hover:bg-muted/30 transition-all duration-200 select-none group'
-                              : 'select-none'
-                          )}
-                          style={{ width: header.getSize() !== 150 ? header.getSize() : undefined }}
-                          onClick={header.column.getToggleSortingHandler()}
-                          tabIndex={header.column.getCanSort() ? 0 : -1}
-                          role={header.column.getCanSort() ? "button" : undefined}
-                          aria-sort={
-                            header.column.getIsSorted() === 'asc' ? 'ascending' :
-                            header.column.getIsSorted() === 'desc' ? 'descending' :
-                            header.column.getCanSort() ? 'none' : undefined
-                          }
-                        >
-                          <div className="flex items-center gap-1.5">
-                            <span className="truncate">
-                              {header.isPlaceholder
-                                ? null
-                                : flexRender(
+                  <TableHeader>
+                    {table.getHeaderGroups().map(headerGroup => (
+                      <TableRow key={headerGroup.id} className="bg-muted/20 border-border/30 sticky top-0 z-10">
+                        {headerGroup.headers.map(header => (
+                          <TableHead
+                            key={header.id}
+                            className={cn(
+                              "h-11 text-xs font-semibold px-2 sm:px-4 text-muted-foreground uppercase tracking-wide bg-muted/20 backdrop-blur-sm",
+                              (header.column.columnDef.meta as any)?.className,
+                              header.column.getCanSort()
+                                ? 'cursor-pointer hover:text-foreground hover:bg-muted/30 transition-all duration-200 select-none group'
+                                : 'select-none'
+                            )}
+                            style={{ width: header.getSize() !== 150 ? header.getSize() : undefined }}
+                            onClick={header.column.getToggleSortingHandler()}
+                            tabIndex={header.column.getCanSort() ? 0 : -1}
+                            role={header.column.getCanSort() ? "button" : undefined}
+                            aria-sort={
+                              header.column.getIsSorted() === 'asc' ? 'ascending' :
+                                header.column.getIsSorted() === 'desc' ? 'descending' :
+                                  header.column.getCanSort() ? 'none' : undefined
+                            }
+                          >
+                            <div className="flex items-center gap-1.5">
+                              <span className="truncate">
+                                {header.isPlaceholder
+                                  ? null
+                                  : flexRender(
                                     header.column.columnDef.header,
                                     header.getContext()
                                   )}
-                            </span>
-                            {header.column.getCanSort() && (
-                              <div className="flex flex-col items-center justify-center w-3 h-3">
-                                {!header.column.getIsSorted() && (
-                                  <ArrowUpDown className="h-3 w-3 text-muted-foreground/40 group-hover:text-muted-foreground/70 transition-colors" />
-                                )}
-                                {header.column.getIsSorted() === 'asc' && (
-                                  <ArrowUp className="h-3 w-3 text-primary" />
-                                )}
-                                {header.column.getIsSorted() === 'desc' && (
-                                  <ArrowDown className="h-3 w-3 text-primary" />
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </TableHead>
-                      ))}
-                    </TableRow>
-                  ))}
-                </TableHeader>
-                <TableBody className="overflow-hidden">
-                  {displayData.map((row, rowIndex) => {
-                    const subRows = expandable && getSubRows ? getSubRows(row.original) : undefined;
-                    const hasSubRows = subRows && subRows.length > 0;
-                    const isExpanded = expandedRows.has(row.id);
-                    const percentage = getRowPercentage(row.original);
-                    const gradient = getPercentageGradient(percentage);
-
-                    return (
-                      <Fragment key={row.id}>
-                        <TableRow
-                          className={cn(
-                            "h-12 border-border/20 relative transition-all duration-300 ease-in-out",
-                            (onRowClick && !hasSubRows) || hasSubRows ? "cursor-pointer" : "",
-                            hoveredRow && hoveredRow !== row.id ? "opacity-40 grayscale-[80%]" : "opacity-100",
-                            !hoveredRow && (rowIndex % 2 === 0 ? "bg-background/50" : "bg-muted/10")
-                          )}
-                          onClick={() => {
-                            if (hasSubRows) {
-                              toggleRowExpansion(row.id);
-                            } else if (onRowClick && row.original.name) {
-                              const field = getFieldFromTabId(activeTab);
-                              onRowClick(field, row.original.name);
-                            }
-                          }}
-                          style={{
-                            background: !hoveredRow && percentage > 0 ? gradient.background : undefined,
-                          }}
-                          onMouseEnter={() => handleRowMouseEnter(row.original, row.id)}
-                        >
-                          {row.getVisibleCells().map((cell, cellIndex) => (
-                            <TableCell
-                              key={cell.id}
-                              className={cn(
-                                "py-3 text-sm font-medium transition-colors duration-150 px-2 sm:px-4",
-                                cellIndex === 0 && "font-semibold text-foreground",
-                                (cell.column.columnDef.meta as any)?.className
-                              )}
-                              style={{ width: cell.column.getSize() !== 150 ? cell.column.getSize() : undefined }}
-                            >
-                              <div className="flex items-center gap-2">
-                                {cellIndex === 0 && hasSubRows && (
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      toggleRowExpansion(row.id);
-                                    }}
-                                    className="flex-shrink-0 p-0.5 hover:bg-muted rounded transition-colors"
-                                    aria-label={isExpanded ? 'Collapse row' : 'Expand row'}
-                                  >
-                                    {isExpanded ? (
-                                      <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-                                    ) : (
-                                      <ChevronRightIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                                    )}
-                                  </button>
-                                )}
-                                <div className="truncate flex-1">
-                                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                </div>
-                              </div>
-                            </TableCell>
-                          ))}
-                        </TableRow>
-
-                        {hasSubRows && isExpanded && subRows.map((subRow, subIndex) => (
-                          <TableRow
-                            key={`${row.id}-sub-${subIndex}`}
-                            className="border-border/10 bg-muted/5 hover:bg-muted/10 transition-colors"
-                          >
-                            {renderSubRow ? (
-                              <TableCell
-                                colSpan={row.getVisibleCells().length}
-                                className="p-0"
-                              >
-                                {renderSubRow(subRow, row.original, subIndex)}
-                              </TableCell>
-                            ) : (
-                              row.getVisibleCells().map((cell, cellIndex) => (
-                                <TableCell
-                                  key={`sub-${cell.id}`}
-                                  className={cn(
-                                    "py-2 text-sm text-muted-foreground",
-                                    cellIndex === 0 ? "pl-8" : "px-3"
+                              </span>
+                              {header.column.getCanSort() && (
+                                <div className="flex flex-col items-center justify-center w-3 h-3">
+                                  {!header.column.getIsSorted() && (
+                                    <ArrowUpDown className="h-3 w-3 text-muted-foreground/40 group-hover:text-muted-foreground/70 transition-colors" />
                                   )}
-                                  style={{ width: cell.column.getSize() !== 150 ? cell.column.getSize() : undefined }}
-                                >
-                                  <div className="truncate">
-                                    {cellIndex === 0 ? (
-                                      <span className="text-xs">↳ {(subRow as any)[cell.column.id] || ''}</span>
-                                    ) : (
-                                      (subRow as any)[cell.column.id] || ''
-                                    )}
-                                  </div>
-                                </TableCell>
-                              ))
-                            )}
-                          </TableRow>
+                                  {header.column.getIsSorted() === 'asc' && (
+                                    <ArrowUp className="h-3 w-3 text-primary" />
+                                  )}
+                                  {header.column.getIsSorted() === 'desc' && (
+                                    <ArrowDown className="h-3 w-3 text-primary" />
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </TableHead>
                         ))}
-                      </Fragment>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+                      </TableRow>
+                    ))}
+                  </TableHeader>
+                  <TableBody className="overflow-hidden">
+                    {displayData.map((row, rowIndex) => {
+                      const subRows = expandable && getSubRows ? getSubRows(row.original) : undefined;
+                      const hasSubRows = subRows && subRows.length > 0;
+                      const isExpanded = expandedRows.has(row.id);
+                      const percentage = getRowPercentage(row.original);
+                      const gradient = getPercentageGradient(percentage);
+
+                      return (
+                        <Fragment key={row.id}>
+                          <TableRow
+                            className={cn(
+                              "h-12 border-border/20 relative transition-all duration-300 ease-in-out",
+                              (onRowClick && !hasSubRows) || hasSubRows ? "cursor-pointer" : "",
+                              hoveredRow && hoveredRow !== row.id ? "opacity-40 grayscale-[80%]" : "opacity-100",
+                              !hoveredRow && (rowIndex % 2 === 0 ? "bg-background/50" : "bg-muted/10")
+                            )}
+                            onClick={() => {
+                              if (hasSubRows) {
+                                toggleRowExpansion(row.id);
+                              } else if (onRowClick && row.original.name) {
+                                const field = getFieldFromTabId(activeTab);
+                                onRowClick(field, row.original.name);
+                              }
+                            }}
+                            style={{
+                              background: !hoveredRow && percentage > 0 ? gradient.background : undefined,
+                              boxShadow: !hoveredRow && percentage > 0 ? `inset 3px 0 0 0 ${gradient.accentColor}` : undefined,
+                            }}
+                            onMouseEnter={() => handleRowMouseEnter(row.original, row.id)}
+                          >
+                            {row.getVisibleCells().map((cell, cellIndex) => (
+                              <TableCell
+                                key={cell.id}
+                                className={cn(
+                                  "py-3 text-sm font-medium transition-colors duration-150 px-2 sm:px-4",
+                                  cellIndex === 0 && "font-semibold text-foreground",
+                                  (cell.column.columnDef.meta as any)?.className
+                                )}
+                                style={{ width: cell.column.getSize() !== 150 ? cell.column.getSize() : undefined }}
+                              >
+                                <div className="flex items-center gap-2">
+                                  {cellIndex === 0 && hasSubRows && (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleRowExpansion(row.id);
+                                      }}
+                                      className="flex-shrink-0 p-0.5 hover:bg-muted rounded transition-colors"
+                                      aria-label={isExpanded ? 'Collapse row' : 'Expand row'}
+                                    >
+                                      {isExpanded ? (
+                                        <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                                      ) : (
+                                        <ChevronRightIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                                      )}
+                                    </button>
+                                  )}
+                                  <div className="truncate flex-1">
+                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                  </div>
+                                </div>
+                              </TableCell>
+                            ))}
+                          </TableRow>
+
+                          {hasSubRows && isExpanded && subRows.map((subRow, subIndex) => (
+                            <TableRow
+                              key={`${row.id}-sub-${subIndex}`}
+                              className="border-border/10 bg-muted/5 hover:bg-muted/10 transition-colors"
+                            >
+                              {renderSubRow ? (
+                                <TableCell
+                                  colSpan={row.getVisibleCells().length}
+                                  className="p-0"
+                                >
+                                  {renderSubRow(subRow, row.original, subIndex)}
+                                </TableCell>
+                              ) : (
+                                row.getVisibleCells().map((cell, cellIndex) => (
+                                  <TableCell
+                                    key={`sub-${cell.id}`}
+                                    className={cn(
+                                      "py-2 text-sm text-muted-foreground",
+                                      cellIndex === 0 ? "pl-8" : "px-3"
+                                    )}
+                                    style={{ width: cell.column.getSize() !== 150 ? cell.column.getSize() : undefined }}
+                                  >
+                                    <div className="truncate">
+                                      {cellIndex === 0 ? (
+                                        <span className="text-xs">↳ {(subRow as any)[cell.column.id] || ''}</span>
+                                      ) : (
+                                        (subRow as any)[cell.column.id] || ''
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                ))
+                              )}
+                            </TableRow>
+                          ))}
+                        </Fragment>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
               </div>
             </div>
           )}

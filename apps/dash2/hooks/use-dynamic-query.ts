@@ -252,6 +252,7 @@ export type ParameterDataMap = {
   custom_events_by_page: any;
   custom_events_by_user: any;
   custom_event_properties: any;
+  custom_event_property_values: { name: string; total_events: number; unique_users: number };
 };
 
 // Helper type to extract data types from parameters

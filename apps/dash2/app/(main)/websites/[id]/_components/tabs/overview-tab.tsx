@@ -68,72 +68,7 @@ const MIN_PREVIOUS_SESSIONS_FOR_TREND = 5;
 const MIN_PREVIOUS_VISITORS_FOR_TREND = 5;
 const MIN_PREVIOUS_PAGEVIEWS_FOR_TREND = 10;
 
-function PropertyBreakdown({ websiteId, dateRange, eventName, propertyKey }: {
-  websiteId: string;
-  dateRange: { start_date: string, end_date: string };
-  eventName: string;
-  propertyKey: string;
-}) {
-  const { data, isLoading, error } = useDynamicQuery(
-    websiteId,
-    dateRange,
-    {
-      id: `prop-breakdown-${eventName}-${propertyKey}`,
-      parameters: ['custom_events'],
-      filters: [
-        { field: 'event_name', operator: 'eq', value: eventName },
-        { field: 'property_key', operator: 'eq', value: propertyKey }
-      ]
-    }
-  );
 
-  if (isLoading) {
-    return (
-      <div className="p-4 text-sm text-center text-muted-foreground">
-        Loading breakdown...
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="p-4 text-sm text-center text-red-500">
-        Error loading data.
-      </div>
-    );
-  }
-
-  const breakdownData = data?.['custom_event_properties'] as { name: string; total_events: number }[] | undefined;
-
-  if (!breakdownData || breakdownData.length === 0) {
-    return (
-      <div className="p-4 text-sm text-center text-muted-foreground">
-        No breakdown available for this property.
-      </div>
-    );
-  }
-
-  const totalEvents = breakdownData.reduce((sum: number, item: { total_events: number }) => sum + item.total_events, 0);
-
-  return (
-    <div className="space-y-1">
-      {breakdownData.map((item: any) => (
-        <div key={item.name} className="flex justify-between items-center text-sm">
-          <span className="text-muted-foreground truncate" title={item.name}>{item.name}</span>
-          <div className="flex items-center gap-2">
-            <span className="font-medium">{item.total_events.toLocaleString()}</span>
-            <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-              <div
-                className="bg-blue-500 h-1.5 rounded-full"
-                style={{ width: `${(item.total_events / totalEvents) * 100}%` }}
-              ></div>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 function UnauthorizedAccessError() {
   const router = useRouter();
@@ -179,13 +114,9 @@ export function WebsiteOverviewTab({
 
   const { analytics, loading, error, refetch } = useWebsiteAnalytics(websiteId, dateRange);
 
-  const [breakdownState, setBreakdownState] = useState<{
-    open: boolean;
-    eventName?: string;
-    propertyKey?: string;
-  }>({ open: false });
 
-  // Fetch custom events data
+
+  // Fetch custom events data with property details
   const {
     data: customEventsData,
     isLoading: customEventsLoading,
@@ -196,7 +127,7 @@ export function WebsiteOverviewTab({
     dateRange,
     {
       id: 'overview-custom-events',
-      parameters: ['custom_events'],
+      parameters: ['custom_events', 'custom_event_details'],
       limit: 10
     }
   );
@@ -448,25 +379,79 @@ export function WebsiteOverviewTab({
     [analytics.device_types, analytics.browser_versions]
   );
 
+  const [expandedProperties, setExpandedProperties] = useState<Set<string>>(new Set());
+
+  const togglePropertyExpansion = (propertyId: string) => {
+    const newExpanded = new Set(expandedProperties);
+    if (newExpanded.has(propertyId)) {
+      newExpanded.delete(propertyId);
+    } else {
+      newExpanded.add(propertyId);
+    }
+    setExpandedProperties(newExpanded);
+  };
+
   const processedCustomEventsData = useMemo(() => {
     console.log("Raw custom events data:", customEventsData);
-    // useDynamicQuery returns data in the format: {custom_events: [...]}
+
     if (!customEventsData?.custom_events?.length) {
       return [];
     }
 
     const customEvents = customEventsData.custom_events;
+    const eventDetails = customEventsData.custom_event_details || [];
+
     console.log("Processing custom events:", customEvents);
+    console.log("Event details for sub-rows:", eventDetails);
+
     const totalEvents = customEvents.reduce((sum: number, event: any) => sum + (event.total_events || 0), 0);
 
-    return customEvents.map((event: any) => ({
-      ...event,
-      percentage: totalEvents > 0 ? Math.round((event.total_events / totalEvents) * 100) : 0,
-      last_occurrence_formatted: event.last_occurrence ?
-        new Date(event.last_occurrence).toLocaleDateString() : 'N/A',
-      first_occurrence_formatted: event.first_occurrence ?
-        new Date(event.first_occurrence).toLocaleDateString() : 'N/A'
-    }));
+    return customEvents.map((event: any) => {
+      // Find all detail records for this event
+      const eventDetailRecords = eventDetails.filter((detail: any) => detail.event_name === event.name);
+
+      // Group property values by key
+      const propertyBreakdown: Record<string, Record<string, number>> = {};
+
+      eventDetailRecords.forEach((record: any) => {
+        if (record.properties && typeof record.properties === 'object') {
+          Object.entries(record.properties).forEach(([key, value]) => {
+            if (key && value !== null && value !== undefined) {
+              if (!propertyBreakdown[key]) propertyBreakdown[key] = {};
+              const stringValue = String(value);
+              propertyBreakdown[key][stringValue] = (propertyBreakdown[key][stringValue] || 0) + 1;
+            }
+          });
+        }
+      });
+
+      // Create property categories for sub-rows
+      const propertyCategories = Object.entries(propertyBreakdown).map(([propertyKey, values]) => {
+        const propertyTotal = Object.values(values).reduce((sum, count) => sum + count, 0);
+
+        const propertyValues = Object.entries(values).map(([propertyValue, count]) => ({
+          value: propertyValue,
+          count,
+          percentage: propertyTotal > 0 ? Math.round((count / propertyTotal) * 100) : 0
+        })).sort((a, b) => b.count - a.count);
+
+        return {
+          key: propertyKey,
+          total: propertyTotal,
+          values: propertyValues
+        };
+      }).sort((a, b) => b.total - a.total);
+
+      return {
+        ...event,
+        percentage: totalEvents > 0 ? Math.round((event.total_events / totalEvents) * 100) : 0,
+        last_occurrence_formatted: event.last_occurrence ?
+          new Date(event.last_occurrence).toLocaleDateString() : 'N/A',
+        first_occurrence_formatted: event.first_occurrence ?
+          new Date(event.first_occurrence).toLocaleDateString() : 'N/A',
+        propertyCategories: propertyCategories
+      };
+    });
   }, [customEventsData]);
 
   const deviceColumns = useMemo(() => [
@@ -570,9 +555,9 @@ export function WebsiteOverviewTab({
       cell: (info: any) => {
         const eventName = info.getValue() as string;
         return (
-          <div className="flex items-center gap-2">
-            <Zap className="w-3 h-3 text-blue-500 flex-shrink-0" />
-            <span className="font-medium truncate">{eventName}</span>
+          <div className="flex items-center gap-3">
+            <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />
+            <span className="font-semibold text-foreground">{eventName}</span>
           </div>
         );
       }
@@ -581,15 +566,23 @@ export function WebsiteOverviewTab({
       id: 'total_events',
       accessorKey: 'total_events',
       header: 'Events',
-      cell: (info: any) => {
-        const count = info.getValue() as number;
-        return <span className="font-medium">{count.toLocaleString()}</span>;
-      }
+      cell: (info: any) => (
+        <div>
+          <div className="font-semibold text-foreground">{info.getValue()?.toLocaleString()}</div>
+          <div className="text-xs text-muted-foreground">events</div>
+        </div>
+      )
     },
     {
       id: 'unique_users',
       accessorKey: 'unique_users',
       header: 'Users',
+      cell: (info: any) => (
+        <div>
+          <div className="font-semibold text-foreground">{info.getValue()?.toLocaleString()}</div>
+          <div className="text-xs text-muted-foreground">users</div>
+        </div>
+      )
     },
     {
       id: 'percentage',
@@ -598,26 +591,6 @@ export function WebsiteOverviewTab({
       cell: (info: any) => {
         const percentage = info.getValue() as number;
         return <PercentageBadge percentage={percentage} />;
-      },
-    },
-    {
-      id: 'properties',
-      header: 'Properties',
-      cell: (info: any) => {
-        const keys = info.row.original.property_keys as string[];
-        if (!keys || keys.length === 0) {
-          return <span className="text-muted-foreground">-</span>;
-        }
-        return (
-          <div className="flex flex-wrap items-center gap-1">
-            {keys.slice(0, 3).map(key => (
-              <span key={key} className="text-xs bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded-full truncate" title={key}>{key}</span>
-            ))}
-            {keys.length > 3 && (
-              <span className="text-xs bg-gray-300 dark:bg-gray-600 px-1.5 py-0.5 rounded-full">+{keys.length - 3} more</span>
-            )}
-          </div>
-        );
       }
     },
   ], []);
@@ -754,11 +727,80 @@ export function WebsiteOverviewTab({
         data={processedCustomEventsData}
         columns={customEventsColumns}
         title="Custom Events"
-        description="User-defined events and interactions"
+        description="User-defined events and interactions with property breakdowns"
         isLoading={customEventsLoading}
         initialPageSize={8}
         minHeight={200}
         emptyMessage="No custom events tracked yet"
+        expandable={true}
+        getSubRows={(row: any) => row.propertyCategories}
+        renderSubRow={(subRow: any, parentRow: any, index: number) => {
+          const propertyKey = subRow.key;
+          const propertyTotal = subRow.total;
+          const propertyValues = subRow.values;
+          const propertyId = `${parentRow.name}-${propertyKey}`;
+          const isPropertyExpanded = expandedProperties.has(propertyId);
+
+          return (
+            <div className="space-y-0">
+              {/* Property Category Row - Clickable */}
+              <button
+                onClick={() => togglePropertyExpansion(propertyId)}
+                className="w-full flex items-center justify-between py-2.5 px-4 bg-gradient-to-r from-slate-50 to-slate-100/50 dark:from-slate-800/30 dark:to-slate-700/20 border-l-3 border-slate-300 dark:border-slate-600 hover:from-slate-100 hover:to-slate-150/50 dark:hover:from-slate-700/40 dark:hover:to-slate-600/30 transition-all duration-150"
+              >
+                <div className="flex items-center gap-2 pl-4">
+                  <div className={`transition-transform duration-200 ${isPropertyExpanded ? 'rotate-90' : ''}`}>
+                    <div className="w-0 h-0 border-l-[4px] border-l-slate-600 dark:border-l-slate-400 border-t-[3px] border-t-transparent border-b-[3px] border-b-transparent" />
+                  </div>
+                  <div className="w-1.5 h-1.5 bg-slate-500 rounded-full flex-shrink-0" />
+                  <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{propertyKey}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="text-sm font-bold text-slate-600 dark:text-slate-400">
+                    {propertyTotal.toLocaleString()}
+                  </div>
+                  <div className="text-xs text-slate-500 dark:text-slate-500 bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded-full">
+                    {propertyValues.length} values
+                  </div>
+                </div>
+              </button>
+
+              {/* Property Values - Collapsible and Scrollable */}
+              {isPropertyExpanded && (
+                <div className="max-h-60 overflow-y-auto border-l border-slate-200 dark:border-slate-700">
+                  {propertyValues.map((valueItem: any, valueIndex: number) => (
+                    <div
+                      key={`${propertyKey}-${valueItem.value}-${valueIndex}`}
+                      className="flex items-center justify-between py-2 px-4 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-all duration-150 border-l border-slate-200/50 dark:border-slate-700/50"
+                    >
+                      <div className="flex items-center gap-3 pl-8">
+                        <div className="w-1 h-1 bg-slate-400 rounded-full flex-shrink-0" />
+                        <span className="text-sm font-medium text-slate-600 dark:text-slate-400 truncate" title={valueItem.value}>
+                          {valueItem.value}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                          {valueItem.count.toLocaleString()}
+                        </span>
+                        <div className="text-xs text-slate-500 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full">
+                          {valueItem.percentage}%
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Scroll indicator if there are many items */}
+                  {propertyValues.length > 8 && (
+                    <div className="text-xs text-center text-slate-500 dark:text-slate-500 py-2 bg-slate-50/50 dark:bg-slate-800/20 border-t border-slate-200/50 dark:border-slate-700/50">
+                      {propertyValues.length} total values • scroll for more
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        }}
       />
 
       {/* Technology */}

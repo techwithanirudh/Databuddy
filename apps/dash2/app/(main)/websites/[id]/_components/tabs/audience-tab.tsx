@@ -75,6 +75,7 @@ interface ProcessedBrowserData {
     version: string;
     visitors: number;
     pageviews?: number;
+    sessions?: number;
   }>;
 }
 

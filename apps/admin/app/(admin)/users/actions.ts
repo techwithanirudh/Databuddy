@@ -4,7 +4,7 @@
 // and your users schema as `user` (singular, based on previous linter hint).
 import { db } from "@databuddy/db";
 import { eq, or, like, desc } from "drizzle-orm";
-import { user, domains, websites, projects, projectAccess, clickHouse, chQuery } from "@databuddy/db";
+import { user, domains, websites, projects, projectAccess, chQuery } from "@databuddy/db";
 import { revalidatePath } from "next/cache";
 import { nanoid } from 'nanoid';
 // import { isAdminUser } from '@/lib/auth-admin'; // Placeholder for your admin auth check utility
@@ -66,10 +66,9 @@ export async function getUserBySlug(slug: string) {
         type: projects.type,
         status: projects.status,
         createdAt: projects.createdAt,
-      })
-      .from(projectAccess)
-      .where(eq(projectAccess.userId, userData.id))
-      .leftJoin(projects, eq(projectAccess.projectId, projects.id)),
+      }).from(projects)
+        .innerJoin(projectAccess, eq(projects.id, projectAccess.projectId))
+        .where(eq(projectAccess.userId, userData.id)),
     ]);
 
     // Return data with dates as strings

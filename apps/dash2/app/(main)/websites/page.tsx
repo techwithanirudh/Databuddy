@@ -64,6 +64,9 @@ function EnhancedEmptyState({ onAddWebsite }: { onAddWebsite: () => void }) {
       <Button
         size="lg"
         onClick={onAddWebsite}
+        data-track="websites-add-first-website"
+        data-section="empty-state"
+        data-button-type="primary-cta"
         className={cn(
           "gap-2 px-8 py-4 font-medium text-base",
           "bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary",
@@ -102,7 +105,7 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
       <p className="text-muted-foreground mb-8 max-w-md leading-relaxed">
         There was an issue fetching your websites. Please check your connection and try again.
       </p>
-      <Button onClick={onRetry} variant="outline" size="lg">
+      <Button onClick={onRetry} variant="outline" size="lg" data-track="websites-retry-load" data-section="error-state">
         Try Again
       </Button>
     </div>
@@ -149,6 +152,9 @@ export default function WebsitesPage() {
           <Button
             size="default"
             onClick={() => setDialogOpen(true)}
+            data-track="websites-new-website-header"
+            data-section="header"
+            data-button-type="primary"
             className={cn(
               "gap-2 w-full sm:w-auto px-6 py-3 font-medium",
               "bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary",

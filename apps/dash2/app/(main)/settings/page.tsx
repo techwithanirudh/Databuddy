@@ -132,6 +132,10 @@ export default function SettingsPage() {
                           if (isMobile) setIsSidebarOpen(false);
                         }}
                         disabled={tab.disabled}
+                        data-track="settings-tab-click"
+                        data-tab-id={tab.id}
+                        data-tab-label={tab.label.toLowerCase().replace(/\s+/g, '-')}
+                        data-section="settings-sidebar"
                       >
                         <Icon className="h-4 w-4" />
                         {tab.label}

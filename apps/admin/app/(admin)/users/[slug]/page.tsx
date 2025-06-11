@@ -143,12 +143,12 @@ export default async function UserProfilePage({
                 {userData.role !== "USER" && (
                   <Badge variant="default" className="gap-1">
                     <Shield className="h-3.5 w-3.5" />
-                    {userData.role === 'ADMIN' ? 'Admin' : 
-                     userData.role === 'EARLY_ADOPTER' ? 'Early Adopter' :
-                     userData.role === 'INVESTOR' ? 'Investor' :
-                     userData.role === 'BETA_TESTER' ? 'Beta Tester' :
-                     userData.role === 'GUEST' ? 'Guest' : 
-                     userData.role}
+                    {userData.role === 'ADMIN' ? 'Admin' :
+                      userData.role === 'EARLY_ADOPTER' ? 'Early Adopter' :
+                        userData.role === 'INVESTOR' ? 'Investor' :
+                          userData.role === 'BETA_TESTER' ? 'Beta Tester' :
+                            userData.role === 'GUEST' ? 'Guest' :
+                              userData.role}
                   </Badge>
                 )}
               </div>
@@ -220,7 +220,7 @@ export default async function UserProfilePage({
                         <div className="flex items-center gap-3">
                           <Badge variant={
                             domain.verificationStatus === "VERIFIED" ? "default" :
-                            domain.verificationStatus === "PENDING" ? "secondary" : "destructive"
+                              domain.verificationStatus === "PENDING" ? "secondary" : "destructive"
                           } className="gap-1">
                             {domain.verificationStatus === "VERIFIED" ? (
                               <>
@@ -279,17 +279,17 @@ export default async function UserProfilePage({
                             <div className="font-medium">{website.name || website.domain}</div>
                             <div className="text-sm text-muted-foreground">
                               {website.domain} • Added {format(new Date(website.createdAt), "MMM d, yyyy")}
-                              {website.domainId && (
+                              {/* {website.domainId && (
                                 <span className="text-xs text-blue-600 ml-2">↗ Linked to domain</span>
-                              )}
+                              )} */}
                             </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
                           <Badge variant={
                             website.status === "HEALTHY" ? "default" :
-                            website.status === "ACTIVE" ? "secondary" :
-                            website.status === "PENDING" ? "secondary" : "destructive"
+                              website.status === "ACTIVE" ? "secondary" :
+                                website.status === "PENDING" ? "secondary" : "destructive"
                           } className="gap-1">
                             {website.status === "HEALTHY" ? (
                               <>
@@ -358,8 +358,8 @@ export default async function UserProfilePage({
                         <div className="flex items-center gap-3">
                           <Badge variant={
                             project.status === "ACTIVE" ? "default" :
-                            project.status === "COMPLETED" ? "secondary" :
-                            project.status === "ON_HOLD" ? "secondary" : "destructive"
+                              project.status === "COMPLETED" ? "secondary" :
+                                project.status === "ON_HOLD" ? "secondary" : "destructive"
                           } className="gap-1">
                             {project.status === "ACTIVE" ? (
                               <>

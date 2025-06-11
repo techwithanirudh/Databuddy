@@ -556,8 +556,8 @@ export function WebsiteOverviewTab({
         const eventName = info.getValue() as string;
         return (
           <div className="flex items-center gap-3">
-            <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />
-            <span className="font-semibold text-foreground">{eventName}</span>
+            <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
+            <span className="font-medium text-foreground">{eventName}</span>
           </div>
         );
       }
@@ -568,8 +568,8 @@ export function WebsiteOverviewTab({
       header: 'Events',
       cell: (info: any) => (
         <div>
-          <div className="font-semibold text-foreground">{info.getValue()?.toLocaleString()}</div>
-          <div className="text-xs text-muted-foreground">events</div>
+          <div className="font-medium text-foreground">{info.getValue()?.toLocaleString()}</div>
+          <div className="text-xs text-muted-foreground">total</div>
         </div>
       )
     },
@@ -579,8 +579,8 @@ export function WebsiteOverviewTab({
       header: 'Users',
       cell: (info: any) => (
         <div>
-          <div className="font-semibold text-foreground">{info.getValue()?.toLocaleString()}</div>
-          <div className="text-xs text-muted-foreground">users</div>
+          <div className="font-medium text-foreground">{info.getValue()?.toLocaleString()}</div>
+          <div className="text-xs text-muted-foreground">unique</div>
         </div>
       )
     },
@@ -742,58 +742,65 @@ export function WebsiteOverviewTab({
           const isPropertyExpanded = expandedProperties.has(propertyId);
 
           return (
-            <div className="space-y-0">
+            <div className="space-y-0 border-l-2 border-muted ml-4">
               {/* Property Category Row - Clickable */}
               <button
                 onClick={() => togglePropertyExpansion(propertyId)}
-                className="w-full flex items-center justify-between py-2.5 px-4 bg-gradient-to-r from-slate-50 to-slate-100/50 dark:from-slate-800/30 dark:to-slate-700/20 border-l-3 border-slate-300 dark:border-slate-600 hover:from-slate-100 hover:to-slate-150/50 dark:hover:from-slate-700/40 dark:hover:to-slate-600/30 transition-all duration-150"
+                className="w-full flex items-center justify-between py-3 px-4 bg-muted/30 hover:bg-muted/50 transition-colors duration-200 rounded-r-md border border-l-0 border-border/50"
+                data-track="custom-event-property-toggle"
+                data-property-key={propertyKey}
+                data-event-name={parentRow.name}
               >
-                <div className="flex items-center gap-2 pl-4">
+                <div className="flex items-center gap-3">
                   <div className={`transition-transform duration-200 ${isPropertyExpanded ? 'rotate-90' : ''}`}>
-                    <div className="w-0 h-0 border-l-[4px] border-l-slate-600 dark:border-l-slate-400 border-t-[3px] border-t-transparent border-b-[3px] border-b-transparent" />
+                    <svg className="w-3 h-3 text-muted-foreground" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                    </svg>
                   </div>
-                  <div className="w-1.5 h-1.5 bg-slate-500 rounded-full flex-shrink-0" />
-                  <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{propertyKey}</span>
+                  <div className="w-2 h-2 bg-primary/60 rounded-full flex-shrink-0" />
+                  <span className="text-sm font-medium text-foreground">{propertyKey}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="text-sm font-bold text-slate-600 dark:text-slate-400">
+                <div className="flex items-center gap-3">
+                  <div className="text-sm font-medium text-foreground">
                     {propertyTotal.toLocaleString()}
                   </div>
-                  <div className="text-xs text-white dark:text-black bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded-full">
-                    {propertyValues.length} values
+                  <div className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-medium">
+                    {propertyValues.length} {propertyValues.length === 1 ? 'value' : 'values'}
                   </div>
                 </div>
               </button>
 
               {/* Property Values - Collapsible and Scrollable */}
               {isPropertyExpanded && (
-                <div className="max-h-60 overflow-y-auto border-l border-slate-200 dark:border-slate-700">
-                  {propertyValues.map((valueItem: any, valueIndex: number) => (
-                    <div
-                      key={`${propertyKey}-${valueItem.value}-${valueIndex}`}
-                      className="flex items-center justify-between py-2 px-4 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-all duration-150 border-l border-slate-200/50 dark:border-slate-700/50"
-                    >
-                      <div className="flex items-center gap-3 pl-8">
-                        <div className="w-1 h-1 bg-slate-400 rounded-full flex-shrink-0" />
-                        <span className="text-sm font-medium text-white dark:text-black truncate" title={valueItem.value}>
-                          {valueItem.value}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                          {valueItem.count.toLocaleString()}
-                        </span>
-                        <div className="text-xs text-slate-500 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full">
-                          {valueItem.percentage}%
+                <div className="max-h-64 overflow-y-auto bg-background/50 border border-l-0 border-t-0 border-border/30 rounded-br-md">
+                  <div className="divide-y divide-border/30">
+                    {propertyValues.map((valueItem: any, valueIndex: number) => (
+                      <div
+                        key={`${propertyKey}-${valueItem.value}-${valueIndex}`}
+                        className="flex items-center justify-between py-2.5 px-4 hover:bg-muted/20 transition-colors duration-150"
+                      >
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full flex-shrink-0" />
+                          <span className="text-sm text-foreground truncate font-mono bg-muted/20 px-2 py-0.5 rounded text-xs" title={valueItem.value}>
+                            {valueItem.value}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          <span className="text-sm font-medium text-foreground">
+                            {valueItem.count.toLocaleString()}
+                          </span>
+                          <div className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded font-medium min-w-[3rem] text-center">
+                            {valueItem.percentage}%
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
 
                   {/* Scroll indicator if there are many items */}
                   {propertyValues.length > 8 && (
-                    <div className="text-xs text-center text-slate-500 dark:text-slate-500 py-2 bg-slate-50/50 dark:bg-slate-800/20 border-t border-slate-200/50 dark:border-slate-700/50">
-                      {propertyValues.length} total values • scroll for more
+                    <div className="text-xs text-center text-muted-foreground py-2 bg-muted/10 border-t border-border/20">
+                      Showing {Math.min(8, propertyValues.length)} of {propertyValues.length} values • scroll for more
                     </div>
                   )}
                 </div>

@@ -1,4 +1,4 @@
-import { clickHouse, chQuery } from "@databuddy/db";
+import { chQuery } from "@databuddy/db";
 
 export async function getUserAnalytics(userId: string) {
   try {

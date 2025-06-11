@@ -15,7 +15,7 @@ const inter = Inter({
 });
 
 const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"], 
+  subsets: ["latin"],
   display: "swap",
   variable: "--font-jetbrains-mono",
 });
@@ -28,11 +28,11 @@ export const metadata: Metadata = {
   },
   description: "Powerful analytics dashboard for your websites. Track visitors, monitor performance, and gain insights into your audience.",
   keywords: [
-    "analytics", 
-    "dashboard", 
-    "monitoring", 
-    "statistics", 
-    "web analytics", 
+    "analytics",
+    "dashboard",
+    "monitoring",
+    "statistics",
+    "web analytics",
     "tracking",
     "website insights",
     "visitor analytics",
@@ -125,10 +125,14 @@ export default function RootLayout({
       <Databuddy
         clientId={isLocalhost ? "5ced32e5-0219-4e75-a18a-ad9826f85698" : "3ed1fce1-5a56-4cb6-a977-66864f6d18e3"}
         trackWebVitals={true}
+        trackAttributes={true}
+        trackErrors={true}
+        trackPerformance={true}
+        trackScreenViews={true}
       />
       <body className="antialiased h-full min-h-screen bg-background text-foreground flex flex-col">
         <Providers>
-          <NextTopLoader 
+          <NextTopLoader
             color="hsl(var(--primary))"
             height={2}
             showSpinner={false}

@@ -66,7 +66,7 @@ export default function DomainsPage() {
     defaultValue: 'domains',
     clearOnDefault: true
   });
-  
+
   const {
     domain,
     setDomain,
@@ -98,13 +98,16 @@ export default function DomainsPage() {
           </div>
           <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
             <DialogTrigger asChild>
-              <Button 
-                size="default" 
+              <Button
+                size="default"
                 className={cn(
                   "gap-2 w-full sm:w-auto px-6 py-3 font-medium",
                   "bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary",
                   "shadow-lg hover:shadow-xl transition-all duration-300 group relative overflow-hidden"
                 )}
+                data-track="domains-add-domain-click"
+                data-section="domains-header"
+                data-button-type="primary-cta"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
                 <Plus className="h-4 w-4 group-hover:rotate-90 transition-transform duration-300 relative z-10" />
@@ -135,7 +138,7 @@ export default function DomainsPage() {
                     Enter only the top-level domain (e.g., example.com)
                   </p>
                 </div>
-                
+
                 <div className="bg-muted/50 rounded-lg p-3 border">
                   <div className="flex items-start gap-2">
                     <div className="p-1 rounded bg-primary/10">
@@ -157,6 +160,9 @@ export default function DomainsPage() {
                     onClick={() => setAddDialogOpen(false)}
                     disabled={isAdding}
                     className="flex-1 h-9"
+                    data-track="domains-add-dialog-cancel"
+                    data-section="domains-dialog"
+                    data-button-type="cancel"
                   >
                     Cancel
                   </Button>
@@ -164,6 +170,9 @@ export default function DomainsPage() {
                     onClick={handleAddDomain}
                     disabled={isAdding}
                     className="flex-1 h-9"
+                    data-track="domains-add-dialog-confirm"
+                    data-section="domains-dialog"
+                    data-button-type="confirm"
                   >
                     {isAdding ? "Adding..." : "Add Domain"}
                   </Button>
@@ -179,13 +188,16 @@ export default function DomainsPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
           <div className="border-b relative mb-6">
             <TabsList className="h-12 bg-transparent p-0 w-full justify-start overflow-x-auto">
-              <TabsTrigger 
-                value="domains" 
+              <TabsTrigger
+                value="domains"
                 className={cn(
                   "text-sm h-12 px-4 rounded-none relative transition-all duration-200",
                   "hover:bg-muted/50 whitespace-nowrap cursor-pointer",
                   "data-[state=active]:text-primary data-[state=active]:bg-transparent"
                 )}
+                data-track="domains-tab-click"
+                data-section="domains-tabs"
+                data-tab-name="domains"
               >
                 <Globe className="h-4 w-4 mr-2" />
                 <span>Domains</span>
@@ -193,13 +205,16 @@ export default function DomainsPage() {
                   <div className="absolute bottom-0 left-0 w-full h-[2px] bg-primary rounded-t" />
                 )}
               </TabsTrigger>
-              <TabsTrigger 
-                value="ranks" 
+              <TabsTrigger
+                value="ranks"
                 className={cn(
                   "text-sm h-12 px-4 rounded-none relative transition-all duration-200",
                   "hover:bg-muted/50 whitespace-nowrap cursor-pointer",
                   "data-[state=active]:text-primary data-[state=active]:bg-transparent"
                 )}
+                data-track="domains-tab-click"
+                data-section="domains-tabs"
+                data-tab-name="ranks"
               >
                 <TrendingUp className="h-4 w-4 mr-2" />
                 <span>Domain Ranks</span>
@@ -209,7 +224,7 @@ export default function DomainsPage() {
               </TabsTrigger>
             </TabsList>
           </div>
-          
+
           <TabsContent value="domains" className="flex-1 mt-0">
             <Suspense fallback={<TabSkeleton />}>
               <DomainsTab />

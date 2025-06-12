@@ -136,13 +136,6 @@ export const useDomainManagement = () => {
         
         if (result.verified) {
           toast.success("Domain verified successfully");
-        } else {
-          toast.error(result.message || "Verification failed", {
-            action: {
-              label: "Retry",
-              onClick: () => handleVerifyDomain(domainId)
-            }
-          });
         }
         
         setTimeout(() => {

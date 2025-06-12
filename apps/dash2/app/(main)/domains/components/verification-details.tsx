@@ -34,7 +34,7 @@ export function VerificationDetails({
         <h4 className="font-medium text-sm mb-2 sm:mb-3">
           {isFailed ? "Verification Failed" : "Add DNS Record"}
         </h4>
-        
+
         <div className="space-y-3 sm:space-y-4">
           <div className="space-y-2 sm:space-y-3">
             <p className="text-xs sm:text-sm text-muted-foreground">Add this TXT record to your DNS:</p>
@@ -44,20 +44,20 @@ export function VerificationDetails({
             </div>
             <p className="text-xs text-muted-foreground">
               DNS changes take 15-30 minutes to propagate.{" "}
-              <a 
-                href={`https://mxtoolbox.com/TXTLookup.aspx?domain=${host}`} 
-                target="_blank" 
-                rel="noopener noreferrer" 
+              <a
+                href={`https://mxtoolbox.com/TXTLookup.aspx?domain=${host}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-primary hover:underline"
               >
                 Check DNS record →
               </a>
             </p>
           </div>
-          
+
           <div className="flex flex-col gap-2">
-            <Button 
-              size="sm" 
+            <Button
+              size="sm"
               onClick={onVerify}
               disabled={isVerifying}
               className="w-full"
@@ -71,22 +71,10 @@ export function VerificationDetails({
                 "Verify Domain"
               )}
             </Button>
-            {isFailed && (
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={onRetry}
-                disabled={isRegenerating}
-                className="w-full"
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${isRegenerating ? "animate-spin" : ""}`} />
-                Reset & Try Again
-              </Button>
-            )}
           </div>
         </div>
       </div>
-      
+
       {isFailed && (
         <div className="pt-3 sm:pt-4 border-t space-y-3 sm:space-y-4">
           <div>
@@ -108,7 +96,7 @@ export function VerificationDetails({
           </div>
         </div>
       )}
-      
+
       {verificationResult && !verificationResult.verified && (
         <div className="pt-3 sm:pt-4 border-t">
           <p className="text-xs sm:text-sm text-muted-foreground">

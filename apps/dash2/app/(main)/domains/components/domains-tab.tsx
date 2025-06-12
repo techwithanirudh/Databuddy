@@ -29,7 +29,7 @@ export function DomainsTab() {
   } = useDomainManagement();
 
   const domains = state.domains;
-  
+
   // Separate domains by verification status
   const verifiedDomains = domains.filter(domain => domain.verificationStatus === "VERIFIED");
   const unverifiedDomains = domains.filter(domain => domain.verificationStatus !== "VERIFIED");
@@ -70,7 +70,7 @@ export function DomainsTab() {
     const isExpanded = state.expandedDomains.has(domain.id);
     const canExpand = domain.verificationStatus === "PENDING" || domain.verificationStatus === "FAILED";
     const isRetrying = actions.retryingDomains[domain.id];
-    
+
     return (
       <Card className="group hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 border hover:border-primary/60 hover:-translate-y-1 bg-gradient-to-br from-background to-muted/20 h-full flex flex-col">
         <CardContent className="p-4 flex-grow flex flex-col">
@@ -82,15 +82,18 @@ export function DomainsTab() {
                   size="icon"
                   className="h-6 w-6 p-0 flex-shrink-0 hover:bg-muted/60 transition-colors"
                   onClick={() => toggleExpanded(domain.id)}
+                  data-track="domain-expand-toggle"
+                  data-section="domains"
+                  data-domain-name={domain.name}
                 >
                   {isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
                 </Button>
               )}
               <div className="relative">
-                <FaviconImage 
-                  domain={domain.name} 
-                  size={32} 
-                  className="h-8 w-8 flex-shrink-0 rounded-full" 
+                <FaviconImage
+                  domain={domain.name}
+                  size={32}
+                  className="h-8 w-8 flex-shrink-0 rounded-full"
                 />
                 {isVerifying && (
                   <div className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-blue-500 rounded-full animate-pulse" />
@@ -103,27 +106,29 @@ export function DomainsTab() {
                 </div>
               </div>
             </div>
-            
-            <DomainRowActions
-              domain={domain}
-              actions={actions}
-              domainIsVerifying={isVerifying}
-              domainVerificationProgress={actions.verificationProgress[domain.id] || 0}
-              isRetrying={isRetrying}
-              onVerify={() => handleVerifyDomain(domain.id)}
-              onDelete={() => handleDeleteDomain(domain.id)}
-              onRegenerate={() => handleRegenerateToken(domain.id)}
-              onRetry={() => handleRetryFailedDomain(domain.id)}
-              onCreate={() => handleCreateWebsite(domain.id, domain.name)}
-              updateActions={updateActions}
-            />
+
+            <div className="flex-shrink-0 ml-3">
+              <DomainRowActions
+                domain={domain}
+                actions={actions}
+                domainIsVerifying={isVerifying}
+                domainVerificationProgress={actions.verificationProgress[domain.id] || 0}
+                isRetrying={isRetrying}
+                onVerify={() => handleVerifyDomain(domain.id)}
+                onDelete={() => handleDeleteDomain(domain.id)}
+                onRegenerate={() => handleRegenerateToken(domain.id)}
+                onRetry={() => handleRetryFailedDomain(domain.id)}
+                onCreate={() => handleCreateWebsite(domain.id, domain.name)}
+                updateActions={updateActions}
+              />
+            </div>
           </div>
 
           <div className="space-y-2 text-xs text-muted-foreground border-t pt-3 mt-auto">
             <div className="flex justify-between">
               <span className="font-medium">Verified:</span>
               <span className="text-right">
-                {domain.verifiedAt 
+                {domain.verifiedAt
                   ? formatDistanceToNow(new Date(domain.verifiedAt), { addSuffix: true })
                   : domain.verificationStatus === "PENDING" ? "Not verified yet" : "—"
                 }
@@ -135,7 +140,7 @@ export function DomainsTab() {
             </div>
           </div>
         </CardContent>
-        
+
         {isExpanded && canExpand && (
           <div className="border-t">
             <VerificationDetails
@@ -200,7 +205,7 @@ export function DomainsTab() {
     </div>
   );
 
-    if (state.isLoading) return <LoadingSkeleton />;
+  if (state.isLoading) return <LoadingSkeleton />;
   if (domains.length === 0) return <EmptyState />;
 
   return (
@@ -209,7 +214,7 @@ export function DomainsTab() {
       <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/30 rounded-lg px-3 py-2 border border-muted">
         <Globe className="h-4 w-4 flex-shrink-0" />
         <span>
-          Managing <span className="font-medium text-foreground">{domains.length}</span> domain{domains.length !== 1 ? 's' : ''} 
+          Managing <span className="font-medium text-foreground">{domains.length}</span> domain{domains.length !== 1 ? 's' : ''}
           {verifiedDomains.length > 0 && unverifiedDomains.length > 0 && (
             <span className="text-xs ml-2">
               (<span className="text-green-600 font-medium">{verifiedDomains.length} verified</span>, <span className="text-amber-600 font-medium">{unverifiedDomains.length} pending</span>)
@@ -217,7 +222,7 @@ export function DomainsTab() {
           )}
         </span>
       </div>
-      
+
       {/* Verified Domains */}
       {verifiedDomains.length > 0 && (
         <div className="space-y-4">

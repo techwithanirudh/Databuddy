@@ -533,7 +533,6 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
       AND referrer IS NOT NULL
     GROUP BY referrer
     ORDER BY visitors DESC
-    LIMIT ${limit} OFFSET ${offset}
   `,
 
 
@@ -828,7 +827,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
       AND time >= parseDateTimeBestEffort(${escapeSqlString(startDate)})
       AND time <= parseDateTimeBestEffort(${escapeSqlString(endDate)})
       
-      AND event_name NOT IN ('screen_view', 'page_exit')
+      AND event_name NOT IN ('screen_view', 'page_exit', 'error', 'web_vitals')
       AND event_name != ''
     GROUP BY event_name
     ORDER BY total_events DESC
@@ -854,7 +853,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
       AND time >= parseDateTimeBestEffort(${escapeSqlString(startDate)})
       AND time <= parseDateTimeBestEffort(${escapeSqlString(endDate)})
       
-      AND event_name NOT IN ('screen_view', 'page_exit')
+      AND event_name NOT IN ('screen_view', 'page_exit', 'error', 'web_vitals')
       AND event_name != ''
     ORDER BY time DESC
     LIMIT ${limit} OFFSET ${offset}
@@ -873,7 +872,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
       AND time >= parseDateTimeBestEffort(${escapeSqlString(startDate)})
       AND time <= parseDateTimeBestEffort(${escapeSqlString(endDate)})
       
-      AND event_name NOT IN ('screen_view', 'page_exit')
+      AND event_name NOT IN ('screen_view', 'page_exit', 'error', 'web_vitals')
       AND event_name != ''
       AND path != ''
     GROUP BY path
@@ -896,7 +895,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
       AND time >= parseDateTimeBestEffort(${escapeSqlString(startDate)})
       AND time <= parseDateTimeBestEffort(${escapeSqlString(endDate)})
       
-      AND event_name NOT IN ('screen_view', 'page_exit')
+      AND event_name NOT IN ('screen_view', 'page_exit', 'error', 'web_vitals')
       AND event_name != ''
     GROUP BY anonymous_id
     ORDER BY total_events DESC
@@ -913,7 +912,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
         AND time >= parseDateTimeBestEffort(${escapeSqlString(startDate)})
         AND time <= parseDateTimeBestEffort(${escapeSqlString(endDate)})
         
-        AND event_name NOT IN ('screen_view', 'page_exit')
+        AND event_name NOT IN ('screen_view', 'page_exit', 'error', 'web_vitals')
         AND event_name != ''
         AND properties IS NOT NULL
         AND properties != '{}'
@@ -1755,7 +1754,8 @@ function processUnifiedResults(
           
         case 'referrer':
         case 'top_referrers':
-          processedData = processReferrerData(rawData, websiteDomain)
+          // Skip aggregation processing to show individual referrer URLs
+          processedData = rawData
           break
           
         case 'browsers_grouped':

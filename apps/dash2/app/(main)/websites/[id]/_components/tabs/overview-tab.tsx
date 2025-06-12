@@ -129,22 +129,22 @@ export function WebsiteOverviewTab({
       {
         id: 'overview-pages',
         parameters: ['top_pages', 'entry_pages', 'exit_pages'],
-        limit: 20
+        limit: 100
       },
       {
         id: 'overview-traffic',
         parameters: ['top_referrers', 'utm_sources', 'utm_mediums', 'utm_campaigns'],
-        limit: 20
+        limit: 100
       },
       {
         id: 'overview-tech',
         parameters: ['device_types', 'browser_versions'],
-        limit: 20
+        limit: 100
       },
       {
         id: 'overview-custom-events',
         parameters: ['custom_events', 'custom_event_details'],
-        limit: 10
+        limit: 100
       }
     ]
   );

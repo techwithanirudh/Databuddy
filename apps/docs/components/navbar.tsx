@@ -10,6 +10,9 @@ export const Navbar = () => {
 				<Link
 					href="/"
 					className="md:border-r md:px-5 px-2.5 py-4 text-foreground md:col-span-2 shrink-0 transition-colors md:w-[268px] lg:w-[286px]"
+					data-track="navbar-logo-click"
+					data-section="navbar"
+					data-destination="home"
 				>
 					<div className="flex flex-row gap-2 w-full items-center justify-center">
 						<Image src="/logo.png" alt="Databuddy Logo" className="w-10 h-10 rounded-full border-2 border-gray-900 border-dashed" width={40} height={40} />

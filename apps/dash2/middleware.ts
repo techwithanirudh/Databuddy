@@ -1,10 +1,12 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-// import { getSessionCookie } from "better-auth/cookies";
+import { getSessionCookie } from "better-auth/cookies";
 
 // const nonAuthRoutes = [ "/login", "/register", "/verify-email", "/reset-password", "/forgot-password" ];
 
 export default async function middleware(request: NextRequest) {
+
+  const isAuth = getSessionCookie(request)
 
   return NextResponse.next();
 }

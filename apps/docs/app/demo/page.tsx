@@ -61,22 +61,25 @@ export default function DemoPage() {
                   </div>
                 </div>
 
-                                 <div className="aspect-video bg-black">
-                   <video 
-                     controls 
-                     className="h-full w-full object-cover"
-                     poster="/demo-thumbnail.webp"
-                   >
-                     <source src="/demo.mp4" type="video/mp4" />
-                     <track kind="captions" src="/demo-captions.vtt" srcLang="en" label="English" />
-                     <div className="flex h-full items-center justify-center">
-                       <div className="text-center">
-                         <Play className="mx-auto mb-4 h-16 w-16 text-neutral-600" />
-                         <p className="text-neutral-400">Video demo coming soon</p>
-                       </div>
-                     </div>
-                   </video>
-                 </div>
+                <div className="aspect-video bg-black">
+                  <video
+                    controls
+                    className="h-full w-full object-cover"
+                    poster="/demo-thumbnail.webp"
+                    data-track="demo-video-interaction"
+                    data-section="demo"
+                    data-video-type="product-demo"
+                  >
+                    <source src="/demo.mp4" type="video/mp4" />
+                    <track kind="captions" src="/demo-captions.vtt" srcLang="en" label="English" />
+                    <div className="flex h-full items-center justify-center">
+                      <div className="text-center">
+                        <Play className="mx-auto mb-4 h-16 w-16 text-neutral-600" />
+                        <p className="text-neutral-400">Video demo coming soon</p>
+                      </div>
+                    </div>
+                  </video>
+                </div>
               </div>
             </div>
           </div>
@@ -186,10 +189,10 @@ export default function DemoPage() {
               </div>
             </div>
             <div className="relative">
-                <div className="aspect-square rounded-2xl border border-neutral-800 bg-neutral-900 p-8">
-                    <Image src="/demo-thumbnail.webp" alt="Dashboard Preview" width={500} height={500} className="rounded-2xl" />
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/50 rounded-2xl" />
-                </div>
+              <div className="aspect-square rounded-2xl border border-neutral-800 bg-neutral-900 p-8">
+                <Image src="/demo-thumbnail.webp" alt="Dashboard Preview" width={500} height={500} className="rounded-2xl" />
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/50 rounded-2xl" />
+              </div>
             </div>
           </div>
         </div>
@@ -204,11 +207,15 @@ export default function DemoPage() {
           <p className="text-xl text-neutral-400 mb-8 max-w-2xl mx-auto">
             Join thousands of developers who've switched to faster, privacy-first analytics. Get insights in minutes, not hours.
           </p>
-          
+
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link
               href="https://app.databuddy.cc/register"
               className="inline-flex items-center justify-center w-full px-8 py-4 text-base font-medium text-white transition-all duration-300 bg-neutral-800 border border-neutral-700 rounded-lg sm:w-auto hover:bg-neutral-700"
+              data-track="demo-cta-start-trial-click"
+              data-section="demo-cta"
+              data-button-type="primary-cta"
+              data-destination="register"
             >
               Start Free Trial
               <ArrowRight className="ml-2 h-4 w-4" />
@@ -216,14 +223,24 @@ export default function DemoPage() {
             <Link
               href="/docs"
               className="inline-flex items-center justify-center w-full px-8 py-4 text-base font-medium text-neutral-300 transition-all duration-300 border border-neutral-700 bg-transparent rounded-lg sm:w-auto hover:border-neutral-600 hover:bg-neutral-900/50 hover:text-white"
+              data-track="demo-cta-docs-click"
+              data-section="demo-cta"
+              data-button-type="secondary-cta"
+              data-destination="docs"
             >
               View Documentation
             </Link>
           </div>
 
           <p className="text-sm text-neutral-500 mt-8">
-            Questions about the demo? 
-            <a href="mailto:support@databuddy.cc" className="text-sky-400 hover:underline ml-1">
+            Questions about the demo?
+            <a
+              href="mailto:support@databuddy.cc"
+              className="text-sky-400 hover:underline ml-1"
+              data-track="demo-support-email-click"
+              data-section="demo-cta"
+              data-link-type="support-contact"
+            >
               Contact our support team
             </a>
           </p>

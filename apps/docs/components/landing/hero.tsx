@@ -72,6 +72,9 @@ export default function Hero() {
 						<Link
 							href="/blog/we-are-gdpr-compliant"
 							className="group mb-8 inline-flex items-center gap-2 rounded-full border border-neutral-700 bg-neutral-800 px-3 py-1.5 transition-colors hover:border-neutral-600 pointer-events-auto"
+							data-track="hero-gdpr-badge-click"
+							data-section="hero"
+							data-badge-type="compliance"
 						>
 							<div className="h-2 w-2 rounded-full bg-green-500" />
 							<span className="text-xs text-neutral-300">
@@ -111,12 +114,20 @@ export default function Hero() {
 							<Link
 								href="https://app.databuddy.cc"
 								className="inline-flex items-center justify-center px-8 py-4 text-base font-semibold text-white transition-all duration-200 bg-neutral-800 border border-neutral-700 rounded-xl hover:bg-neutral-700 pointer-events-auto shadow-lg hover:shadow-xl transform hover:scale-105"
+								data-track="hero-get-started-click"
+								data-section="hero"
+								data-button-type="primary-cta"
+								data-destination="app"
 							>
 								Get Started Free
 							</Link>
 							<Link
 								href="/demo"
 								className="inline-flex items-center justify-center px-6 py-3 text-base font-medium text-neutral-400 transition-all duration-200 hover:text-white pointer-events-auto"
+								data-track="hero-demo-click"
+								data-section="hero"
+								data-button-type="secondary-cta"
+								data-destination="demo"
 							>
 								View Live Demo →
 							</Link>
@@ -149,6 +160,10 @@ export default function Hero() {
 													? "bg-white text-black"
 													: "text-neutral-400 hover:text-white"
 													}`}
+												data-track="hero-code-tab-click"
+												data-section="hero"
+												data-tab-name={tab.name.toLowerCase()}
+												data-tab-index={index}
 											>
 												{tab.name}
 											</button>

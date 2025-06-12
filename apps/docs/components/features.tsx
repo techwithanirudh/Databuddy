@@ -87,6 +87,10 @@ export default function Features({ stars }: FeaturesProps) {
 								"justify-center border-l-[1.2px] md:min-h-[240px] border-t-[1.2px] md:border-t-0 transform-gpu flex flex-col p-10",
 								index >= 3 && "md:border-t-[1.2px]",
 							)}
+							data-track="feature-card-view"
+							data-section="features"
+							data-feature-id={feature.id}
+							data-feature-name={feature.label.toLowerCase().replace(/\s+/g, '-')}
 						>
 							<div className="flex items-center gap-2 my-1">
 								<feature.icon className="w-4 h-4" />
@@ -99,14 +103,23 @@ export default function Features({ stars }: FeaturesProps) {
 									<div className="flex gap-3">
 										<p
 											className="max-w-lg text-xl font-normal tracking-tighter md:text-2xl"
-                                            // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
+											// biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
 											dangerouslySetInnerHTML={{ __html: feature.title }}
 										/>
 									</div>
 								</div>
 								<p className="mt-2 text-sm text-left text-muted-foreground">
 									{feature.description}
-									<a className="ml-2 underline" href="/docs" target="_blank" rel="noreferrer">
+									<a
+										className="ml-2 underline"
+										href="/docs"
+										target="_blank"
+										rel="noreferrer"
+										data-track="feature-learn-more-click"
+										data-section="features"
+										data-feature-id={feature.id}
+										data-feature-name={feature.label.toLowerCase().replace(/\s+/g, '-')}
+									>
 										Learn more
 									</a>
 								</p>
@@ -128,13 +141,13 @@ export default function Features({ stars }: FeaturesProps) {
 							interactive={false}
 						/>
 					</div>
-					
+
 					{/* Gradient overlays for edge fading */}
 					<div className="absolute inset-0 bg-gradient-to-r from-white/80 via-transparent to-white/80 dark:from-black/80 dark:via-transparent dark:to-black/80" />
 					<div className="absolute inset-0 bg-gradient-to-b from-white/60 via-transparent to-white/60 dark:from-black/60 dark:via-transparent dark:to-black/60" />
 					<div className="absolute inset-0 bg-gradient-to-tr from-white/40 via-transparent to-transparent dark:from-black/40 dark:via-transparent dark:to-transparent" />
 					<div className="absolute inset-0 bg-gradient-to-bl from-transparent via-transparent to-white/40 dark:from-transparent dark:via-transparent dark:to-black/40" />
-					
+
 					<div className="relative z-10 w-full h-full p-16 pt-10 md:px-10">
 						<div className="flex flex-col items-center justify-center w-full h-full gap-8 text-center">
 							<div className="space-y-4">
@@ -150,12 +163,20 @@ export default function Features({ stars }: FeaturesProps) {
 								<a
 									href="https://app.databuddy.cc/register"
 									className="inline-flex items-center justify-center px-8 py-4 text-base font-semibold text-white transition-all duration-200 bg-sky-600 rounded-xl hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 dark:focus:ring-offset-black shadow-lg hover:shadow-xl transform hover:scale-105"
+									data-track="features-cta-get-started-click"
+									data-section="features-cta"
+									data-button-type="primary-cta"
+									data-destination="register"
 								>
 									Get Started Free
 								</a>
 								<a
 									href="/docs"
 									className="inline-flex items-center justify-center px-6 py-3 text-base font-medium text-muted-foreground transition-all duration-200 hover:text-foreground"
+									data-track="features-cta-docs-click"
+									data-section="features-cta"
+									data-button-type="secondary-cta"
+									data-destination="docs"
 								>
 									View docs →
 								</a>

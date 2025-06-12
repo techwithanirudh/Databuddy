@@ -12,6 +12,20 @@ export function NavLink({ href, children, className, external }: NavLinkProps) {
 	const Component = external ? "a" : Link;
 	const externalProps = external ? { target: "_blank", rel: "noopener noreferrer" } : {};
 
+	// Generate tracking data based on href and children
+	const getTrackingData = () => {
+		const childrenText = typeof children === 'string' ? children : 'nav-item';
+		const trackingName = childrenText.toLowerCase().replace(/\s+/g, '-');
+
+		return {
+			'data-track': 'navbar-nav-click',
+			'data-section': 'navbar',
+			'data-nav-item': trackingName,
+			'data-destination': href.startsWith('http') ? 'external' : 'internal',
+			'data-is-external': external ? 'true' : 'false'
+		};
+	};
+
 	return (
 		<Component
 			href={href}
@@ -20,6 +34,7 @@ export function NavLink({ href, children, className, external }: NavLinkProps) {
 				className
 			)}
 			{...externalProps}
+			{...getTrackingData()}
 		>
 			{children}
 		</Component>

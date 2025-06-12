@@ -40,13 +40,6 @@ import {
   TechnologyIcon,
   PercentageBadge,
 } from "../utils/technology-helpers";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
 
 // Types
 interface TrendCalculation {
@@ -209,6 +202,50 @@ export function WebsiteOverviewTab({
       return filtered;
     });
   }, [analytics.events_by_date, visibleMetrics, dateRange.granularity]);
+
+  // Mini chart data for stat cards
+  const miniChartData = useMemo(() => {
+    if (!analytics.events_by_date?.length) return {};
+
+    const visitors = analytics.events_by_date.map(event => ({
+      date: event.date,
+      value: event.visitors || 0
+    }));
+
+    const sessions = analytics.events_by_date.map(event => ({
+      date: event.date,
+      value: event.sessions || 0
+    }));
+
+    const pageviews = analytics.events_by_date.map(event => ({
+      date: event.date,
+      value: event.pageviews || 0
+    }));
+
+    const pagesPerSession = analytics.events_by_date.map(event => ({
+      date: event.date,
+      value: event.sessions > 0 ? (event.pageviews || 0) / event.sessions : 0
+    }));
+
+    const bounceRate = analytics.events_by_date.map(event => ({
+      date: event.date,
+      value: event.bounce_rate || 0
+    }));
+
+    const sessionDuration = analytics.events_by_date.map(event => ({
+      date: event.date,
+      value: (event as any).avg_session_duration || 0
+    }));
+
+    return {
+      visitors,
+      sessions,
+      pageviews,
+      pagesPerSession,
+      bounceRate,
+      sessionDuration
+    };
+  }, [analytics.events_by_date]);
 
   const processedTopPages = useMemo(() => {
     if (!analytics.top_pages?.length) return [];
@@ -604,7 +641,7 @@ export function WebsiteOverviewTab({
   return (
     <div className="space-y-6">
       {/* Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         <StatCard
           title="UNIQUE VISITORS"
           value={analytics.summary?.unique_visitors || 0}
@@ -615,6 +652,9 @@ export function WebsiteOverviewTab({
           trend={calculateTrends.visitors}
           trendLabel={calculateTrends.visitors !== undefined ? "vs previous period" : undefined}
           className="h-full"
+          chartData={miniChartData.visitors}
+          showChart={true}
+          id="visitors-chart"
         />
         <StatCard
           title="SESSIONS"
@@ -626,6 +666,9 @@ export function WebsiteOverviewTab({
           trend={calculateTrends.sessions}
           trendLabel={calculateTrends.sessions !== undefined ? "vs previous period" : undefined}
           className="h-full"
+          chartData={miniChartData.sessions}
+          showChart={true}
+          id="sessions-chart"
         />
         <StatCard
           title="PAGEVIEWS"
@@ -637,6 +680,9 @@ export function WebsiteOverviewTab({
           trend={calculateTrends.pageviews}
           trendLabel={calculateTrends.pageviews !== undefined ? "vs previous period" : undefined}
           className="h-full"
+          chartData={miniChartData.pageviews}
+          showChart={true}
+          id="pageviews-chart"
         />
         <StatCard
           title="PAGES/SESSION"
@@ -652,6 +698,9 @@ export function WebsiteOverviewTab({
           trend={calculateTrends.pages_per_session}
           trendLabel={calculateTrends.pages_per_session !== undefined ? "vs previous period" : undefined}
           className="h-full"
+          chartData={miniChartData.pagesPerSession}
+          showChart={true}
+          id="pages-per-session-chart"
         />
         <StatCard
           title="BOUNCE RATE"
@@ -663,6 +712,9 @@ export function WebsiteOverviewTab({
           variant={getColorVariant(analytics.summary?.bounce_rate || 0, 70, 50)}
           invertTrend={true}
           className="h-full"
+          chartData={miniChartData.bounceRate}
+          showChart={true}
+          id="bounce-rate-chart"
         />
         <StatCard
           title="SESSION DURATION"
@@ -673,6 +725,9 @@ export function WebsiteOverviewTab({
           trend={calculateTrends.session_duration}
           trendLabel={calculateTrends.session_duration !== undefined ? "vs previous period" : undefined}
           className="h-full"
+          chartData={miniChartData.sessionDuration}
+          showChart={true}
+          id="session-duration-chart"
         />
       </div>
 

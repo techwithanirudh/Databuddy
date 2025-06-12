@@ -6,18 +6,6 @@ const nonAuthRoutes = [ "/login", "/register", "/verify-email", "/reset-password
 
 export default async function middleware(request: NextRequest) {
 
-  const isAuth = getSessionCookie(request)
-
-  const isNonAuthRoute = nonAuthRoutes.some(route => request.nextUrl.pathname.startsWith(route));
-
-  if (isNonAuthRoute && isAuth) {
-    return NextResponse.redirect(new URL("/websites", request.url));
-  }
-
-  if (!isNonAuthRoute && !isAuth) {
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
-
   return NextResponse.next();
 }
 

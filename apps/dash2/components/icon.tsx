@@ -10,7 +10,7 @@ const BROWSER_ICONS = [
   "IE", "Chromium", "DuckDuckGo", "Avast", "AVG", "Android", "Huawei",
   "Miui", "Vivo", "Sogou", "CocCoc", "Whale", "WebKit", "Wolvic",
   "Sleipnir", "Silk", "Quark", "PaleMoon", "Oculus", "Naver", "Line",
-  "Lenovo", "KAKAOTALK", "Iron", "HeyTap", "360"
+  "Lenovo", "KAKAOTALK", "Iron", "HeyTap", "360", "Brave"
 ] as const;
 
 // Define available OS icons based on the public directory  
@@ -37,27 +37,25 @@ const sizeMap = {
   lg: 24,
 };
 
-export function PublicIcon({ 
-  type, 
-  name, 
-  size = "md", 
-  className, 
-  fallback 
+export function PublicIcon({
+  type,
+  name,
+  size = "md",
+  className,
+  fallback
 }: PublicIconProps) {
   const iconSize = typeof size === "number" ? size : sizeMap[size];
-  
-  // Normalize the name to match file names
+
   const normalizedName = name.replace(/\s+/g, "").replace(/[^a-zA-Z0-9]/g, "");
-  
-  // Determine the folder and check if icon exists
+
   const folder = type === "browser" ? "browsers" : "operating-systems";
   const availableIcons = type === "browser" ? BROWSER_ICONS : OS_ICONS;
-  
+
   // Check if we have this icon (case-insensitive)
-  const exactMatch = availableIcons.find(icon => 
+  const exactMatch = availableIcons.find(icon =>
     icon.toLowerCase() === normalizedName.toLowerCase()
   );
-  
+
   // Special mapping for OS icons
   let mappedName = normalizedName;
   if (type === "os") {
@@ -72,26 +70,35 @@ export function PublicIcon({
       mappedName = osMap[lowerName];
     }
   }
-  
+
   // Check with mapped name
-  const mappedMatch = availableIcons.find(icon => 
+  const mappedMatch = availableIcons.find(icon =>
     icon.toLowerCase() === mappedName.toLowerCase()
   );
-  
+
   // If no exact match, try partial matching
-  const partialMatch = availableIcons.find(icon => 
+  const partialMatch = availableIcons.find(icon =>
     icon.toLowerCase().includes(normalizedName.toLowerCase()) ||
     normalizedName.toLowerCase().includes(icon.toLowerCase())
   );
-  
+
   const iconName = exactMatch || mappedMatch || partialMatch;
-  
-  if (!iconName) {
-    // Return fallback if provided, otherwise a default icon
+
+  // Try to find the icon file with supported extensions
+  let iconSrc: string | null = null;
+  if (iconName) {
+    if (iconName === "Brave" && folder === "browsers") {
+      iconSrc = `/${folder}/${iconName}.webp`;
+    } else {
+      iconSrc = `/${folder}/${iconName}.svg`;
+    }
+  }
+
+  if (!iconName || !iconSrc) {
     return fallback ? (
       <>{fallback}</>
     ) : (
-      <div 
+      <div
         className={cn(
           "rounded bg-muted flex items-center justify-center text-muted-foreground text-xs font-medium",
           className
@@ -102,58 +109,58 @@ export function PublicIcon({
       </div>
     );
   }
-  
+
   return (
     <div className={cn("relative flex-shrink-0", className)} style={{ width: iconSize, height: iconSize }}>
-        <Image
-          key={`${iconName}`}
-          src={`/${folder}/${iconName}.svg`}
-          alt={name}
-          width={iconSize}
-          height={iconSize}
-          className={cn(
-            "object-contain",
-          )}
-          onError={(e) => {
-            const img = e.target as HTMLImageElement;
-            img.style.display = 'none';
-          }}
-        />
+      <Image
+        key={`${iconName}`}
+        src={iconSrc}
+        alt={name}
+        width={iconSize}
+        height={iconSize}
+        className={cn(
+          "object-contain",
+        )}
+        onError={(e) => {
+          const img = e.target as HTMLImageElement;
+          img.style.display = 'none';
+        }}
+      />
     </div>
   );
 }
 
 // Convenience components for specific types
-export function BrowserIcon({ 
-  name, 
-  size = "md", 
-  className, 
-  fallback 
+export function BrowserIcon({
+  name,
+  size = "md",
+  className,
+  fallback
 }: Omit<PublicIconProps, "type">) {
   return (
-    <PublicIcon 
-      type="browser" 
-      name={name} 
-      size={size} 
-      className={className} 
-      fallback={fallback} 
+    <PublicIcon
+      type="browser"
+      name={name}
+      size={size}
+      className={className}
+      fallback={fallback}
     />
   );
 }
 
-export function OSIcon({ 
-  name, 
-  size = "md", 
-  className, 
-  fallback 
+export function OSIcon({
+  name,
+  size = "md",
+  className,
+  fallback
 }: Omit<PublicIconProps, "type">) {
   return (
-    <PublicIcon 
-      type="os" 
-      name={name} 
-      size={size} 
-      className={className} 
-      fallback={fallback} 
+    <PublicIcon
+      type="os"
+      name={name}
+      size={size}
+      className={className}
+      fallback={fallback}
     />
   );
 } 

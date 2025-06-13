@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { db, domains, eq, projectAccess, and, or, inArray } from '@databuddy/db';
+import { db, domains, eq, projects, and, or, inArray } from '@databuddy/db';
 import type { AppVariables } from '../../types';
 import { authMiddleware } from '../../middleware/auth';
 import { logger } from '../../lib/logger';
@@ -19,14 +19,14 @@ type DomainsContext = {
 // Helper functions - Redis cached
 async function _getUserProjectIds(userId: string): Promise<string[]> {
   try {
-    const projects = await db.query.projectAccess.findMany({
-      where: eq(projectAccess.userId, userId),
+    const userProjects = await db.query.projects.findMany({
+      where: eq(projects.organizationId, userId),
       columns: {
-        projectId: true
+        id: true
       }
     });
     
-    return projects.map(access => access.projectId);
+    return userProjects.map(project => project.id);
   } catch (error) {
     logger.error('[Domain API] Error fetching project IDs:', {error, userId});
     return [];
@@ -164,8 +164,8 @@ domainsRouter.get('/project/:projectId', async (c) => {
   }
 
   try {
-    const access = await db.query.projectAccess.findFirst({
-      where: and(eq(projectAccess.projectId, projectId), eq(projectAccess.userId, user.id)),
+    const access = await db.query.projects.findFirst({
+      where: and(eq(projects.id, projectId), eq(projects.organizationId, user.id)),
       columns: { id: true }
     });
     

@@ -3,7 +3,7 @@ import { auth } from "./betterauth"
 import { logger } from '../lib/logger';
 import { db } from "@databuddy/db";
 import { eq, and } from "drizzle-orm";
-import { websites, projectAccess } from "@databuddy/db";
+import { websites, projects } from "@databuddy/db";
 import { cacheable } from "@databuddy/redis";
 
 // Helper function to verify website access with caching
@@ -21,10 +21,10 @@ const verifyWebsiteAccess = cacheable(
 
       // Then check if user has access through project access
       if (website.projectId) {
-        const access = await db.query.projectAccess.findFirst({
+        const access = await db.query.projects.findFirst({
           where: and(
-            eq(projectAccess.projectId, website.projectId),
-            eq(projectAccess.userId, userId)
+            eq(projects.id, website.projectId),
+            eq(projects.organizationId, userId)
           )
         });
         

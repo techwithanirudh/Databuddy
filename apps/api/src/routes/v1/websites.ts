@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { db, websites, domains, projectAccess, eq, and, or, inArray } from '@databuddy/db';
+import { db, websites, domains, projects, eq, and, or, inArray } from '@databuddy/db';
 import { authMiddleware } from '../../middleware/auth';
 import { logger } from '../../lib/logger';
 import { nanoid } from 'nanoid';
@@ -20,14 +20,14 @@ websitesRouter.use('*', authMiddleware);
 // Helper functions - Redis cached
 async function _getUserProjectIds(userId: string): Promise<string[]> {
   try {
-    const projects = await db.query.projectAccess.findMany({
-      where: eq(projectAccess.userId, userId),
+    const userProjects = await db.query.projects.findMany({
+      where: eq(projects.organizationId, userId),
       columns: {
-        projectId: true
+        id: true
       }
     });
     
-    return projects.map(access => access.projectId);
+    return userProjects.map(project => project.id);
   } catch (error) {
     logger.error('[Website API] Error fetching project IDs:', { error });
     return [];
@@ -253,10 +253,10 @@ websitesRouter.get('/project/:projectId', async (c) => {
 
   try {
     // Check if user has access to the project
-    const projectAccessRecord = await db.query.projectAccess.findFirst({
+    const projectAccessRecord = await db.query.projects.findFirst({
       where: and(
-        eq(projectAccess.projectId, projectId),
-        eq(projectAccess.userId, user.id)
+        eq(projects.id, projectId),
+        eq(projects.organizationId, user.id)
       )
     });
 

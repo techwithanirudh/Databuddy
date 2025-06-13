@@ -110,6 +110,40 @@ export function WebsiteOverviewTab({
   setIsRefreshing,
 }: FullTabProps) {
 
+  // Memoize the queries array to prevent double fetching
+  const queries = useMemo(() => [
+    {
+      id: 'overview-summary',
+      parameters: ['summary_metrics', 'today_metrics', 'events_by_date'],
+      limit: 100,
+      granularity: dateRange.granularity
+    },
+    {
+      id: 'overview-pages',
+      parameters: ['top_pages', 'entry_pages', 'exit_pages'],
+      limit: 100,
+      granularity: dateRange.granularity
+    },
+    {
+      id: 'overview-traffic',
+      parameters: ['top_referrers', 'utm_sources', 'utm_mediums', 'utm_campaigns'],
+      limit: 100,
+      granularity: dateRange.granularity
+    },
+    {
+      id: 'overview-tech',
+      parameters: ['device_types', 'browser_versions'],
+      limit: 100,
+      granularity: dateRange.granularity
+    },
+    {
+      id: 'overview-custom-events',
+      parameters: ['custom_events', 'custom_event_details'],
+      limit: 100,
+      granularity: dateRange.granularity
+    }
+  ], [dateRange.granularity]);
+
   // Fetch all overview data in a single batch query
   const {
     results,
@@ -120,38 +154,7 @@ export function WebsiteOverviewTab({
   } = useBatchDynamicQuery(
     websiteId,
     dateRange,
-    [
-      {
-        id: 'overview-summary',
-        parameters: ['summary_metrics', 'today_metrics', 'events_by_date'],
-        limit: 100,
-        granularity: dateRange.granularity
-      },
-      {
-        id: 'overview-pages',
-        parameters: ['top_pages', 'entry_pages', 'exit_pages'],
-        limit: 100,
-        granularity: dateRange.granularity
-      },
-      {
-        id: 'overview-traffic',
-        parameters: ['top_referrers', 'utm_sources', 'utm_mediums', 'utm_campaigns'],
-        limit: 100,
-        granularity: dateRange.granularity
-      },
-      {
-        id: 'overview-tech',
-        parameters: ['device_types', 'browser_versions'],
-        limit: 100,
-        granularity: dateRange.granularity
-      },
-      {
-        id: 'overview-custom-events',
-        parameters: ['custom_events', 'custom_event_details'],
-        limit: 100,
-        granularity: dateRange.granularity
-      }
-    ]
+    queries
   );
 
   // Combine all data into analytics object for backward compatibility

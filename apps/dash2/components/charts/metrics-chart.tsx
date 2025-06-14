@@ -68,7 +68,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   };
 
   return (
-    <div className="bg-background/95 backdrop-blur-md border border-border/50 rounded-xl shadow-2xl p-4 min-w-[200px]">
+    <div className="bg-card backdrop-blur-md border border-border/50 rounded-xl shadow-2xl p-4 min-w-[200px]">
       <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border/30">
         <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
         <p className="font-semibold text-sm text-foreground">{label}</p>
@@ -142,23 +142,6 @@ export function MetricsChart({
 
 
   const [hoveredMetric, setHoveredMetric] = useState<string | null>(null);
-  const [zoomDomain, setZoomDomain] = useState<{ startIndex?: number; endIndex?: number }>({});
-  const [isZoomed, setIsZoomed] = useState(false);
-
-  const resetZoom = () => {
-    setZoomDomain({});
-    setIsZoomed(false);
-  };
-
-  const handleBrushChange = (brushData: any) => {
-    if (brushData && brushData.startIndex !== undefined && brushData.endIndex !== undefined) {
-      setZoomDomain({
-        startIndex: brushData.startIndex,
-        endIndex: brushData.endIndex
-      });
-      setIsZoomed(true);
-    }
-  };
 
   const valueFormatter = (value: number): string => {
     if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
@@ -256,7 +239,6 @@ export function MetricsChart({
                 tickLine={false}
                 axisLine={{ stroke: 'var(--border)', strokeOpacity: 0.5 }}
                 dy={10}
-                domain={zoomDomain.startIndex !== undefined && zoomDomain.endIndex !== undefined ? [zoomDomain.startIndex, zoomDomain.endIndex] : undefined}
               />
 
               <YAxis

@@ -824,7 +824,7 @@ export function WebsiteOverviewTab({
       </div>
 
       {/* Chart */}
-      <div className="rounded border shadow-sm">
+      <div className="rounded border shadow-sm bg-card">
         <div className="p-4 border-b flex flex-col sm:flex-row justify-between items-start gap-3">
           <div>
             <h2 className="text-lg font-semibold tracking-tight">Traffic Trends</h2>

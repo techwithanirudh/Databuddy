@@ -1,9 +1,9 @@
 import { useMemo, useState, useCallback } from "react";
 import {
-  AreaChart, Area, 
-  BarChart, Bar, 
-  LineChart as RechartsLineChart, Line, 
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Brush 
+  AreaChart, Area,
+  BarChart, Bar,
+  LineChart as RechartsLineChart, Line,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Brush
 } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,7 @@ const METRIC_COLORS: Record<string, string> = {
   avg_load_time: "#ef4444",
   default: "#6b7280",
   count: "#ef4444",
-  value: "#f97316", 
+  value: "#f97316",
 };
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -72,7 +72,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
           return (
             <div key={`item-${entry.name}-${entry.value}`} className="flex items-center gap-2">
-              <div 
+              <div
                 className="w-2.5 h-2.5 rounded-full"
                 style={{ backgroundColor: entry.color || METRIC_COLORS[entryNameLower as keyof typeof METRIC_COLORS] || METRIC_COLORS.default }}
               />
@@ -115,7 +115,7 @@ interface BrushChangeEvent {
   endIndex?: number;
 }
 
-export function VersatileAIChart({ 
+export function VersatileAIChart({
   data,
   isLoading,
   height = 260,
@@ -151,7 +151,7 @@ export function VersatileAIChart({
   if (isLoading) {
     return <SkeletonChart height={height} title={title} className={`w-full ${className || ''}`} />;
   }
-  
+
   if (!chartData || chartData.length === 0) {
     return (
       <Card className={`w-full rounded-none border-none ${className || ''}`} style={{ height: `${height}px` }}>
@@ -171,13 +171,13 @@ export function VersatileAIChart({
   }
 
   const metricKeys = chartData.length > 0 ? Object.keys(chartData[0]).filter(key => key !== xAxisDataKey && typeof chartData[0][key] === 'number') : [];
-  
+
   if (metricKeys.length === 0 && chartData.length > 0 && chartType !== 'pie') {
-      // console.warn(`[VersatileAIChart] No numeric metric keys found in data besides '${xAxisDataKey}'. Chart may not render correctly. Chart Type: ${chartType}`, chartData[0]);
+    // console.warn(`[VersatileAIChart] No numeric metric keys found in data besides '${xAxisDataKey}'. Chart may not render correctly. Chart Type: ${chartType}`, chartData[0]);
   }
 
   const chartSpecificMargin = {
-    top: 20, right: 20, left: 8, 
+    top: 20, right: 20, left: 8,
     bottom: chartData.length > 5 && (chartType === 'area' || chartType === 'line' || chartType === 'multi_line') ? 45 : (chartType === 'bar' || chartType === 'stacked_bar' ? 30 : 10)
   };
 
@@ -194,8 +194,8 @@ export function VersatileAIChart({
   };
 
   const commonXAxis = (
-    <XAxis 
-      dataKey={xAxisDataKey} 
+    <XAxis
+      dataKey={xAxisDataKey}
       tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }}
       tickLine={false}
       axisLine={false}
@@ -209,7 +209,7 @@ export function VersatileAIChart({
     />
   );
   const commonYAxis = (
-    <YAxis 
+    <YAxis
       tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }}
       tickLine={false}
       axisLine={false}
@@ -217,25 +217,25 @@ export function VersatileAIChart({
       tickFormatter={valueFormatter}
     />
   );
-  const commonTooltip = <Tooltip content={<CustomTooltip />} cursor={{fill: 'hsl(var(--accent-foreground) / 0.05)'}} wrapperStyle={{outline: 'none'}}/>;
+  const commonTooltip = <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--accent-foreground) / 0.05)' }} wrapperStyle={{ outline: 'none' }} />;
   const commonGrid = <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" strokeOpacity={0.5} />;
   const commonLegend = metricKeys.length > 1 || chartType === 'multi_line' || chartType === 'stacked_bar' ? (
-    <Legend 
+    <Legend
       iconSize={8}
       iconType="circle"
       formatter={(value) => (
         <span className="text-xs capitalize">{value.replace(/_/g, ' ')}</span>
       )}
-      wrapperStyle={{ 
-        fontSize: '10px', 
+      wrapperStyle={{
+        fontSize: '10px',
         paddingTop: '8px',
         marginLeft: '20px'
       }}
     />
   ) : null;
   const commonBrush = (chartType === 'line' || chartType === 'area' || chartType === 'multi_line') && chartData.length > 10 ? (
-    <Brush 
-      dataKey={xAxisDataKey} 
+    <Brush
+      dataKey={xAxisDataKey}
       height={30}
       stroke={'var(--border)'}
       fill={'var(--muted)'}
@@ -246,7 +246,7 @@ export function VersatileAIChart({
         if (!Number.isNaN(date.getTime())) {
           return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         }
-        return String(value).substring(0,10);
+        return String(value).substring(0, 10);
       }}
       onChange={handleBrushChange}
       startIndex={zoomDomain.startIndex}
@@ -266,29 +266,29 @@ export function VersatileAIChart({
       </defs>
       {commonGrid}{commonXAxis}{commonYAxis}{commonTooltip}
       {metricKeys.map(key => (
-        <Area key={key} type="monotone" dataKey={key} 
-              strokeWidth={1.5}
-              stroke={METRIC_COLORS[key.toLowerCase() as keyof typeof METRIC_COLORS] || METRIC_COLORS.default}
-              fillOpacity={1} fill={`url(#fill-${key})`} 
-              name={key}
-              activeDot={{ r: 4, strokeWidth: 1 }}
+        <Area key={key} type="monotone" dataKey={key}
+          strokeWidth={1.5}
+          stroke={METRIC_COLORS[key.toLowerCase() as keyof typeof METRIC_COLORS] || METRIC_COLORS.default}
+          fillOpacity={1} fill={`url(#fill-${key})`}
+          name={key}
+          activeDot={{ r: 4, strokeWidth: 1 }}
         />
       ))}
       {commonLegend}
       {commonBrush}
     </AreaChart>
   );
-  
+
   const renderLineOrMultiLineChart = () => (
     <RechartsLineChart data={chartData} margin={chartSpecificMargin}>
       {commonGrid}{commonXAxis}{commonYAxis}{commonTooltip}
       {metricKeys.map(key => (
-        <Line key={key} type="monotone" dataKey={key} 
-              strokeWidth={1.5}
-              stroke={METRIC_COLORS[key.toLowerCase() as keyof typeof METRIC_COLORS] || METRIC_COLORS.default} 
-              name={key}
-              dot={{ r: 2, strokeWidth: 0.5 }}
-              activeDot={{ r: 4, strokeWidth: 1 }}
+        <Line key={key} type="monotone" dataKey={key}
+          strokeWidth={1.5}
+          stroke={METRIC_COLORS[key.toLowerCase() as keyof typeof METRIC_COLORS] || METRIC_COLORS.default}
+          name={key}
+          dot={{ r: 2, strokeWidth: 0.5 }}
+          activeDot={{ r: 4, strokeWidth: 1 }}
         />
       ))}
       {commonLegend}
@@ -300,12 +300,12 @@ export function VersatileAIChart({
     <BarChart data={chartData} margin={chartSpecificMargin} barCategoryGap={isStacked ? "10%" : "20%"}>
       {commonGrid}{commonXAxis}{commonYAxis}{commonTooltip}
       {metricKeys.map((key) => (
-        <Bar key={key} dataKey={key} 
-             stackId={isStacked ? "stack" : undefined}
-             fill={METRIC_COLORS[key.toLowerCase() as keyof typeof METRIC_COLORS] || METRIC_COLORS.default} 
-             name={key}
-             radius={[3, 3, 0, 0]}
-             barSize={metricKeys.length === 1 && !isStacked ? Math.min(35, Math.max(10, 250 / Math.max(1, chartData.length))) : undefined} 
+        <Bar key={key} dataKey={key}
+          stackId={isStacked ? "stack" : undefined}
+          fill={METRIC_COLORS[key.toLowerCase() as keyof typeof METRIC_COLORS] || METRIC_COLORS.default}
+          name={key}
+          radius={[3, 3, 0, 0]}
+          barSize={metricKeys.length === 1 && !isStacked ? Math.min(35, Math.max(10, 250 / Math.max(1, chartData.length))) : undefined}
         />
       ))}
       {commonLegend}
@@ -328,7 +328,7 @@ export function VersatileAIChart({
       chartComponent = renderBarOrStackedBarChart(true);
       break;
     default:
-      chartComponent = renderAreaChart(); 
+      chartComponent = renderAreaChart();
   }
 
   return (

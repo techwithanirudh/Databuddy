@@ -150,7 +150,7 @@ export function StatCard({
     return (
       <Card className={cn(
         "overflow-hidden border",
-        "bg-gradient-to-br from-background to-muted/10",
+        "bg-card",
         className
       )} id={id}>
         <div className="p-3 sm:p-4">
@@ -185,7 +185,7 @@ export function StatCard({
       "group overflow-hidden transition-all duration-300 ease-out pt-0",
       "hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-0.5",
       "border-border/50 hover:border-primary/20",
-      "bg-gradient-to-br from-background to-muted/10",
+      "bg-card",
       getVariantClasses(),
       className
     )} id={id}>

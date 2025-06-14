@@ -8,6 +8,8 @@ import { Logo } from "./logo";
 import { ThemeToggle } from "./theme-toggle";
 import { UserMenu } from "./user-menu";
 import { NotificationsPopover } from "@/components/notifications/notifications-popover";
+import Image from "next/image";
+
 
 const HelpDialog = dynamic(() => import("./help-dialog").then(mod => mod.HelpDialog), {
   ssr: false,
@@ -36,7 +38,11 @@ export function TopHeader({ setMobileOpen }: TopHeaderProps) {
             <span className="sr-only">Toggle menu</span>
           </Button>
 
-          <Logo />
+          <div className="flex items-center gap-3">
+            <div className="flex flex-row items-center gap-3">
+              <Logo />
+            </div>
+          </div>
         </div>
 
         {/* Right Side - User Controls */}
@@ -44,9 +50,9 @@ export function TopHeader({ setMobileOpen }: TopHeaderProps) {
           <ThemeToggle />
 
           {/* Help */}
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             className="hidden md:flex h-8 w-8"
             onClick={() => setHelpOpen(true)}
           >
@@ -61,7 +67,7 @@ export function TopHeader({ setMobileOpen }: TopHeaderProps) {
           <UserMenu />
         </div>
       </div>
-      
+
       {/* Help dialog */}
       <HelpDialog open={helpOpen} onOpenChange={setHelpOpen} />
     </header>

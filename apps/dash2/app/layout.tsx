@@ -1,13 +1,17 @@
 import "./globals.css";
 
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
 import NextTopLoader from 'nextjs-toploader';
 import { Toaster } from "sonner";
 import Providers from "./providers";
-import Script from "next/script";
 import { Databuddy } from "@databuddy/sdk";
-import { Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
+
+const geist = Geist({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-geist",
+});
 
 const geistMono = Geist_Mono({
   subsets: ["latin"],
@@ -101,7 +105,7 @@ export default function RootLayout({
   const isLocalhost = process.env.NODE_ENV === 'development';
 
   return (
-    <html lang="en" suppressHydrationWarning className={`${geistMono.variable} h-full`}>
+    <html lang="en" suppressHydrationWarning className={`${geist.variable} ${geistMono.variable} h-full`}>
       <head />
       {/* <Script
         src={isLocalhost ? "http://localhost:3000/databuddy.js" : "https://app.databuddy.cc/databuddy.js"}

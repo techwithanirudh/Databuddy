@@ -1,4 +1,4 @@
-FROM oven/bun:alpine AS build
+FROM oven/bun AS build
 
 WORKDIR /app
 
@@ -21,6 +21,8 @@ RUN bun build \
 	--minify-syntax \
 	--target bun \
 	--outfile server \
+    --sourcemap \
+    --bytecode \
 	./apps/basket/src/index.ts
 
 FROM gcr.io/distroless/base

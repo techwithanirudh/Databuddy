@@ -7,6 +7,7 @@ steps:
   - name: Build Dash2
     image: woodpeckerci/plugin-docker-buildx:6.0.0
     settings:
+      registry: http://registry.databuddy.cc/v2
       repo: registry.databuddy.cc/dash2
       dockerfile: dash2.Dockerfile
       auto_tag: true
@@ -18,6 +19,7 @@ steps:
   - name: Build API
     image: woodpeckerci/plugin-docker-buildx:6.0.0
     settings:
+      registry: http://registry.databuddy.cc/v2
       repo: registry.databuddy.cc/api
       dockerfile: api.Dockerfile
       auto_tag: true
@@ -29,6 +31,7 @@ steps:
   - name: Build Basket
     image: woodpeckerci/plugin-docker-buildx:6.0.0
     settings:
+      registry: http://registry.databuddy.cc/v2
       repo: registry.databuddy.cc/basket
       dockerfile: basket.Dockerfile
       auto_tag: true

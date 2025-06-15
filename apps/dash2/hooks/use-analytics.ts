@@ -186,7 +186,7 @@ export interface ProfileData {
   os: string;
   country: string;
   region: string;
-  sessions: SessionData[];
+  sessions: SessionWithEvents[];
 }
 
 export interface ErrorDetail {

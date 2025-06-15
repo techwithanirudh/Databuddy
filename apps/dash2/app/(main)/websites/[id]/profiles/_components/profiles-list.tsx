@@ -26,8 +26,8 @@ export function ProfilesList({ websiteId }: ProfilesListProps) {
         error
     } = useInfiniteAnalyticsProfiles(websiteId, dateRange, 25);
 
-    const toggleProfile = (profileId: string) => {
-        setExpandedProfileId(expandedProfileId === profileId ? null : profileId);
+    const toggleProfile = (profileKey: string) => {
+        setExpandedProfileId(expandedProfileId === profileKey ? null : profileKey);
     };
 
     // Intersection Observer for infinite scrolling
@@ -138,15 +138,18 @@ export function ProfilesList({ websiteId }: ProfilesListProps) {
             </CardHeader>
             <CardContent className="p-0">
                 <div className="divide-y divide-border">
-                    {allProfiles.map((profile, index) => (
-                        <ProfileRow
-                            key={profile.visitor_id || index}
-                            profile={profile}
-                            index={index}
-                            isExpanded={expandedProfileId === profile.visitor_id}
-                            onToggle={() => toggleProfile(profile.visitor_id)}
-                        />
-                    ))}
+                    {allProfiles.map((profile, index) => {
+                        const profileKey = `${profile.visitor_id}-${profile.first_visit}-${profile.last_visit}-${index}`;
+                        return (
+                            <ProfileRow
+                                key={profileKey}
+                                profile={profile}
+                                index={index}
+                                isExpanded={expandedProfileId === profileKey}
+                                onToggle={() => toggleProfile(profileKey)}
+                            />
+                        );
+                    })}
                 </div>
 
                 {/* Load More Trigger */}

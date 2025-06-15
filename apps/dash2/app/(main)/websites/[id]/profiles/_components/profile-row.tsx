@@ -2,9 +2,10 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDownIcon, ChevronRightIcon, ClockIcon, EyeIcon, UserRound, Users } from "lucide-react";
+import { ChevronDownIcon, ChevronRightIcon, ClockIcon, EyeIcon, UserRound, Users, ExternalLinkIcon } from "lucide-react";
 import { format } from "date-fns";
 import { getCountryFlag, getDeviceIcon, getBrowserIconComponent, getOSIconComponent, formatDuration } from "./profile-utils";
+import { FaviconImage } from "@/components/analytics/favicon-image";
 import type { ProfileData } from "@/hooks/use-analytics";
 
 interface ProfileRowProps {
@@ -14,10 +15,49 @@ interface ProfileRowProps {
     onToggle: () => void;
 }
 
+function getReferrerDisplayInfo(session: any) {
+    // Check if we have parsed referrer info
+    if (session.referrer_parsed) {
+        return {
+            name: session.referrer_parsed.name || session.referrer_parsed.domain || 'Unknown',
+            domain: session.referrer_parsed.domain,
+            type: session.referrer_parsed.type
+        };
+    }
+
+    // Fallback to raw referrer
+    if (session.referrer && session.referrer !== 'direct' && session.referrer !== '') {
+        try {
+            const url = new URL(session.referrer.startsWith('http') ? session.referrer : `https://${session.referrer}`);
+            return {
+                name: url.hostname.replace('www.', ''),
+                domain: url.hostname,
+                type: 'referrer'
+            };
+        } catch {
+            return {
+                name: session.referrer,
+                domain: null,
+                type: 'referrer'
+            };
+        }
+    }
+
+    return {
+        name: 'Direct',
+        domain: null,
+        type: 'direct'
+    };
+}
+
 export function ProfileRow({ profile, index, isExpanded, onToggle }: ProfileRowProps) {
     const avgSessionDuration = profile.total_sessions > 0
         ? (profile.total_duration || 0) / profile.total_sessions
         : 0;
+
+    // Get the most recent session's referrer for the main profile display
+    const latestSession = profile.sessions?.[0];
+    const profileReferrerInfo = latestSession ? getReferrerDisplayInfo(latestSession) : null;
 
     return (
         <Collapsible open={isExpanded} onOpenChange={onToggle}>
@@ -53,6 +93,26 @@ export function ProfileRow({ profile, index, isExpanded, onToggle }: ProfileRowP
                                 <span>{profile.country || 'Unknown'}</span>
                             </div>
                         </div>
+
+                        {/* Latest Referrer Info */}
+                        {profileReferrerInfo && (
+                            <div className="hidden lg:flex items-center gap-2 flex-shrink-0 min-w-[120px]">
+                                <div className="flex items-center gap-2">
+                                    {profileReferrerInfo.domain ? (
+                                        <FaviconImage
+                                            domain={profileReferrerInfo.domain}
+                                            size={16}
+                                            className="flex-shrink-0"
+                                        />
+                                    ) : (
+                                        <ExternalLinkIcon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                                    )}
+                                    <span className="text-sm text-muted-foreground truncate">
+                                        {profileReferrerInfo.name}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Key Metrics - More Prominent */}
@@ -96,114 +156,76 @@ export function ProfileRow({ profile, index, isExpanded, onToggle }: ProfileRowP
             </CollapsibleTrigger>
 
             <CollapsibleContent>
-                <div className="px-4 pb-4 bg-muted/20 border-t border-border">
-                    {/* Profile Info Row */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 py-4 text-sm border-b border-border/50">
-                        <div className="text-center">
-                            <span className="text-muted-foreground text-xs uppercase tracking-wide block mb-2">Total Sessions</span>
-                            <div className="font-bold text-foreground text-lg">{profile.total_sessions}</div>
+                <div className="px-4 pb-4 bg-muted/20 border-t">
+                    {/* Basic Profile Info */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-4 text-sm">
+                        <div>
+                            <div className="text-muted-foreground text-xs mb-1">First Visit</div>
+                            <div className="font-medium">
+                                {profile.first_visit ? format(new Date(profile.first_visit), 'MMM d, yyyy') : 'Unknown'}
+                            </div>
                         </div>
-                        <div className="text-center">
-                            <span className="text-muted-foreground text-xs uppercase tracking-wide block mb-2">Page Views</span>
-                            <div className="font-bold text-foreground text-lg">{profile.total_pageviews}</div>
+                        <div>
+                            <div className="text-muted-foreground text-xs mb-1">Last Visit</div>
+                            <div className="font-medium">
+                                {profile.last_visit ? format(new Date(profile.last_visit), 'MMM d, yyyy') : 'Unknown'}
+                            </div>
                         </div>
-                        <div className="text-center">
-                            <span className="text-muted-foreground text-xs uppercase tracking-wide block mb-2">Visitor Type</span>
-                            <div className="font-medium text-foreground">
-                                {profile.total_sessions > 1 ? (
-                                    <span className="text-blue-600 font-semibold">Returning</span>
-                                ) : (
-                                    <span className="text-green-600 font-semibold">New</span>
+                        <div>
+                            <div className="text-muted-foreground text-xs mb-1">Location</div>
+                            <div className="font-medium">
+                                {profile.region && profile.region !== 'Unknown' ? `${profile.region}, ` : ''}
+                                {profile.country || 'Unknown'}
+                            </div>
+                        </div>
+                        <div>
+                            <div className="text-muted-foreground text-xs mb-1">Total Time</div>
+                            <div className="font-medium">
+                                {profile.total_duration_formatted || formatDuration(profile.total_duration || 0)}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Recent Sessions */}
+                    {profile.sessions && profile.sessions.length > 0 && (
+                        <div className="pt-4 border-t">
+                            <div className="text-sm font-medium text-muted-foreground mb-3">
+                                Recent Sessions ({profile.sessions.length})
+                            </div>
+                            <div className="space-y-2">
+                                {profile.sessions.slice(0, 5).map((session, sessionIndex) => (
+                                    <div key={session.session_id} className="flex items-center justify-between p-3 bg-background rounded border">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-6 h-6 rounded bg-primary/10 text-xs font-medium text-primary flex items-center justify-center">
+                                                {sessionIndex + 1}
+                                            </div>
+                                            <div>
+                                                <div className="text-sm font-medium">{session.session_name}</div>
+                                                <div className="text-xs text-muted-foreground">
+                                                    {session.first_visit ? format(new Date(session.first_visit), 'MMM d, HH:mm') : 'Unknown'}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-4 text-xs">
+                                            <div className="text-center">
+                                                <div className="font-medium">{session.duration_formatted}</div>
+                                                <div className="text-muted-foreground">Duration</div>
+                                            </div>
+                                            <div className="text-center">
+                                                <div className="font-medium">{session.page_views}</div>
+                                                <div className="text-muted-foreground">Pages</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                                {profile.sessions.length > 5 && (
+                                    <div className="text-xs text-muted-foreground text-center py-2">
+                                        +{profile.sessions.length - 5} more sessions
+                                    </div>
                                 )}
                             </div>
                         </div>
-                        <div className="text-center">
-                            <span className="text-muted-foreground text-xs uppercase tracking-wide block mb-2">Avg Session</span>
-                            <div className="font-bold text-foreground text-lg">
-                                {formatDuration(avgSessionDuration)}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Profile Details */}
-                    <div className="pt-6">
-                        <div className="flex items-center justify-between mb-6">
-                            <h4 className="font-semibold text-lg text-foreground">Profile Details</h4>
-                            <div className="flex items-center gap-3">
-                                <div className="flex items-center gap-2 px-3 py-2 bg-slate-100 rounded-lg">
-                                    <span className="text-sm font-bold text-slate-800">{profile.total_sessions}</span>
-                                    <span className="text-xs text-slate-600">sessions</span>
-                                </div>
-                                <div className="flex items-center gap-2 px-3 py-2 bg-slate-100 rounded-lg">
-                                    <span className="text-sm font-bold text-slate-800">{profile.total_pageviews}</span>
-                                    <span className="text-xs text-slate-600">page views</span>
-                                </div>
-                                <div className="flex items-center gap-2 px-3 py-2 bg-slate-100 rounded-lg">
-                                    <span className="text-sm font-bold text-slate-800">{profile.total_duration_formatted || formatDuration(profile.total_duration || 0)}</span>
-                                    <span className="text-xs text-slate-600">total time</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Visit Information */}
-                            <div className="space-y-3">
-                                <h5 className="font-medium text-foreground">Visit Information</h5>
-                                <div className="space-y-2 text-sm">
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">First Visit:</span>
-                                        <span className="font-medium">
-                                            {profile.first_visit ? format(new Date(profile.first_visit), 'MMM d, yyyy HH:mm') : 'Unknown'}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Last Visit:</span>
-                                        <span className="font-medium">
-                                            {profile.last_visit ? format(new Date(profile.last_visit), 'MMM d, yyyy HH:mm') : 'Unknown'}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Total Duration:</span>
-                                        <span className="font-medium">
-                                            {profile.total_duration_formatted || formatDuration(profile.total_duration || 0)}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Technical Information */}
-                            <div className="space-y-3">
-                                <h5 className="font-medium text-foreground">Technical Information</h5>
-                                <div className="space-y-2 text-sm">
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Location:</span>
-                                        <span className="font-medium">
-                                            {profile.region && profile.region !== 'Unknown' ? `${profile.region}, ` : ''}
-                                            {profile.country || 'Unknown'}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Device:</span>
-                                        <span className="font-medium capitalize">
-                                            {profile.device || 'Unknown'}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Browser:</span>
-                                        <span className="font-medium">
-                                            {profile.browser || 'Unknown'}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Operating System:</span>
-                                        <span className="font-medium">
-                                            {profile.os || 'Unknown'}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    )}
                 </div>
             </CollapsibleContent>
         </Collapsible>

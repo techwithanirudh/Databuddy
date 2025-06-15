@@ -2,9 +2,10 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDownIcon, ChevronRightIcon, ClockIcon, EyeIcon, MousePointerClickIcon, AlertTriangleIcon, SparklesIcon } from "lucide-react";
+import { ChevronDownIcon, ChevronRightIcon, ClockIcon, EyeIcon, MousePointerClickIcon, AlertTriangleIcon, SparklesIcon, ExternalLinkIcon } from "lucide-react";
 import { getCountryFlag, getDeviceIcon, getBrowserIconComponent, getOSIconComponent } from "./session-utils";
 import { SessionEventTimeline } from "./session-event-timeline";
+import { FaviconImage } from "@/components/analytics/favicon-image";
 
 interface SessionRowProps {
     session: any;
@@ -13,11 +14,29 @@ interface SessionRowProps {
     onToggle: () => void;
 }
 
+function getReferrerDisplayInfo(session: any) {
+    if (session.referrer_parsed) {
+        return {
+            name: session.referrer_parsed.name || session.referrer_parsed.domain || 'Unknown',
+            domain: session.referrer_parsed.domain,
+            type: session.referrer_parsed.type
+        };
+    }
+
+    return {
+        name: 'Direct',
+        domain: null,
+        type: 'direct'
+    };
+}
+
 export function SessionRow({ session, index, isExpanded, onToggle }: SessionRowProps) {
     const errorCount = session.events?.filter((e: any) => e.error_message).length || 0;
     const customEventCount = session.events?.filter((e: any) =>
         e.properties && Object.keys(e.properties).length > 0
     ).length || 0;
+
+    const referrerInfo = getReferrerDisplayInfo(session);
 
     return (
         <Collapsible open={isExpanded} onOpenChange={onToggle}>
@@ -57,6 +76,24 @@ export function SessionRow({ session, index, isExpanded, onToggle }: SessionRowP
                                         <span className="text-blue-600 font-medium">Returning</span>
                                     </>
                                 )}
+                            </div>
+                        </div>
+
+                        {/* Referrer Info */}
+                        <div className="hidden lg:flex items-center gap-2 flex-shrink-0 min-w-[120px]">
+                            <div className="flex items-center gap-2">
+                                {referrerInfo.domain ? (
+                                    <FaviconImage
+                                        domain={referrerInfo.domain}
+                                        size={16}
+                                        className="flex-shrink-0"
+                                    />
+                                ) : (
+                                    <ExternalLinkIcon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                                )}
+                                <span className="text-sm text-muted-foreground truncate">
+                                    {referrerInfo.name}
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -122,7 +159,7 @@ export function SessionRow({ session, index, isExpanded, onToggle }: SessionRowP
             <CollapsibleContent>
                 <div className="px-4 pb-4 bg-muted/20 border-t border-border">
                     {/* Session Info Row */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 py-4 text-sm border-b border-border/50">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 py-4 text-sm border-b border-border/50">
                         <div className="text-center">
                             <span className="text-muted-foreground text-xs uppercase tracking-wide block mb-2">Duration</span>
                             <div className="font-bold text-foreground text-lg">{session.duration_formatted}</div>
@@ -145,6 +182,23 @@ export function SessionRow({ session, index, isExpanded, onToggle }: SessionRowP
                             <span className="text-muted-foreground text-xs uppercase tracking-wide block mb-2">Session #</span>
                             <div className="font-bold text-foreground text-lg">
                                 #{session.visitor_session_count || 1}
+                            </div>
+                        </div>
+                        <div className="text-center">
+                            <span className="text-muted-foreground text-xs uppercase tracking-wide block mb-2">Referrer</span>
+                            <div className="flex items-center justify-center gap-2">
+                                {referrerInfo.domain ? (
+                                    <FaviconImage
+                                        domain={referrerInfo.domain}
+                                        size={16}
+                                        className="flex-shrink-0"
+                                    />
+                                ) : (
+                                    <ExternalLinkIcon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                                )}
+                                <span className="font-medium text-foreground text-sm truncate">
+                                    {referrerInfo.name}
+                                </span>
                             </div>
                         </div>
                     </div>

@@ -53,7 +53,7 @@ export const getCountryFlag = (country: string) => {
     }
 
     return (
-        <Image
+        <img
             src={`https://flagcdn.com/w40/${country.toLowerCase()}.png`}
             alt={`${country} flag`}
             className="w-5 h-4 object-cover rounded-sm"

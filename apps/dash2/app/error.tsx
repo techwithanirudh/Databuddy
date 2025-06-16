@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { AlertTriangle, ArrowLeft, RefreshCw } from "lucide-react";
+import { WarningCircleIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 
 export default function GlobalError({
@@ -22,7 +22,7 @@ export default function GlobalError({
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4">
       <div className="text-center max-w-md">
-        <AlertTriangle className="mx-auto h-16 w-16 text-destructive mb-6" />
+        <WarningCircleIcon size={64} weight="duotone" className="mx-auto h-16 w-16 text-destructive mb-6" />
         <h1 className="text-3xl font-semibold mb-3">Something went wrong</h1>
         <p className="text-muted-foreground mb-1">
           We encountered an unexpected issue. Please try again.

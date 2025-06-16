@@ -536,17 +536,19 @@
             if (this.isServer() || !this.options.trackPerformance) return {};
             
             try {
-                
                 if (window.performance?.getEntriesByType) {
                     const navEntries = window.performance.getEntriesByType('navigation');
                     if (navEntries && navEntries.length > 0) {
                         const navEntry = navEntries[0];
+                        
+                        const navigationStart = navEntry.startTime || 0;
+                        
                         return {
-                            load_time: Math.round(navEntry.loadEventEnd),
-                            dom_ready_time: Math.round(navEntry.domContentLoadedEventEnd),
-                            ttfb: Math.round(navEntry.responseStart),
+                            load_time: Math.round(navEntry.loadEventEnd - navigationStart),
+                            dom_ready_time: Math.round(navEntry.domContentLoadedEventEnd - navigationStart),
+                            ttfb: Math.round(navEntry.responseStart - navigationStart),
                             request_time: Math.round(navEntry.responseEnd - navEntry.responseStart),
-                            render_time: Math.round(navEntry.domComplete - navEntry.domInteractive)
+                            render_time: Math.round(navEntry.domComplete - navEntry.domContentLoadedEventEnd)
                         };
                     }
                 }
@@ -555,13 +557,15 @@
                     const timing = window.performance.timing;
                     const navigationStart = timing.navigationStart;
                     
+                    if (navigationStart === 0) return {};
+                    
                     return {
-                        load_time: timing.loadEventEnd - navigationStart,
-                        dom_ready_time: timing.domContentLoadedEventEnd - navigationStart,
-                        dom_interactive: timing.domInteractive - navigationStart,
-                        ttfb: timing.responseStart - timing.requestStart,
-                        request_time: timing.responseEnd - timing.requestStart,
-                        render_time: timing.domComplete - timing.domInteractive
+                        load_time: timing.loadEventEnd > 0 ? timing.loadEventEnd - navigationStart : 0,
+                        dom_ready_time: timing.domContentLoadedEventEnd > 0 ? timing.domContentLoadedEventEnd - navigationStart : 0,
+                        dom_interactive: timing.domInteractive > 0 ? timing.domInteractive - navigationStart : 0,
+                        ttfb: timing.responseStart > 0 && timing.requestStart > 0 ? timing.responseStart - timing.requestStart : 0,
+                        request_time: timing.responseEnd > 0 && timing.requestStart > 0 ? timing.responseEnd - timing.requestStart : 0,
+                        render_time: timing.domComplete > 0 && timing.domContentLoadedEventEnd > 0 ? timing.domComplete - timing.domContentLoadedEventEnd : 0
                     };
                 }
                 

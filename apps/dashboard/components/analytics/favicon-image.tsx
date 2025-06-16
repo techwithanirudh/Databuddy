@@ -10,11 +10,11 @@ interface FaviconImageProps {
   className?: string;
 }
 
-export function FaviconImage({ 
-  domain, 
+export function FaviconImage({
+  domain,
   altText,
-  size = 20, 
-  className = '' 
+  size = 20,
+  className = ''
 }: FaviconImageProps) {
   const [faviconUrl, setFaviconUrl] = useState<string>('');
   const [hasError, setHasError] = useState<boolean>(false);
@@ -27,11 +27,11 @@ export function FaviconImage({
     setCurrentSourceIndex(0);
     const effectiveDomain = domain;
 
-    if (!effectiveDomain || 
-        effectiveDomain.toLowerCase() === 'direct' || 
-        effectiveDomain.toLowerCase() === 'unknown' ||
-        effectiveDomain.includes('localhost') ||
-        effectiveDomain.includes('127.0.0.1')) {
+    if (!effectiveDomain ||
+      effectiveDomain.toLowerCase() === 'direct' ||
+      effectiveDomain.toLowerCase() === 'unknown' ||
+      effectiveDomain.includes('localhost') ||
+      effectiveDomain.includes('127.0.0.1')) {
       setHasError(true);
       setFaviconUrl('');
       setIsLoading(false);
@@ -41,10 +41,10 @@ export function FaviconImage({
     try {
       // Clean the domain - remove protocol, www, and get just the hostname
       let hostname = effectiveDomain.replace(/^https?:\/\//, '').replace(/^www\./, '');
-      
+
       // Remove any path, query, or fragment
       hostname = hostname.split('/')[0].split('?')[0].split('#')[0];
-      
+
       // Validate hostname format
       if (!hostname || hostname.length < 3 || !hostname.includes('.')) {
         setHasError(true);
@@ -66,7 +66,7 @@ export function FaviconImage({
       // Try the first source
       setFaviconUrl(faviconSources[0]);
       setIsLoading(false);
-      
+
     } catch (e) {
       console.warn("Error processing domain for favicon URL:", effectiveDomain, e);
       setHasError(true);
@@ -77,7 +77,7 @@ export function FaviconImage({
 
   const handleImageError = () => {
     const effectiveDomain = domain;
-    
+
     if (!effectiveDomain) {
       setHasError(true);
       setIsLoading(false);
@@ -87,7 +87,7 @@ export function FaviconImage({
     try {
       let hostname = effectiveDomain.replace(/^https?:\/\//, '').replace(/^www\./, '');
       hostname = hostname.split('/')[0].split('?')[0].split('#')[0];
-      
+
       const faviconSources = [
         `https://icons.duckduckgo.com/ip3/${hostname}.ico`,
         `https://${hostname}/favicon.ico`,
@@ -95,7 +95,7 @@ export function FaviconImage({
       ];
 
       const nextIndex = currentSourceIndex + 1;
-      
+
       if (nextIndex < faviconSources.length) {
         setCurrentSourceIndex(nextIndex);
         setFaviconUrl(faviconSources[nextIndex]);
@@ -117,27 +117,27 @@ export function FaviconImage({
 
   if (hasError || !faviconUrl) {
     return (
-      <div 
-        className={`${className} flex items-center justify-center bg-muted/30 rounded-sm`}
+      <div
+        className={`${className} flex items-center justify-center rounded-sm`}
         style={{ width: size, height: size }}
       >
-        <Globe 
-          className="text-muted-foreground" 
-          style={{ width: size * 0.6, height: size * 0.6 }} 
-          aria-label={altText || 'Website icon'} 
+        <Globe
+          className="text-muted-foreground"
+          style={{ width: size * 0.6, height: size * 0.6 }}
+          aria-label={altText || 'Website icon'}
         />
       </div>
     );
   }
 
   return (
-    <div 
+    <div
       className={`${className} relative flex items-center justify-center rounded-sm overflow-hidden bg-muted/10`}
       style={{ width: size, height: size }}
     >
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-muted/20">
-          <div 
+          <div
             className="animate-pulse bg-muted-foreground/20 rounded-full"
             style={{ width: size * 0.4, height: size * 0.4 }}
           />
@@ -151,8 +151,8 @@ export function FaviconImage({
         className={`transition-opacity duration-200 ${isLoading ? 'opacity-0' : 'opacity-100'}`}
         onError={handleImageError}
         onLoad={handleImageLoad}
-        style={{ 
-          width: size, 
+        style={{
+          width: size,
           height: size,
           objectFit: 'contain',
           imageRendering: '-webkit-optimize-contrast',

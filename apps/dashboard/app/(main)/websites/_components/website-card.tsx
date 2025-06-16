@@ -7,6 +7,7 @@ import type { MiniChartDataPoint } from '@/hooks/use-analytics';
 import { useMiniChartData } from '@/hooks/use-analytics';
 import type { Website } from '@databuddy/shared';
 import { memo, useMemo } from 'react';
+import { FaviconImage } from '@/components/analytics/favicon-image';
 
 interface WebsiteCardProps {
     website: Website;
@@ -103,7 +104,12 @@ export const WebsiteCard = memo(({ website }: WebsiteCardProps) => {
                                 {website.name}
                             </CardTitle>
                             <CardDescription className="flex items-center gap-1 pt-0.5">
-                                <GlobeIcon size={32} weight="duotone" className="h-4 w-4 flex-shrink-0" />
+                                <FaviconImage
+                                    domain={website.domain}
+                                    size={24}
+                                    className="flex-shrink-0"
+                                    altText={`${website.name} favicon`}
+                                />
                                 <span className="truncate text-xs">{website.domain}</span>
                             </CardDescription>
                         </div>

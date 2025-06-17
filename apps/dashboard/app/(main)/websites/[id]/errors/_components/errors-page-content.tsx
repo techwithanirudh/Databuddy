@@ -2,15 +2,14 @@
 
 import { useState, useMemo, useEffect, useCallback, use } from "react";
 import { toast } from "sonner";
-import { ArrowLeftIcon, ArrowClockwiseIcon, XIcon, BugIcon } from "@phosphor-icons/react";
-import { useRouter } from "next/navigation";
+import { ArrowClockwiseIcon, BugIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { AnimatedLoading } from "@/components/analytics/animated-loading";
 import { useEnhancedErrorData } from "@/hooks/use-dynamic-query";
 import type { DateRange } from "@/hooks/use-analytics";
 import { EmptyState } from "../../_components/utils/ui-components";
 import type { DynamicQueryFilter } from "@/hooks/use-dynamic-query";
+import { Card, CardContent } from "@/components/ui/card";
 
 // Import our separated components
 import { ErrorSummaryStats } from "./error-summary-stats";
@@ -26,7 +25,6 @@ interface ErrorsPageContentProps {
 }
 
 export const ErrorsPageContent = ({ params }: ErrorsPageContentProps) => {
-    const router = useRouter();
     const resolvedParams = use(params);
     const websiteId = resolvedParams.id;
 
@@ -273,69 +271,61 @@ export const ErrorsPageContent = ({ params }: ErrorsPageContentProps) => {
 
     if (error) {
         return (
-            <div className="container mx-auto p-6">
-                <EmptyState
-                    icon={<BugIcon size={16} weight="duotone" className="h-4 w-4" />}
-                    title="Failed to load error data"
-                    description="There was an error loading the error analytics data. Please try again."
-                    action={
-                        <Button onClick={handleRefresh} variant="outline">
-                            <ArrowClockwiseIcon size={16} weight="duotone" className="mr-2 h-4 w-4" />
-                            Retry
-                        </Button>
-                    }
-                />
+            <div className="p-3 sm:p-4 lg:p-6 max-w-[1600px] mx-auto">
+                <Card className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950 rounded-xl">
+                    <CardContent className="pt-6">
+                        <div className="flex flex-col items-center text-center space-y-3">
+                            <div className="p-3 rounded-full bg-destructive/10 border border-destructive/20">
+                                <BugIcon size={16} weight="duotone" className="h-6 w-6 text-destructive" />
+                            </div>
+                            <div>
+                                <h4 className="font-semibold text-destructive">Error loading error data</h4>
+                                <p className="text-destructive/80 text-sm mt-1">
+                                    There was an issue loading your error analytics. Please try refreshing the page.
+                                </p>
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleRefresh}
+                                className="gap-2 rounded-lg"
+                            >
+                                <ArrowClockwiseIcon size={16} weight="fill" className="h-4 w-4" />
+                                Retry
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
         );
     }
 
     return (
-        <div className="p-6 space-y-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => router.back()}
-                        className="h-8 w-8 p-0"
-                    >
-                        <ArrowLeftIcon size={16} weight="duotone" className="h-4 w-4" />
-                    </Button>
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight">Error Analytics</h1>
-                        <p className="text-muted-foreground">Monitor and analyze application errors</p>
-                    </div>
-                </div>
-                <div className="flex items-center gap-3">
-                    {activeFilters.length > 0 && (
-                        <div className="flex items-center gap-2">
-                            <div className="flex flex-wrap gap-1">
-                                {activeFilters.map((filter, index) => (
-                                    <Badge key={index} variant="secondary" className="text-xs">
-                                        {filter.field}: {filter.value}
-                                        <button
-                                            onClick={() => removeFilter(filter)}
-                                            className="ml-1 hover:bg-muted-foreground/20 rounded-full p-0.5"
-                                        >
-                                            <XIcon size={12} className="h-3 w-3" />
-                                        </button>
-                                    </Badge>
-                                ))}
+        <div className="p-3 sm:p-4 lg:p-6 max-w-[1600px] mx-auto space-y-6">
+            <div className="border-b bg-muted/20 rounded py-2 -mx-3 sm:-mx-4 lg:-mx-6 px-3 sm:px-4 lg:px-6 pb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                            <div className="p-3 rounded-xl bg-primary/10 border border-primary/20">
+                                <BugIcon size={16} weight="duotone" className="h-6 w-6 text-primary" />
                             </div>
-                            <Button variant="ghost" size="sm" onClick={clearFilters} className="h-7 px-2 text-xs">
-                                Clear all
-                            </Button>
+                            <div>
+                                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Error Analytics</h1>
+                                <p className="text-muted-foreground text-sm sm:text-base">
+                                    Monitor and analyze application errors to improve user experience
+                                </p>
+                            </div>
                         </div>
-                    )}
+                    </div>
                     <Button
                         onClick={handleRefresh}
-                        disabled={isLoading || isRefreshing}
+                        disabled={isRefreshing}
                         variant="outline"
-                        size="sm"
+                        size="default"
+                        className="gap-2 rounded-lg px-4 py-2 font-medium border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all duration-300"
                     >
-                        <ArrowClockwiseIcon size={16} weight="duotone" className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                        Refresh
+                        <ArrowClockwiseIcon size={16} weight="fill" className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        Refresh Data
                     </Button>
                 </div>
             </div>

@@ -16,8 +16,9 @@ export const processCountryData = (data: any[]) =>
     country: item.country === 'IL' ? 'PS' : item.country
   }))
 
-export const processPageData = (data: any[]) => 
-  data.map(item => {
+export const processPageData = (data: any[]) => {
+  // First, clean and process each item
+  const processedData = data.map(item => {
     let cleanPath = item.name || item.path || '/';
     
     try {
@@ -56,7 +57,36 @@ export const processPageData = (data: any[]) =>
       name: cleanPath,
       path: cleanPath
     };
-  })
+  });
+
+  // Now aggregate duplicates
+  const pathMap = new Map();
+  
+  processedData.forEach(item => {
+    const path = item.path;
+    
+    if (pathMap.has(path)) {
+      // Merge with existing entry
+      const existing = pathMap.get(path);
+      existing.pageviews = (existing.pageviews || 0) + (item.pageviews || 0);
+      existing.visitors = (existing.visitors || 0) + (item.visitors || 0);
+      existing.sessions = (existing.sessions || 0) + (item.sessions || 0);
+      existing.entries = (existing.entries || 0) + (item.entries || 0);
+      existing.exits = (existing.exits || 0) + (item.exits || 0);
+    } else {
+      // Create new entry
+      pathMap.set(path, { ...item });
+    }
+  });
+  
+  // Convert map back to array and sort by pageviews (or entries/exits depending on data)
+  return Array.from(pathMap.values())
+    .sort((a, b) => {
+      const aValue = a.pageviews || a.entries || a.exits || 0;
+      const bValue = b.pageviews || b.entries || b.exits || 0;
+      return bValue - aValue;
+    });
+}
 
 export const processCustomEventsData = (data: any[]) => 
   data.map(item => {

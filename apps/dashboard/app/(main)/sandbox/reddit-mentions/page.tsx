@@ -11,26 +11,23 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-    Loader2,
-    RefreshCw,
-    ExternalLink,
-    Search,
-    TrendingUp,
-    MessageSquare,
-    ArrowUp,
-    Clock,
-    User,
-    AlertCircle,
-    Wifi,
-    WifiOff,
+    ChatCircleIcon,
+    ArrowUpIcon,
+    ClockIcon,
+    UserIcon,
+    WarningCircleIcon,
+    WifiHighIcon,
+    WifiLowIcon,
     PlusIcon,
     X,
     Download,
-    BarChart3,
-    Filter,
-    History,
-    Settings
-} from "lucide-react";
+    MagnifyingGlassIcon,
+    ArrowClockwiseIcon,
+    FunnelIcon,
+    TrendUpIcon,
+    ArrowSquareOutIcon,
+    CircleNotchIcon,
+} from "@phosphor-icons/react";
 import { useRedditMentions, useRefreshRedditMentions, useRedditHealth, useExportRedditData, useSearchHistory, type RedditPost, type SearchFilters } from "./hooks/use-reddit-mentions";
 import { cn } from "@/lib/utils";
 
@@ -95,10 +92,10 @@ function EmptyState({ onRefresh }: { onRefresh: () => void }) {
         <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
             <div className="relative mb-8">
                 <div className="rounded-full bg-muted/50 p-8 border">
-                    <Search className="h-16 w-16 text-muted-foreground" />
+                    <MagnifyingGlassIcon size={64} weight="duotone" className="h-16 w-16 text-muted-foreground" />
                 </div>
                 <div className="absolute -top-2 -right-2 p-2 rounded-full bg-primary/10 border border-primary/20">
-                    <MessageSquare className="h-6 w-6 text-primary" />
+                    <ChatCircleIcon size={24} weight="fill" className="h-6 w-6 text-primary" />
                 </div>
             </div>
 
@@ -108,7 +105,7 @@ function EmptyState({ onRefresh }: { onRefresh: () => void }) {
             </p>
 
             <Button onClick={onRefresh} variant="outline" size="lg">
-                <RefreshCw className="h-4 w-4 mr-2" />
+                <ArrowClockwiseIcon size={16} weight="fill" className="h-4 w-4 mr-2" />
                 Refresh Data
             </Button>
         </div>
@@ -119,7 +116,7 @@ function ErrorState({ error, onRetry }: { error: string; onRetry: () => void }) 
     return (
         <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
             <div className="rounded-full bg-red-50 p-8 border border-red-200 mb-8">
-                <AlertCircle className="h-16 w-16 text-red-500" />
+                <WarningCircleIcon size={64} weight="fill" className="h-16 w-16 text-red-500" />
             </div>
             <h3 className="text-2xl font-bold mb-4">Something went wrong</h3>
             <p className="text-muted-foreground mb-8 max-w-md leading-relaxed">
@@ -217,7 +214,7 @@ export default function RedditMentionsPage() {
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-3">
                             <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
-                                <MessageSquare className="h-5 w-5 text-primary" />
+                                <ChatCircleIcon size={20} weight="fill" className="h-5 w-5 text-primary" />
                             </div>
                             <div>
                                 <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground truncate">
@@ -239,9 +236,9 @@ export default function RedditMentionsPage() {
                                 : "bg-red-50 text-red-700 border-red-200"
                         )}>
                             {isApiHealthy ? (
-                                <Wifi className="h-3 w-3" />
+                                <WifiHighIcon size={16} className="h-4 w-4" />
                             ) : (
-                                <WifiOff className="h-3 w-3" />
+                                <WifiLowIcon size={16} className="h-4 w-4" />
                             )}
                             <span>{isApiHealthy ? 'Connected' : 'Disconnected'}</span>
                         </div>
@@ -269,9 +266,9 @@ export default function RedditMentionsPage() {
                             >
                                 <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
                                 {isRefreshing ? (
-                                    <Loader2 className="h-4 w-4 animate-spin relative z-10" />
+                                    <CircleNotchIcon size={16} weight="fill" className="h-4 w-4 animate-spin relative z-10" />
                                 ) : (
-                                    <RefreshCw className="h-4 w-4 relative z-10" />
+                                    <ArrowClockwiseIcon size={16} weight="fill" className="h-4 w-4 relative z-10" />
                                 )}
                                 <span className="relative z-10">
                                     {isRefreshing ? 'Refreshing...' : 'Refresh'}
@@ -287,7 +284,7 @@ export default function RedditMentionsPage() {
                 {/* Error Alert */}
                 {isError && (
                     <Alert variant="destructive" className="mb-6">
-                        <AlertCircle className="h-4 w-4" />
+                        <WarningCircleIcon size={16} weight="duotone" className="h-4 w-4" />
                         <AlertDescription>
                             {error?.message || 'Failed to fetch Reddit mentions. Please try again.'}
                         </AlertDescription>
@@ -338,7 +335,7 @@ export default function RedditMentionsPage() {
                                     variant="outline"
                                     disabled={keywords.length >= 10 || !newKeyword.trim()}
                                 >
-                                    <PlusIcon className="h-4 w-4" />
+                                    <PlusIcon size={16} className="h-4 w-4" />
                                 </Button>
                             </div>
 
@@ -373,7 +370,7 @@ export default function RedditMentionsPage() {
                         {/* Advanced Filters */}
                         <div className="space-y-4">
                             <div className="flex items-center gap-2">
-                                <Filter className="h-4 w-4" />
+                                <FunnelIcon size={16} weight="fill" className="h-4 w-4" />
                                 <Label className="text-sm font-medium">Advanced Filters</Label>
                             </div>
 
@@ -446,7 +443,7 @@ export default function RedditMentionsPage() {
                             <CardContent className="p-4">
                                 <div className="flex items-center gap-3">
                                     <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                                        <Search className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                                        <MagnifyingGlassIcon size={20} weight="fill" className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                                     </div>
                                     <div>
                                         <p className="text-sm font-medium text-muted-foreground">Total Mentions</p>
@@ -460,7 +457,7 @@ export default function RedditMentionsPage() {
                             <CardContent className="p-4">
                                 <div className="flex items-center gap-3">
                                     <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                                        <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />
+                                        <TrendUpIcon size={20} weight="fill" className="h-5 w-5 text-green-600 dark:text-green-400" />
                                     </div>
                                     <div>
                                         <p className="text-sm font-medium text-muted-foreground">Avg Score</p>
@@ -474,7 +471,7 @@ export default function RedditMentionsPage() {
                             <CardContent className="p-4">
                                 <div className="flex items-center gap-3">
                                     <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
-                                        <MessageSquare className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                                        <ChatCircleIcon size={20} weight="fill" className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                                     </div>
                                     <div>
                                         <p className="text-sm font-medium text-muted-foreground">Top Subreddit</p>
@@ -488,7 +485,7 @@ export default function RedditMentionsPage() {
                             <CardContent className="p-4">
                                 <div className="flex items-center gap-3">
                                     <div className="p-2 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
-                                        <Clock className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                                        <ClockIcon size={20} weight="fill" className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                                     </div>
                                     <div>
                                         <p className="text-sm font-medium text-muted-foreground">Recent</p>
@@ -547,22 +544,22 @@ export default function RedditMentionsPage() {
                                                         </h3>
                                                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                                             <div className="flex items-center gap-1">
-                                                                <MessageSquare className="h-4 w-4" />
+                                                                <ChatCircleIcon size={16} weight="fill" className="h-4 w-4" />
                                                                 <span className="font-medium">r/{post.subreddit}</span>
                                                             </div>
                                                             <div className="flex items-center gap-1">
-                                                                <User className="h-4 w-4" />
+                                                                <UserIcon size={16} weight="fill" className="h-4 w-4" />
                                                                 <span>u/{post.author}</span>
                                                             </div>
                                                             <div className="flex items-center gap-1">
-                                                                <Clock className="h-4 w-4" />
+                                                                <ClockIcon size={16} weight="fill" className="h-4 w-4" />
                                                                 <span>{formatTimeAgo(post.created_utc)}</span>
                                                             </div>
                                                         </div>
                                                     </div>
                                                     <Button variant="ghost" size="sm" asChild>
                                                         <a href={`https://reddit.com${post.permalink}`} target="_blank" rel="noopener noreferrer">
-                                                            <ExternalLink className="h-4 w-4" />
+                                                            <ArrowSquareOutIcon size={16} weight="fill" className="h-4 w-4" />
                                                         </a>
                                                     </Button>
                                                 </div>
@@ -582,11 +579,11 @@ export default function RedditMentionsPage() {
 
                                                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                                         <div className="flex items-center gap-1">
-                                                            <ArrowUp className="h-4 w-4" />
+                                                            <ArrowUpIcon size={16} weight="fill" className="h-4 w-4" />
                                                             <span className="font-medium">{post.score}</span>
                                                         </div>
                                                         <div className="flex items-center gap-1">
-                                                            <MessageSquare className="h-4 w-4" />
+                                                            <ChatCircleIcon size={16} weight="fill" className="h-4 w-4" />
                                                             <span>{post.num_comments}</span>
                                                         </div>
                                                     </div>

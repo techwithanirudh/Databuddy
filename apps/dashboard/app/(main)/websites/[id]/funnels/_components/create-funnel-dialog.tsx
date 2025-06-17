@@ -176,7 +176,7 @@ export function CreateFunnelDialog({ isOpen, onClose, onSubmit, isCreating }: Cr
                             onClick={addStep}
                             disabled={formData.steps.length >= 10}
                         >
-                            <PlusIcon size={16} weight="fill" className="h-4 w-4 mr-2 group-hover:rotate-90 transition-transform duration-300" />
+                            <PlusIcon size={16} className="h-4 w-4 mr-2 group-hover:rotate-90 transition-transform duration-300" />
                             Add Step
                         </Button>
                     </div>

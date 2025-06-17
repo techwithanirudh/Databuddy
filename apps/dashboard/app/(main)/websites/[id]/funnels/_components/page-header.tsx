@@ -57,7 +57,7 @@ export function PageHeader({
                             className="gap-2 rounded-lg px-4 py-2 font-medium bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary transition-all duration-300 group relative overflow-hidden"
                         >
                             <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-                            <PlusIcon size={16} weight="fill" className="h-4 w-4 group-hover:rotate-90 transition-transform duration-300 relative z-10" />
+                            <PlusIcon size={16} className="h-4 w-4 group-hover:rotate-90 transition-transform duration-300 relative z-10" />
                             <span className="relative z-10">Create Funnel</span>
                         </Button>
                     </div>

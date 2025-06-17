@@ -18,7 +18,7 @@ export function EmptyState({ onCreateFunnel }: EmptyStateProps) {
                         <TargetIcon size={16} weight="duotone" className="h-16 w-16 text-primary" />
                     </div>
                     <div className="absolute -top-2 -right-2 p-2 rounded-full bg-background border-2 border-primary/20 shadow-sm animate-pulse">
-                        <PlusIcon size={16} weight="fill" className="h-6 w-6 text-primary" />
+                        <PlusIcon size={16} className="h-6 w-6 text-primary" />
                     </div>
                 </div>
                 <div className="text-center space-y-4 max-w-md">
@@ -37,7 +37,7 @@ export function EmptyState({ onCreateFunnel }: EmptyStateProps) {
                             )}
                         >
                             <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-                            <PlusIcon size={16} weight="fill" className="h-5 w-5 group-hover:rotate-90 transition-transform duration-300 relative z-10" />
+                            <PlusIcon size={16} className="h-5 w-5 group-hover:rotate-90 transition-transform duration-300 relative z-10" />
                             <span className="relative z-10">Create Your First Funnel</span>
                         </Button>
                     </div>

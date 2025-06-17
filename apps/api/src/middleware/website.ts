@@ -36,6 +36,12 @@ export const websiteAuthHook = createMiddleware(async (c, next) => {
     }, 401);
   }
 
+  if (websiteId === 'OXmNQsViBT-FOS_wZCTHc') {
+    const website = await getWebsiteById(websiteId);
+    c.set('website', website);
+    return next();
+  }
+
   if (!user) {
     return c.json({
       success: false,

@@ -333,6 +333,33 @@ websitesRouter.get('/:id', async (c) => {
   const user = c.get('user');
   const id = c.req.param('id');
 
+  // Handle demo website access
+  if (id === 'OXmNQsViBT-FOS_wZCTHc') {
+    try {
+      const website = await db.query.websites.findFirst({
+        where: eq(websites.id, id)
+      });
+      
+      if (!website) {
+        return c.json({ 
+          success: false, 
+          error: "Website not found" 
+        }, 404);
+      }
+      
+      return c.json({
+        success: true,
+        data: website
+      });
+    } catch (error) {
+      logger.error('[Website API] Error fetching demo website:', { error });
+      return c.json({ 
+        success: false, 
+        error: "Failed to fetch website" 
+      }, 500);
+    }
+  }
+
   if (!user) {
     return c.json({ success: false, error: "Unauthorized" }, 401);
   }

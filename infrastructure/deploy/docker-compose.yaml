@@ -36,6 +36,8 @@ services:
     networks:
       - databuddy_ingress
       - databuddy_aqua
+    expose:
+      - 3000
 
   dashboard:
     image: "registry.databuddy.cc/dashboard:{{version}}"
@@ -54,6 +56,8 @@ services:
     networks:
       - databuddy_ingress
       - databuddy_aqua
+    expose:
+      - 3000
   
   basket:
     image: "registry.databuddy.cc/basket:{{version}}"
@@ -72,6 +76,8 @@ services:
     networks:
       - databuddy_ingress
       - databuddy_aqua
+    expose:
+      - 3000
 
 networks:
   databuddy_ingress:

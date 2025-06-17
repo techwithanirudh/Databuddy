@@ -28,6 +28,12 @@ export function NavigationSection({ title, items, pathname, currentWebsiteId }: 
             isActive = item.href === ""
               ? pathname === "/sandbox"
               : pathname === fullPath;
+          } else if (pathname.startsWith("/demo")) {
+            // Handle demo context
+            fullPath = item.href === "" ? `/demo/${currentWebsiteId}` : `/demo/${currentWebsiteId}${item.href}`;
+            isActive = item.href === ""
+              ? pathname === `/demo/${currentWebsiteId}`
+              : pathname === fullPath;
           } else {
             // Handle website context
             fullPath = `/websites/${currentWebsiteId}${item.href}`;

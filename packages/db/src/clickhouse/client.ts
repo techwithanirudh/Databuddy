@@ -9,6 +9,11 @@ export { createClient };
  */
 export const TABLE_NAMES = {
   events: 'analytics.events',
+  errors: 'analytics.errors',
+  web_vitals: 'analytics.web_vitals',
+  stripe_payment_intents: 'analytics.stripe_payment_intents',
+  stripe_charges: 'analytics.stripe_charges',
+  stripe_refunds: 'analytics.stripe_refunds',
 };
 
 const logger = console;

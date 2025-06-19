@@ -40,12 +40,48 @@ import {
 
 // Types
 interface TrendCalculation {
-  visitors?: number;
-  sessions?: number;
-  pageviews?: number;
-  bounce_rate?: number;
-  session_duration?: number;
-  pages_per_session?: number;
+  visitors?: {
+    change?: number;
+    current: number;
+    previous: number;
+    currentPeriod: { start: string; end: string };
+    previousPeriod: { start: string; end: string };
+  };
+  sessions?: {
+    change?: number;
+    current: number;
+    previous: number;
+    currentPeriod: { start: string; end: string };
+    previousPeriod: { start: string; end: string };
+  };
+  pageviews?: {
+    change?: number;
+    current: number;
+    previous: number;
+    currentPeriod: { start: string; end: string };
+    previousPeriod: { start: string; end: string };
+  };
+  bounce_rate?: {
+    change?: number;
+    current: number;
+    previous: number;
+    currentPeriod: { start: string; end: string };
+    previousPeriod: { start: string; end: string };
+  };
+  session_duration?: {
+    change?: number;
+    current: number;
+    previous: number;
+    currentPeriod: { start: string; end: string };
+    previousPeriod: { start: string; end: string };
+  };
+  pages_per_session?: {
+    change?: number;
+    current: number;
+    previous: number;
+    currentPeriod: { start: string; end: string };
+    previousPeriod: { start: string; end: string };
+  };
 }
 
 import { useTableTabs } from "@/lib/table-tabs";
@@ -406,7 +442,7 @@ export function WebsiteOverviewTab({
     sessions: 'purple-500'
   };
 
-  const calculateTrends = useMemo<TrendCalculation>(() => {
+  const calculateTrends = useMemo((): TrendCalculation => {
     if (!analytics.events_by_date?.length || analytics.events_by_date.length < 2) {
       return {};
     }
@@ -460,18 +496,37 @@ export function WebsiteOverviewTab({
 
     const canShowSessionBasedTrend = previousSumSessions >= MIN_PREVIOUS_SESSIONS_FOR_TREND;
 
+    // Get period start and end dates
+    const previousPeriodStart = previousPeriodData[0]?.date;
+    const previousPeriodEnd = previousPeriodData[previousPeriodData.length - 1]?.date;
+    const currentPeriodStart = currentPeriodData[0]?.date;
+    const currentPeriodEnd = currentPeriodData[currentPeriodData.length - 1]?.date;
+
+    const createDetailedTrend = (current: number, previous: number, minimumBase = 0) => {
+      const change = calculateTrendPercentage(current, previous, minimumBase);
+      if (change === undefined) return change;
+
+      return {
+        change,
+        current,
+        previous,
+        currentPeriod: { start: currentPeriodStart, end: currentPeriodEnd },
+        previousPeriod: { start: previousPeriodStart, end: previousPeriodEnd },
+      };
+    };
+
     return {
-      visitors: calculateTrendPercentage(currentSumVisitors, previousSumVisitors, MIN_PREVIOUS_VISITORS_FOR_TREND),
-      sessions: calculateTrendPercentage(currentSumSessions, previousSumSessions, MIN_PREVIOUS_SESSIONS_FOR_TREND),
-      pageviews: calculateTrendPercentage(currentSumPageviews, previousSumPageviews, MIN_PREVIOUS_PAGEVIEWS_FOR_TREND),
+      visitors: createDetailedTrend(currentSumVisitors, previousSumVisitors, MIN_PREVIOUS_VISITORS_FOR_TREND),
+      sessions: createDetailedTrend(currentSumSessions, previousSumSessions, MIN_PREVIOUS_SESSIONS_FOR_TREND),
+      pageviews: createDetailedTrend(currentSumPageviews, previousSumPageviews, MIN_PREVIOUS_PAGEVIEWS_FOR_TREND),
       pages_per_session: canShowSessionBasedTrend
-        ? calculateTrendPercentage(currentPagesPerSession, previousPagesPerSession)
+        ? createDetailedTrend(currentPagesPerSession, previousPagesPerSession)
         : undefined,
       bounce_rate: canShowSessionBasedTrend
-        ? calculateTrendPercentage(currentBounceRateAvg, previousBounceRateAvg)
+        ? createDetailedTrend(currentBounceRateAvg, previousBounceRateAvg)
         : undefined,
       session_duration: canShowSessionBasedTrend
-        ? calculateTrendPercentage(currentSessionDurationAvg, previousSessionDurationAvg)
+        ? createDetailedTrend(currentSessionDurationAvg, previousSessionDurationAvg)
         : undefined,
     };
   }, [analytics.events_by_date]);
@@ -790,6 +845,7 @@ export function WebsiteOverviewTab({
           chartData={miniChartData.pagesPerSession}
           showChart={true}
           id="pages-per-session-chart"
+          formatValue={(value) => value.toFixed(1)}
         />
         <StatCard
           title="BOUNCE RATE"
@@ -804,6 +860,7 @@ export function WebsiteOverviewTab({
           chartData={miniChartData.bounceRate}
           showChart={true}
           id="bounce-rate-chart"
+          formatValue={(value) => `${value.toFixed(1)}%`}
         />
         <StatCard
           title="SESSION DURATION"
@@ -817,6 +874,12 @@ export function WebsiteOverviewTab({
           chartData={miniChartData.sessionDuration}
           showChart={true}
           id="session-duration-chart"
+          formatValue={(value) => {
+            if (value < 60) return `${value.toFixed(1)}s`;
+            const minutes = Math.floor(value / 60);
+            const seconds = Math.round(value % 60);
+            return `${minutes}m ${seconds}s`;
+          }}
         />
       </div>
 

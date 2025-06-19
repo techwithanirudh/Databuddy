@@ -859,8 +859,7 @@ export function WebsiteOverviewTab({
           title="Traffic Sources"
           description="Referrers and campaign data"
           isLoading={isLoading}
-          initialPageSize={7}
-          minHeight={230}
+          minHeight={350}
         />
 
         <DataTable
@@ -868,8 +867,7 @@ export function WebsiteOverviewTab({
           title="Pages"
           description="Top pages and entry/exit points"
           isLoading={isLoading}
-          initialPageSize={7}
-          minHeight={230}
+          minHeight={350}
         />
       </div>
 

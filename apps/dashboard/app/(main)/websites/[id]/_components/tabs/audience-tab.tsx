@@ -666,8 +666,7 @@ export function WebsiteAudienceTab({
           title="Browser Versions"
           description="Expandable browser breakdown showing all versions per browser"
           isLoading={isLoading}
-          initialPageSize={8}
-          minHeight={200}
+          minHeight={350}
           showSearch={false}
           expandable={true}
           getSubRows={(row: any) => row.versions}
@@ -715,8 +714,7 @@ export function WebsiteAudienceTab({
           title="Connection Types"
           description="Visitors by network connection"
           isLoading={isLoading}
-          initialPageSize={8}
-          minHeight={200}
+          minHeight={350}
           showSearch={false}
         />
       </div>

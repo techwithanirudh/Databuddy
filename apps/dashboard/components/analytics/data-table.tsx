@@ -422,7 +422,7 @@ export function DataTable<TData extends { name: string | number }, TValue>(
               id={`tabpanel-${activeTab}`}
               aria-labelledby={`tab-${activeTab}`}
             >
-              <Table>
+              <Table className="table-fixed w-full">
                 <TableHeader>
                   {table.getHeaderGroups().map(headerGroup => (
                     <TableRow key={headerGroup.id} className="bg-muted/20 border-border/30 sticky top-0 z-10">
@@ -436,7 +436,11 @@ export function DataTable<TData extends { name: string | number }, TValue>(
                               ? 'cursor-pointer hover:text-foreground hover:bg-muted/30 transition-all duration-200 select-none group'
                               : 'select-none'
                           )}
-                          style={{ width: header.getSize() !== 150 ? header.getSize() : undefined }}
+                          style={{
+                            width: header.getSize() !== 150 ? `${Math.min(header.getSize(), 300)}px` : undefined,
+                            maxWidth: '300px',
+                            minWidth: '80px'
+                          }}
                           onClick={header.column.getToggleSortingHandler()}
                           tabIndex={header.column.getCanSort() ? 0 : -1}
                           role={header.column.getCanSort() ? "button" : undefined}
@@ -513,7 +517,11 @@ export function DataTable<TData extends { name: string | number }, TValue>(
                                 cellIndex === 0 && "font-semibold text-foreground",
                                 (cell.column.columnDef.meta as any)?.className
                               )}
-                              style={{ width: cell.column.getSize() !== 150 ? cell.column.getSize() : undefined }}
+                              style={{
+                                width: cell.column.getSize() !== 150 ? `${Math.min(cell.column.getSize(), 300)}px` : undefined,
+                                maxWidth: '300px',
+                                minWidth: '80px'
+                              }}
                             >
                               <div className="flex items-center gap-2">
                                 {cellIndex === 0 && hasSubRows && (
@@ -533,8 +541,10 @@ export function DataTable<TData extends { name: string | number }, TValue>(
                                     )}
                                   </button>
                                 )}
-                                <div className="truncate flex-1">
-                                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                <div className="truncate flex-1 overflow-hidden">
+                                  <div className="truncate">
+                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                  </div>
                                 </div>
                               </div>
                             </TableCell>
@@ -561,7 +571,11 @@ export function DataTable<TData extends { name: string | number }, TValue>(
                                     "py-2 text-sm text-muted-foreground",
                                     cellIndex === 0 ? "pl-8" : "px-3"
                                   )}
-                                  style={{ width: cell.column.getSize() !== 150 ? cell.column.getSize() : undefined }}
+                                  style={{
+                                    width: cell.column.getSize() !== 150 ? `${Math.min(cell.column.getSize(), 300)}px` : undefined,
+                                    maxWidth: '300px',
+                                    minWidth: '80px'
+                                  }}
                                 >
                                   <div className="truncate">
                                     {cellIndex === 0 ? (

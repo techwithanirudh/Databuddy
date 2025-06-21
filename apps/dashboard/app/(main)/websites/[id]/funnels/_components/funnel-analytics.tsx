@@ -1,9 +1,6 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { StatCard } from "@/components/analytics/stat-card";
-import { ClosableAlert } from "@/components/ui/closable-alert";
 import {
     ArrowClockwiseIcon,
     TrendDownIcon,
@@ -11,8 +8,6 @@ import {
     TargetIcon,
     ClockIcon,
     ChartBarIcon,
-    WarningIcon,
-    CheckCircleIcon
 } from "@phosphor-icons/react";
 import { FunnelFlow } from "./funnel-flow";
 
@@ -28,7 +23,6 @@ interface FunnelAnalyticsProps {
     error: Error | null;
     data: any;
     summaryStats: SummaryStats;
-    funnelId: string;
     onRetry: () => void;
     formatCompletionTime: (seconds: number) => string;
 }
@@ -38,7 +32,6 @@ export function FunnelAnalytics({
     error,
     data,
     summaryStats,
-    funnelId,
     onRetry,
     formatCompletionTime
 }: FunnelAnalyticsProps) {

@@ -354,7 +354,6 @@ export default function FunnelsPage() {
                                         error={selectedReferrer === "all" ? analyticsError : referrerAnalyticsError}
                                         data={currentAnalyticsData}
                                         summaryStats={summaryStats}
-                                        funnelId={funnel.id}
                                         onRetry={selectedReferrer === "all" ? refetchAnalytics : refetchReferrerAnalytics}
                                         formatCompletionTime={formatCompletionTime}
                                     />

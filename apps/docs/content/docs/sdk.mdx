@@ -41,7 +41,7 @@ No installation needed - load directly from CDN:
 <script 
   src="https://app.databuddy.cc/databuddy.js"
   data-client-id="your-client-id"
-  defer
+  async
 ></script>
 ```
 
@@ -91,7 +91,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     data-track-screen-views="true"  // Enabled by default, shown for clarity
     data-track-performance="true"  // Enabled by default, shown for clarity
     data-track-web-vitals="true"   // Recommended, but false by default
-    defer
+    async
   ></script>
 </body>
 </html>
@@ -371,7 +371,7 @@ When `trackAttributes` is set to `true`, the Databuddy SDK automatically tracks 
       src="https://app.databuddy.cc/databuddy.js"
       data-client-id="your-client-id"
       data-track-attributes="true"
-      defer
+      async
     ></script>
     ```
 
@@ -699,7 +699,7 @@ Once the Databuddy SDK is initialized (either via the `<Databuddy />` component 
 These methods allow you to send custom data, manage user sessions, and control SDK behavior dynamically.
 
 <Callout type="info">
-Ensure the SDK is fully loaded before calling these methods. If you're using the script tag with `defer`, place your custom calls in a script that also defers or executes after the Databuddy script has loaded.
+Ensure the SDK is fully loaded before calling these methods. If you're using the script tag with `async`, place your custom calls in a script that also asyncs or executes after the Databuddy script has loaded.
 </Callout>
 
 ---

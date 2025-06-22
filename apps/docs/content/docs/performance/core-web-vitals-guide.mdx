@@ -76,11 +76,11 @@ new PerformanceObserver((entryList) => {
 
 #### 3. Remove Render-Blocking Resources
 ```html
-<!-- Defer non-critical CSS -->
+<!-- async non-critical CSS -->
 <link rel="preload" href="styles.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
 
-<!-- Defer JavaScript -->
-<script src="script.js" defer></script>
+<!-- async JavaScript -->
+<script src="script.js" async></script>
 ```
 
 #### 4. Optimize Critical Rendering Path
@@ -373,7 +373,7 @@ Many analytics tools negatively impact Core Web Vitals:
 - [ ] Minimize JavaScript execution time
 - [ ] Implement code splitting
 - [ ] Use Web Workers for heavy tasks
-- [ ] Defer non-critical JavaScript
+- [ ] async non-critical JavaScript
 - [ ] Optimize third-party scripts
 - [ ] Remove unused JavaScript
 
@@ -405,7 +405,7 @@ Many analytics tools negatively impact Core Web Vitals:
 <!-- Load scripts asynchronously -->
 <script async src="https://example.com/script.js"></script>
 
-<!-- Or defer until after page load -->
+<!-- Or async until after page load -->
 <script>
 window.addEventListener('load', () => {
   const script = document.createElement('script');

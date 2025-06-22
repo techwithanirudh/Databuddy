@@ -94,12 +94,14 @@ export default function RevenuePage() {
                                     Set up your Stripe webhook to start tracking revenue across all your websites. This is a one-time setup that works for all your sites.
                                 </p>
                                 <div className="flex flex-col sm:flex-row gap-3">
-                                    <Button size="sm" className="gap-2">
+                                    <Button size="sm" className="gap-2" onClick={() => setActiveTab('settings')}>
                                         <LightningIcon size={16} weight="duotone" className="h-4 w-4" />
                                         Configure Stripe Integration
                                     </Button>
-                                    <Button size="sm" variant="outline">
-                                        View Setup Guide
+                                    <Button size="sm" variant="outline" asChild>
+                                        <Link href="https://docs.databuddy.cc/docs/Integrations/stripe" target="_blank" rel="noopener noreferrer">
+                                            View Setup Guide
+                                        </Link>
                                     </Button>
                                 </div>
                             </div>

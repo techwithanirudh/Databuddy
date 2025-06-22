@@ -263,7 +263,45 @@ ORDER BY (client_id, webhook_token, created, id)
 SETTINGS index_granularity = 8192
 `;
 
-// TypeScript interfaces for the specialized tables
+const CREATE_BLOCKED_TRAFFIC_TABLE = `
+CREATE TABLE IF NOT EXISTS ${ANALYTICS_DATABASE}.blocked_traffic (
+  id UUID,
+  client_id String,
+  timestamp DateTime64(3, 'UTC'),
+  
+  path Nullable(String),
+  url Nullable(String),
+  referrer Nullable(String),
+  method LowCardinality(String) DEFAULT 'POST',
+  origin Nullable(String),
+  
+  ip String,
+  user_agent Nullable(String),
+  accept_header Nullable(String),
+  language Nullable(String),
+  
+  block_reason LowCardinality(String),
+  block_category LowCardinality(String),
+  bot_name Nullable(String),
+  
+  country Nullable(String),
+  region Nullable(String),
+  browser_name Nullable(String),
+  browser_version Nullable(String),
+  os_name Nullable(String),
+  os_version Nullable(String),
+  device_type Nullable(String),
+  
+  payload_size Nullable(UInt32),
+  
+  created_at DateTime64(3, 'UTC') DEFAULT now()
+) ENGINE = MergeTree()
+PARTITION BY toYYYYMM(timestamp)
+ORDER BY (timestamp, client_id, id)
+TTL toDateTime(timestamp) + INTERVAL 6 MONTH
+SETTINGS index_granularity = 8192
+`;
+
 export interface ErrorEvent {
   id: string;
   client_id: string;
@@ -373,6 +411,33 @@ export interface StripeRefund {
   payment_intent_id?: string;
   metadata: Record<string, any>;
   session_id?: string;
+}
+
+export interface BlockedTraffic {
+  id: string;
+  client_id?: string;
+  timestamp: number;
+  path?: string;
+  url?: string;
+  referrer?: string;
+  method: string;
+  origin?: string;
+  ip: string;
+  user_agent?: string;
+  accept_header?: string;
+  language?: string;
+  block_reason: string;
+  block_category: string;
+  bot_name?: string;
+  country?: string;
+  region?: string;
+  browser_name?: string;
+  browser_version?: string;
+  os_name?: string;
+  os_version?: string;
+  device_type?: string;
+  payload_size?: number;
+  created_at: number;
 }
 
 // TypeScript interface that matches the ClickHouse schema
@@ -500,6 +565,7 @@ export async function initClickHouseSchema() {
       { name: 'stripe_payment_intents', query: CREATE_STRIPE_PAYMENT_INTENTS_TABLE },
       { name: 'stripe_charges', query: CREATE_STRIPE_CHARGES_TABLE },
       { name: 'stripe_refunds', query: CREATE_STRIPE_REFUNDS_TABLE },
+      { name: 'blocked_traffic', query: CREATE_BLOCKED_TRAFFIC_TABLE },
     ];
     
     for (const table of tables) {

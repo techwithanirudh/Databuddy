@@ -1,5 +1,5 @@
 import { Elysia } from 'elysia'
-import { AnalyticsEvent, ErrorEvent, WebVitalsEvent, clickHouse } from '@databuddy/db'
+import { AnalyticsEvent, ErrorEvent, WebVitalsEvent, BlockedTraffic, clickHouse } from '@databuddy/db'
 import { createHash, randomUUID } from 'node:crypto'
 import { getGeo, extractIpFromRequest } from '../utils/ip-geo'
 import { parseUserAgent } from '../utils/user-agent'
@@ -32,26 +32,46 @@ function saltAnonymousId(anonymousId: string, salt: string): string {
 }
 
 async function validateRequest(body: any, query: any, request: Request) {
+  // Check payload size first
   if (!validatePayloadSize(body, VALIDATION_LIMITS.PAYLOAD_MAX_SIZE)) {
+    await logBlockedTraffic(request, body, query, 'payload_too_large', 'Validation Error')
     return { error: { status: 'error', message: 'Payload too large' } }
   }
   
+  // Check client ID
   const clientId = sanitizeString(query.client_id, VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH)
-  if (!clientId) return { error: { status: 'error', message: 'Missing client ID' } }
+  if (!clientId) {
+    await logBlockedTraffic(request, body, query, 'missing_client_id', 'Validation Error')
+    return { error: { status: 'error', message: 'Missing client ID' } }
+  }
   
+  // Check website validity
   const website = await getWebsiteById(clientId)
   if (!website || website.status !== 'ACTIVE') {
+    await logBlockedTraffic(request, body, query, 'invalid_client_id', 'Validation Error', undefined, clientId)
     return { error: { status: 'error', message: 'Invalid or inactive client ID' } }
   }
   
+  // Check origin authorization
   const origin = request.headers.get('origin')
   if (origin && !isValidOrigin(origin, website.domain)) {
+    await logBlockedTraffic(request, body, query, 'origin_not_authorized', 'Security Check', undefined, clientId)
     return { error: { status: 'error', message: 'Origin not authorized' } }
   }
   
+  // Check for bots
   const userAgent = sanitizeString(request.headers.get('user-agent'), VALIDATION_LIMITS.STRING_MAX_LENGTH) || ''
   const botCheck = detectBot(userAgent, request)
   if (botCheck.isBot) {
+    await logBlockedTraffic(
+      request, 
+      body, 
+      query, 
+      botCheck.reason || 'unknown_bot', 
+      botCheck.category || 'Bot Detection',
+      botCheck.botName,
+      clientId
+    )
     return { error: { status: 'ignored' } }
   }
   
@@ -65,15 +85,51 @@ async function validateRequest(body: any, query: any, request: Request) {
   }
 }
 
-function detectBot(userAgent: string, request: Request): { isBot: boolean } {
+function detectBot(userAgent: string, request: Request): { 
+  isBot: boolean; 
+  reason?: string; 
+  category?: string; 
+  botName?: string 
+} {
   const ua = userAgent?.toLowerCase() || '';
   
-  const detectedBot = bots.find(bot => ua.includes(bot.regex));
-  if (detectedBot) return { isBot: true };
+  // Check for known bots
+  const detectedBot = bots.find(bot => ua.includes(bot.regex.toLowerCase()));
+  if (detectedBot) {
+    return { 
+      isBot: true, 
+      reason: 'known_bot_user_agent', 
+      category: 'Known Bot',
+      botName: detectedBot.name 
+    };
+  }
 
-  if (!userAgent) return { isBot: true };
-  if (!request.headers.get('accept')) return { isBot: true };
-  if (ua.length < 10) return { isBot: true };
+  // Missing user agent
+  if (!userAgent) {
+    return { 
+      isBot: true, 
+      reason: 'missing_user_agent', 
+      category: 'Missing Headers' 
+    };
+  }
+
+  // Missing accept header
+  if (!request.headers.get('accept')) {
+    return { 
+      isBot: true, 
+      reason: 'missing_accept_header', 
+      category: 'Missing Headers' 
+    };
+  }
+
+  // User agent too short
+  if (ua.length < 10) {
+    return { 
+      isBot: true, 
+      reason: 'user_agent_too_short', 
+      category: 'Suspicious Pattern' 
+    };
+  }
 
   return { isBot: false };
 }
@@ -248,6 +304,66 @@ async function checkDuplicate(eventId: string, eventType: string): Promise<boole
   const ttl = eventId.startsWith('exit_') ? 172800 : 86400
   await redis.setex(key, ttl, '1')
   return false
+}
+
+async function logBlockedTraffic(request: Request, body: any, query: any, blockReason: string, blockCategory: string, botName?: string, clientId?: string): Promise<void> {
+  try {
+    const ip = extractIpFromRequest(request)
+    const userAgent = sanitizeString(request.headers.get('user-agent'), VALIDATION_LIMITS.STRING_MAX_LENGTH) || ''
+    
+    // Try to get basic geo and user agent info even for blocked requests
+    const { anonymizedIP, country, region } = await getGeo(ip)
+    const { browserName, browserVersion, osName, osVersion, deviceType } = parseUserAgent(userAgent)
+    
+    const now = new Date().getTime()
+    
+    const blockedEvent: BlockedTraffic = {
+      id: randomUUID(),
+      client_id: clientId || null,
+      timestamp: now,
+      
+      // Request details
+      path: sanitizeString(body?.path, VALIDATION_LIMITS.STRING_MAX_LENGTH),
+      url: sanitizeString(body?.url || body?.href, VALIDATION_LIMITS.STRING_MAX_LENGTH),
+      referrer: sanitizeString(body?.referrer || request.headers.get('referer'), VALIDATION_LIMITS.STRING_MAX_LENGTH),
+      method: 'POST',
+      origin: sanitizeString(request.headers.get('origin'), VALIDATION_LIMITS.STRING_MAX_LENGTH),
+      
+      // Client information
+      ip: anonymizedIP || ip,
+      user_agent: userAgent || null,
+      accept_header: sanitizeString(request.headers.get('accept'), VALIDATION_LIMITS.STRING_MAX_LENGTH),
+      language: sanitizeString(request.headers.get('accept-language'), VALIDATION_LIMITS.STRING_MAX_LENGTH),
+      
+      // Blocking details
+      block_reason: blockReason,
+      block_category: blockCategory,
+      bot_name: botName || null,
+      
+      // Enriched data (when possible)
+      country: country || null,
+      region: region || null,
+      browser_name: browserName || null,
+      browser_version: browserVersion || null,
+      os_name: osName || null,
+      os_version: osVersion || null,
+      device_type: deviceType || null,
+      
+      // Payload size for size-related blocks
+      payload_size: blockReason === 'payload_too_large' ? JSON.stringify(body || {}).length : null,
+      
+      created_at: now
+    }
+
+    await clickHouse.insert({
+      table: 'analytics.blocked_traffic',
+      values: [blockedEvent],
+      format: 'JSONEachRow'
+    })
+  } catch (error) {
+    // Don't let logging errors break the main flow
+    console.error('Failed to log blocked traffic:', error)
+  }
 }
 
 const app = new Elysia()

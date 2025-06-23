@@ -632,4 +632,123 @@ export function useAutocompleteData(websiteId: string, options?: Partial<UseQuer
     isFetching: query.isFetching,
     getSuggestions
   };
+}
+
+// Hook for individual goal analytics (using goal-specific endpoint)
+export function useGoalAnalytics(
+  websiteId: string, 
+  goalId: string, 
+  dateRange: DateRange,
+  options?: Partial<UseQueryOptions<FunnelAnalyticsResponse>>
+) {
+  const queryKey = ['goal-analytics', websiteId, goalId, dateRange];
+  
+  const fetchData = useCallback(async ({ signal }: { signal?: AbortSignal }) => {
+    const params = buildParams(websiteId, dateRange);
+    const url = `${API_BASE_URL}/v1/funnels/${goalId}/goal-analytics?${params}`;
+    
+    const response = await fetch(url, {
+      credentials: 'include',
+      signal
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch goal analytics');
+    }
+    
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.error || 'Failed to fetch goal analytics');
+    }
+    
+    return data;
+  }, [websiteId, goalId, dateRange]);
+
+  return useQuery({
+    queryKey,
+    queryFn: fetchData,
+    enabled: options?.enabled !== false && !!websiteId && !!goalId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    ...options,
+  });
+}
+
+// Hook for bulk goal analytics (for displaying conversion rates on all goal cards)
+export function useBulkGoalAnalytics(
+  websiteId: string,
+  goalIds: string[],
+  dateRange: DateRange,
+  options?: Partial<UseQueryOptions<any>>
+) {
+  const queryKey = ['bulk-goal-analytics', websiteId, goalIds, dateRange];
+  
+  const fetchData = useCallback(async ({ signal }: { signal?: AbortSignal }) => {
+    if (!goalIds.length) return { goalAnalytics: [] };
+    
+    // Fetch all goal analytics in parallel
+    const promises = goalIds.map(async (goalId) => {
+      const params = buildParams(websiteId, dateRange);
+      const url = `${API_BASE_URL}/v1/funnels/${goalId}/goal-analytics?${params}`;
+      
+      try {
+        const response = await fetch(url, {
+          credentials: 'include',
+          signal
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch goal analytics');
+        }
+        
+        const data = await response.json();
+        
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to fetch goal analytics');
+        }
+        
+        const steps = data.data?.steps_analytics;
+        const step = steps?.[0]; // Only one step for goals
+        const totalUsers = step?.total_users || 0;
+        const completions = step?.users || 0;
+        const conversionRate = totalUsers > 0 ? (completions / totalUsers) * 100 : 0;
+        
+        return {
+          goalId,
+          conversionRate,
+          totalUsers,
+          completions,
+          error: null
+        };
+      } catch (error) {
+        return {
+          goalId,
+          conversionRate: 0,
+          totalUsers: 0,
+          completions: 0,
+          error: error as Error
+        };
+      }
+    });
+    
+    const results = await Promise.all(promises);
+    return { goalAnalytics: results };
+  }, [websiteId, goalIds, dateRange]);
+
+  const query = useQuery({
+    queryKey,
+    queryFn: fetchData,
+    enabled: !!websiteId && goalIds.length > 0,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    ...options,
+  });
+
+  return {
+    goalAnalytics: query.data?.goalAnalytics || [],
+    isLoading: query.isLoading,
+    error: query.error,
+    refetch: query.refetch
+  };
 } 

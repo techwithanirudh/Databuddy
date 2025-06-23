@@ -1105,4 +1105,183 @@ funnelRouter.get('/:funnel_id/analytics/referrer', async (c) => {
   }
 });
 
+// Get goal analytics (single-step conversion rate vs all site users)
+funnelRouter.get('/:id/goal-analytics', async (c) => {
+  try {
+    const website = c.get('website')
+    const funnelId = c.req.param('id')
+    const startDate = c.req.query('start_date') || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    const endDate = c.req.query('end_date') || new Date().toISOString().split('T')[0]
+    
+    // Get the funnel definition
+    const funnel = await db
+      .select()
+      .from(funnelDefinitions)
+      .where(and(
+        eq(funnelDefinitions.id, funnelId),
+        eq(funnelDefinitions.websiteId, website.id),
+        isNull(funnelDefinitions.deletedAt)
+      ))
+      .limit(1)
+
+    if (funnel.length === 0) {
+      return c.json({
+        success: false,
+        error: 'Goal not found'
+      }, 404)
+    }
+
+    const funnelData = funnel[0]
+    const steps = funnelData.steps as Array<{ type: string; target: string; name: string; conditions?: any }>
+    const filters = funnelData.filters as Array<{ field: string; operator: string; value: string | string[] }> || []
+
+    // For goals, we only care about the first (and only) step
+    const goalStep = steps[0]
+    if (!goalStep) {
+      return c.json({
+        success: false,
+        error: 'Invalid goal configuration'
+      }, 400)
+    }
+
+    // Build filter conditions
+    const buildFilterConditions = () => {
+      if (!filters || filters.length === 0) return '';
+      
+      const filterConditions = filters.map(filter => {
+        const field = filter.field.replace(/'/g, "''");
+        const value = Array.isArray(filter.value) ? filter.value : [filter.value];
+        
+        switch (filter.operator) {
+          case 'equals':
+            return `${field} = '${value[0].replace(/'/g, "''")}'`;
+          case 'contains':
+            return `${field} LIKE '%${value[0].replace(/'/g, "''")}%'`;
+          case 'not_equals':
+            return `${field} != '${value[0].replace(/'/g, "''")}'`;
+          case 'in':
+            return `${field} IN (${value.map(v => `'${v.replace(/'/g, "''")}'`).join(', ')})`;
+          case 'not_in':
+            return `${field} NOT IN (${value.map(v => `'${v.replace(/'/g, "''")}'`).join(', ')})`;
+          default:
+            return '';
+        }
+      }).filter(Boolean);
+      
+      return filterConditions.length > 0 ? ` AND ${filterConditions.join(' AND ')}` : '';
+    };
+
+    const filterConditions = buildFilterConditions();
+
+    // Build goal-specific where condition
+    let goalWhereCondition = '';
+    if (goalStep.type === 'PAGE_VIEW') {
+      const targetPath = goalStep.target.replace(/'/g, "''");
+      goalWhereCondition = `event_name = 'screen_view' AND (path = '${targetPath}' OR path LIKE '%${targetPath}%')`;
+    } else if (goalStep.type === 'EVENT') {
+      const eventName = goalStep.target.replace(/'/g, "''");
+      goalWhereCondition = `event_name = '${eventName}'`;
+    }
+
+    // Query to get total unique users (sessions) and goal completions
+    const analyticsQuery = `
+      WITH 
+      total_sessions AS (
+        SELECT COUNT(DISTINCT session_id) as total_users
+        FROM analytics.events
+        WHERE client_id = '${website.id}'
+          AND time >= parseDateTimeBestEffort('${startDate}')
+          AND time <= parseDateTimeBestEffort('${endDate} 23:59:59')${filterConditions}
+      ),
+      goal_sessions AS (
+        SELECT COUNT(DISTINCT session_id) as goal_users
+        FROM analytics.events
+        WHERE client_id = '${website.id}'
+          AND time >= parseDateTimeBestEffort('${startDate}')
+          AND time <= parseDateTimeBestEffort('${endDate} 23:59:59')
+          AND ${goalWhereCondition}${filterConditions}
+      )
+      SELECT 
+        total_sessions.total_users,
+        goal_sessions.goal_users,
+        CASE 
+          WHEN total_sessions.total_users > 0 
+          THEN ROUND((goal_sessions.goal_users * 100.0) / total_sessions.total_users, 2)
+          ELSE 0.0 
+        END as conversion_rate
+      FROM total_sessions, goal_sessions
+    `;
+
+    logger.info('Generated goal analytics query', {
+      funnel_id: funnelId,
+      website_id: website.id,
+      goal_type: goalStep.type,
+      goal_target: goalStep.target,
+      query: analyticsQuery
+    });
+
+    let results;
+    try {
+      results = await chQuery<{
+        total_users: number;
+        goal_users: number;
+        conversion_rate: number;
+      }>(analyticsQuery);
+    } catch (sqlError: any) {
+      logger.error('SQL query failed for goal analytics', {
+        funnel_id: funnelId,
+        website_id: website.id,
+        sql_error: sqlError.message,
+        query: analyticsQuery
+      });
+      throw new Error(`SQL query failed: ${sqlError.message}`);
+    }
+
+    const result = results[0] || { total_users: 0, goal_users: 0, conversion_rate: 0 };
+
+    // Format response to match funnel analytics structure
+    const goalAnalytics = {
+      overall_conversion_rate: result.conversion_rate,
+      total_users_entered: result.total_users,
+      total_users_completed: result.goal_users,
+      avg_completion_time: 0,
+      avg_completion_time_formatted: "0s",
+      biggest_dropoff_step: 1,
+      biggest_dropoff_rate: 0,
+      steps_analytics: [{
+        step_number: 1,
+        step_name: goalStep.name,
+        users: result.goal_users,
+        total_users: result.total_users,
+        conversion_rate: result.conversion_rate,
+        dropoffs: result.total_users - result.goal_users,
+        dropoff_rate: result.total_users > 0 ? 
+          Math.round(((result.total_users - result.goal_users) / result.total_users) * 100 * 100) / 100 : 0,
+        avg_time_to_complete: 0
+      }]
+    };
+
+    return c.json({
+      success: true,
+      data: goalAnalytics,
+      date_range: {
+        start_date: startDate,
+        end_date: endDate
+      }
+    });
+
+  } catch (error: any) {
+    logger.error('Failed to fetch goal analytics', {
+      error: error.message,
+      funnel_id: c.req.param('id'),
+      website_id: c.get('website')?.id
+    });
+    
+    return c.json({
+      success: false,
+      error: 'Failed to fetch goal analytics'
+    }, 500);
+  }
+});
+
 export default funnelRouter 

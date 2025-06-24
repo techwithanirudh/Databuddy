@@ -1,5 +1,5 @@
 import { betterAuth } from "better-auth";
-import { customSession, multiSession, twoFactor, emailOTP, magicLink } from "better-auth/plugins";
+import { customSession, multiSession, twoFactor, emailOTP, magicLink, organization } from "better-auth/plugins";
 import { getSessionCookie } from "better-auth/cookies";
 import { db, eq } from "@databuddy/db";
 import { user } from "@databuddy/db";
@@ -146,6 +146,7 @@ export const auth = betterAuth({
                 session
             };
         }),
+        organization()
     ]
 })
 

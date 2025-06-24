@@ -12,6 +12,7 @@ import { SandboxHeader } from "./navigation/sandbox-header";
 import { mainNavigation, websiteNavigation, sandboxNavigation, demoNavigation } from "./navigation/navigation-config";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
+import { OrganizationSelector } from "./organization-selector";
 
 const WebsiteList = dynamic(() => import("./navigation/website-list").then(mod => mod.WebsiteList), {
   ssr: false,
@@ -146,6 +147,9 @@ export function Sidebar() {
             ) : (
               // Main navigation
               <div className="space-y-4">
+                {/* Organization Selector */}
+                <OrganizationSelector />
+
                 {/* Main navigation sections */}
                 {mainNavigation.map((section) => (
                   <NavigationSection

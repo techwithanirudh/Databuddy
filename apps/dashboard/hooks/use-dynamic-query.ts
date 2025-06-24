@@ -329,19 +329,19 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 // Base params builder - following use-analytics.ts pattern
 function buildParams(
-  websiteId: string, 
-  dateRange?: DateRange, 
+  websiteId: string,
+  dateRange?: DateRange,
   additionalParams?: Record<string, string | number>
 ): URLSearchParams {
   const params = new URLSearchParams({
     website_id: websiteId,
     ...additionalParams
   });
-  
+
   if (dateRange?.start_date) {
     params.append('start_date', dateRange.start_date);
   }
-  
+
   if (dateRange?.end_date) {
     params.append('end_date', dateRange.end_date);
   }
@@ -349,10 +349,10 @@ function buildParams(
   if (dateRange?.granularity) {
     params.append('granularity', dateRange.granularity);
   }
-  
+
   // Add cache busting
   params.append('_t', Date.now().toString());
-  
+
   return params;
 }
 
@@ -366,22 +366,22 @@ async function fetchAnalyticsData<T extends ApiResponse>(
 ): Promise<T> {
   const params = buildParams(websiteId, dateRange, additionalParams);
   const url = `${API_BASE_URL}/v1${endpoint}?${params}`;
-  
+
   const response = await fetch(url, {
     credentials: 'include',
     signal
   });
-  
+
   if (!response.ok) {
     throw new Error(`Failed to fetch data from ${endpoint}`);
   }
-  
+
   const data = await response.json();
-  
+
   if (!data.success) {
     throw new Error(data.error || `Failed to fetch data from ${endpoint}`);
   }
-  
+
   return data;
 }
 
@@ -407,7 +407,7 @@ const defaultQueryOptions = {
  */
 function useUserTimezone(): string {
   const { preferences } = usePreferences();
-  
+
   // Get browser timezone as fallback
   const browserTimezone = useMemo(() => {
     try {
@@ -416,10 +416,10 @@ function useUserTimezone(): string {
       return 'UTC';
     }
   }, []);
-  
+
   // Return user's preferred timezone or browser timezone if 'auto'
   if (!preferences) return browserTimezone;
-  
+
   return preferences.timezone === 'auto' ? browserTimezone : preferences.timezone;
 }
 
@@ -434,29 +434,29 @@ async function fetchDynamicQuery(
   const timezone = userTimezone || 'UTC';
   const params = buildParams(websiteId, dateRange, { timezone });
   const url = `${API_BASE_URL}/v1/query?${params}`;
-  
+
   // Prepare the request body
-  const requestBody = Array.isArray(queryData) 
+  const requestBody = Array.isArray(queryData)
     ? queryData.map(query => ({
-        ...query,
-        startDate: dateRange.start_date,
-        endDate: dateRange.end_date,
-        timeZone: timezone,
-        limit: query.limit || 100,
-        page: query.page || 1,
-        filters: query.filters || [],
-        granularity: query.granularity || dateRange.granularity || 'daily',
-      }))
+      ...query,
+      startDate: dateRange.start_date,
+      endDate: dateRange.end_date,
+      timeZone: timezone,
+      limit: query.limit || 100,
+      page: query.page || 1,
+      filters: query.filters || [],
+      granularity: query.granularity || dateRange.granularity || 'daily',
+    }))
     : {
-        ...queryData,
-        startDate: dateRange.start_date,
-        endDate: dateRange.end_date,
-        timeZone: timezone,
-        limit: queryData.limit || 100,
-        page: queryData.page || 1,
-        filters: queryData.filters || [],
-        granularity: queryData.granularity || dateRange.granularity || 'daily',
-      };
+      ...queryData,
+      startDate: dateRange.start_date,
+      endDate: dateRange.end_date,
+      timeZone: timezone,
+      limit: queryData.limit || 100,
+      page: queryData.page || 1,
+      filters: queryData.filters || [],
+      granularity: queryData.granularity || dateRange.granularity || 'daily',
+    };
 
   const response = await fetch(url, {
     method: 'POST',
@@ -467,17 +467,17 @@ async function fetchDynamicQuery(
     signal,
     body: JSON.stringify(requestBody),
   });
-  
+
   if (!response.ok) {
     throw new Error(`Failed to fetch dynamic query data: ${response.statusText}`);
   }
-  
+
   const data = await response.json();
-  
+
   if (!data.success) {
     throw new Error(data.error || 'Failed to fetch dynamic query data');
   }
-  
+
   return data;
 }
 
@@ -491,7 +491,7 @@ export function useDynamicQuery<T extends (keyof ParameterDataMap)[]>(
   options?: Partial<UseQueryOptions<DynamicQueryResponse>>
 ) {
   const userTimezone = useUserTimezone();
-  
+
   const fetchData = useCallback(async ({ signal }: { signal?: AbortSignal }) => {
     const result = await fetchDynamicQuery(websiteId, dateRange, queryData, signal, userTimezone);
     // Ensure we return a single query response (not batch)
@@ -545,7 +545,7 @@ export function useBatchDynamicQuery(
   options?: Partial<UseQueryOptions<BatchQueryResponse>>
 ) {
   const userTimezone = useUserTimezone();
-  
+
   const fetchData = useCallback(async ({ signal }: { signal?: AbortSignal }) => {
     const result = await fetchDynamicQuery(websiteId, dateRange, queries, signal, userTimezone);
     // Ensure we return a batch query response
@@ -1057,7 +1057,7 @@ export function useJourneyAnalytics(
   // Calculate summary statistics
   const summaryStats = useMemo(() => {
     const { transitions, dropoffs, paths } = journeyData;
-    
+
     const totalTransitions = transitions.reduce((sum, item) => sum + item.transitions, 0);
     const totalUsers = transitions.reduce((sum, item) => sum + item.users, 0);
     const avgStepInJourney = transitions.length > 0
@@ -1164,16 +1164,16 @@ export function useRevenueAnalytics(
   // Calculate additional summary statistics
   const summaryStats = useMemo(() => {
     const { summary, trends, recentTransactions, recentRefunds } = revenueData;
-    
+
     // Calculate growth from trends if available
-    const revenueGrowth = trends.length >= 2 ? 
+    const revenueGrowth = trends.length >= 2 ?
       ((trends[0]?.revenue || 0) - (trends[1]?.revenue || 0)) / (trends[1]?.revenue || 1) * 100 : 0;
-    
-    const transactionGrowth = trends.length >= 2 ? 
+
+    const transactionGrowth = trends.length >= 2 ?
       ((trends[0]?.transactions || 0) - (trends[1]?.transactions || 0)) / (trends[1]?.transactions || 1) * 100 : 0;
 
     // Calculate refund rate
-    const refundRate = summary.total_transactions > 0 ? 
+    const refundRate = summary.total_transactions > 0 ?
       (summary.total_refunds / summary.total_transactions) * 100 : 0;
 
     return {

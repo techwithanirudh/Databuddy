@@ -7,6 +7,7 @@ import { nanoid } from 'nanoid';
 import { cacheable } from '@databuddy/redis';
 import type { AppVariables } from '../../types';
 import { z } from 'zod';
+import { websiteAuthHook } from '../../middleware/website';
 
 type WebsitesContext = {
   Variables: AppVariables & {
@@ -360,71 +361,17 @@ websitesRouter.get('/project/:projectId', async (c) => {
 });
 
 // GET BY ID - GET /websites/:id
-websitesRouter.get('/:id', async (c) => {
-  const user = c.get('user');
-  const id = c.req.param('id');
-
-  // Handle demo website access
-  if (id === 'OXmNQsViBT-FOS_wZCTHc') {
-    try {
-      const website = await db.query.websites.findFirst({
-        where: eq(websites.id, id)
-      });
-
-      if (!website) {
-        return c.json({
-          success: false,
-          error: "Website not found"
-        }, 404);
-      }
-
-      return c.json({
-        success: true,
-        data: website
-      });
-    } catch (error) {
-      logger.error('[Website API] Error fetching demo website:', { error });
-      return c.json({
-        success: false,
-        error: "Failed to fetch website"
-      }, 500);
-    }
-  }
-
-  if (!user) {
-    return c.json({ success: false, error: "Unauthorized" }, 401);
-  }
-
-  try {
-    if (user.role === 'ADMIN') {
-      const website = await db.query.websites.findFirst({
-        where: eq(websites.id, id)
-      });
-      return c.json({
-        success: true,
-        data: website
-      });
-    }
-
-    const projectIds = await getUserProjectIds(user.id);
-
-    const website = await db.query.websites.findFirst({
-      where: or(
-        and(
-          eq(websites.id, id),
-          eq(websites.userId, user.id)
-        ),
-        and(
-          eq(websites.id, id),
-          projectIds.length > 0 ? inArray(websites.projectId, projectIds) : sql`FALSE`
-        )
-      )
-    });
+websitesRouter.get(
+  '/:id',
+  websiteAuthHook,
+  async (c) => {
+    const website = c.get('website');
 
     if (!website) {
+      // This should technically be handled by the middleware, but as a safeguard
       return c.json({
         success: false,
-        error: "Website not found"
+        error: "Website not found or you do not have permission to access it."
       }, 404);
     }
 
@@ -432,14 +379,8 @@ websitesRouter.get('/:id', async (c) => {
       success: true,
       data: website
     });
-  } catch (error) {
-    logger.error('[Website API] Error fetching website:', { error });
-    return c.json({
-      success: false,
-      error: "Failed to fetch website"
-    }, 500);
   }
-});
+);
 
 // DELETE - DELETE /websites/:id
 websitesRouter.delete('/:id', async (c) => {

@@ -11,6 +11,7 @@ import { parseReferrer } from '../../utils/referrer'
 interface Website {
   id: string;
   domain: string;
+  organizationId: string | null;
 }
 
 type FunnelContext = {

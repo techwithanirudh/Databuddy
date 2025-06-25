@@ -3,35 +3,33 @@ import { auth } from "./betterauth"
 import { logger } from '../lib/logger';
 import { db } from "@databuddy/db";
 import { eq, and } from "drizzle-orm";
-import { websites, projects } from "@databuddy/db";
+import { websites, projects, member } from "@databuddy/db";
 import { cacheable } from "@databuddy/redis";
 
 // Helper function to verify website access with caching
 export const verifyWebsiteAccess = cacheable(
   async (userId: string, websiteId: string, role: string): Promise<boolean> => {
     try {
-      // First check if user owns the website
       const website = await db.query.websites.findFirst({
-        where: eq(websites.id, websiteId)
+        where: eq(websites.id, websiteId),
       });
 
       if (!website) return false;
       if (role === 'ADMIN') return true;
-      if (website.userId === userId) return true;
 
-      // Then check if user has access through project access
-      if (website.projectId) {
-        const access = await db.query.projects.findFirst({
+      if (website.organizationId) {
+        // Organization website. Check if user is a member of that organization.
+        const membership = await db.query.member.findFirst({
           where: and(
-            eq(projects.id, website.projectId),
-            eq(projects.organizationId, userId)
-          )
+            eq(member.userId, userId),
+            eq(member.organizationId, website.organizationId)
+          ),
         });
-
-        return !!access;
+        return !!membership;
+      } else {
+        // Personal website. Check for direct ownership.
+        return website.userId === userId;
       }
-
-      return false;
     } catch (error) {
       logger.error('Error verifying website access:', { error, userId, websiteId });
       return false;
@@ -80,20 +78,6 @@ export const authMiddleware = createMiddleware(async (c, next) => {
     // Set context
     c.set('user', session.user);
     c.set('session', session);
-
-    if (path.startsWith('/analytics/') && session) {
-      const websiteId = c.req.query('website_id');
-      if (websiteId) {
-        const hasAccess = await verifyWebsiteAccess(session.user.id, websiteId, session.user.role);
-        if (!hasAccess) {
-          return c.json({
-            success: false,
-            error: 'Unauthorized access to website',
-            code: 'UNAUTHORIZED_WEBSITE_ACCESS'
-          }, 403);
-        }
-      }
-    }
 
     return next();
   } catch (error) {

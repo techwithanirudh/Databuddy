@@ -4,7 +4,7 @@ import { authMiddleware } from '../../middleware/auth'
 import { websiteAuthHook } from '../../middleware/website'
 import { timezoneMiddleware } from '../../middleware/timezone'
 import { logger } from '../../lib/logger'
-import { 
+import {
   PARAMETER_BUILDERS,
   PARAMETER_CATEGORIES,
   executeBatchQueries,
@@ -29,12 +29,12 @@ queryRouter.post(
       }
 
       const queries = Array.isArray(requestData) ? requestData : [requestData]
-      
+
       const queriesWithIds = queries.map((query, index) => ({
         ...query,
         id: query.id || `query_${index}`
       }))
-      
+
       const results = await executeBatchQueries(queriesWithIds, website.id, website.domain)
 
       if (!Array.isArray(requestData)) {
@@ -58,9 +58,9 @@ queryRouter.post(
         website_id: website.id,
         queries_count: Array.isArray(requestData) ? requestData.length : 1
       })
-      
-      return c.json({ 
-        success: false, 
+
+      return c.json({
+        success: false,
         error: 'Query processing failed'
       }, 500)
     }

@@ -78,16 +78,31 @@ async function checkWebsiteAccess(id: string, userId: string) {
   }
 }
 
-async function _verifyDomainAccess(domainId: string, userId: string): Promise<boolean> {
+async function _verifyDomainAccess(domainId: string, userId: string, organizationId?: string | null): Promise<boolean> {
   if (!domainId || !userId) return false;
 
   try {
-    const domain = await db.query.domains.findFirst({
-      where: and(
+    let whereCondition;
+
+    if (organizationId) {
+      // In organization context, check organization ownership
+      whereCondition = and(
         eq(domains.id, domainId),
         eq(domains.verificationStatus, "VERIFIED"),
-        eq(domains.userId, userId)
-      ),
+        eq(domains.organizationId, organizationId)
+      );
+    } else {
+      // Personal workspace, check user ownership and no organization
+      whereCondition = and(
+        eq(domains.id, domainId),
+        eq(domains.verificationStatus, "VERIFIED"),
+        eq(domains.userId, userId),
+        isNull(domains.organizationId)
+      );
+    }
+
+    const domain = await db.query.domains.findFirst({
+      where: whereCondition,
       columns: {
         id: true
       }
@@ -133,7 +148,7 @@ websitesRouter.post('/', async (c) => {
     logger.info('[Website API] Creating website with data:', { ...data, userId: user.id, organizationId });
 
     // Verify domain access
-    const hasAccess = await verifyDomainAccess(data.domainId, user.id);
+    const hasAccess = await verifyDomainAccess(data.domainId, user.id, organizationId);
     if (!hasAccess) {
       return c.json({
         success: false,

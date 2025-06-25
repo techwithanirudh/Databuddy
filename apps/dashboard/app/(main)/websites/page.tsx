@@ -113,8 +113,10 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
 
 export default function WebsitesPage() {
   const { websites, isLoading, isError, refetch } = useWebsites();
-  const { verifiedDomains } = useDomains();
+  const { domains } = useDomains();
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  const verifiedDomains = domains.filter(domain => domain.verificationStatus === "VERIFIED");
 
   const handleRetry = () => {
     refetch();

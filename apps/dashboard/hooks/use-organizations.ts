@@ -30,6 +30,7 @@ interface UpdateMemberData {
 }
 
 const QUERY_KEYS = {
+  organization: (slug: string) => ["organization", slug] as const,
   organizationMembers: (orgId: string) => ["organizations", orgId, "members"] as const,
   organizationInvitations: (orgId: string) => ["organizations", orgId, "invitations"] as const,
   userInvitations: ["organizations", "invitations", "user"] as const,
@@ -61,11 +62,10 @@ const createMutation = <TData, TVariables>(
  */
 export function useOrganizations() {
   const queryClient = useQueryClient();
-  const { data: organizations = [], error: organizationsError } = authClient.useListOrganizations();
-  const { data: activeOrganization, error: activeOrganizationError } = authClient.useActiveOrganization();
+  const { data, error: organizationsError, isPending: isOrganizationsPending } = authClient.useListOrganizations();
+  const { data: activeOrganization, error: activeOrganizationError, isPending: isActiveOrganizationPending } = authClient.useActiveOrganization();
 
-  const isLoadingOrganizations = organizations === undefined && !organizationsError;
-  const isLoadingActiveOrganization = activeOrganization === undefined && !activeOrganizationError;
+  const organizations = data || [];
 
   const createOrganizationMutation = useMutation(createMutation(
     async (data: CreateOrganizationData) => {
@@ -137,9 +137,7 @@ export function useOrganizations() {
     activeOrganization,
 
     // Loading states
-    isLoadingOrganizations,
-    isLoadingActiveOrganization,
-    isLoading: isLoadingOrganizations || isLoadingActiveOrganization,
+    isLoading: isOrganizationsPending || isActiveOrganizationPending,
 
     // Error states
     organizationsError,

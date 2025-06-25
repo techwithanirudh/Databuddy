@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryState } from "nuqs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -22,7 +23,8 @@ interface OverviewTabProps {
 }
 
 export function OverviewTab({ organization }: OverviewTabProps) {
-    const { members, isLoading } = useOrganizationMembers(organization.id);
+    const { members } = useOrganizationMembers(organization.id);
+    const [, setActiveTab] = useQueryState("tab");
 
     const recentMembers = members?.slice(0, 5) || [];
     const ownerMember = members?.find(member => member.role === "owner");
@@ -107,7 +109,12 @@ export function OverviewTab({ organization }: OverviewTabProps) {
                         <UsersIcon size={16} weight="duotone" className="h-5 w-5" />
                         Recent Team Members
                     </h3>
-                    <Button variant="outline" size="sm" className="rounded">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="rounded"
+                        onClick={() => setActiveTab("teams")}
+                    >
                         View All Members
                     </Button>
                 </div>

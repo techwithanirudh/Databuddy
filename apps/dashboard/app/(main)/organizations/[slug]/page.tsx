@@ -2,7 +2,6 @@
 
 import { useState, Suspense } from "react";
 import { useParams } from "next/navigation";
-import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,7 +19,6 @@ import { useOrganizations } from "@/hooks/use-organizations";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-// Tab components
 import { OverviewTab } from "./components/overview-tab";
 import { TeamsTab } from "./components/teams-tab";
 import { SettingsTab } from "./components/settings-tab";
@@ -34,6 +32,15 @@ function TabSkeleton() {
     );
 }
 
+const getOrganizationInitials = (name: string) => {
+    return name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2);
+};
+
 export default function OrganizationPage() {
     const params = useParams();
     const slug = params.slug as string;
@@ -41,18 +48,8 @@ export default function OrganizationPage() {
 
     const { organizations, activeOrganization, setActiveOrganization, isSettingActiveOrganization, isLoading } = useOrganizations();
 
-    // Find the organization by slug
     const organization = organizations?.find(org => org.slug === slug);
     const isCurrentlyActive = activeOrganization?.id === organization?.id;
-
-    const getOrganizationInitials = (name: string) => {
-        return name
-            .split(" ")
-            .map((n) => n[0])
-            .join("")
-            .toUpperCase()
-            .slice(0, 2);
-    };
 
     const handleSetActive = () => {
         if (organization && !isCurrentlyActive) {
@@ -95,7 +92,6 @@ export default function OrganizationPage() {
 
     return (
         <div className="container mx-auto px-4 py-6 max-w-6xl space-y-6">
-            {/* Back Navigation */}
             <div>
                 <Button
                     variant="ghost"
@@ -110,7 +106,6 @@ export default function OrganizationPage() {
                 </Button>
             </div>
 
-            {/* Organization Header */}
             <div className="p-6 rounded border border-border/50 bg-muted/30">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -160,7 +155,6 @@ export default function OrganizationPage() {
                 </div>
             </div>
 
-            {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
                 <div className="border-b relative">
                     <TabsList className="h-10 bg-transparent p-0 w-full justify-start overflow-x-auto">

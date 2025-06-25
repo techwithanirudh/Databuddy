@@ -64,7 +64,6 @@ function createResponse<T = unknown>(success: boolean, data?: T, error?: string,
   return { response, status };
 }
 
-// Error handler
 function handleError(operation: string, error: unknown, context?: any) {
   logger.error(`[Domain API] ${operation} failed:`, { error, context });
 
@@ -74,19 +73,15 @@ function handleError(operation: string, error: unknown, context?: any) {
   return createResponse(false, undefined, `${operation} failed`, 500);
 }
 
-// Verification token generator
 function generateVerificationToken(): string {
   return randomBytes(32).toString('hex');
 }
 
-// Owner data extractor
 function getOwnerData(user: any, data: any) {
   return data.projectId
     ? { projectId: data.projectId }
     : { userId: user.id };
 }
-
-// Validation schemas
 const createDomainSchema = z.object({
   name: z.string().min(1).max(253).regex(/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, 'Invalid domain format'),
   projectId: z.string().uuid().optional()
@@ -96,16 +91,9 @@ const updateDomainSchema = z.object({
   name: z.string().min(1).max(253).regex(/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, 'Invalid domain format').optional()
 });
 
-// Create router
 export const domainsRouter = new Hono<DomainsContext>();
 
-// Apply auth middleware to all routes
 domainsRouter.use('*', authMiddleware);
-
-/**
- * Get all user domains - Optimized
- * GET /domains
- */
 domainsRouter.get('/', async (c) => {
   const user = c.get('user');
   const organizationId = c.req.query('organizationId');
@@ -118,10 +106,8 @@ domainsRouter.get('/', async (c) => {
     let whereCondition;
 
     if (organizationId) {
-      // Filter by organization
       whereCondition = eq(domains.organizationId, organizationId);
     } else {
-      // Personal domains (no organization)
       whereCondition = and(
         eq(domains.userId, user.id),
         isNull(domains.organizationId)
@@ -150,10 +136,7 @@ domainsRouter.get('/', async (c) => {
   }
 });
 
-/**
- * Get domain by ID - Optimized
- * GET /domains/:id
- */
+
 domainsRouter.get('/:id', async (c) => {
   const user = c.get('user');
   const { id } = c.req.param();
@@ -177,10 +160,7 @@ domainsRouter.get('/:id', async (c) => {
   }
 });
 
-/**
- * Get domains by project ID - Optimized
- * GET /domains/project/:projectId
- */
+
 domainsRouter.get('/project/:projectId', async (c) => {
   const user = c.get('user');
   const { projectId } = c.req.param();
@@ -222,10 +202,7 @@ domainsRouter.get('/project/:projectId', async (c) => {
   }
 });
 
-/**
- * Create domain - Optimized with parallel checks
- * POST /domains
- */
+
 domainsRouter.post('/', async (c) => {
   const user = c.get('user');
   const rawData = await c.req.json();
@@ -236,7 +213,6 @@ domainsRouter.post('/', async (c) => {
   }
 
   try {
-    // Validate input data
     const validationResult = createDomainSchema.safeParse(rawData);
     if (!validationResult.success) {
       const { response, status } = createResponse(false, undefined, 'Invalid input data', 400);
@@ -245,8 +221,6 @@ domainsRouter.post('/', async (c) => {
 
     const data = validationResult.data;
     logger.info(`[Domain API] Creating domain: ${data.name}`, { organizationId });
-
-    // Check if domain already exists
     const existingDomain = await db.query.domains.findFirst({
       where: eq(domains.name, data.name),
       columns: { id: true }

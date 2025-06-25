@@ -16,7 +16,6 @@ type WebsitesContext = {
 
 export const websitesRouter = new Hono<WebsitesContext>();
 
-// Validation schemas
 const createWebsiteSchema = z.object({
   name: z.string().min(1).max(100).regex(/^[a-zA-Z0-9\s\-_.]+$/, 'Invalid website name format'),
   domain: z.string().min(1).max(253).regex(/^[a-zA-Z0-9.-]+$/, 'Invalid domain format'),
@@ -28,10 +27,7 @@ const updateWebsiteSchema = z.object({
   name: z.string().min(1).max(100).regex(/^[a-zA-Z0-9\s\-_.]+$/, 'Invalid website name format')
 });
 
-// Apply auth middleware to all routes
 websitesRouter.use('*', authMiddleware);
-
-// Helper functions - Redis cached
 async function _getUserProjectIds(userId: string): Promise<string[]> {
   try {
     const userProjects = await db.query.projects.findMany({
@@ -48,12 +44,11 @@ async function _getUserProjectIds(userId: string): Promise<string[]> {
   }
 }
 
-// Cache user project IDs for 5 minutes with stale-while-revalidate
 const getUserProjectIds = cacheable(_getUserProjectIds, {
-  expireInSec: 300, // 5 minutes
+  expireInSec: 300,
   prefix: 'user_projects',
   staleWhileRevalidate: true,
-  staleTime: 60 // Revalidate if cache is older than 1 minute
+  staleTime: 60
 });
 
 async function checkWebsiteAccess(id: string, userId: string) {
@@ -85,14 +80,12 @@ async function _verifyDomainAccess(domainId: string, userId: string, organizatio
     let whereCondition;
 
     if (organizationId) {
-      // In organization context, check organization ownership
       whereCondition = and(
         eq(domains.id, domainId),
         eq(domains.verificationStatus, "VERIFIED"),
         eq(domains.organizationId, organizationId)
       );
     } else {
-      // Personal workspace, check user ownership and no organization
       whereCondition = and(
         eq(domains.id, domainId),
         eq(domains.verificationStatus, "VERIFIED"),
@@ -115,15 +108,12 @@ async function _verifyDomainAccess(domainId: string, userId: string, organizatio
   }
 }
 
-// Cache domain verification for 2 minutes (shorter TTL for security)
 const verifyDomainAccess = cacheable(_verifyDomainAccess, {
-  expireInSec: 120, // 2 minutes
+  expireInSec: 120,
   prefix: 'domain_access',
   staleWhileRevalidate: true,
-  staleTime: 30 // Revalidate if cache is older than 30 seconds
+  staleTime: 30
 });
-
-// CREATE - POST /websites
 websitesRouter.post('/', async (c) => {
   const user = c.get('user');
   const rawData = await c.req.json();
@@ -134,7 +124,6 @@ websitesRouter.post('/', async (c) => {
   }
 
   try {
-    // Validate input data
     const validationResult = createWebsiteSchema.safeParse(rawData);
     if (!validationResult.success) {
       return c.json({
@@ -146,8 +135,6 @@ websitesRouter.post('/', async (c) => {
 
     const data = validationResult.data;
     logger.info('[Website API] Creating website with data:', { ...data, userId: user.id, organizationId });
-
-    // Verify domain access
     const hasAccess = await verifyDomainAccess(data.domainId, user.id, organizationId);
     if (!hasAccess) {
       return c.json({
@@ -156,7 +143,6 @@ websitesRouter.post('/', async (c) => {
       }, 400);
     }
 
-    // Check for existing websites with the same domain
     const fullDomain = data.subdomain
       ? `${data.subdomain}.${data.domain}`
       : data.domain;
@@ -185,8 +171,6 @@ websitesRouter.post('/', async (c) => {
       .returning();
 
     logger.info('[Website API] Successfully created website:', website);
-
-    // Discord notification for website creation
     await discordLogger.success(
       'Website Created',
       `New website "${data.name}" was created with domain "${fullDomain}"`,

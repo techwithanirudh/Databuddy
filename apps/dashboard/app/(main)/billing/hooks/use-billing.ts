@@ -19,21 +19,21 @@ export function useBilling(refetch?: () => void) {
         setIsActionLoading(true);
 
         try {
-            const result = await attach({ 
+            const result = await attach({
                 productId: planId,
                 dialog: AttachDialog,
-                successUrl: `${window.location.origin}/payment/success?plan_id=${planId}`
+                successUrl: `${window.location.origin}/billing`
             });
         } catch (error: any) {
             toast.error(error.message || 'An unexpected error occurred.');
-        } finally {                    
+        } finally {
             setIsActionLoading(false);
         }
     };
 
     const handleCancel = async (planId: string, immediate = false) => {
         setIsLoading(true);
-        try { 
+        try {
             await cancel({
                 productId: planId,
                 ...(immediate && { cancelImmediately: true })

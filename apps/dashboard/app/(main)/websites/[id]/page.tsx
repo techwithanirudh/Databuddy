@@ -128,22 +128,21 @@ function WebsiteDetailsPage() {
 
   const { data, isLoading, isError, error, refetch: refetchWebsiteData } = useWebsite(id as string);
 
-  // Always call the analytics hook with the websiteId to maintain hook order
   const { analytics: analyticsData, loading: analyticsLoading } = useWebsiteAnalytics(
     id as string,
     memoizedDateRangeForTabs
   );
 
-  // Determine tracking status once we have both website and analytics data
   const isTrackingSetup = useMemo(() => {
-    if (!data || analyticsLoading.summary) return null; // Still loading
+    if (!data || analyticsLoading.summary) return null;
     return analyticsData?.tracking_setup !== false;
   }, [data, analyticsLoading.summary, analyticsData?.tracking_setup]);
 
-  // Set initial tab based on tracking status, but only once when we first determine the status
   useEffect(() => {
     if (isTrackingSetup === false && activeTab === "overview") {
       setActiveTab("tracking-setup");
+    } else if (isTrackingSetup === true && activeTab === "tracking-setup") {
+      setActiveTab("overview");
     }
   }, [isTrackingSetup, activeTab, setActiveTab]);
 

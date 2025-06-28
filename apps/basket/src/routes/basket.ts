@@ -8,7 +8,7 @@ import {
 } from "@databuddy/db";
 import { createHash, randomUUID } from "node:crypto";
 import { getGeo, extractIpFromRequest } from "../utils/ip-geo";
-import { parseUserAgent } from "../utils/user-agent";
+import { parseUserAgent, detectBot } from "../utils/user-agent";
 import { getWebsiteById, isValidOrigin } from "../hooks/auth";
 import {
 	validatePayloadSize,
@@ -151,54 +151,6 @@ async function validateRequest(body: any, query: any, request: Request) {
 		ip,
 		ownerId: website.ownerId,
 	};
-}
-
-function detectBot(
-	userAgent: string,
-	request: Request,
-): {
-	isBot: boolean;
-	reason?: string;
-	category?: string;
-	botName?: string;
-} {
-	const ua = userAgent?.toLowerCase() || "";
-
-	const detectedBot = bots.find((bot) => ua.includes(bot.regex.toLowerCase()));
-	if (detectedBot) {
-		return {
-			isBot: true,
-			reason: "known_bot_user_agent",
-			category: "Known Bot",
-			botName: detectedBot.name,
-		};
-	}
-
-	if (!userAgent) {
-		return {
-			isBot: true,
-			reason: "missing_user_agent",
-			category: "Missing Headers",
-		};
-	}
-
-	if (!request.headers.get("accept")) {
-		return {
-			isBot: true,
-			reason: "missing_accept_header",
-			category: "Missing Headers",
-		};
-	}
-
-	if (ua.length < 10) {
-		return {
-			isBot: true,
-			reason: "user_agent_too_short",
-			category: "Suspicious Pattern",
-		};
-	}
-
-	return { isBot: false };
 }
 
 async function insertError(errorData: any, clientId: string): Promise<void> {

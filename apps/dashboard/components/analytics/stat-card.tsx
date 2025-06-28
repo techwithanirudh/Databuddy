@@ -177,20 +177,37 @@ export function StatCard({
 
   if (isLoading) {
     return (
-      <Card className={cn("overflow-hidden border", "bg-card", className)} id={id}>
-        <div className="p-3 sm:p-4">
-          <div className="mb-1.5 flex items-center justify-between sm:mb-2">
-            <Skeleton className="h-2.5 w-16 rounded sm:h-3 sm:w-20" />
-            {Icon && (
-              <div className="rounded-md bg-muted/20 p-1">
-                <Skeleton className="h-3 w-3 rounded sm:h-4 sm:w-4" />
+      <Card
+        className={cn("group overflow-hidden pt-0", "border-border/50", "bg-card", className)}
+        id={id}
+      >
+        <div className="relative p-3 sm:p-4">
+          <div className="relative z-10 space-y-1.5 sm:space-y-2">
+            <div className="flex items-start justify-between">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-[10px] w-20 rounded-full sm:h-3" />
+                </div>
+                <Skeleton className="mt-1 h-6 w-24 rounded-md sm:h-8" />
               </div>
-            )}
+              {Icon && (
+                <div className="ml-1.5 flex-shrink-0 rounded-lg bg-muted/50 p-1 sm:ml-2 sm:p-1.5">
+                  <Skeleton className="h-3 w-3 rounded-full sm:h-4 sm:w-4" />
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-4 w-12 rounded-full" />
+              <Skeleton className="h-3 w-16 rounded-full" />
+            </div>
           </div>
-          <Skeleton className="mb-1.5 h-5 w-20 rounded sm:mb-2 sm:h-6 sm:w-24 md:h-8" />
-          <Skeleton className="mb-1.5 h-3 w-12 rounded sm:mb-2 sm:h-4 sm:w-16" />
-          {showChart && <Skeleton className="h-7 w-full rounded sm:h-9" />}
         </div>
+        {showChart && (
+          <div className="-mb-0.5 p-1 sm:-mb-1">
+            <Skeleton className="h-7 w-full rounded-sm" />
+          </div>
+        )}
       </Card>
     );
   }

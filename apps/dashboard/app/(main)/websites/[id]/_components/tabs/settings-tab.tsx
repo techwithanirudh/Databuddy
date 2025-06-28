@@ -73,6 +73,16 @@ export function WebsiteSettingsTab({
 }: WebsiteDataTabProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [copied, setCopied] = useState(false);
+  const [installMethod, setInstallMethod] = useState<"script" | "npm">(
+    "script"
+  );
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [activeTab, setActiveTab] = useState<"tracking" | "basic" | "advanced" | "optimization">(
+    "tracking"
+  );
+  const [trackingOptions, setTrackingOptions] = useState<TrackingOptions>(RECOMMENDED_DEFAULTS);
   const { mutate: deleteWebsiteMutation, isPending: isMutationDeleting } =
     useMutation({
       mutationFn: (id: string) => websiteApi.delete(id),
@@ -87,16 +97,6 @@ export function WebsiteSettingsTab({
         setShowDeleteDialog(false);
       },
     });
-  const [copied, setCopied] = useState(false);
-  const [installMethod, setInstallMethod] = useState<"script" | "npm">(
-    "script"
-  );
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [activeTab, setActiveTab] = useState<"tracking" | "basic" | "advanced" | "optimization">(
-    "tracking"
-  );
-  const [trackingOptions, setTrackingOptions] = useState<TrackingOptions>(RECOMMENDED_DEFAULTS);
 
   const handleCopyCode = (code: string) => {
     navigator.clipboard.writeText(code);

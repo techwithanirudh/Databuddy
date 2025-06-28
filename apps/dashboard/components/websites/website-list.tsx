@@ -15,18 +15,11 @@ import { WebsiteDialog } from "@/components/website-dialog";
 import { MiniChart } from "@/components/websites/mini-chart";
 import type { Website } from "@/hooks/use-websites";
 
-type VerifiedDomain = {
-  id: string;
-  name: string;
-  verificationStatus: "PENDING" | "VERIFIED" | "FAILED";
-};
-
 interface WebsiteListProps {
   websites: Website[];
-  verifiedDomains: VerifiedDomain[];
 }
 
-export function WebsiteList({ websites, verifiedDomains }: WebsiteListProps) {
+export function WebsiteList({ websites }: WebsiteListProps) {
   return (
     <div className="overflow-hidden rounded-lg border bg-background shadow-sm">
       <Table className="min-w-full text-sm">
@@ -38,7 +31,7 @@ export function WebsiteList({ websites, verifiedDomains }: WebsiteListProps) {
         </TableHeader>
         <TableBody>
           {websites.map((website) => (
-            <WebsiteRow key={website.id} verifiedDomains={verifiedDomains} website={website} />
+            <WebsiteRow key={website.id} website={website} />
           ))}
         </TableBody>
       </Table>
@@ -48,10 +41,9 @@ export function WebsiteList({ websites, verifiedDomains }: WebsiteListProps) {
 
 interface WebsiteRowProps {
   website: Website;
-  verifiedDomains: VerifiedDomain[];
 }
 
-function WebsiteRow({ website, verifiedDomains }: WebsiteRowProps) {
+function WebsiteRow({ website }: WebsiteRowProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const router = useRouter();
 
@@ -103,7 +95,6 @@ function WebsiteRow({ website, verifiedDomains }: WebsiteRowProps) {
       <WebsiteDialog
         onOpenChange={setDialogOpen}
         open={dialogOpen}
-        verifiedDomains={verifiedDomains}
         website={website}
       />
     </>

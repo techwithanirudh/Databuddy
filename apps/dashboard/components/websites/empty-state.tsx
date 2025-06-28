@@ -1,51 +1,31 @@
-import type { domains } from "@databuddy/db";
+
 import { Globe, Plus } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { WebsiteDialog } from "@/components/website-dialog";
 import type { CreateWebsiteData } from "@/hooks/use-websites";
-
-type Domain = typeof domains.$inferSelect;
 
 interface EmptyStateProps {
   onCreateWebsite: (data: CreateWebsiteData) => void;
   isCreating: boolean;
-  hasVerifiedDomains?: boolean;
-  verifiedDomains?: Domain[];
 }
 
 export function EmptyState({
   isCreating,
-  hasVerifiedDomains = true,
-  verifiedDomains = [],
 }: EmptyStateProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const renderButton = () => {
     const button = (
       <Button
-        disabled={!hasVerifiedDomains || isCreating}
-        onClick={() => hasVerifiedDomains && setDialogOpen(true)}
+        disabled={isCreating}
+        onClick={() => setDialogOpen(true)}
         size="lg"
       >
         <Plus className="mr-2 h-4 w-4" />
         Add Your First Website
       </Button>
     );
-
-    if (!hasVerifiedDomains) {
-      return (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>{button}</TooltipTrigger>
-            <TooltipContent>
-              <p>You need a verified domain to create a website</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      );
-    }
 
     return button;
   };
@@ -56,7 +36,6 @@ export function EmptyState({
       <h3 className="mb-2 font-semibold text-xl">No websites added yet</h3>
       <p className="mb-6 max-w-md text-center text-muted-foreground">
         Add your first website to start tracking analytics and insights.
-        {!hasVerifiedDomains && " You'll need a verified domain first."}
       </p>
 
       {renderButton()}
@@ -64,7 +43,6 @@ export function EmptyState({
       <WebsiteDialog
         onOpenChange={setDialogOpen}
         open={dialogOpen}
-        verifiedDomains={verifiedDomains}
       />
     </div>
   );

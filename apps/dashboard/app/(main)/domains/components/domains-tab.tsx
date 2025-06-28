@@ -80,14 +80,14 @@ export function DomainsTab() {
     const isRetrying = actions.retryingDomains[domain.id];
 
     return (
-      <Card className="group hover:-translate-y-1 flex h-full flex-col border bg-card transition-all duration-300 hover:border-primary/60 hover:shadow-lg hover:shadow-primary/5">
+      <Card className="flex h-full flex-col border bg-card hover:border-primary/60">
         {/* Removed pt-4 */}
         <CardContent className="flex flex-grow flex-col px-4 pb-4">
           <div className="mb-3 flex items-center justify-between">
             <div className="flex min-w-0 flex-1 items-center space-x-3">
               {canExpand && (
                 <Button
-                  className="h-6 w-6 flex-shrink-0 p-0 transition-colors hover:bg-muted/60"
+                  className="h-6 w-6 flex-shrink-0 p-0 hover:bg-muted/60"
                   data-domain-name={domain.name}
                   data-section="domains"
                   data-track="domain-expand-toggle"
@@ -113,7 +113,7 @@ export function DomainsTab() {
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="truncate font-semibold text-base transition-colors group-hover:text-primary">
+                <h3 className="truncate font-semibold text-base">
                   {domain.name}
                 </h3>
                 <div className="mt-1">

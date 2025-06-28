@@ -64,7 +64,7 @@ export function DomainRowActions({
     if (domain.verificationStatus === "PENDING") {
       return (
         <Button
-          className="flex-1 font-medium text-xs transition-all duration-200 hover:shadow-sm sm:min-w-[80px] sm:flex-none"
+          className="flex-1 font-medium text-xs sm:min-w-[80px] sm:flex-none"
           data-domain-name={domain.name}
           data-section="domains"
           data-track="domain-verify-click"
@@ -92,7 +92,7 @@ export function DomainRowActions({
     if (domain.verificationStatus === "FAILED") {
       return (
         <Button
-          className="flex-1 font-medium text-xs transition-all duration-200 hover:shadow-sm sm:min-w-[80px] sm:flex-none"
+          className="flex-1 font-medium text-xs sm:min-w-[80px] sm:flex-none"
           data-domain-name={domain.name}
           data-section="domains"
           data-track="domain-retry-click"
@@ -174,7 +174,7 @@ export function DomainRowActions({
           <DropdownMenu onOpenChange={setDropdownOpen} open={dropdownOpen}>
             <DropdownMenuTrigger asChild>
               <Button
-                className="h-8 w-8 flex-shrink-0 p-0 transition-all duration-200 hover:bg-muted/80"
+                className="h-8 w-8 flex-shrink-0 p-0 hover:bg-muted/80"
                 data-domain-name={domain.name}
                 data-section="domains"
                 data-track="domain-actions-menu-click"

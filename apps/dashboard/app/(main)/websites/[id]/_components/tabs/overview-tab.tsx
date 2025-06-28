@@ -132,7 +132,7 @@ function LiveUserIndicator({ count }: { count: number }) {
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
           <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-500" />
         </span>
-        <span className={`transition-colors duration-300 ${getChangeColor()}`}>
+        <span className={getChangeColor()}>
           {count} {count === 1 ? "user" : "users"} live
         </span>
       </div>
@@ -362,32 +362,43 @@ export function WebsiteOverviewTab({
   const miniChartData = useMemo(() => {
     if (!analytics.events_by_date?.length) return {};
 
-    const visitors = analytics.events_by_date.map((event: any) => ({
+    const now = dayjs().utc();
+
+    // Filter out future data points, same as main chart
+    const filteredEvents = analytics.events_by_date.filter((event: any) => {
+      const eventDate = dayjs(event.date);
+      return (
+        eventDate.isBefore(now) ||
+        eventDate.isSame(now, dateRange.granularity === "hourly" ? "hour" : "day")
+      );
+    });
+
+    const visitors = filteredEvents.map((event: any) => ({
       date: event.date,
       value: event.visitors || 0,
     }));
 
-    const sessions = analytics.events_by_date.map((event: any) => ({
+    const sessions = filteredEvents.map((event: any) => ({
       date: event.date,
       value: event.sessions || 0,
     }));
 
-    const pageviews = analytics.events_by_date.map((event: any) => ({
+    const pageviews = filteredEvents.map((event: any) => ({
       date: event.date,
       value: event.pageviews || 0,
     }));
 
-    const pagesPerSession = analytics.events_by_date.map((event: any) => ({
+    const pagesPerSession = filteredEvents.map((event: any) => ({
       date: event.date,
       value: event.sessions > 0 ? (event.pageviews || 0) / event.sessions : 0,
     }));
 
-    const bounceRate = analytics.events_by_date.map((event: any) => ({
+    const bounceRate = filteredEvents.map((event: any) => ({
       date: event.date,
       value: event.bounce_rate || 0,
     }));
 
-    const sessionDuration = analytics.events_by_date.map((event: any) => ({
+    const sessionDuration = filteredEvents.map((event: any) => ({
       date: event.date,
       value: event.avg_session_duration || 0,
     }));
@@ -400,7 +411,7 @@ export function WebsiteOverviewTab({
       bounceRate,
       sessionDuration,
     };
-  }, [analytics.events_by_date]);
+  }, [analytics.events_by_date, dateRange.granularity]);
 
   const processedTopPages = useMemo(() => {
     if (!analytics.top_pages?.length) return [];
@@ -1059,7 +1070,7 @@ export function WebsiteOverviewTab({
             <div className="ml-4">
               {/* Property Category Row - Clickable */}
               <button
-                className="flex w-full items-center justify-between rounded border border-border/30 bg-muted/20 px-3 py-2 transition-colors duration-200 hover:bg-muted/40"
+                className="flex w-full items-center justify-between rounded border border-border/30 bg-muted/20 px-3 py-2 hover:bg-muted/40"
                 onClick={() => togglePropertyExpansion(propertyId)}
               >
                 <div className="flex items-center gap-2">
@@ -1093,7 +1104,7 @@ export function WebsiteOverviewTab({
                 <div className="mt-1 max-h-48 overflow-y-auto rounded border border-border/20">
                   {propertyValues.map((valueItem: any, valueIndex: number) => (
                     <div
-                      className="flex items-center justify-between border-border/10 border-b px-3 py-2 transition-colors duration-150 last:border-b-0 hover:bg-muted/20"
+                      className="flex items-center justify-between border-border/10 border-b px-3 py-2 last:border-b-0 hover:bg-muted/20"
                       key={`${propertyKey}-${valueItem.value}-${valueIndex}`}
                     >
                       <span

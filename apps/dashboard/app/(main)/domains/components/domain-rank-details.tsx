@@ -85,7 +85,7 @@ const ScoreIndicator = ({ score, maxScore = 100 }: { score: number; maxScore?: n
 
   return (
     <div className="relative mx-auto h-16 w-16 sm:h-24 sm:w-24">
-      <svg className="-rotate-90 h-16 w-16 transform sm:h-24 sm:w-24" viewBox="0 0 36 36">
+      <svg className="h-16 w-16 sm:h-24 sm:w-24" viewBox="0 0 36 36">
         <title>Domain Rank Score Indicator</title>
         <path
           className="text-muted/20"

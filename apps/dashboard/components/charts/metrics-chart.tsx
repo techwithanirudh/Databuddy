@@ -122,7 +122,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
                   <span className="font-medium text-muted-foreground text-xs">{entry.name}</span>
                 </div>
               </div>
-              <span className="font-bold text-foreground text-sm transition-colors group-hover:text-primary">
+              <span className="font-bold text-foreground text-sm group-hover:text-primary">
                 {displayValue}
               </span>
             </div>
@@ -135,17 +135,17 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 interface MetricsChartProps {
   data:
-    | Array<{
-        date: string;
-        pageviews?: number;
-        visitors?: number;
-        unique_visitors?: number;
-        sessions?: number;
-        bounce_rate?: number;
-        avg_session_duration?: number;
-        [key: string]: any;
-      }>
-    | undefined;
+  | Array<{
+    date: string;
+    pageviews?: number;
+    visitors?: number;
+    unique_visitors?: number;
+    sessions?: number;
+    bounce_rate?: number;
+    avg_session_duration?: number;
+    [key: string]: any;
+  }>
+  | undefined;
   isLoading: boolean;
   height?: number;
   title?: string;
@@ -265,7 +265,6 @@ export function MetricsChart({
               </defs>
 
               <CartesianGrid
-                className="animate-pulse"
                 stroke="var(--border)"
                 strokeDasharray="2 4"
                 strokeOpacity={0.3}
@@ -315,7 +314,6 @@ export function MetricsChart({
               )}
 
               <Tooltip
-                animationDuration={200}
                 content={<CustomTooltip />}
                 cursor={{
                   stroke: "var(--primary)",
@@ -330,7 +328,7 @@ export function MetricsChart({
                 formatter={(value, entry: any) => (
                   <span
                     className={cn(
-                      "cursor-pointer font-medium text-xs transition-all duration-200",
+                      "cursor-pointer font-medium text-xs",
                       hoveredMetric === value
                         ? "text-primary"
                         : "text-muted-foreground hover:text-foreground"
@@ -360,7 +358,6 @@ export function MetricsChart({
                     fill: "var(--background)",
                     filter: "url(#glow-pageviews)",
                   }}
-                  className="transition-all duration-300"
                   dataKey="pageviews"
                   dot={{ r: 0 }}
                   fill="url(#gradient-pageviews)"
@@ -382,7 +379,6 @@ export function MetricsChart({
                     fill: "var(--background)",
                     filter: "url(#glow-visitors)",
                   }}
-                  className="transition-all duration-300"
                   dataKey="visitors"
                   dot={{ r: 0 }}
                   fill="url(#gradient-visitors)"
@@ -404,7 +400,6 @@ export function MetricsChart({
                     fill: "var(--background)",
                     filter: "url(#glow-sessions)",
                   }}
-                  className="transition-all duration-300"
                   dataKey="sessions"
                   dot={{ r: 0 }}
                   fill="url(#gradient-sessions)"

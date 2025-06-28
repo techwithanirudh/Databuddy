@@ -109,20 +109,18 @@ export default function DomainsPage() {
               <Button
                 className={cn(
                   "w-full gap-2 px-6 py-3 font-medium sm:w-auto",
-                  "bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary",
-                  "group relative overflow-hidden shadow-lg transition-all duration-300 hover:shadow-xl"
+                  "bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary"
                 )}
                 data-button-type="primary-cta"
                 data-section="domains-header"
                 data-track="domains-add-domain-click"
                 size="default"
               >
-                <div className="absolute inset-0 translate-x-[-100%] bg-gradient-to-r from-white/0 via-white/20 to-white/0 transition-transform duration-700 group-hover:translate-x-[100%]" />
                 <PlusIcon
-                  className="relative z-10 h-4 w-4 transition-transform duration-300 group-hover:rotate-90"
+                  className="h-4 w-4"
                   size={16}
                 />
-                <span className="relative z-10 truncate">Add Domain</span>
+                <span className="truncate">Add Domain</span>
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
@@ -204,7 +202,7 @@ export default function DomainsPage() {
             <TabsList className="h-12 w-full justify-start overflow-x-auto bg-transparent p-0">
               <TabsTrigger
                 className={cn(
-                  "relative h-12 rounded-none px-4 text-sm transition-all duration-200",
+                  "relative h-12 rounded-none px-4 text-sm",
                   "cursor-pointer whitespace-nowrap hover:bg-muted/50",
                   "data-[state=active]:bg-transparent data-[state=active]:text-primary"
                 )}
@@ -221,7 +219,7 @@ export default function DomainsPage() {
               </TabsTrigger>
               <TabsTrigger
                 className={cn(
-                  "relative h-12 rounded-none px-4 text-sm transition-all duration-200",
+                  "relative h-12 rounded-none px-4 text-sm",
                   "cursor-pointer whitespace-nowrap hover:bg-muted/50",
                   "data-[state=active]:bg-transparent data-[state=active]:text-primary"
                 )}

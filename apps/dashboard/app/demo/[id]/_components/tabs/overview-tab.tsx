@@ -320,32 +320,42 @@ export function WebsiteOverviewTab({
   const miniChartData = useMemo(() => {
     if (!analytics.events_by_date?.length) return {};
 
-    const visitors = analytics.events_by_date.map((event: any) => ({
+    const now = dayjs().utc();
+
+    const filteredEvents = analytics.events_by_date.filter((event: any) => {
+      const eventDate = dayjs(event.date);
+      return (
+        eventDate.isBefore(now) ||
+        eventDate.isSame(now, dateRange.granularity === "hourly" ? "hour" : "day")
+      );
+    });
+
+    const visitors = filteredEvents.map((event: any) => ({
       date: event.date,
       value: event.visitors || 0,
     }));
 
-    const sessions = analytics.events_by_date.map((event: any) => ({
+    const sessions = filteredEvents.map((event: any) => ({
       date: event.date,
       value: event.sessions || 0,
     }));
 
-    const pageviews = analytics.events_by_date.map((event: any) => ({
+    const pageviews = filteredEvents.map((event: any) => ({
       date: event.date,
       value: event.pageviews || 0,
     }));
 
-    const pagesPerSession = analytics.events_by_date.map((event: any) => ({
+    const pagesPerSession = filteredEvents.map((event: any) => ({
       date: event.date,
       value: event.sessions > 0 ? (event.pageviews || 0) / event.sessions : 0,
     }));
 
-    const bounceRate = analytics.events_by_date.map((event: any) => ({
+    const bounceRate = filteredEvents.map((event: any) => ({
       date: event.date,
       value: event.bounce_rate || 0,
     }));
 
-    const sessionDuration = analytics.events_by_date.map((event: any) => ({
+    const sessionDuration = filteredEvents.map((event: any) => ({
       date: event.date,
       value: event.avg_session_duration || 0,
     }));
@@ -358,7 +368,7 @@ export function WebsiteOverviewTab({
       bounceRate,
       sessionDuration,
     };
-  }, [analytics.events_by_date]);
+  }, [analytics.events_by_date, dateRange.granularity]);
 
   const processedTopPages = useMemo(() => {
     if (!analytics.top_pages?.length) return [];

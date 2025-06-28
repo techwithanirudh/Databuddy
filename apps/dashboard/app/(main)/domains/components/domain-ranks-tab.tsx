@@ -109,7 +109,7 @@ const DomainRankCard = ({
   const isLoading = !rankData;
 
   return (
-    <Card className="group hover:-translate-y-1 border bg-gradient-to-br from-background to-muted/20 transition-all duration-300 hover:border-primary/60 hover:shadow-lg hover:shadow-primary/5">
+    <Card className="border bg-gradient-to-br from-background to-muted/20 hover:border-primary/60">
       <CardContent className="p-4">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex flex-1 items-center space-x-3">
@@ -129,7 +129,7 @@ const DomainRankCard = ({
               )}
             </div>
             <div className="flex-1">
-              <h4 className="truncate font-semibold text-base transition-colors group-hover:text-primary">
+              <h4 className="truncate font-semibold text-base">
                 {domain.name}
               </h4>
               <div className="mt-1 flex items-center gap-4 text-muted-foreground text-sm">
@@ -158,15 +158,14 @@ const DomainRankCard = ({
             </div>
             <div className="mb-3 h-2 w-full rounded-full bg-muted">
               <div
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  rankData.page_rank_decimal >= 70
-                    ? "bg-green-500"
-                    : rankData.page_rank_decimal >= 40
-                      ? "bg-blue-500"
-                      : rankData.page_rank_decimal >= 20
-                        ? "bg-yellow-500"
-                        : "bg-red-500"
-                }`}
+                className={`h-2 rounded-full ${rankData.page_rank_decimal >= 70
+                  ? "bg-green-500"
+                  : rankData.page_rank_decimal >= 40
+                    ? "bg-blue-500"
+                    : rankData.page_rank_decimal >= 20
+                      ? "bg-yellow-500"
+                      : "bg-red-500"
+                  }`}
                 style={{ width: `${Math.min(100, rankData.page_rank_decimal)}%` }}
               />
             </div>
@@ -209,7 +208,7 @@ export function DomainRanksTab() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="animate-pulse rounded-lg border border-primary/20 bg-primary/10 p-2">
+          <div className="rounded-lg border border-primary/20 bg-primary/10 p-2">
             <TrendUpIcon className="h-5 w-5 text-primary" size={20} weight="fill" />
           </div>
           <div>
@@ -241,14 +240,14 @@ export function DomainRanksTab() {
       {/* Domain rankings grid */}
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {rankedDomains.map((domain, index) => (
-            <DomainRankCard
-              domain={domain}
-              onViewDetails={() =>
-                setSelectedRankDetails({ domainName: domain.name, domainId: domain.id })
-              }
-              rankData={ranks[domain.id]}
-              key={domain.id}
-            />
+          <DomainRankCard
+            domain={domain}
+            onViewDetails={() =>
+              setSelectedRankDetails({ domainName: domain.name, domainId: domain.id })
+            }
+            rankData={ranks[domain.id]}
+            key={domain.id}
+          />
         ))}
       </div>
 

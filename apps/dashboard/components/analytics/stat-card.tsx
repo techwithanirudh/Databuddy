@@ -123,7 +123,7 @@ const MiniChart = memo(({ data, id }: { data: MiniChartDataPoint[]; id: string }
               strokeWidth: 2,
               filter: `url(#glow-${id})`,
             }}
-            className="transition-all duration-300 group-hover/chart:drop-shadow-sm"
+
             dataKey="value"
             dot={false}
             fill={`url(#gradient-${id})`}
@@ -209,8 +209,7 @@ export function StatCard({
   const cardContent = (
     <Card
       className={cn(
-        "group overflow-hidden pt-0 transition-all duration-300 ease-out",
-        "hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5",
+        "group overflow-hidden pt-0",
         "border-border/50 hover:border-primary/20",
         "bg-card",
         getVariantClasses(),
@@ -220,7 +219,7 @@ export function StatCard({
     >
       <div className="relative p-3 sm:p-4">
         {/* Background decoration */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.02] to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.02] to-transparent opacity-0 group-hover:opacity-100" />
 
         <div className="relative z-10 space-y-1.5 sm:space-y-2">
           {/* Header with title and icon */}
@@ -234,7 +233,7 @@ export function StatCard({
               </div>
               <div
                 className={cn(
-                  "font-bold text-foreground leading-tight transition-colors duration-300 group-hover:text-primary",
+                  "font-bold text-foreground leading-tight group-hover:text-primary",
                   isTimeValue
                     ? "text-base sm:text-lg md:text-xl"
                     : "text-lg sm:text-xl md:text-2xl",
@@ -247,8 +246,8 @@ export function StatCard({
               </div>
             </div>
             {Icon && (
-              <div className="ml-1.5 flex-shrink-0 rounded-lg bg-primary/5 p-1 transition-colors duration-300 group-hover:bg-primary/10 sm:ml-2 sm:p-1.5">
-                <Icon className="h-3 w-3 text-primary/70 transition-colors duration-300 group-hover:text-primary sm:h-4 sm:w-4" />
+              <div className="ml-1.5 flex-shrink-0 rounded-lg bg-primary/5 p-1 group-hover:bg-primary/10 sm:ml-2 sm:p-1.5">
+                <Icon className="h-3 w-3 text-primary/70 group-hover:text-primary sm:h-4 sm:w-4" />
               </div>
             )}
           </div>
@@ -279,7 +278,7 @@ export function StatCard({
 
           {/* Chart */}
           {hasValidChartData && (
-            <div className="-mb-0.5 sm:-mb-1 transition-colors duration-300 [--chart-color:theme(colors.primary.DEFAULT)] group-hover:[--chart-color:theme(colors.primary.500)]">
+            <div className="-mb-0.5 sm:-mb-1 [--chart-color:theme(colors.primary.DEFAULT)] group-hover:[--chart-color:theme(colors.primary.500)]">
               <MiniChart data={chartData} id={id || `chart-${Math.random()}`} />
             </div>
           )}

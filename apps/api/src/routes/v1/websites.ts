@@ -226,16 +226,37 @@ websitesRouter.post("/", async (c) => {
 			? `${data.subdomain}.${data.domain}`
 			: data.domain;
 
-		const existingWebsite = await db.query.websites.findFirst({
-			where: eq(websites.domain, fullDomain),
-		});
-
-		if (existingWebsite) {
-			return c.json(
-				createErrorResponse(
-					`A website with the domain "${fullDomain}" already exists`,
+		if (organizationId) {
+			const existingWebsite = await db.query.websites.findFirst({
+				where: and(
+					eq(websites.domain, fullDomain),
+					eq(websites.organizationId, organizationId),
 				),
-			);
+			});
+
+			if (existingWebsite) {
+				return c.json(
+					createErrorResponse(
+						`A website with the domain "${fullDomain}" already exists in this organization.`,
+					),
+				);
+			}
+		} else {
+			const existingWebsite = await db.query.websites.findFirst({
+				where: and(
+					eq(websites.domain, fullDomain),
+					eq(websites.userId, user.id),
+					isNull(websites.organizationId),
+				),
+			});
+
+			if (existingWebsite) {
+				return c.json(
+					createErrorResponse(
+						`You already have a website with the domain "${fullDomain}".`,
+					),
+				);
+			}
 		}
 
 		const [website] = await db

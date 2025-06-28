@@ -11,7 +11,7 @@ import {
 	boolean,
 	pgEnum,
 } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
+import { isNotNull, isNull, sql } from "drizzle-orm";
 
 export const clientType = pgEnum("ClientType", [
 	"individual",
@@ -118,72 +118,6 @@ export const auditLogs = pgTable(
 		})
 			.onUpdate("cascade")
 			.onDelete("set null"),
-	],
-);
-
-export const domains = pgTable(
-	"domains",
-	{
-		id: text().primaryKey().notNull(),
-		name: text().notNull(),
-		verificationStatus: verificationStatus().default("PENDING").notNull(),
-		verificationToken: text(),
-		verifiedAt: timestamp({ precision: 3, mode: "string" }),
-		userId: text(),
-		projectId: text(),
-		dnsRecords: jsonb(),
-		createdAt: timestamp({ precision: 3, mode: "string" })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull(),
-		updatedAt: timestamp({ precision: 3, mode: "string" })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull(),
-		deletedAt: timestamp({ precision: 3, mode: "string" }),
-		organizationId: text("organization_id"),
-	},
-	(table) => [
-		uniqueIndex("domains_name_key").using(
-			"btree",
-			table.name.asc().nullsLast().op("text_ops"),
-		),
-		index("domains_projectId_idx").using(
-			"btree",
-			table.projectId.asc().nullsLast().op("text_ops"),
-		),
-		index("domains_userId_idx").using(
-			"btree",
-			table.userId.asc().nullsLast().op("text_ops"),
-		),
-		uniqueIndex("domains_verificationToken_key").using(
-			"btree",
-			table.verificationToken.asc().nullsLast().op("text_ops"),
-		),
-		foreignKey({
-			columns: [table.userId],
-			foreignColumns: [user.id],
-			name: "domains_userId_fkey",
-		})
-			.onUpdate("cascade")
-			.onDelete("set null"),
-		foreignKey({
-			columns: [table.projectId],
-			foreignColumns: [projects.id],
-			name: "domains_projectId_fkey",
-		})
-			.onUpdate("cascade")
-			.onDelete("set null"),
-		foreignKey({
-			columns: [table.organizationId],
-			foreignColumns: [organization.id],
-			name: "domains_organization_id_organization_id_fk",
-		}).onDelete("cascade"),
-		foreignKey({
-			columns: [table.organizationId],
-			foreignColumns: [organization.id],
-			name: "domains_organizationId_fkey",
-		})
-			.onUpdate("cascade")
-			.onDelete("cascade"),
 	],
 );
 
@@ -506,10 +440,12 @@ export const websites = pgTable(
 		organizationId: text("organization_id"),
 	},
 	(table) => [
-		uniqueIndex("websites_domain_key").using(
-			"btree",
-			table.domain.asc().nullsLast().op("text_ops"),
-		),
+		uniqueIndex("websites_user_domain_unique")
+			.on(table.userId, table.domain)
+			.where(isNull(table.organizationId)),
+		uniqueIndex("websites_org_domain_unique")
+			.on(table.organizationId, table.domain)
+			.where(isNotNull(table.organizationId)),
 		uniqueIndex("websites_projectId_key").using(
 			"btree",
 			table.projectId.asc().nullsLast().op("text_ops"),

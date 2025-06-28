@@ -2,7 +2,6 @@ import { relations } from "drizzle-orm/relations";
 import {
 	user,
 	auditLogs,
-	domains,
 	projects,
 	organization,
 	eventMeta,
@@ -41,20 +40,7 @@ export const userRelations = relations(user, ({ many }) => ({
 	apikeys: many(apikey),
 }));
 
-export const domainsRelations = relations(domains, ({ one, many }) => ({
-	user: one(user, {
-		fields: [domains.userId],
-		references: [user.id],
-	}),
-	project: one(projects, {
-		fields: [domains.projectId],
-		references: [projects.id],
-	}),
-	websites: many(websites),
-}));
-
 export const projectsRelations = relations(projects, ({ one, many }) => ({
-	domains: many(domains),
 	eventMetas: many(eventMeta),
 	organization_organizationId: one(organization, {
 		fields: [projects.organizationId],
@@ -151,10 +137,6 @@ export const websitesRelations = relations(websites, ({ one, many }) => ({
 	project: one(projects, {
 		fields: [websites.projectId],
 		references: [projects.id],
-	}),
-	domain: one(domains, {
-		fields: [websites.domain],
-		references: [domains.id],
 	}),
 	organization_organizationId: one(organization, {
 		fields: [websites.organizationId],

@@ -108,10 +108,12 @@ export function useChat(websiteId: string, websiteName?: string) {
     }, 50);
   }, []);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Need to scroll on message content changes
+  const lastMessage = messages[messages.length - 1];
+  const lastMessageThinkingSteps = lastMessage?.thinkingSteps?.length || 0;
+
   useEffect(() => {
     scrollToBottom();
-  }, [messages.length]);
+  }, [messages.length, lastMessageThinkingSteps, scrollToBottom]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -182,10 +184,10 @@ export function useChat(websiteId: string, websiteName?: string) {
                 prev.map((msg) =>
                   msg.id === assistantId
                     ? {
-                        ...msg,
-                        content:
-                          "⏱️ You've reached the rate limit. Please wait 60 seconds before sending another message.",
-                      }
+                      ...msg,
+                      content:
+                        "⏱️ You've reached the rate limit. Please wait 60 seconds before sending another message.",
+                    }
                     : msg
                 )
               );
@@ -231,9 +233,9 @@ export function useChat(websiteId: string, websiteName?: string) {
                       prev.map((msg) =>
                         msg.id === assistantId
                           ? {
-                              ...msg,
-                              thinkingSteps: [...(msg.thinkingSteps || []), update.content],
-                            }
+                            ...msg,
+                            thinkingSteps: [...(msg.thinkingSteps || []), update.content],
+                          }
                           : msg
                       )
                     );
@@ -242,15 +244,15 @@ export function useChat(websiteId: string, websiteName?: string) {
                       prev.map((msg) =>
                         msg.id === assistantId
                           ? {
-                              ...msg,
-                              content: update.content,
-                              hasVisualization: update.data?.hasVisualization,
-                              chartType: update.data?.chartType as any,
-                              data: update.data?.data,
-                              responseType: update.data?.responseType,
-                              metricValue: update.data?.metricValue,
-                              metricLabel: update.data?.metricLabel,
-                            }
+                            ...msg,
+                            content: update.content,
+                            hasVisualization: update.data?.hasVisualization,
+                            chartType: update.data?.chartType as any,
+                            data: update.data?.data,
+                            responseType: update.data?.responseType,
+                            metricValue: update.data?.metricValue,
+                            metricLabel: update.data?.metricLabel,
+                          }
                           : msg
                       )
                     );
@@ -287,10 +289,10 @@ export function useChat(websiteId: string, websiteName?: string) {
                       prev.map((msg) =>
                         msg.id === assistantId
                           ? {
-                              ...msg,
-                              content: update.content,
-                              debugInfo: update.debugInfo,
-                            }
+                            ...msg,
+                            content: update.content,
+                            debugInfo: update.debugInfo,
+                          }
                           : msg
                       )
                     );
@@ -311,10 +313,10 @@ export function useChat(websiteId: string, websiteName?: string) {
           prev.map((msg) =>
             msg.id === assistantId
               ? {
-                  ...msg,
-                  content:
-                    "I apologize, but I'm having trouble processing your request right now. Please try again in a moment.",
-                }
+                ...msg,
+                content:
+                  "I apologize, but I'm having trouble processing your request right now. Please try again in a moment.",
+              }
               : msg
           )
         );

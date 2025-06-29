@@ -3,17 +3,13 @@
 import {
   BarChart3,
   Bot,
-  Bug,
-  ChevronDown,
-  ChevronRight,
   Clock,
   Hash,
   LineChart,
   PieChart,
-  TrendingUp,
   User,
 } from "lucide-react";
-import React, { useState } from "react";
+import React from "react";
 import { cn } from "@/lib/utils";
 import type { Message } from "../types/message";
 
@@ -35,35 +31,71 @@ const getChartIcon = (chartType: string) => {
 };
 
 export function MessageBubble({ message }: MessageBubbleProps) {
-  const [showThinking, setShowThinking] = useState(false);
-  const [showDebug, setShowDebug] = useState(false);
+  const isUser = message.type === "user";
+  const isInProgress = message.type === "assistant" && !message.content;
+
+  if (isInProgress) {
+    return (
+      <div className="flex w-full max-w-[85%] gap-3">
+        <div className="mt-1 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border bg-muted shadow-sm">
+          <Bot className="h-4 w-4" />
+        </div>
+        <div className="min-w-0 flex-1 rounded-lg border bg-muted px-4 py-3 shadow-sm">
+          <div className="flex items-center gap-2 text-sm">
+            <div className="flex space-x-1">
+              <div className="h-2 w-2 animate-bounce rounded-full bg-foreground [animation-delay:-0.3s]" />
+              <div className="h-2 w-2 animate-bounce rounded-full bg-foreground [animation-delay:-0.15s]" />
+              <div className="h-2 w-2 animate-bounce rounded-full bg-foreground" />
+            </div>
+            <span className="text-muted-foreground">Nova is analyzing...</span>
+          </div>
+
+          {message.thinkingSteps && message.thinkingSteps.length > 0 && (
+            <div className="mt-3 border-border/30 border-t pt-3">
+              <div className="mt-2 space-y-1">
+                {message.thinkingSteps.map((step, index) => (
+                  <div
+                    className="flex items-start gap-2 py-1 pl-1 text-muted-foreground text-xs"
+                    key={`thinking-${index}-${step.slice(0, 20)}`}
+                  >
+                    <Clock className="mt-0.5 h-3 w-3 flex-shrink-0" />
+                    <span>{step}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
       className={cn(
-        "fade-in-0 slide-in-from-bottom-2 flex w-full animate-in gap-3 duration-300",
-        message.type === "user" ? "justify-end" : "justify-start"
+        "group flex w-full gap-3",
+        isUser ? "justify-end" : "justify-start"
       )}
     >
       {/* Avatar */}
       <div
         className={cn(
           "mt-1 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full shadow-sm",
-          message.type === "user"
+          isUser
             ? "order-2 bg-primary text-primary-foreground"
             : "order-1 border bg-muted"
         )}
       >
-        {message.type === "user" ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
+        {isUser ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
       </div>
 
       {/* Message Content */}
       <div
         className={cn(
-          "min-w-0 max-w-[85%] rounded-lg px-4 py-3 shadow-sm",
-          message.type === "user"
+          "relative min-w-0 max-w-[85%] rounded-lg px-4 py-3 shadow-sm",
+          isUser
             ? "order-1 bg-primary text-primary-foreground"
-            : "order-2 border bg-muted/70"
+            : "order-2 border bg-muted"
         )}
       >
         {/* Main message text */}
@@ -74,7 +106,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         {/* Metric Display */}
         {message.responseType === "metric" &&
           message.metricValue !== undefined &&
-          message.type === "assistant" && (
+          !isUser && (
             <div className="mt-4 rounded-lg border border-primary/20 bg-primary/5 p-4">
               <div className="flex min-w-0 items-center gap-3">
                 <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
@@ -94,83 +126,24 @@ export function MessageBubble({ message }: MessageBubbleProps) {
             </div>
           )}
 
-        {/* Thinking Steps */}
-        {message.thinkingSteps &&
-          message.thinkingSteps.length > 0 &&
-          message.type === "assistant" && (
-            <div className="mt-3 border-border/30 border-t pt-3">
-              <button
-                className="flex items-center gap-2 text-muted-foreground text-xs transition-colors hover:text-foreground"
-                onClick={() => setShowThinking(!showThinking)}
-                type="button"
-              >
-                {showThinking ? (
-                  <ChevronDown className="h-3 w-3" />
-                ) : (
-                  <ChevronRight className="h-3 w-3" />
-                )}
-                <Clock className="h-3 w-3" />
-                <span>Thinking process ({message.thinkingSteps.length} steps)</span>
-              </button>
-
-              {showThinking && (
-                <div className="slide-in-from-top-1 mt-2 animate-in space-y-1 duration-200">
-                  {message.thinkingSteps.map((step, index) => (
-                    <div
-                      className="py-1 pl-5 text-muted-foreground text-xs"
-                      key={`thinking-${index}-${step.slice(0, 20)}`}
-                    >
-                      {step}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
         {/* Visualization Indicator */}
-        {message.hasVisualization && message.type === "assistant" && (
+        {message.hasVisualization && !isUser && (
           <div className="mt-3 border-border/30 border-t pt-3">
             <div className="flex items-center gap-2 text-muted-foreground text-xs">
               {getChartIcon(message.chartType || "bar")}
-              <span>Visualization available in the data panel →</span>
+              <span>Visualization generated in the data panel.</span>
             </div>
           </div>
         )}
 
-        {/* Debug Information */}
-        {message.debugInfo && message.type === "assistant" && (
-          <div className="mt-3 border-border/30 border-t pt-3">
-            <button
-              className="flex items-center gap-2 text-muted-foreground text-xs transition-colors hover:text-foreground"
-              onClick={() => setShowDebug(!showDebug)}
-              type="button"
-            >
-              {showDebug ? (
-                <ChevronDown className="h-3 w-3" />
-              ) : (
-                <ChevronRight className="h-3 w-3" />
-              )}
-              <Bug className="h-3 w-3" />
-              <span>Debug info</span>
-            </button>
-
-            {showDebug && (
-              <div className="slide-in-from-top-1 mt-2 animate-in duration-200">
-                <pre className="overflow-x-auto rounded border bg-background/50 p-2 text-xs">
-                  {JSON.stringify(message.debugInfo, null, 2)}
-                </pre>
-              </div>
-            )}
+        {/* Timestamp (hover) */}
+        <div className="absolute -bottom-5 right-0 opacity-0 transition-opacity group-hover:opacity-60">
+          <div className="mt-1 font-mono text-xs">
+            {message.timestamp.toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
           </div>
-        )}
-
-        {/* Timestamp */}
-        <div className="mt-3 font-mono text-xs opacity-60">
-          {message.timestamp.toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
         </div>
       </div>
     </div>

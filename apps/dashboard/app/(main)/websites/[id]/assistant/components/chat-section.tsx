@@ -22,7 +22,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import type { WebsiteDataTabProps } from "../../_components/utils/types";
 import type { Message } from "../types/message";
-import { ChatHistorySidebar } from "./chat-history-sidebar";
+import { ChatHistorySheet } from "./chat-history-sheet";
 import { LoadingMessage } from "./loading-message";
 import { MessageBubble } from "./message-bubble";
 
@@ -97,7 +97,6 @@ export default function ChatSection({
   onSelectChat,
 }: ChatSectionProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [inputFocused, setInputFocused] = useState(false);
   const [showChatHistory, setShowChatHistory] = useState(false);
 
   // Calculate message statistics
@@ -238,22 +237,11 @@ export default function ChatSection({
             {/* Messages */}
             {hasMessages && (
               <div className="space-y-4">
-                {messages.map((message, index) => (
-                  <div
-                    className="fade-in-0 slide-in-from-bottom-2 animate-in duration-300"
-                    key={message.id}
-                    style={{ animationDelay: `${index * 50}ms` }}
-                  >
+                {messages.map((message) => (
+                  <div key={message.id}>
                     <MessageBubble message={message} />
                   </div>
                 ))}
-              </div>
-            )}
-
-            {/* Loading Message */}
-            {isLoading && (
-              <div className="fade-in-0 slide-in-from-bottom-2 mt-4 animate-in duration-300">
-                <LoadingMessage />
               </div>
             )}
           </div>
@@ -264,7 +252,7 @@ export default function ChatSection({
       <div className="flex-shrink-0 border-t bg-gradient-to-r from-muted/10 to-muted/5 p-4">
         <div className="relative">
           <div
-            className={cn("flex gap-3 transition-all duration-300", inputFocused && "scale-[1.02]")}
+            className={cn("flex gap-3")}
           >
             <Input
               className={cn(
@@ -274,9 +262,7 @@ export default function ChatSection({
                 "transition-all duration-200"
               )}
               disabled={isLoading || isRateLimited}
-              onBlur={() => setInputFocused(false)}
               onChange={(e) => setInputValue(e.target.value)}
-              onFocus={() => setInputFocused(true)}
               onKeyPress={handleKeyPress}
               placeholder={
                 isLoading
@@ -296,8 +282,8 @@ export default function ChatSection({
                 "disabled:from-muted disabled:to-muted",
                 "shadow-lg transition-all duration-200",
                 (!inputValue.trim() || isRateLimited || !isInitialized) &&
-                  !isLoading &&
-                  "opacity-50"
+                !isLoading &&
+                "opacity-50"
               )}
               disabled={!inputValue.trim() || isLoading || isRateLimited || !isInitialized}
               onClick={() => sendMessage()}
@@ -306,7 +292,7 @@ export default function ChatSection({
             >
               <Send
                 className={cn(
-                  "h-4 w-4 transition-transform duration-200",
+                  "h-4 w-4",
                   inputValue.trim() && !isLoading && !isRateLimited && "scale-110"
                 )}
               />
@@ -340,7 +326,7 @@ export default function ChatSection({
       </div>
 
       {/* Chat History Sidebar */}
-      <ChatHistorySidebar
+      <ChatHistorySheet
         currentWebsiteId={websiteId}
         currentWebsiteName={websiteData?.name}
         isOpen={showChatHistory}

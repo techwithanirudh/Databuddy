@@ -14,18 +14,6 @@ function isProduction() {
     return process.env.NODE_ENV === 'production';
 }
 
-export const canManageUsers = (role: string) => {
-    return role === 'ADMIN'
-}
-
-export const getSession = async (request: any) => {
-    const sessionCookie = getSessionCookie(request);
-    if (!sessionCookie) {
-        return null;
-    }
-    return sessionCookie;
-}
-
 export const auth = betterAuth({
     database: drizzleAdapter(db, {
         provider: "pg",

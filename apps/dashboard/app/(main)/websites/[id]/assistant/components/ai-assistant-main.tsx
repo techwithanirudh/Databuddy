@@ -54,8 +54,8 @@ export default function AIAssistantMain(props: WebsiteDataTabProps) {
     <div className="flex flex-1 flex-col gap-3 overflow-hidden lg:flex-row">
       <div
         className={cn(
-          "flex flex-col overflow-hidden transition-all duration-500 ease-in-out",
-          shouldShowVisualization ? "flex-[3_3_0%]" : "flex-1"
+          "flex flex-col overflow-hidden",
+          shouldShowVisualization ? "lg:flex-[0.6]" : "flex-1"
         )}
       >
         <Suspense fallback={<ChatSkeleton />}>
@@ -78,23 +78,20 @@ export default function AIAssistantMain(props: WebsiteDataTabProps) {
         </Suspense>
       </div>
 
-      {/* Visualization Section - smoothly slides in/out based on need */}
-      <div
-        className={cn(
-          "transform flex-col overflow-hidden transition-all duration-500 ease-in-out",
-          shouldShowVisualization ? "flex flex-[2_2_0%] translate-x-0 opacity-100" : "hidden"
-        )}
-      >
-        <Suspense fallback={<VisualizationSkeleton />}>
-          <VisualizationSection
-            {...props}
-            currentMessage={currentQueryMessage}
-            hasVisualization={shouldShowVisualization}
-            latestVisualization={latestVisualizationMessage}
-            onQuickInsight={chat.sendMessage}
-          />
-        </Suspense>
-      </div>
+      {/* Visualization Section - simplified */}
+      {shouldShowVisualization && (
+        <div className="flex flex-[0.4] flex-col overflow-hidden">
+          <Suspense fallback={<VisualizationSkeleton />}>
+            <VisualizationSection
+              {...props}
+              currentMessage={currentQueryMessage}
+              hasVisualization={shouldShowVisualization}
+              latestVisualization={latestVisualizationMessage}
+              onQuickInsight={chat.sendMessage}
+            />
+          </Suspense>
+        </div>
+      )}
     </div>
   );
 }

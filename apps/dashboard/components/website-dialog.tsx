@@ -3,6 +3,7 @@
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
+import { useEffect, useRef } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -59,13 +60,19 @@ export function WebsiteDialog({
   const queryClient = useQueryClient();
   const isEditing = !!website;
   const { data: activeOrganization } = authClient.useActiveOrganization();
-
   const form = useForm<FormData>({
     defaultValues: {
       name: website?.name || "",
       domain: website?.domain || "",
     },
   });
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (open) {
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
+  }, [open]);
 
   const { mutate: createWebsite, isPending: isCreating } = useMutation({
     mutationFn: (data: CreateWebsiteData) => {
@@ -103,7 +110,10 @@ export function WebsiteDialog({
     },
   });
 
-  const handleSubmit = (data: FormData) => {
+  const handleSubmit = async (data: FormData) => {
+    const isValid = await form.trigger();
+    if (!isValid) return;
+
     if (isEditing) {
       updateWebsite({ id: website.id, name: data.name });
     } else {
@@ -139,7 +149,7 @@ export function WebsiteDialog({
                 <FormItem>
                   <FormLabel>Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="My Awesome Site" {...field} />
+                    <Input placeholder="My Awesome Site" {...field} ref={inputRef} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -168,7 +178,10 @@ export function WebsiteDialog({
               >
                 Cancel
               </Button>
-              <Button disabled={isCreating || isUpdating} type="submit">
+              <Button
+                disabled={isCreating || isUpdating || !form.formState.isValid}
+                type="submit"
+              >
                 {isCreating || isUpdating
                   ? "Saving..."
                   : isEditing

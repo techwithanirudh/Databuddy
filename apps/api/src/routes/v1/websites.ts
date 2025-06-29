@@ -181,13 +181,13 @@ websitesRouter.post("/", async (c) => {
 	const organizationId = c.req.query("organizationId");
 
 	if (!user) {
-		return c.json(createErrorResponse("Unauthorized", 401));
+		return c.json({ success: false, error: "Unauthorized" }, 401);
 	}
 
 	try {
 		const validationResult = createWebsiteSchema.safeParse(rawData);
 		if (!validationResult.success) {
-			return c.json(createErrorResponse("Invalid input data", 400));
+			return c.json({ success: false, error: "Invalid input data" }, 400);
 		}
 
 		const data = validationResult.data;
@@ -205,10 +205,12 @@ websitesRouter.post("/", async (c) => {
 
 			if (!hasPermission) {
 				return c.json(
-					createErrorResponse(
-						"You don't have permission to create websites in this organization.",
-						403,
-					),
+					{
+						success: false,
+						error:
+							"You don't have permission to create websites in this organization.",
+					},
+					403,
 				);
 			}
 		}
@@ -218,7 +220,11 @@ websitesRouter.post("/", async (c) => {
 
 		if (!limitCheck.allowed) {
 			return c.json(
-				createErrorResponse(limitCheck.error || "Creation limit exceeded"),
+				{
+					success: false,
+					error: limitCheck.error || "Creation limit exceeded",
+				},
+				400,
 			);
 		}
 
@@ -236,9 +242,11 @@ websitesRouter.post("/", async (c) => {
 
 			if (existingWebsite) {
 				return c.json(
-					createErrorResponse(
-						`A website with the domain "${fullDomain}" already exists in this organization.`,
-					),
+					{
+						success: false,
+						error: `A website with the domain "${fullDomain}" already exists in this organization.`,
+					},
+					409,
 				);
 			}
 		} else {
@@ -252,9 +260,11 @@ websitesRouter.post("/", async (c) => {
 
 			if (existingWebsite) {
 				return c.json(
-					createErrorResponse(
-						`You already have a website with the domain "${fullDomain}".`,
-					),
+					{
+						success: false,
+						error: `You already have a website with the domain "${fullDomain}".`,
+					},
+					409,
 				);
 			}
 		}
@@ -287,16 +297,18 @@ websitesRouter.post("/", async (c) => {
 			},
 		);
 
-		return c.json(createSuccessResponse(website));
+		return c.json({ success: true, data: website });
 	} catch (error) {
 		logger.error("[Website API] Error creating website:", { error });
 		return c.json(
-			createErrorResponse(
-				error instanceof Error
-					? `Failed to create website: ${error.message}`
-					: "Failed to create website",
-				500,
-			),
+			{
+				success: false,
+				error:
+					error instanceof Error
+						? `Failed to create website: ${error.message}`
+						: "Failed to create website",
+			},
+			500,
 		);
 	}
 });
@@ -311,13 +323,13 @@ websitesRouter.patch(
 		const website = c.get("website");
 
 		if (!user) {
-			return c.json(createErrorResponse("Unauthorized", 401));
+			return c.json({ success: false, error: "Unauthorized" }, 401);
 		}
 
 		try {
 			const validationResult = updateWebsiteSchema.safeParse(rawData);
 			if (!validationResult.success) {
-				return c.json(createErrorResponse("Invalid input data", 400));
+				return c.json({ success: false, error: "Invalid input data" }, 400);
 			}
 
 			const { name } = validationResult.data;
@@ -329,10 +341,11 @@ websitesRouter.patch(
 
 			if (!website) {
 				return c.json(
-					createErrorResponse(
-						"Website not found or you do not have permission.",
-						404,
-					),
+					{
+						success: false,
+						error: "Website not found or you do not have permission.",
+					},
+					404,
 				);
 			}
 
@@ -359,16 +372,18 @@ websitesRouter.patch(
 				},
 			);
 
-			return c.json(createSuccessResponse(updatedWebsite));
+			return c.json({ success: true, data: updatedWebsite });
 		} catch (error) {
 			logger.error("[Website API] Error updating website:", { error });
 			return c.json(
-				createErrorResponse(
-					error instanceof Error
-						? `Failed to update website: ${error.message}`
-						: "Failed to update website",
-					500,
-				),
+				{
+					success: false,
+					error:
+						error instanceof Error
+							? `Failed to update website: ${error.message}`
+							: "Failed to update website",
+				},
+				500,
 			);
 		}
 	},
@@ -384,14 +399,16 @@ websitesRouter.post(
 
 		if (!user || !website) {
 			return c.json(
-				createErrorResponse("Unauthorized or website not found", 401),
+				{ success: false, error: "Unauthorized or website not found" },
+				401,
 			);
 		}
 
 		try {
 			if (organizationId && typeof organizationId !== "string") {
 				return c.json(
-					createErrorResponse("Invalid organization ID format", 400),
+					{ success: false, error: "Invalid organization ID format" },
+					400,
 				);
 			}
 
@@ -403,10 +420,12 @@ websitesRouter.post(
 
 				if (!hasPermission) {
 					return c.json(
-						createErrorResponse(
-							"You don't have permission to transfer websites to this organization.",
-							403,
-						),
+						{
+							success: false,
+							error:
+								"You don't have permission to transfer websites to this organization.",
+						},
+						403,
 					);
 				}
 			}
@@ -420,10 +439,13 @@ websitesRouter.post(
 				.where(eq(websites.id, website.id))
 				.returning();
 
-			return c.json(createSuccessResponse(updatedWebsite));
+			return c.json({ success: true, data: updatedWebsite });
 		} catch (error) {
 			logger.error("[Website API] Error transferring website:", { error });
-			return c.json(createErrorResponse("Failed to transfer website", 500));
+			return c.json(
+				{ success: false, error: "Failed to transfer website" },
+				500,
+			);
 		}
 	},
 );
@@ -433,7 +455,7 @@ websitesRouter.get("/", async (c) => {
 	const organizationId = c.req.query("organizationId");
 
 	if (!user) {
-		return c.json(createErrorResponse("Unauthorized", 401));
+		return c.json({ success: false, error: "Unauthorized" }, 401);
 	}
 
 	try {
@@ -446,13 +468,13 @@ websitesRouter.get("/", async (c) => {
 			orderBy: (websites, { desc }) => [desc(websites.createdAt)],
 		});
 
-		return c.json(createSuccessResponse(userWebsites));
+		return c.json({ success: true, data: userWebsites });
 	} catch (error) {
 		logger.error("[Website API] Error fetching websites:", {
 			error,
 			organizationId,
 		});
-		return c.json(createErrorResponse("Failed to fetch websites", 500));
+		return c.json({ success: false, error: "Failed to fetch websites" }, 500);
 	}
 });
 
@@ -461,7 +483,7 @@ websitesRouter.get("/project/:projectId", async (c) => {
 	const projectId = c.req.param("projectId");
 
 	if (!user) {
-		return c.json(createErrorResponse("Unauthorized", 401));
+		return c.json({ success: false, error: "Unauthorized" }, 401);
 	}
 
 	if (!projectId) {
@@ -478,7 +500,8 @@ websitesRouter.get("/project/:projectId", async (c) => {
 
 		if (!projectAccessRecord) {
 			return c.json(
-				createErrorResponse("You don't have access to this project", 403),
+				{ success: false, error: "You don't have access to this project" },
+				403,
 			);
 		}
 
@@ -487,10 +510,13 @@ websitesRouter.get("/project/:projectId", async (c) => {
 			orderBy: (websites, { desc }) => [desc(websites.createdAt)],
 		});
 
-		return c.json(createSuccessResponse(projectWebsites));
+		return c.json({ success: true, data: projectWebsites });
 	} catch (error) {
 		logger.error("[Website API] Error fetching project websites:", { error });
-		return c.json(createErrorResponse("Failed to fetch project websites", 500));
+		return c.json(
+			{ success: false, error: "Failed to fetch project websites" },
+			500,
+		);
 	}
 });
 
@@ -499,14 +525,15 @@ websitesRouter.get("/:id", websiteAuthHook(), async (c) => {
 
 	if (!website) {
 		return c.json(
-			createErrorResponse(
-				"Website not found or you do not have permission to access it.",
-				404,
-			),
+			{
+				success: false,
+				error: "Website not found or you do not have permission to access it.",
+			},
+			404,
 		);
 	}
 
-	return c.json(createSuccessResponse(website));
+	return c.json({ success: true, data: website });
 });
 
 websitesRouter.delete(
@@ -518,16 +545,17 @@ websitesRouter.delete(
 		const website = c.get("website");
 
 		if (!user) {
-			return c.json(createErrorResponse("Unauthorized", 401));
+			return c.json({ success: false, error: "Unauthorized" }, 401);
 		}
 
 		try {
 			if (!website) {
 				return c.json(
-					createErrorResponse(
-						"Website not found or you do not have permission.",
-						404,
-					),
+					{
+						success: false,
+						error: "Website not found or you do not have permission.",
+					},
+					404,
 				);
 			}
 
@@ -547,10 +575,10 @@ websitesRouter.delete(
 				},
 			);
 
-			return c.json(createSuccessResponse({ success: true }));
+			return c.json({ success: true, data: { success: true } });
 		} catch (error) {
 			logger.error("[Website API] Error deleting website:", { error });
-			return c.json(createErrorResponse("Failed to delete website", 500));
+			return c.json({ success: false, error: "Failed to delete website" }, 500);
 		}
 	},
 );

@@ -81,7 +81,6 @@ function EnhancedEmptyState({ onAddWebsite }: { onAddWebsite: () => void }) {
         <div className="absolute inset-0 translate-x-[-100%] bg-gradient-to-r from-white/0 via-white/20 to-white/0 transition-transform duration-700 group-hover:translate-x-[100%]" />
         <PlusIcon
           className="relative z-10 h-5 w-5 transition-transform duration-300 group-hover:rotate-90"
-          size={24}
         />
         <span className="relative z-10">Add First Website</span>
       </Button>
@@ -174,7 +173,6 @@ export default function WebsitesPage() {
             <div className="absolute inset-0 translate-x-[-100%] bg-gradient-to-r from-white/0 via-white/20 to-white/0 transition-transform duration-700 group-hover:translate-x-[100%]" />
             <PlusIcon
               className="relative z-10 h-4 w-4 transition-transform duration-300 group-hover:rotate-90"
-              size={24}
             />
             <span className="relative z-10 truncate">New Website</span>
           </Button>

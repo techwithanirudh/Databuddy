@@ -127,7 +127,6 @@ export const WebsiteCard = memo(({ website }: WebsiteCardProps) => {
             </div>
             <ArrowRightIcon
               className="h-4 w-4 flex-shrink-0 text-muted-foreground transition-all duration-200 group-hover:translate-x-1 group-hover:text-primary"
-              size={32}
               weight="fill"
             />
           </div>
@@ -152,20 +151,19 @@ export const WebsiteCard = memo(({ website }: WebsiteCardProps) => {
                 </span>
                 {trend && (
                   <div
-                    className={`flex items-center gap-1 font-medium text-xs ${
-                      trend.type === "up"
-                        ? "text-green-600"
-                        : trend.type === "down"
-                          ? "text-red-600"
-                          : "text-muted-foreground"
-                    }`}
+                    className={`flex items-center gap-1 font-medium text-xs ${trend.type === "up"
+                      ? "text-green-600"
+                      : trend.type === "down"
+                        ? "text-red-600"
+                        : "text-muted-foreground"
+                      }`}
                   >
                     {trend.type === "up" ? (
-                      <TrendUpIcon className="h-4 w-4" size={32} weight="fill" />
+                      <TrendUpIcon className="h-4 w-4" weight="fill" />
                     ) : trend.type === "down" ? (
-                      <TrendDownIcon className="h-4 w-4" size={32} weight="fill" />
+                      <TrendDownIcon className="h-4 w-4" weight="fill" />
                     ) : (
-                      <MinusIcon className="h-4 w-4" size={32} weight="fill" />
+                      <MinusIcon className="h-4 w-4" weight="fill" />
                     )}
                     <span>
                       {trend.type === "neutral"

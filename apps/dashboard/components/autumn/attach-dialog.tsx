@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import type React from "react";
+import { useEffect, useState } from "react";
 import { useAutumn } from "autumn-js/react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Loader2 } from "lucide-react";
-import { type CheckProductPreview } from "autumn-js";
+import type { CheckProductPreview } from "autumn-js";
 import { Dialog, DialogContent, DialogFooter, DialogTitle } from "@/components/ui/dialog";
 import { getAttachContent } from "@/lib/autumn/attach-content";
 
@@ -25,11 +26,11 @@ export default function AttachDialog(params?: AttachDialogProps) {
 
   const getTotalPrice = () => {
     let sum = due_today?.price || 0;
-    optionsInput.forEach((option) => {
+    for (const option of optionsInput) {
       if (option.price && option.quantity) {
         sum += option.price * (option.quantity / option.billing_units);
       }
-    });
+    }
     return sum;
   }
 
@@ -104,7 +105,7 @@ export default function AttachDialog(params?: AttachDialogProps) {
             className="min-w-16 flex items-center gap-2"
           >
             {loading ? <Loader2 className="animate-spin" size={10} /> : <span>Confirm</span>}
-            
+
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -170,7 +171,7 @@ export const OptionsInput = ({
         value={quantity ? quantity / billing_units : ""}
         onChange={(e) => {
           const newOptions = [...optionsInput];
-          newOptions[index].quantity = parseInt((e.target as HTMLInputElement).value) * billing_units;
+          newOptions[index].quantity = Number.parseInt((e.target as HTMLInputElement).value) * billing_units;
           setOptionsInput(newOptions);
         }}
       >

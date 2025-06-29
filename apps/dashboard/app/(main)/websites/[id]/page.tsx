@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowClockwiseIcon, CalendarIcon, WarningIcon } from "@phosphor-icons/react";
+import { ArrowClockwiseIcon, WarningIcon } from "@phosphor-icons/react";
 import { format, subDays, subHours } from "date-fns";
 import { useAtom } from "jotai";
 import dynamic from "next/dynamic";
@@ -25,6 +25,7 @@ import {
 } from "@/stores/jotai/filterAtoms";
 import type { FullTabProps, WebsiteDataTabProps } from "./_components/utils/types";
 import { EmptyState } from "./_components/utils/ui-components";
+import { useQueryClient } from "@tanstack/react-query";
 
 type TabId =
   | "overview"
@@ -80,6 +81,7 @@ function WebsiteDetailsPage() {
   const [, setDateRangeAction] = useAtom(setDateRangeAndAdjustGranularityAtom);
   const [formattedDateRangeState] = useAtom(formattedDateRangeAtom);
   const [timezone] = useAtom(timezoneAtom);
+  const queryClient = useQueryClient();
 
   const dayPickerSelectedRange: DayPickerRange | undefined = useMemo(
     () => ({
@@ -146,13 +148,16 @@ function WebsiteDetailsPage() {
     }
   }, [isTrackingSetup, activeTab, setActiveTab]);
 
-  const handleRefresh = useCallback(() => {
+  const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    setTimeout(() => {
-      setIsRefreshing(false);
-      toast.success("Data refreshed");
-    }, 1000);
-  }, []);
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["websites", id] }),
+      queryClient.invalidateQueries({ queryKey: ["websiteAnalytics", id] }),
+      queryClient.invalidateQueries({ queryKey: ["websiteTrends", id] }),
+    ]);
+    setIsRefreshing(false);
+    toast.success("Data refreshed");
+  }, [id, queryClient]);
 
   const renderTabContent = useCallback(
     (tabId: TabId) => {
@@ -212,7 +217,7 @@ function WebsiteDetailsPage() {
             </Link>
           }
           description="The website you are looking for does not exist or you do not have access."
-          icon={<WarningIcon className="h-10 w-10" size={48} weight="duotone" />}
+          icon={<WarningIcon className="h-10 w-10" weight="duotone" />}
           title="Website not found"
         />
       </div>
@@ -268,7 +273,6 @@ function WebsiteDetailsPage() {
               >
                 <ArrowClockwiseIcon
                   className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`}
-                  size={24}
                   weight="fill"
                 />
                 <span className="hidden sm:inline">

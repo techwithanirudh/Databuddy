@@ -62,6 +62,18 @@ async function _resolveOwnerId(website: Website): Promise<string | null> {
 	return null;
 }
 
+const getOwnerId = cacheable(
+	async (website: Website): Promise<string | null> => {
+		return _resolveOwnerId(website);
+	},
+	{
+		expireInSec: 300,
+		prefix: "website_owner_id",
+		staleWhileRevalidate: true,
+		staleTime: 60,
+	},
+);
+
 // Cache the website lookup and owner lookup
 export const getWebsiteById = cacheable(
 	async (id: string): Promise<WebsiteWithOwner | null> => {
@@ -73,7 +85,7 @@ export const getWebsiteById = cacheable(
 			return null;
 		}
 
-		const ownerId = await _resolveOwnerId(website);
+		const ownerId = await getOwnerId(website);
 
 		return { ...website, ownerId };
 	},
@@ -249,42 +261,38 @@ export function isValidOriginSecure(
 			return allowLocalhost;
 		}
 
-		const normalizedAllowedDomain = normalizeDomain(allowedDomain.trim());
+		// Specific subdomain checks
 		const normalizedOriginDomain = normalizeDomain(originUrl.hostname);
-
-		// Exact match
-		if (normalizedOriginDomain === normalizedAllowedDomain) {
-			return true;
+		if (
+			allowedSubdomains.length > 0 &&
+			!allowedSubdomains.some(
+				(sub) => `${sub}.${allowedDomain}` === normalizedOriginDomain,
+			)
+		) {
+			return false;
 		}
 
-		// Subdomain checks
-		if (isSubdomain(normalizedOriginDomain, normalizedAllowedDomain)) {
-			const subdomain = normalizedOriginDomain.replace(
-				`.${normalizedAllowedDomain}`,
-				"",
-			);
-
-			// Check blocked subdomains
-			if (blockedSubdomains.includes(subdomain)) {
-				return false;
-			}
-
-			// Check allowed subdomains (if specified, only these are allowed)
-			if (allowedSubdomains.length > 0) {
-				return allowedSubdomains.includes(subdomain);
-			}
-
-			return true;
+		if (
+			blockedSubdomains.length > 0 &&
+			blockedSubdomains.some(
+				(sub) => `${sub}.${allowedDomain}` === normalizedOriginDomain,
+			)
+		) {
+			return false;
 		}
 
-		return false;
+		// Main domain check
+		const normalizedAllowedDomain = normalizeDomain(allowedDomain);
+		return (
+			normalizedOriginDomain === normalizedAllowedDomain ||
+			isSubdomain(normalizedOriginDomain, normalizedAllowedDomain)
+		);
 	} catch (error) {
 		logger.error(
 			new Error(
 				`[isValidOriginSecure] Validation failed: ${error instanceof Error ? error.message : String(error)}`,
 			),
 		);
-
 		return false;
 	}
 }
@@ -295,19 +303,48 @@ export function isValidOriginSecure(
  * @returns `true` if the hostname is considered localhost.
  */
 export function isLocalhost(hostname: string): boolean {
-	const normalizedHost = hostname.toLowerCase();
+	return (
+		hostname === "localhost" || // "localhost"
+		hostname === "[::1]" || // IPv6 loopback
+		hostname.startsWith("127.")
+	); // IPv4 loopback
+}
 
-	const localhostHosts = new Set(["localhost", "127.0.0.1", "::1", "0.0.0.0"]);
+const getWebsiteByIdCached = cacheable(
+	async (id: string): Promise<Website | null> => {
+		const website = await db.query.websites.findFirst({
+			where: eq(websites.id, id),
+		});
+		return website ?? null;
+	},
+	{
+		expireInSec: 300, // 5 minutes
+		prefix: "website_by_id",
+		staleWhileRevalidate: true,
+		staleTime: 60, // 1 minute
+	},
+);
 
-	if (localhostHosts.has(normalizedHost)) {
-		return true;
+const getOwnerIdCached = cacheable(
+	async (website: Website): Promise<string | null> => {
+		return _resolveOwnerId(website);
+	},
+	{
+		expireInSec: 300,
+		prefix: "website_owner_id",
+		staleWhileRevalidate: true,
+		staleTime: 60,
+	},
+);
+
+export async function getWebsiteByIdV2(
+	id: string,
+): Promise<WebsiteWithOwner | null> {
+	const website = await getWebsiteByIdCached(id);
+	if (!website) {
+		return null;
 	}
 
-	// Check for private IP ranges
-	return (
-		normalizedHost.match(/^127\.\d+\.\d+\.\d+$/) !== null || // 127.0.0.0/8
-		normalizedHost.match(/^192\.168\.\d+\.\d+$/) !== null || // 192.168.0.0/16
-		normalizedHost.match(/^10\.\d+\.\d+\.\d+$/) !== null || // 10.0.0.0/8
-		normalizedHost.match(/^172\.(1[6-9]|2\d|3[01])\.\d+\.\d+$/) !== null // 172.16.0.0/12
-	);
+	const ownerId = await getOwnerIdCached(website);
+	return { ...website, ownerId };
 }

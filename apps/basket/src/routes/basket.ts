@@ -9,7 +9,7 @@ import {
 import { createHash, randomUUID } from "node:crypto";
 import { getGeo, extractIpFromRequest } from "../utils/ip-geo";
 import { parseUserAgent, detectBot } from "../utils/user-agent";
-import { getWebsiteById, isValidOrigin } from "../hooks/auth";
+import { getWebsiteByIdV2, isValidOrigin } from "../hooks/auth";
 import {
 	validatePayloadSize,
 	sanitizeString,
@@ -67,7 +67,7 @@ async function validateRequest(body: any, query: any, request: Request) {
 		return { error: { status: "error", message: "Missing client ID" } };
 	}
 
-	const website = await getWebsiteById(clientId);
+	const website = await getWebsiteByIdV2(clientId);
 	if (!website || website.status !== "ACTIVE") {
 		await logBlockedTraffic(
 			request,
@@ -90,11 +90,22 @@ async function validateRequest(body: any, query: any, request: Request) {
 		});
 
 		if (data?.allowed) {
-			await autumn.track({
-				customer_id: website.ownerId,
-				feature_id: "events",
-				value: 1,
-			});
+			autumn
+				.track({
+					customer_id: website.ownerId,
+					feature_id: "events",
+					value: 1,
+				})
+				.then(() => {
+					console.timeEnd("autumn.track");
+				})
+				.catch((err) => {
+					logger.error("Failed to track autumn event", {
+						error: err as Error,
+						ownerId: website.ownerId,
+					});
+					console.timeEnd("autumn.track");
+				});
 		} else {
 			await logBlockedTraffic(
 				request,
@@ -158,7 +169,9 @@ async function insertError(errorData: any, clientId: string): Promise<void> {
 		errorData.payload.eventId,
 		VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH,
 	);
-	if (await checkDuplicate(eventId, "error")) return;
+	if (await checkDuplicate(eventId, "error")) {
+		return;
+	}
 
 	const payload = errorData.payload;
 	const now = new Date().getTime();
@@ -192,11 +205,22 @@ async function insertError(errorData: any, clientId: string): Promise<void> {
 		created_at: now,
 	};
 
-	await clickHouse.insert({
-		table: "analytics.errors",
-		values: [errorEvent],
-		format: "JSONEachRow",
-	});
+	clickHouse
+		.insert({
+			table: "analytics.errors",
+			values: [errorEvent],
+			format: "JSONEachRow",
+		})
+		.then(() => {
+			console.timeEnd(`clickhouse.insert:error:${eventId}`);
+		})
+		.catch((err) => {
+			logger.error("Failed to insert error event", {
+				error: err as Error,
+				eventId,
+			});
+			console.timeEnd(`clickhouse.insert:error:${eventId}`);
+		});
 }
 
 async function insertWebVitals(
@@ -207,7 +231,9 @@ async function insertWebVitals(
 		vitalsData.payload.eventId,
 		VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH,
 	);
-	if (await checkDuplicate(eventId, "web_vitals")) return;
+	if (await checkDuplicate(eventId, "web_vitals")) {
+		return;
+	}
 
 	const payload = vitalsData.payload;
 	const now = new Date().getTime();
@@ -231,11 +257,22 @@ async function insertWebVitals(
 		created_at: now,
 	};
 
-	await clickHouse.insert({
-		table: "analytics.web_vitals",
-		values: [webVitalsEvent],
-		format: "JSONEachRow",
-	});
+	clickHouse
+		.insert({
+			table: "analytics.web_vitals",
+			values: [webVitalsEvent],
+			format: "JSONEachRow",
+		})
+		.then(() => {
+			console.timeEnd(`clickhouse.insert:web_vitals:${eventId}`);
+		})
+		.catch((err) => {
+			logger.error("Failed to insert web vitals event", {
+				error: err as Error,
+				eventId,
+			});
+			console.timeEnd(`clickhouse.insert:web_vitals:${eventId}`);
+		});
 }
 
 async function insertTrackEvent(
@@ -248,7 +285,9 @@ async function insertTrackEvent(
 		trackData.eventId,
 		VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH,
 	);
-	if (await checkDuplicate(eventId, "track")) return;
+	if (await checkDuplicate(eventId, "track")) {
+		return;
+	}
 
 	const { anonymizedIP, country, region } = await getGeo(ip);
 	const {
@@ -361,11 +400,22 @@ async function insertTrackEvent(
 		created_at: now,
 	};
 
-	await clickHouse.insert({
-		table: "analytics.events",
-		values: [trackEvent],
-		format: "JSONEachRow",
-	});
+	clickHouse
+		.insert({
+			table: "analytics.events",
+			values: [trackEvent],
+			format: "JSONEachRow",
+		})
+		.then(() => {
+			console.timeEnd(`clickhouse.insert:track:${eventId}`);
+		})
+		.catch((err) => {
+			logger.error("Failed to insert track event", {
+				error: err as Error,
+				eventId,
+			});
+			console.timeEnd(`clickhouse.insert:track:${eventId}`);
+		});
 }
 
 async function checkDuplicate(
@@ -373,7 +423,9 @@ async function checkDuplicate(
 	eventType: string,
 ): Promise<boolean> {
 	const key = `dedup:${eventType}:${eventId}`;
-	if (await redis.exists(key)) return true;
+	if (await redis.exists(key)) {
+		return true;
+	}
 
 	const ttl = eventId.startsWith("exit_") ? 172800 : 86400;
 	await redis.setex(key, ttl, "1");
@@ -454,11 +506,19 @@ async function logBlockedTraffic(
 			created_at: now,
 		};
 
-		await clickHouse.insert({
-			table: "analytics.blocked_traffic",
-			values: [blockedEvent],
-			format: "JSONEachRow",
-		});
+		clickHouse
+			.insert({
+				table: "analytics.blocked_traffic",
+				values: [blockedEvent],
+				format: "JSONEachRow",
+			})
+			.then(() => {
+				console.timeEnd("clickhouse.insert:blocked_traffic");
+			})
+			.catch((err) => {
+				logger.error("Failed to log blocked traffic", { error: err as Error });
+				console.timeEnd("clickhouse.insert:blocked_traffic");
+			});
 	} catch (error) {
 		logger.error("Failed to log blocked traffic", { error: error as Error });
 	}
@@ -473,7 +533,9 @@ const app = new Elysia()
 			request,
 		}: { body: any; query: any; request: Request }) => {
 			const validation = await validateRequest(body, query, request);
-			if (!validation.success) return validation.error;
+			if (!validation.success) {
+				return validation.error;
+			}
 
 			const { clientId, userAgent, ip } = validation;
 
@@ -485,17 +547,17 @@ const app = new Elysia()
 			const eventType = body.type || "track";
 
 			if (eventType === "track") {
-				await insertTrackEvent(body, clientId, userAgent, ip);
+				insertTrackEvent(body, clientId, userAgent, ip);
 				return { status: "success", type: "track" };
 			}
 
 			if (eventType === "error") {
-				await insertError(body, clientId);
+				insertError(body, clientId);
 				return { status: "success", type: "error" };
 			}
 
 			if (eventType === "web_vitals") {
-				await insertWebVitals(body, clientId);
+				insertWebVitals(body, clientId);
 				return { status: "success", type: "web_vitals" };
 			}
 
@@ -521,7 +583,9 @@ const app = new Elysia()
 			}
 
 			const validation = await validateRequest(body, query, request);
-			if (!validation.success) return { ...validation.error, batch: true };
+			if (!validation.success) {
+				return { ...validation.error, batch: true };
+			}
 
 			const { clientId, userAgent, ip } = validation;
 
@@ -533,47 +597,49 @@ const app = new Elysia()
 			}
 
 			const results = [];
-			for (const event of body) {
+			const processingPromises = body.map(async (event: any) => {
 				const eventType = event.type || "track";
-
 				try {
 					if (eventType === "track") {
-						await insertTrackEvent(event, clientId, userAgent, ip);
-						results.push({
+						insertTrackEvent(event, clientId, userAgent, ip);
+						return {
 							status: "success",
 							type: "track",
 							eventId: event.eventId,
-						});
-					} else if (eventType === "error") {
-						await insertError(event, clientId);
-						results.push({
+						};
+					}
+					if (eventType === "error") {
+						insertError(event, clientId);
+						return {
 							status: "success",
 							type: "error",
 							eventId: event.payload?.eventId,
-						});
-					} else if (eventType === "web_vitals") {
-						await insertWebVitals(event, clientId);
-						results.push({
+						};
+					}
+					if (eventType === "web_vitals") {
+						insertWebVitals(event, clientId);
+						return {
 							status: "success",
 							type: "web_vitals",
 							eventId: event.payload?.eventId,
-						});
-					} else {
-						results.push({
-							status: "error",
-							message: "Unknown event type",
-							eventType,
-						});
+						};
 					}
+					return {
+						status: "error",
+						message: "Unknown event type",
+						eventType,
+					};
 				} catch (error) {
-					results.push({
+					return {
 						status: "error",
 						message: "Processing failed",
 						eventType,
 						error: String(error),
-					});
+					};
 				}
-			}
+			});
+
+			results.push(...(await Promise.all(processingPromises)));
 
 			return {
 				status: "success",

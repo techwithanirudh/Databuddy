@@ -8,10 +8,18 @@ import {
   LineChart,
   PieChart,
   User,
+  ChevronDown,
+  Brain,
 } from "lucide-react";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import type { Message } from "../types/message";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 interface MessageBubbleProps {
   message: Message;
@@ -30,9 +38,100 @@ const getChartIcon = (chartType: string) => {
   }
 };
 
+function ThinkingStepsPreview({ steps }: { steps: string[] }) {
+  const [visibleSteps, setVisibleSteps] = useState<string[]>([]);
+  const [animatedSteps, setAnimatedSteps] = useState<Set<number>>(new Set());
+  const maxPreviewSteps = 3;
+
+  useEffect(() => {
+    if (steps.length === 0) return;
+
+    // Show the latest steps in the preview (sliding window)
+    const latestSteps = steps.slice(-maxPreviewSteps);
+    setVisibleSteps(latestSteps);
+
+    // Animate new steps
+    const newStepIndex = latestSteps.length - 1;
+    if (newStepIndex >= 0) {
+      setTimeout(() => {
+        setAnimatedSteps(prev => new Set([...prev, newStepIndex]));
+      }, 50);
+    }
+  }, [steps]);
+
+  if (visibleSteps.length === 0) return null;
+
+  return (
+    <div className="mt-2 space-y-1 max-h-20 overflow-hidden">
+      {visibleSteps.map((step, index) => {
+        // Remove the 🧠 emoji if it exists
+        const cleanStep = step.replace(/^🧠\s*/, '');
+        const isAnimated = animatedSteps.has(index);
+
+        return (
+          <div
+            key={`preview-${index}-${step.slice(0, 20)}`}
+            className={cn(
+              "flex items-start gap-2 py-1 pl-1 text-muted-foreground text-xs transition-all duration-300 ease-in-out",
+              isAnimated ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+            )}
+          >
+            <Clock className="mt-0.5 h-3 w-3 flex-shrink-0" />
+            <span className="leading-relaxed break-words">{cleanStep}</span>
+          </div>
+        );
+      })}
+      {steps.length > maxPreviewSteps && (
+        <div className="flex items-center gap-2 py-1 pl-1 text-muted-foreground text-xs opacity-60">
+          <ChevronDown className="h-3 w-3" />
+          <span>+{steps.length - maxPreviewSteps} more steps...</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ThinkingStepsAccordion({ steps }: { steps: string[] }) {
+  if (steps.length === 0) return null;
+
+  return (
+    <Accordion type="single" collapsible className="w-full">
+      <AccordionItem value="thinking-steps" className="border-border/30">
+        <AccordionTrigger className="py-2 text-xs hover:no-underline">
+          <div className="flex items-center gap-2">
+            <Brain className="h-3 w-3" />
+            <span>Thinking Process ({steps.length} steps)</span>
+          </div>
+        </AccordionTrigger>
+        <AccordionContent className="pt-2">
+          <div className="space-y-2 max-h-48 overflow-y-auto">
+            {steps.map((step, index) => {
+              // Remove the 🧠 emoji if it exists
+              const cleanStep = step.replace(/^🧠\s*/, '');
+
+              return (
+                <div
+                  key={`step-${index}-${step.slice(0, 20)}`}
+                  className="flex items-start gap-2 py-1 pl-1 text-muted-foreground text-xs"
+                >
+                  <div className="mt-0.5 h-3 w-3 flex-shrink-0 rounded-full bg-muted-foreground/20 flex items-center justify-center">
+                    <span className="text-[10px] font-mono">{index + 1}</span>
+                  </div>
+                  <span className="leading-relaxed">{cleanStep}</span>
+                </div>
+              );
+            })}
+          </div>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
+  );
+}
+
 export function MessageBubble({ message }: MessageBubbleProps) {
   const isUser = message.type === "user";
   const isInProgress = message.type === "assistant" && !message.content;
+  const hasThinkingSteps = message.thinkingSteps && message.thinkingSteps.length > 0;
 
   if (isInProgress) {
     return (
@@ -50,19 +149,9 @@ export function MessageBubble({ message }: MessageBubbleProps) {
             <span className="text-muted-foreground">Nova is analyzing...</span>
           </div>
 
-          {message.thinkingSteps && message.thinkingSteps.length > 0 && (
+          {hasThinkingSteps && (
             <div className="mt-3 border-border/30 border-t pt-3">
-              <div className="mt-2 space-y-1">
-                {message.thinkingSteps.map((step, index) => (
-                  <div
-                    className="flex items-start gap-2 py-1 pl-1 text-muted-foreground text-xs"
-                    key={`thinking-${index}-${step.slice(0, 20)}`}
-                  >
-                    <Clock className="mt-0.5 h-3 w-3 flex-shrink-0" />
-                    <span>{step}</span>
-                  </div>
-                ))}
-              </div>
+              <ThinkingStepsPreview steps={message.thinkingSteps || []} />
             </div>
           )}
         </div>
@@ -102,6 +191,13 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         <div className="overflow-wrap-anywhere whitespace-pre-wrap break-words text-sm leading-relaxed">
           {message.content}
         </div>
+
+        {/* Thinking Steps Accordion (for completed messages) */}
+        {hasThinkingSteps && !isUser && message.content && (
+          <div className="mt-3">
+            <ThinkingStepsAccordion steps={message.thinkingSteps || []} />
+          </div>
+        )}
 
         {/* Metric Display */}
         {message.responseType === "metric" &&

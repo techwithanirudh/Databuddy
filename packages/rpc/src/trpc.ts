@@ -1,6 +1,5 @@
 import { TRPCError, initTRPC, type inferAsyncReturnType } from '@trpc/server';
 import superjson from 'superjson';
-import 'server-only';
 import { ZodError } from 'zod';
 
 import { auth } from '@databuddy/auth';
@@ -22,7 +21,7 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
 
 export type Context = inferAsyncReturnType<typeof createTRPCContext>;
 
-const t = initTRPC.context<Context>().create({
+export const t = initTRPC.context<Context>().create({
   transformer: superjson,
   errorFormatter({ shape, error }) {
     return {

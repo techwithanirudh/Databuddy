@@ -20,7 +20,7 @@ Add Databuddy directly to your Shopify theme:
 
 ```html
 <script
-  src="https://app.databuddy.cc/databuddy.js"
+  src="https://cdn.databuddy.cc/databuddy.js"
   data-client-id="YOUR_SITE_ID"
   data-track-screen-views="true"
   data-track-attributes="true"
@@ -40,7 +40,7 @@ If you're using Google Tag Manager:
 <script>
   (function() {
     var script = document.createElement('script');
-    script.src = 'https://app.databuddy.cc/databuddy.js';
+    script.src = 'https://cdn.databuddy.cc/databuddy.js';
     script.setAttribute('data-client-id', 'YOUR_SITE_ID');
     script.setAttribute('data-track-screen-views', 'true');
     script.setAttribute('data-track-attributes', 'true');
@@ -293,7 +293,7 @@ Load Databuddy after critical resources:
   window.addEventListener('load', function() {
     // Load Databuddy after page is fully loaded
     var script = document.createElement('script');
-    script.src = 'https://app.databuddy.cc/databuddy.js';
+    script.src = 'https://cdn.databuddy.cc/databuddy.js';
     script.setAttribute('data-client-id', 'YOUR_SITE_ID');
     script.setAttribute('data-track-screen-views', 'true');
     script.async = true;
@@ -308,7 +308,7 @@ Optimize for mobile users:
 
 ```html
 <script
-  src="https://app.databuddy.cc/databuddy.js"
+  src="https://cdn.databuddy.cc/databuddy.js"
   data-client-id="YOUR_SITE_ID"
   data-track-screen-views="true"
   data-track-attributes="true"
@@ -344,7 +344,7 @@ If using a cookie consent banner:
 // Wait for consent before tracking
 function initializeDatabuddy() {
   var script = document.createElement('script');
-  script.src = 'https://app.databuddy.cc/databuddy.js';
+  script.src = 'https://cdn.databuddy.cc/databuddy.js';
   script.setAttribute('data-client-id', 'YOUR_SITE_ID');
   script.async = true;
   document.head.appendChild(script);
@@ -379,7 +379,7 @@ Enable debug mode for development:
 
 ```html
 <script
-  src="https://app.databuddy.cc/databuddy.js"
+  src="https://cdn.databuddy.cc/databuddy.js"
   data-client-id="YOUR_SITE_ID"
   data-debug="true"
   async

@@ -5,13 +5,13 @@
     "main": "./src/index.ts",
     "types": "./src/index.ts",
     "scripts": {
-        "dev": "echo \"Error: no test specified\" && exit 1"
+        "dev": "turbo run dev --filter=rpc"
     },
     "dependencies": {
         "@databuddy/auth": "workspace:*",
         "@databuddy/db": "workspace:*",
         "@databuddy/redis": "workspace:*",
-        "@trpc/server": "^10.45.2",
+        "@trpc/server": "^11.4.3",
         "autumn-js": "^0.0.72",
         "superjson": "^2.2.2",
         "zod": "^3.23.8"

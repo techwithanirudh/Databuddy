@@ -8,7 +8,7 @@ export function generateScriptTag(websiteId: string, trackingOptions: TrackingOp
   const isLocalhost = process.env.NODE_ENV === "development";
   const scriptUrl = isLocalhost
     ? "http://localhost:3000/databuddy.js"
-    : "https://app.databuddy.cc/databuddy.js";
+    : "https://cdn.databuddy.cc/databuddy.js";
   const apiUrl = isLocalhost ? "http://localhost:4000" : "https://basket.databuddy.cc";
 
   const options = Object.entries(trackingOptions)

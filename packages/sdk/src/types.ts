@@ -24,7 +24,7 @@ export interface DatabuddyConfig {
 
   /**
    * Custom script URL for the Databuddy browser bundle.
-   * Default: 'https://app.databuddy.cc/databuddy.js'
+   * Default: 'https://cdn.databuddy.cc/databuddy.js'
    */
   scriptUrl?: string;
 
@@ -291,7 +291,7 @@ export type EventName = keyof EventTypeMap;
 /**
  * Properties for a specific event type
  */
-export type PropertiesForEvent<T extends EventName> = T extends keyof EventTypeMap 
+export type PropertiesForEvent<T extends EventName> = T extends keyof EventTypeMap
   ? EventTypeMap[T] & EventProperties
   : EventProperties;
 
@@ -303,7 +303,7 @@ export interface DatabuddyTracker {
    * Track a custom event
    */
   track<T extends EventName>(
-    eventName: T, 
+    eventName: T,
     properties?: PropertiesForEvent<T>
   ): Promise<void>;
 
@@ -369,7 +369,7 @@ export type TrackFunction = <T extends EventName>(
 ) => Promise<void>;
 
 export type ScreenViewFunction = (
-  path?: string, 
+  path?: string,
   properties?: EventProperties
 ) => void;
 

@@ -1,13 +1,14 @@
 "use client";
 
 import { useSession } from "@databuddy/auth/client";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
 import { createContext, useContext, useEffect, useState } from "react";
 import type { session } from "@databuddy/db";
 import type { ReactNode } from "react";
 import { AutumnProvider } from "autumn-js/react";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
+import { TRPCProvider } from "@/lib/trpc-provider";
 
 type Session = typeof session.$inferSelect;
 // Default query client configuration
@@ -71,31 +72,16 @@ const SessionProvider = ({ children }: { children: ReactNode }) => {
 };
 
 export default function Providers({ children }: { children: React.ReactNode }) {
-  // Create a client-specific query client to avoid shared state between users
-  const [clientQueryClient] = useState(
-    () =>
-      new QueryClient({
-        ...defaultQueryClientOptions,
-        defaultOptions: {
-          ...defaultQueryClientOptions.defaultOptions,
-          queries: {
-            ...defaultQueryClientOptions.defaultOptions.queries,
-            gcTime: 1000 * 60 * 5, // 5 minutes
-            staleTime: 1000 * 60 * 2, // 2 minutes
-          },
-        },
-      })
-  );
 
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-      <QueryClientProvider client={clientQueryClient}>
+      <TRPCProvider>
         <SessionProvider>
-          <AutumnProvider backendUrl={process.env.NEXT_PUBLIC_API_URL}>
+          <AutumnProvider>
             <NuqsAdapter>{children}</NuqsAdapter>
           </AutumnProvider>
         </SessionProvider>
-      </QueryClientProvider>
+      </TRPCProvider>
     </ThemeProvider>
   );
 }

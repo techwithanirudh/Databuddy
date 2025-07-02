@@ -39,7 +39,7 @@ No installation needed - load directly from CDN:
 
 ```html
 <script 
-  src="https://app.databuddy.cc/databuddy.js"
+  src="https://cdn.databuddy.cc/databuddy.js"
   data-client-id="your-client-id"
   async
 ></script>
@@ -86,7 +86,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   <!-- Your content -->
   
   <script 
-    src="https://app.databuddy.cc/databuddy.js"
+    src="https://cdn.databuddy.cc/databuddy.js"
     data-client-id="your-client-id"
     data-track-screen-views="true"  // Enabled by default, shown for clarity
     data-track-performance="true"  // Enabled by default, shown for clarity
@@ -118,7 +118,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
 ```html
 <script 
-  src="https://app.databuddy.cc/databuddy.js"
+  src="https://cdn.databuddy.cc/databuddy.js"
   data-client-id="your-client-id"  <!-- ✅ Required -->
 ></script>
 ```
@@ -368,7 +368,7 @@ When `trackAttributes` is set to `true`, the Databuddy SDK automatically tracks 
     ```html
     <!-- Script Tag Example -->
     <script
-      src="https://app.databuddy.cc/databuddy.js"
+      src="https://cdn.databuddy.cc/databuddy.js"
       data-client-id="your-client-id"
       data-track-attributes="true"
       async
@@ -507,7 +507,7 @@ This feature is particularly useful for quickly adding tracking to static conten
 
 ```html title="Performance Configuration"
 <script 
-  src="https://app.databuddy.cc/databuddy.js"
+  src="https://cdn.databuddy.cc/databuddy.js"
   data-client-id="your-client-id"
   
   <!-- Batching -->
@@ -642,7 +642,7 @@ export interface DatabuddyConfig {
 
   // Endpoints
   apiUrl?: string;        // Default: 'https://basket.databuddy.cc'
-  scriptUrl?: string;     // Default: 'https://app.databuddy.cc/databuddy.js'
+  scriptUrl?: string;     // Default: 'https://cdn.databuddy.cc/databuddy.js'
 
   // SDK metadata
   sdk?: string;           // Default: 'web'
@@ -1424,7 +1424,7 @@ This table provides a comprehensive list of all configuration options available 
 | `clientId` | - | `string` | **Required** | Your Databuddy project client ID. |
 | `clientSecret` | `undefined` | `string` | - | Client secret for server-side operations (NEVER expose in browser). |
 | `apiUrl` | `https://basket.databuddy.cc` | `string` | Valid URL | Custom API endpoint for event ingestion. |
-| `scriptUrl` | `https://app.databuddy.cc/databuddy.js` | `string` | Valid URL | Custom script URL for the browser bundle. |
+| `scriptUrl` | `https://cdn.databuddy.cc/databuddy.js` | `string` | Valid URL | Custom script URL for the browser bundle. |
 | `sdk` | `'web'` | `string` | - | SDK name for analytics (advanced). |
 | `sdkVersion` | `package.json` version | `string` | - | SDK version (advanced). |
 | `disabled` | `false` | `boolean` | - | Disable all tracking if true. |
@@ -1529,7 +1529,7 @@ declare global {
 
 <Accordion title="Script Loading Issues">
 
-1. **Check URL**: Verify `https://app.databuddy.cc/databuddy.js`
+1. **Check URL**: Verify `https://cdn.databuddy.cc/databuddy.js`
 2. **Content Security Policy**: Add CSP rules if needed:
    ```
    script-src 'self' https://app.databuddy.cc;

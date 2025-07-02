@@ -15,7 +15,7 @@ export function Databuddy(props: DatabuddyConfig) {
     if (props.disabled) return;
     if (document.querySelector('script[data-databuddy-injected]')) return;
     const script = document.createElement('script');
-    script.src = props.scriptUrl || 'https://app.databuddy.cc/databuddy.js';
+    script.src = props.scriptUrl || 'https://cdn.databuddy.cc/databuddy.js';
     script.async = true;
     script.crossOrigin = 'anonymous';
     script.setAttribute('data-databuddy-injected', 'true');

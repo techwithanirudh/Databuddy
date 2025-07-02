@@ -1,4 +1,4 @@
-import type { Context } from '../trpc';
+import type { Context } from '@/trpc';
 import { TRPCError } from '@trpc/server';
 import { eq, websites } from '@databuddy/db';
 

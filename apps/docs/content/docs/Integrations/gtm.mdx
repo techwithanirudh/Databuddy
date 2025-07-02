@@ -29,7 +29,7 @@ Integrate Databuddy with Google Tag Manager for centralized tag management while
 <script>
   (function() {
     var el = document.createElement("script");
-    el.src = "https://app.databuddy.cc/databuddy.js";
+    el.src = "https://cdn.databuddy.cc/databuddy.js";
     el.async = true;
     el.setAttribute("data-client-id", "Databuddy Site ID");
     el.setAttribute("data-track-screen-views", "true");
@@ -75,7 +75,7 @@ Load different Databuddy configurations based on environment:
     var siteId = isProduction ? '{{Databuddy Prod Site ID}}' : '{{Databuddy Dev Site ID}}';
     
     var el = document.createElement("script");
-    el.src = "https://app.databuddy.cc/databuddy.js";
+    el.src = "https://cdn.databuddy.cc/databuddy.js";
     el.async = true;
     el.setAttribute("data-client-id", siteId);
     el.setAttribute("data-track-screen-views", "true");
@@ -96,7 +96,7 @@ Load Databuddy only for specific conditions:
     // Only load for non-internal traffic
     if ({{Internal Traffic}} === 'false') {
       var el = document.createElement("script");
-      el.src = "https://app.databuddy.cc/databuddy.js";
+      el.src = "https://cdn.databuddy.cc/databuddy.js";
       el.async = true;
       el.setAttribute("data-client-id", "{{Databuddy Site ID}}");
       el.setAttribute("data-track-screen-views", "true");
@@ -277,7 +277,7 @@ Respect user privacy choices:
     
     if (hasConsent) {
       var el = document.createElement("script");
-      el.src = "https://app.databuddy.cc/databuddy.js";
+      el.src = "https://cdn.databuddy.cc/databuddy.js";
       el.async = true;
       el.setAttribute("data-client-id", "{{Databuddy Site ID}}");
       el.setAttribute("data-track-screen-views", "true");
@@ -371,7 +371,7 @@ function() {
   (function() {
     try {
       var el = document.createElement("script");
-      el.src = "https://app.databuddy.cc/databuddy.js";
+      el.src = "https://cdn.databuddy.cc/databuddy.js";
       el.async = true;
       el.setAttribute("data-client-id", "{{Databuddy Site ID}}");
       el.onerror = function() {

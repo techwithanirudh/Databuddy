@@ -5,8 +5,7 @@ import { TRPCError } from '@trpc/server';
 import { nanoid } from 'nanoid';
 import { checkAndTrackWebsiteCreation, getBillingCustomerId, trackWebsiteUsage } from '../utils/billing';
 import { authorizeWebsiteAccess } from '../utils/auth';
-import { discordLogger } from '../utils/discord-webhook';
-import type { WebsiteInsert } from '../utils/types';
+import { logger as discordLogger } from '../utils/discord-webhook';
 
 const createWebsiteSchema = z.object({
     name: z

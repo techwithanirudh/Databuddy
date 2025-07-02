@@ -61,7 +61,7 @@ All options are type-safe and documented in `DatabuddyConfig`:
 | `clientId`            | string    | —            | **Required.** Your Databuddy project client ID. |
 | `clientSecret`        | string    | —            | (Advanced) For server-side use only. |
 | `apiUrl`              | string    | `https://api.databuddy.cc` | Custom API endpoint. |
-| `scriptUrl`           | string    | `https://app.databuddy.cc/databuddy.js` | Custom script URL. |
+| `scriptUrl`           | string    | `https://cdn.databuddy.cc/databuddy.js` | Custom script URL. |
 | `sdk`                 | string    | `web`        | SDK name. Only override for custom builds. |
 | `sdkVersion`          | string    | *auto*       | SDK version. Defaults to package version. |
 | `disabled`            | boolean   | `false`      | Disable all tracking. |

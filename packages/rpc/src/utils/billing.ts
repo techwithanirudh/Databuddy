@@ -2,12 +2,9 @@ import { Autumn } from 'autumn-js';
 import { db, member, eq, and } from '@databuddy/db';
 import { cacheable } from '@databuddy/redis';
 
+console.log(process.env)
 const autumn = new Autumn();
 
-/**
- * For creation, checks the limit and tracks usage in one call if allowed.
- * This is an optimized call that uses `send_event`.
- */
 export async function checkAndTrackWebsiteCreation(customerId: string) {
     if (!customerId) {
         return { allowed: true };
@@ -30,9 +27,6 @@ export async function checkAndTrackWebsiteCreation(customerId: string) {
     }
 }
 
-/**
- * For deletion or other discrete tracking events.
- */
 export async function trackWebsiteUsage(customerId: string, value: number) {
     if (!customerId) {
         return { success: false };

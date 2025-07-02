@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@databuddy/rpc": "workspace:*",
     "@databuddy/sdk": "workspace:*",
     "@hello-pangea/dnd": "^18.0.1",
     "@mantine/dates": "^8.1.1",
@@ -19,6 +20,8 @@
     "@radix-ui/react-switch": "^1.2.5",
     "@tanstack/react-query": "^5.75.4",
     "@tanstack/react-virtual": "^3.13.10",
+    "@trpc/client": "^11.4.3",
+    "@trpc/react-query": "^11.4.3",
     "@types/d3-scale": "^4.0.9",
     "@types/dagre": "^0.7.52",
     "@types/geojson": "^7946.0.16",

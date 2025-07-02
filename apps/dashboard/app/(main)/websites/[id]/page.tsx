@@ -96,6 +96,9 @@ function WebsiteDetailsPage() {
       { label: "24h", fullLabel: "Last 24 hours", hours: 24 },
       { label: "7d", fullLabel: "Last 7 days", days: 7 },
       { label: "30d", fullLabel: "Last 30 days", days: 30 },
+      { label: "90d", fullLabel: "Last 90 days", days: 90 },
+      { label: "180d", fullLabel: "Last 180 days", days: 180 },
+      { label: "365d", fullLabel: "Last 365 days", days: 365 },
     ],
     []
   );

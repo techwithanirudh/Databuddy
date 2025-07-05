@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { z } from 'zod'
 import { eq, and, isNull, desc, sql } from 'drizzle-orm'
+import { escape as sqlEscape } from 'sqlstring'
 
 import { authMiddleware } from '../../middleware/auth'
 import { websiteAuthHook } from '../../middleware/website'
@@ -239,48 +240,48 @@ funnelRouter.get('/', async (c) => {
 
 // Get all goals for a website
 funnelRouter.get('/goals', async (c) => {
-    try {
-      const website = c.get('website')
-  
-      const goals = await db
-        .select({
-          id: funnelDefinitions.id,
-          name: funnelDefinitions.name,
-          description: funnelDefinitions.description,
-          steps: funnelDefinitions.steps,
-          filters: funnelDefinitions.filters,
-          isActive: funnelDefinitions.isActive,
-          createdAt: funnelDefinitions.createdAt,
-          updatedAt: funnelDefinitions.updatedAt,
-        })
-        .from(funnelDefinitions)
-        .where(and(
-          eq(funnelDefinitions.websiteId, website.id),
-          isNull(funnelDefinitions.deletedAt),
-          sql`jsonb_array_length(${funnelDefinitions.steps}) = 1`
-        ))
-        .orderBy(desc(funnelDefinitions.createdAt))
-  
-      return c.json({
-        success: true,
-        data: goals,
-        meta: {
-          total: goals.length,
-          website_id: website.id
-        }
+  try {
+    const website = c.get('website')
+
+    const goals = await db
+      .select({
+        id: funnelDefinitions.id,
+        name: funnelDefinitions.name,
+        description: funnelDefinitions.description,
+        steps: funnelDefinitions.steps,
+        filters: funnelDefinitions.filters,
+        isActive: funnelDefinitions.isActive,
+        createdAt: funnelDefinitions.createdAt,
+        updatedAt: funnelDefinitions.updatedAt,
       })
-    } catch (error: any) {
-      logger.error('Failed to fetch goals', {
-        error: error.message,
-        website_id: c.get('website')?.id
-      })
-  
-      return c.json({
-        success: false,
-        error: 'Failed to fetch goals'
-      }, 500)
-    }
-  })
+      .from(funnelDefinitions)
+      .where(and(
+        eq(funnelDefinitions.websiteId, website.id),
+        isNull(funnelDefinitions.deletedAt),
+        sql`jsonb_array_length(${funnelDefinitions.steps}) = 1`
+      ))
+      .orderBy(desc(funnelDefinitions.createdAt))
+
+    return c.json({
+      success: true,
+      data: goals,
+      meta: {
+        total: goals.length,
+        website_id: website.id
+      }
+    })
+  } catch (error: any) {
+    logger.error('Failed to fetch goals', {
+      error: error.message,
+      website_id: c.get('website')?.id
+    })
+
+    return c.json({
+      success: false,
+      error: 'Failed to fetch goals'
+    }, 500)
+  }
+})
 
 // Get a specific funnel
 funnelRouter.get('/:id', async (c) => {
@@ -346,8 +347,8 @@ funnelRouter.post(
 
       if (steps.length <= 1) {
         return c.json({
-            success: false,
-            error: 'Funnels must have more than one step.'
+          success: false,
+          error: 'Funnels must have more than one step.'
         }, 400)
       }
 
@@ -395,60 +396,60 @@ funnelRouter.post(
 
 // Create a new goal
 funnelRouter.post(
-    '/goals',
-    async (c) => {
-      try {
-        const website = c.get('website')
-        const user = c.get('user')
-        const { name, description, steps, filters } = await c.req.json()
-  
-        if (steps.length !== 1) {
-          return c.json({
-              success: false,
-              error: 'Goals must have exactly one step.'
-          }, 400)
-        }
-  
-        const goalId = crypto.randomUUID()
-  
-        const [newGoal] = await db
-          .insert(funnelDefinitions)
-          .values({
-            id: goalId,
-            websiteId: website.id,
-            name,
-            description,
-            steps,
-            filters,
-            createdBy: user.id,
-          })
-          .returning()
-  
-        logger.info('Goal created', {
-          goal_id: goalId,
-          name,
-          website_id: website.id,
-          user_id: user.id
-        })
-  
-        return c.json({
-          success: true,
-          data: newGoal
-        }, 201)
-      } catch (error: any) {
-        logger.error('Failed to create goal', {
-          error: error.message,
-          website_id: c.get('website')?.id,
-          user_id: c.get('user')?.id
-        })
-  
+  '/goals',
+  async (c) => {
+    try {
+      const website = c.get('website')
+      const user = c.get('user')
+      const { name, description, steps, filters } = await c.req.json()
+
+      if (steps.length !== 1) {
         return c.json({
           success: false,
-          error: 'Failed to create goal'
-        }, 500)
+          error: 'Goals must have exactly one step.'
+        }, 400)
       }
+
+      const goalId = crypto.randomUUID()
+
+      const [newGoal] = await db
+        .insert(funnelDefinitions)
+        .values({
+          id: goalId,
+          websiteId: website.id,
+          name,
+          description,
+          steps,
+          filters,
+          createdBy: user.id,
+        })
+        .returning()
+
+      logger.info('Goal created', {
+        goal_id: goalId,
+        name,
+        website_id: website.id,
+        user_id: user.id
+      })
+
+      return c.json({
+        success: true,
+        data: newGoal
+      }, 201)
+    } catch (error: any) {
+      logger.error('Failed to create goal', {
+        error: error.message,
+        website_id: c.get('website')?.id,
+        user_id: c.get('user')?.id
+      })
+
+      return c.json({
+        success: false,
+        error: 'Failed to create goal'
+      }, 500)
     }
-  )
+  }
+)
 
 // Update a funnel
 funnelRouter.put(
@@ -461,8 +462,8 @@ funnelRouter.put(
 
       if (updates.steps && updates.steps.length <= 1) {
         return c.json({
-            success: false,
-            error: 'Funnels must have more than one step.'
+          success: false,
+          error: 'Funnels must have more than one step.'
         }, 400)
       }
 
@@ -507,58 +508,58 @@ funnelRouter.put(
 
 // Update a goal
 funnelRouter.put(
-    '/:id/goals',
-    async (c) => {
-      try {
-        const website = c.get('website')
-        const goalId = c.req.param('id')
-        const updates = await c.req.json()
-  
-        if (updates.steps && updates.steps.length !== 1) {
-          return c.json({
-              success: false,
-              error: 'Goals must have exactly one step.'
-          }, 400)
-        }
-  
-        const [updatedGoal] = await db
-          .update(funnelDefinitions)
-          .set({
-            ...updates,
-            updatedAt: new Date().toISOString(),
-          })
-          .where(and(
-            eq(funnelDefinitions.id, goalId),
-            eq(funnelDefinitions.websiteId, website.id),
-            isNull(funnelDefinitions.deletedAt)
-          ))
-          .returning()
-  
-        if (!updatedGoal) {
-          return c.json({
-            success: false,
-            error: 'Goal not found'
-          }, 404)
-        }
-  
-        return c.json({
-          success: true,
-          data: updatedGoal
-        })
-      } catch (error: any) {
-        logger.error('Failed to update goal', {
-          error: error.message,
-          goal_id: c.req.param('id'),
-          website_id: c.get('website')?.id
-        })
-  
+  '/:id/goals',
+  async (c) => {
+    try {
+      const website = c.get('website')
+      const goalId = c.req.param('id')
+      const updates = await c.req.json()
+
+      if (updates.steps && updates.steps.length !== 1) {
         return c.json({
           success: false,
-          error: 'Failed to update goal'
-        }, 500)
+          error: 'Goals must have exactly one step.'
+        }, 400)
       }
+
+      const [updatedGoal] = await db
+        .update(funnelDefinitions)
+        .set({
+          ...updates,
+          updatedAt: new Date().toISOString(),
+        })
+        .where(and(
+          eq(funnelDefinitions.id, goalId),
+          eq(funnelDefinitions.websiteId, website.id),
+          isNull(funnelDefinitions.deletedAt)
+        ))
+        .returning()
+
+      if (!updatedGoal) {
+        return c.json({
+          success: false,
+          error: 'Goal not found'
+        }, 404)
+      }
+
+      return c.json({
+        success: true,
+        data: updatedGoal
+      })
+    } catch (error: any) {
+      logger.error('Failed to update goal', {
+        error: error.message,
+        goal_id: c.req.param('id'),
+        website_id: c.get('website')?.id
+      })
+
+      return c.json({
+        success: false,
+        error: 'Failed to update goal'
+      }, 500)
     }
-  )
+  }
+)
 
 // Delete a funnel (soft delete)
 funnelRouter.delete('/:id', async (c) => {
@@ -612,47 +613,47 @@ funnelRouter.delete('/:id', async (c) => {
 
 // Delete a goal (soft delete)
 funnelRouter.delete('/:id/goals', async (c) => {
-    try {
-      const website = c.get('website')
-      const goalId = c.req.param('id')
-  
-      const [deletedGoal] = await db
-        .update(funnelDefinitions)
-        .set({
-          deletedAt: new Date().toISOString(),
-          isActive: false,
-        })
-        .where(and(
-          eq(funnelDefinitions.id, goalId),
-          eq(funnelDefinitions.websiteId, website.id),
-          isNull(funnelDefinitions.deletedAt)
-        ))
-        .returning({ id: funnelDefinitions.id })
-  
-      if (!deletedGoal) {
-        return c.json({
-          success: false,
-          error: 'Goal not found'
-        }, 404)
-      }
-  
-      return c.json({
-        success: true,
-        message: 'Goal deleted successfully'
+  try {
+    const website = c.get('website')
+    const goalId = c.req.param('id')
+
+    const [deletedGoal] = await db
+      .update(funnelDefinitions)
+      .set({
+        deletedAt: new Date().toISOString(),
+        isActive: false,
       })
-    } catch (error: any) {
-      logger.error('Failed to delete goal', {
-        error: error.message,
-        goal_id: c.req.param('id'),
-        website_id: c.get('website')?.id
-      })
-  
+      .where(and(
+        eq(funnelDefinitions.id, goalId),
+        eq(funnelDefinitions.websiteId, website.id),
+        isNull(funnelDefinitions.deletedAt)
+      ))
+      .returning({ id: funnelDefinitions.id })
+
+    if (!deletedGoal) {
       return c.json({
         success: false,
-        error: 'Failed to delete goal'
-      }, 500)
+        error: 'Goal not found'
+      }, 404)
     }
-  })
+
+    return c.json({
+      success: true,
+      message: 'Goal deleted successfully'
+    })
+  } catch (error: any) {
+    logger.error('Failed to delete goal', {
+      error: error.message,
+      goal_id: c.req.param('id'),
+      website_id: c.get('website')?.id
+    })
+
+    return c.json({
+      success: false,
+      error: 'Failed to delete goal'
+    }, 500)
+  }
+})
 
 // Get funnel analytics
 funnelRouter.get('/:id/analytics', async (c) => {
@@ -684,25 +685,48 @@ funnelRouter.get('/:id/analytics', async (c) => {
     const steps = funnelData.steps as Array<{ type: string; target: string; name: string; conditions?: any }>
     const filters = funnelData.filters as Array<{ field: string; operator: string; value: string | string[] }> || []
 
-    // Build filter conditions
+    // Allowed fields and operators for filtering
+    const ALLOWED_FIELDS = new Set([
+      'id', 'client_id', 'event_name', 'anonymous_id', 'time', 'session_id',
+      'event_type', 'event_id', 'session_start_time', 'timestamp',
+      'referrer', 'url', 'path', 'title', 'ip', 'user_agent', 'browser_name',
+      'browser_version', 'os_name', 'os_version', 'device_type', 'device_brand',
+      'device_model', 'country', 'region', 'city', 'screen_resolution',
+      'viewport_size', 'language', 'timezone', 'connection_type', 'rtt',
+      'downlink', 'time_on_page', 'scroll_depth', 'interaction_count',
+      'exit_intent', 'page_count', 'is_bounce', 'has_exit_intent', 'page_size',
+      'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
+      'load_time', 'dom_ready_time', 'dom_interactive', 'ttfb', 'connection_time',
+      'request_time', 'render_time', 'redirect_time', 'domain_lookup_time',
+      'fcp', 'lcp', 'cls', 'fid', 'inp', 'href', 'text', 'value',
+      'error_message', 'error_filename', 'error_lineno', 'error_colno',
+      'error_stack', 'error_type', 'properties', 'created_at',
+    ]);
+    const ALLOWED_OPERATORS = new Set([
+      'equals', 'contains', 'not_equals', 'in', 'not_in',
+    ]);
+
+    // Build filter conditions (safe)
     const buildFilterConditions = () => {
       if (!filters || filters.length === 0) return '';
 
-      const filterConditions = filters.map(filter => {
-        const field = filter.field.replace(/'/g, "''");
+      const filterConditions = filters.map((filter: { field: string; operator: string; value: string | string[] }) => {
+        if (!ALLOWED_FIELDS.has(filter.field)) return '';
+        if (!ALLOWED_OPERATORS.has(filter.operator)) return '';
+        const field = filter.field;
         const value = Array.isArray(filter.value) ? filter.value : [filter.value];
 
         switch (filter.operator) {
           case 'equals':
-            return `${field} = '${value[0].replace(/'/g, "''")}'`;
+            return `${field} = ${sqlEscape(value[0])}`;
           case 'contains':
             return `${field} LIKE '%${value[0].replace(/'/g, "''")}%'`;
           case 'not_equals':
-            return `${field} != '${value[0].replace(/'/g, "''")}'`;
+            return `${field} != ${sqlEscape(value[0])}`;
           case 'in':
-            return `${field} IN (${value.map(v => `'${v.replace(/'/g, "''")}'`).join(', ')})`;
+            return `${field} IN (${value.map(v => sqlEscape(v)).join(', ')})`;
           case 'not_in':
-            return `${field} NOT IN (${value.map(v => `'${v.replace(/'/g, "''")}'`).join(', ')})`;
+            return `${field} NOT IN (${value.map(v => sqlEscape(v)).join(', ')})`;
           default:
             return '';
         }
@@ -752,8 +776,6 @@ funnelRouter.get('/:id/analytics', async (c) => {
       ORDER BY session_id, first_occurrence
     `;
 
-
-
     // Log the generated query for debugging
     logger.info('Generated funnel analysis query', {
       funnel_id: funnelId,
@@ -761,7 +783,7 @@ funnelRouter.get('/:id/analytics', async (c) => {
       query: analysisQuery
     });
 
-    let rawResults;
+    let rawResults: any[];
     try {
       rawResults = await chQuery<{
         step_number: number;
@@ -787,7 +809,7 @@ funnelRouter.get('/:id/analytics', async (c) => {
       if (!sessionEvents.has(event.session_id)) {
         sessionEvents.set(event.session_id, []);
       }
-      sessionEvents.get(event.session_id)!.push({
+      sessionEvents.get(event.session_id)?.push({
         step_number: event.step_number,
         step_name: event.step_name,
         first_occurrence: event.first_occurrence
@@ -811,7 +833,9 @@ funnelRouter.get('/:id/analytics', async (c) => {
           if (!stepCounts.has(event.step_number)) {
             stepCounts.set(event.step_number, new Set());
           }
-          stepCounts.get(event.step_number)!.add(sessionId);
+          const stepSet = stepCounts.get(event.step_number);
+          if (!stepSet) continue;
+          stepSet.add(sessionId);
           currentStep++;
         }
       }
@@ -852,7 +876,7 @@ funnelRouter.get('/:id/analytics', async (c) => {
     // Calculate average completion time across all steps
     const completionTimes = analyticsResults
       .filter(step => step.avg_time_to_complete && step.avg_time_to_complete > 0)
-      .map(step => step.avg_time_to_complete!);
+      .map(step => step.avg_time_to_complete);
 
     const avgCompletionTime = completionTimes.length > 0
       ? Number((completionTimes.reduce((sum, time) => sum + time, 0) / completionTimes.length).toFixed(2))
@@ -947,25 +971,48 @@ funnelRouter.get('/:funnel_id/analytics/referrer', async (c) => {
       return c.json({ success: false, error: 'Funnel has no steps' }, 400);
     }
 
-    // Build filter conditions
+    // Allowed fields and operators for filtering
+    const ALLOWED_FIELDS = new Set([
+      'id', 'client_id', 'event_name', 'anonymous_id', 'time', 'session_id',
+      'event_type', 'event_id', 'session_start_time', 'timestamp',
+      'referrer', 'url', 'path', 'title', 'ip', 'user_agent', 'browser_name',
+      'browser_version', 'os_name', 'os_version', 'device_type', 'device_brand',
+      'device_model', 'country', 'region', 'city', 'screen_resolution',
+      'viewport_size', 'language', 'timezone', 'connection_type', 'rtt',
+      'downlink', 'time_on_page', 'scroll_depth', 'interaction_count',
+      'exit_intent', 'page_count', 'is_bounce', 'has_exit_intent', 'page_size',
+      'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
+      'load_time', 'dom_ready_time', 'dom_interactive', 'ttfb', 'connection_time',
+      'request_time', 'render_time', 'redirect_time', 'domain_lookup_time',
+      'fcp', 'lcp', 'cls', 'fid', 'inp', 'href', 'text', 'value',
+      'error_message', 'error_filename', 'error_lineno', 'error_colno',
+      'error_stack', 'error_type', 'properties', 'created_at',
+    ]);
+    const ALLOWED_OPERATORS = new Set([
+      'equals', 'contains', 'not_equals', 'in', 'not_in',
+    ]);
+
+    // Build filter conditions (safe)
     const buildFilterConditions = () => {
       if (!filters || filters.length === 0) return '';
 
-      const filterConditions = filters.map(filter => {
-        const field = filter.field.replace(/'/g, "''");
+      const filterConditions = filters.map((filter: { field: string; operator: string; value: string | string[] }) => {
+        if (!ALLOWED_FIELDS.has(filter.field)) return '';
+        if (!ALLOWED_OPERATORS.has(filter.operator)) return '';
+        const field = filter.field;
         const value = Array.isArray(filter.value) ? filter.value : [filter.value];
 
         switch (filter.operator) {
           case 'equals':
-            return `${field} = '${value[0].replace(/'/g, "''")}'`;
+            return `${field} = ${sqlEscape(value[0])}`;
           case 'contains':
             return `${field} LIKE '%${value[0].replace(/'/g, "''")}%'`;
           case 'not_equals':
-            return `${field} != '${value[0].replace(/'/g, "''")}'`;
+            return `${field} != ${sqlEscape(value[0])}`;
           case 'in':
-            return `${field} IN (${value.map(v => `'${v.replace(/'/g, "''")}'`).join(', ')})`;
+            return `${field} IN (${value.map(v => sqlEscape(v)).join(', ')})`;
           case 'not_in':
-            return `${field} NOT IN (${value.map(v => `'${v.replace(/'/g, "''")}'`).join(', ')})`;
+            return `${field} NOT IN (${value.map(v => sqlEscape(v)).join(', ')})`;
           default:
             return '';
         }
@@ -1034,7 +1081,7 @@ funnelRouter.get('/:funnel_id/analytics/referrer', async (c) => {
       website_id: website.id
     });
 
-    let rawResults;
+    let rawResults: any[];
     try {
       rawResults = await chQuery<{
         step_number: number;
@@ -1091,7 +1138,8 @@ funnelRouter.get('/:funnel_id/analytics/referrer', async (c) => {
         }
       }
 
-      const sessionData = sessionReferrerMap.get(event.session_id)!;
+      const sessionData = sessionReferrerMap.get(event.session_id);
+      if (!sessionData) continue;
       const normalizedReferrer = sessionData.normalizedKey;
 
       if (!referrerData.has(normalizedReferrer)) {
@@ -1101,12 +1149,15 @@ funnelRouter.get('/:funnel_id/analytics/referrer', async (c) => {
         });
       }
 
-      const referrerGroup = referrerData.get(normalizedReferrer)!;
+      const referrerGroup = referrerData.get(normalizedReferrer);
+      if (!referrerGroup) continue;
       if (!referrerGroup.sessions.has(event.session_id)) {
         referrerGroup.sessions.set(event.session_id, []);
       }
 
-      referrerGroup.sessions.get(event.session_id)!.push({
+      const sessionEventsArr = referrerGroup.sessions.get(event.session_id);
+      if (!sessionEventsArr) continue;
+      sessionEventsArr.push({
         step_number: event.step_number,
         step_name: event.step_name,
         first_occurrence: event.first_occurrence
@@ -1128,7 +1179,9 @@ funnelRouter.get('/:funnel_id/analytics/referrer', async (c) => {
             if (!stepCounts.has(event.step_number)) {
               stepCounts.set(event.step_number, new Set());
             }
-            stepCounts.get(event.step_number)!.add(sessionId);
+            const stepSet = stepCounts.get(event.step_number);
+            if (!stepSet) continue;
+            stepSet.add(sessionId);
             currentStep++;
           }
         }
@@ -1242,25 +1295,48 @@ funnelRouter.get('/:id/goal-analytics', async (c) => {
       }, 400)
     }
 
-    // Build filter conditions
+    // Allowed fields and operators for filtering
+    const ALLOWED_FIELDS = new Set([
+      'id', 'client_id', 'event_name', 'anonymous_id', 'time', 'session_id',
+      'event_type', 'event_id', 'session_start_time', 'timestamp',
+      'referrer', 'url', 'path', 'title', 'ip', 'user_agent', 'browser_name',
+      'browser_version', 'os_name', 'os_version', 'device_type', 'device_brand',
+      'device_model', 'country', 'region', 'city', 'screen_resolution',
+      'viewport_size', 'language', 'timezone', 'connection_type', 'rtt',
+      'downlink', 'time_on_page', 'scroll_depth', 'interaction_count',
+      'exit_intent', 'page_count', 'is_bounce', 'has_exit_intent', 'page_size',
+      'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
+      'load_time', 'dom_ready_time', 'dom_interactive', 'ttfb', 'connection_time',
+      'request_time', 'render_time', 'redirect_time', 'domain_lookup_time',
+      'fcp', 'lcp', 'cls', 'fid', 'inp', 'href', 'text', 'value',
+      'error_message', 'error_filename', 'error_lineno', 'error_colno',
+      'error_stack', 'error_type', 'properties', 'created_at',
+    ]);
+    const ALLOWED_OPERATORS = new Set([
+      'equals', 'contains', 'not_equals', 'in', 'not_in',
+    ]);
+
+    // Build filter conditions (safe)
     const buildFilterConditions = () => {
       if (!filters || filters.length === 0) return '';
 
-      const filterConditions = filters.map(filter => {
-        const field = filter.field.replace(/'/g, "''");
+      const filterConditions = filters.map((filter: { field: string; operator: string; value: string | string[] }) => {
+        if (!ALLOWED_FIELDS.has(filter.field)) return '';
+        if (!ALLOWED_OPERATORS.has(filter.operator)) return '';
+        const field = filter.field;
         const value = Array.isArray(filter.value) ? filter.value : [filter.value];
 
         switch (filter.operator) {
           case 'equals':
-            return `${field} = '${value[0].replace(/'/g, "''")}'`;
+            return `${field} = ${sqlEscape(value[0])}`;
           case 'contains':
             return `${field} LIKE '%${value[0].replace(/'/g, "''")}%'`;
           case 'not_equals':
-            return `${field} != '${value[0].replace(/'/g, "''")}'`;
+            return `${field} != ${sqlEscape(value[0])}`;
           case 'in':
-            return `${field} IN (${value.map(v => `'${v.replace(/'/g, "''")}'`).join(', ')})`;
+            return `${field} IN (${value.map(v => sqlEscape(v)).join(', ')})`;
           case 'not_in':
-            return `${field} NOT IN (${value.map(v => `'${v.replace(/'/g, "''")}'`).join(', ')})`;
+            return `${field} NOT IN (${value.map(v => sqlEscape(v)).join(', ')})`;
           default:
             return '';
         }
@@ -1318,7 +1394,7 @@ funnelRouter.get('/:id/goal-analytics', async (c) => {
       query: analyticsQuery
     });
 
-    let results;
+    let results: any;
     try {
       results = await chQuery<{
         total_users: number;

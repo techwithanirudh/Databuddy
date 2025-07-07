@@ -14,7 +14,7 @@ import {
 import { differenceInDays } from "date-fns";
 import dayjs from "dayjs";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState, memo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { DataTable } from "@/components/analytics/data-table";
 import { StatCard } from "@/components/analytics/stat-card";
 import {
@@ -100,8 +100,7 @@ const MIN_PREVIOUS_SESSIONS_FOR_TREND = 5;
 const MIN_PREVIOUS_VISITORS_FOR_TREND = 5;
 const MIN_PREVIOUS_PAGEVIEWS_FOR_TREND = 10;
 
-// Memoized LiveUserIndicator component
-const LiveUserIndicator = memo(({ count }: { count: number }) => {
+function LiveUserIndicator({ count }: { count: number }) {
   const [prevCount, setPrevCount] = useState(count);
   const [change, setChange] = useState<"up" | "down" | null>(null);
 
@@ -139,17 +138,10 @@ const LiveUserIndicator = memo(({ count }: { count: number }) => {
       </div>
     </div>
   );
-});
+}
 
-LiveUserIndicator.displayName = 'LiveUserIndicator';
-
-// Memoized UnauthorizedAccessError component
-const UnauthorizedAccessError = memo(() => {
+function UnauthorizedAccessError() {
   const router = useRouter();
-
-  const handleBackClick = useCallback(() => {
-    router.push("/websites");
-  }, [router]);
 
   return (
     <Card className="mx-auto my-8 w-full max-w-lg border-red-200 bg-red-50 dark:border-red-800/50 dark:bg-red-950/20">
@@ -176,7 +168,7 @@ const UnauthorizedAccessError = memo(() => {
         </p>
         <Button
           className="w-full sm:w-auto"
-          onClick={handleBackClick}
+          onClick={() => router.push("/websites")}
           variant="destructive"
         >
           Back to Websites
@@ -184,9 +176,7 @@ const UnauthorizedAccessError = memo(() => {
       </CardContent>
     </Card>
   );
-});
-
-UnauthorizedAccessError.displayName = 'UnauthorizedAccessError';
+}
 
 export function WebsiteOverviewTab({
   websiteId,
@@ -270,9 +260,9 @@ export function WebsiteOverviewTab({
     [getDataForQuery]
   );
 
-  const loading = useMemo(() => ({
+  const loading = {
     summary: batchLoading || isRefreshing,
-  }), [batchLoading, isRefreshing]);
+  };
 
   const error = batchError;
 
@@ -496,11 +486,11 @@ export function WebsiteOverviewTab({
   const dateTo = useMemo(() => new Date(dateRange.end_date), [dateRange.end_date]);
   const dateDiff = useMemo(() => differenceInDays(dateTo, dateFrom), [dateTo, dateFrom]);
 
-  const metricColors = useMemo(() => ({
+  const metricColors = {
     pageviews: "blue-500",
     visitors: "green-500",
     sessions: "purple-500",
-  }), []);
+  };
 
   const calculateTrends = useMemo(() => {
     if (!analytics.events_by_date?.length || analytics.events_by_date.length < 2) {
@@ -656,17 +646,15 @@ export function WebsiteOverviewTab({
 
   const [expandedProperties, setExpandedProperties] = useState<Set<string>>(new Set());
 
-  const togglePropertyExpansion = useCallback((propertyId: string) => {
-    setExpandedProperties(prev => {
-      const newExpanded = new Set(prev);
-      if (newExpanded.has(propertyId)) {
-        newExpanded.delete(propertyId);
-      } else {
-        newExpanded.add(propertyId);
-      }
-      return newExpanded;
-    });
-  }, []);
+  const togglePropertyExpansion = (propertyId: string) => {
+    const newExpanded = new Set(expandedProperties);
+    if (newExpanded.has(propertyId)) {
+      newExpanded.delete(propertyId);
+    } else {
+      newExpanded.add(propertyId);
+    }
+    setExpandedProperties(newExpanded);
+  };
 
   const processedCustomEventsData = useMemo(() => {
     if (!customEventsData?.custom_events?.length) {
@@ -737,7 +725,6 @@ export function WebsiteOverviewTab({
     });
   }, [customEventsData]);
 
-  // Memoized column definitions to prevent recreation
   const deviceColumns = useMemo(
     () => [
       {
@@ -891,96 +878,6 @@ export function WebsiteOverviewTab({
     []
   );
 
-  // Memoized render sub row function
-  const renderSubRow = useCallback((subRow: any, parentRow: any, index: number) => {
-    const propertyKey = subRow.key;
-    const propertyTotal = subRow.total;
-    const propertyValues = subRow.values;
-    const propertyId = `${parentRow.name}-${propertyKey}`;
-    const isPropertyExpanded = expandedProperties.has(propertyId);
-
-    return (
-      <div className="ml-4">
-        <button
-          className="flex w-full items-center justify-between rounded border border-border/30 bg-muted/20 px-3 py-2 hover:bg-muted/40"
-          onClick={() => togglePropertyExpansion(propertyId)}
-          type="button"
-        >
-          <div className="flex items-center gap-2">
-            {isPropertyExpanded ? (
-              <CaretDownIcon
-                className="h-3 w-3 text-muted-foreground"
-                size={16}
-                weight="fill"
-              />
-            ) : (
-              <CaretRightIcon
-                className="h-3 w-3 text-muted-foreground"
-                size={16}
-                weight="fill"
-              />
-            )}
-            <span className="font-medium text-foreground text-sm">{propertyKey}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="font-medium text-foreground text-sm">
-              {propertyTotal.toLocaleString()}
-            </div>
-            <div className="rounded bg-primary/10 px-2 py-0.5 font-medium text-primary text-xs">
-              {propertyValues.length} {propertyValues.length === 1 ? "value" : "values"}
-            </div>
-          </div>
-        </button>
-
-        {isPropertyExpanded && (
-          <div className="mt-1 max-h-48 overflow-y-auto rounded border border-border/20">
-            {propertyValues.map((valueItem: any, valueIndex: number) => (
-              <div
-                className="flex items-center justify-between border-border/10 border-b px-3 py-2 last:border-b-0 hover:bg-muted/20"
-                key={`${propertyKey}-${valueItem.value}-${valueIndex}`}
-              >
-                <span
-                  className="truncate font-mono text-foreground text-sm"
-                  title={valueItem.value}
-                >
-                  {valueItem.value}
-                </span>
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-foreground text-sm">
-                    {valueItem.count.toLocaleString()}
-                  </span>
-                  <div className="min-w-[2.5rem] rounded bg-muted px-2 py-0.5 text-center font-medium text-muted-foreground text-xs">
-                    {valueItem.percentage}%
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }, [expandedProperties, togglePropertyExpansion]);
-
-  // Memoized stat card values
-  const statCardValues = useMemo(() => ({
-    visitors: analytics.summary?.unique_visitors || 0,
-    sessions: analytics.summary?.sessions || 0,
-    pageviews: analytics.summary?.pageviews || 0,
-    pagesPerSession: analytics.summary
-      ? analytics.summary.sessions > 0
-        ? (analytics.summary.pageviews / analytics.summary.sessions).toFixed(1)
-        : "0"
-      : "0",
-    bounceRate: analytics.summary?.bounce_rate_pct || "0%",
-    sessionDuration: analytics.summary?.avg_session_duration_formatted || "0s",
-  }), [analytics.summary]);
-
-  const todayValues = useMemo(() => ({
-    visitors: analytics.today?.visitors || 0,
-    sessions: analytics.today?.sessions || 0,
-    pageviews: analytics.today?.pageviews || 0,
-  }), [analytics.today]);
-
   return (
     <div className="space-y-6">
       {/* Metrics */}
@@ -988,7 +885,7 @@ export function WebsiteOverviewTab({
         <StatCard
           chartData={miniChartData.visitors}
           className="h-full"
-          description={`${todayValues.visitors} today`}
+          description={`${analytics.today?.visitors || 0} today`}
           icon={UsersIcon}
           id="visitors-chart"
           isLoading={isLoading}
@@ -996,13 +893,13 @@ export function WebsiteOverviewTab({
           title="UNIQUE VISITORS"
           trend={calculateTrends.visitors}
           trendLabel={calculateTrends.visitors !== undefined ? "vs previous period" : undefined}
-          value={statCardValues.visitors}
+          value={analytics.summary?.unique_visitors || 0}
           variant="default"
         />
         <StatCard
           chartData={miniChartData.sessions}
           className="h-full"
-          description={`${todayValues.sessions} today`}
+          description={`${analytics.today?.sessions || 0} today`}
           icon={ChartLineIcon}
           id="sessions-chart"
           isLoading={isLoading}
@@ -1010,13 +907,13 @@ export function WebsiteOverviewTab({
           title="SESSIONS"
           trend={calculateTrends.sessions}
           trendLabel={calculateTrends.sessions !== undefined ? "vs previous period" : undefined}
-          value={statCardValues.sessions}
+          value={analytics.summary?.sessions || 0}
           variant="default"
         />
         <StatCard
           chartData={miniChartData.pageviews}
           className="h-full"
-          description={`${todayValues.pageviews} today`}
+          description={`${analytics.today?.pageviews || 0} today`}
           icon={GlobeIcon}
           id="pageviews-chart"
           isLoading={isLoading}
@@ -1024,7 +921,7 @@ export function WebsiteOverviewTab({
           title="PAGEVIEWS"
           trend={calculateTrends.pageviews}
           trendLabel={calculateTrends.pageviews !== undefined ? "vs previous period" : undefined}
-          value={statCardValues.pageviews}
+          value={analytics.summary?.pageviews || 0}
           variant="default"
         />
         <StatCard
@@ -1040,7 +937,13 @@ export function WebsiteOverviewTab({
           trendLabel={
             calculateTrends.pages_per_session !== undefined ? "vs previous period" : undefined
           }
-          value={statCardValues.pagesPerSession}
+          value={
+            analytics.summary
+              ? analytics.summary.sessions > 0
+                ? (analytics.summary.pageviews / analytics.summary.sessions).toFixed(1)
+                : "0"
+              : "0"
+          }
           variant="default"
         />
         <StatCard
@@ -1055,7 +958,7 @@ export function WebsiteOverviewTab({
           title="BOUNCE RATE"
           trend={calculateTrends.bounce_rate}
           trendLabel={calculateTrends.bounce_rate !== undefined ? "vs previous period" : undefined}
-          value={statCardValues.bounceRate}
+          value={analytics.summary?.bounce_rate_pct || "0%"}
           variant={getColorVariant(analytics.summary?.bounce_rate || 0, 70, 50)}
         />
         <StatCard
@@ -1076,7 +979,7 @@ export function WebsiteOverviewTab({
           trendLabel={
             calculateTrends.session_duration !== undefined ? "vs previous period" : undefined
           }
-          value={statCardValues.sessionDuration}
+          value={analytics.summary?.avg_session_duration_formatted || "0s"}
           variant="default"
         />
       </div>
@@ -1141,7 +1044,74 @@ export function WebsiteOverviewTab({
         initialPageSize={8}
         isLoading={isLoading}
         minHeight={350}
-        renderSubRow={renderSubRow}
+        renderSubRow={(subRow: any, parentRow: any, index: number) => {
+          const propertyKey = subRow.key;
+          const propertyTotal = subRow.total;
+          const propertyValues = subRow.values;
+          const propertyId = `${parentRow.name}-${propertyKey}`;
+          const isPropertyExpanded = expandedProperties.has(propertyId);
+
+          return (
+            <div className="ml-4">
+              <button
+                className="flex w-full items-center justify-between rounded border border-border/30 bg-muted/20 px-3 py-2 hover:bg-muted/40"
+                onClick={() => togglePropertyExpansion(propertyId)}
+                type="button"
+              >
+                <div className="flex items-center gap-2">
+                  {isPropertyExpanded ? (
+                    <CaretDownIcon
+                      className="h-3 w-3 text-muted-foreground"
+                      size={16}
+                      weight="fill"
+                    />
+                  ) : (
+                    <CaretRightIcon
+                      className="h-3 w-3 text-muted-foreground"
+                      size={16}
+                      weight="fill"
+                    />
+                  )}
+                  <span className="font-medium text-foreground text-sm">{propertyKey}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="font-medium text-foreground text-sm">
+                    {propertyTotal.toLocaleString()}
+                  </div>
+                  <div className="rounded bg-primary/10 px-2 py-0.5 font-medium text-primary text-xs">
+                    {propertyValues.length} {propertyValues.length === 1 ? "value" : "values"}
+                  </div>
+                </div>
+              </button>
+
+              {isPropertyExpanded && (
+                <div className="mt-1 max-h-48 overflow-y-auto rounded border border-border/20">
+                  {propertyValues.map((valueItem: any, valueIndex: number) => (
+                    <div
+                      className="flex items-center justify-between border-border/10 border-b px-3 py-2 last:border-b-0 hover:bg-muted/20"
+                      key={`${propertyKey}-${valueItem.value}-${valueIndex}`}
+                    >
+                      <span
+                        className="truncate font-mono text-foreground text-sm"
+                        title={valueItem.value}
+                      >
+                        {valueItem.value}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-foreground text-sm">
+                          {valueItem.count.toLocaleString()}
+                        </span>
+                        <div className="min-w-[2.5rem] rounded bg-muted px-2 py-0.5 text-center font-medium text-muted-foreground text-xs">
+                          {valueItem.percentage}%
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        }}
         title="Custom Events"
       />
 

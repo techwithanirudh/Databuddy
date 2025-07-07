@@ -1,6 +1,5 @@
 import { betterAuth } from "better-auth";
 import { customSession, multiSession, twoFactor, emailOTP, magicLink, organization } from "better-auth/plugins";
-import { getSessionCookie } from "better-auth/cookies";
 import { db, eq, user } from "@databuddy/db";
 import { Resend } from "resend";
 import { getRedisCache } from "@databuddy/redis";
@@ -18,6 +17,22 @@ export const auth = betterAuth({
     database: drizzleAdapter(db, {
         provider: "pg",
     }),
+    databaseHooks: {
+        user: {
+            create: {
+                after: async (user) => {
+                    logger.info('User Created', `User ${user.id}, ${user.name}, ${user.email} created`);
+                    // const resend = new Resend(process.env.RESEND_API_KEY as string);
+                    // await resend.emails.send({
+                    //     from: "Databuddy <noreply@databuddy.cc>",
+                    //     to: user.email,
+                    //     subject: "Welcome to Databuddy",
+                    //     react: WelcomeEmail({ username: user.name, url: process.env.BETTER_AUTH_URL as string }),
+                    // });
+                },
+            },
+        },
+    },
     appName: "databuddy.cc",
     onAPIError: {
         throw: false,
@@ -79,7 +94,7 @@ export const auth = betterAuth({
         sendVerificationOnSignIn: true,
         autoSignInAfterVerification: true,
         sendVerificationEmail: async ({ user, url }: { user: any, url: string }) => {
-            logger.info('Email Verification', `Sending verification email to ${user.email}`, { url });
+            logger.info('Email Verification', `Sending verification email to ${user.email}`);
             const resend = new Resend(process.env.RESEND_API_KEY as string);
             await resend.emails.send({
                 from: 'noreply@databuddy.cc',
@@ -124,7 +139,7 @@ export const auth = betterAuth({
         }),
         magicLink({
             sendMagicLink: async ({ email, token, url }) => {
-                logger.info('Magic Link', `Sending magic link to ${email}`, { url });
+                logger.info('Magic Link', `Sending magic link to ${email}`);
                 const resend = new Resend(process.env.RESEND_API_KEY as string);
                 await resend.emails.send({
                     from: 'noreply@databuddy.cc',

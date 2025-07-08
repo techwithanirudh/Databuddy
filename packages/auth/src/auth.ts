@@ -8,12 +8,19 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { ac, owner, admin, member, viewer } from "./permissions";
 import { logger } from "@databuddy/shared";
 import { VerificationEmail, OtpEmail, MagicLinkEmail, InvitationEmail, ResetPasswordEmail } from "@databuddy/email";
-import { chQuery } from "@databuddy/db";
+import { chCommand } from "@databuddy/db";
+import { TABLE_NAMES } from "@databuddy/db";
 
 function isProduction() {
     return process.env.NODE_ENV === 'production';
 }
 
+async function deleteWebsiteData(websiteId: string) {
+    for (const table of Object.values(TABLE_NAMES)) {
+        await chCommand(`DELETE FROM ${table} WHERE client_id = {websiteId:String}`, { websiteId });
+        logger.info(`Deleted data from ${table}`, `for website ${websiteId}`);
+    }
+}
 
 export const auth = betterAuth({
     database: drizzleAdapter(db, {
@@ -41,18 +48,22 @@ export const auth = betterAuth({
             beforeDelete: async (user) => {
                 logger.info('User Deletion Started', `Starting deletion process for user ${user.id}`);
 
-                const userWebsites = await db.query.websites.findMany({
-                    where: eq(websites.userId, user.id)
-                });
+                try {
+                    const userWebsites = await db.query.websites.findMany({
+                        where: eq(websites.userId, user.id)
+                    });
 
-                if (userWebsites.length > 0) {
-                    logger.info('Deleting Websites', `Deleting websites for user ${user.id}`);
-                    await db.delete(websites).where(inArray(websites.id, userWebsites.map(w => w.id)));
+                    if (userWebsites.length > 0) {
+                        logger.info('Deleting Websites', `Deleting websites for user ${user.id}`);
+                        await db.delete(websites).where(inArray(websites.id, userWebsites.map(w => w.id)));
+                    }
+                    for (const website of userWebsites) {
+                        await deleteWebsiteData(website.id);
+                    }
+                    logger.info('User Deletion Finished', `Finished deletion process for user ${user.id}`);
+                } catch (error) {
+                    logger.exception(error as Error, { user: user.id });
                 }
-                for (const website of userWebsites) {
-                    await chQuery(`DELETE FROM analytics.events WHERE client_id = ${website.id}`);
-                }
-                logger.info('User Deletion Finished', `Finished deletion process for user ${user.id}`);
             }
         }
     },

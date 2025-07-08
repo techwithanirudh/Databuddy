@@ -2,6 +2,7 @@ import type { LogParams, ErrorLogParams, WarnLogParams, Logger, ResponseJSON } f
 import { ClickHouseLogLevel, createClient } from '@clickhouse/client';
 import type { NodeClickHouseClientConfigOptions } from '@clickhouse/client/dist/config';
 
+
 export { createClient };
 
 /**
@@ -133,6 +134,14 @@ export async function chQuery<T extends Record<string, any>>(
   return (await chQueryWithMeta<T>(query)).data;
 }
 
+export async function chCommand(query: string, params?: Record<string, unknown>): Promise<void> {
+  await clickHouse.command({
+    query,
+    query_params: params,
+    clickhouse_settings: { wait_end_of_query: 1 },
+  });
+}
+
 export function formatClickhouseDate(
   date: Date | string,
   skipTime = false,
@@ -144,7 +153,6 @@ export function formatClickhouseDate(
 }
 
 export function toDate(str: string, interval?: string) {
-  // If it does not match the regex it's a column name eg 'created_at'
   if (!interval || interval === 'minute' || interval === 'hour') {
     if (str.match(/\d{4}-\d{2}-\d{2}/)) {
       return escape(str);

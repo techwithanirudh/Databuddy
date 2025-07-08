@@ -1,6 +1,6 @@
 "use client";
 
-import { logout, useSession } from "@databuddy/auth/client";
+import { authClient, useSession } from "@databuddy/auth/client";
 import {
   ArrowClockwiseIcon,
   InfoIcon,
@@ -13,7 +13,6 @@ import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-import { deactivateUserAccount } from "@/app/actions/users";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -68,22 +67,17 @@ export function AccountDeletion() {
     setIsLoading(true);
 
     try {
-      const formData = new FormData();
-      formData.append("password", data.password);
-      formData.append("email", data.email);
+      const { data } = await authClient.deleteUser({ callbackURL: "/login" });
 
-      const result = await deactivateUserAccount(formData);
-
-      if (result.success) {
+      if (data?.success) {
         toast.success("Your account has been scheduled for deletion");
         form.reset();
         setIsDialogOpen(false);
 
-        // Sign out the user
-        await logout();
+        await authClient.signOut();
         router.push("/login");
-      } else if (result.error) {
-        toast.error(result.error);
+      } else if (data?.message) {
+        toast.error(data.message);
       } else {
         toast.error("Failed to process account deletion");
       }

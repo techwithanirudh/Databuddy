@@ -172,11 +172,10 @@ export function DataTable<TData extends { name: string | number }, TValue>({
   const [tooltipState, setTooltipState] = useState<{
     visible: boolean;
     content: React.ReactNode;
-    x: number;
-    y: number;
-  }>({ visible: false, content: null, x: 0, y: 0 });
+  }>({ visible: false, content: null });
 
   const tableContainerRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
 
   const currentTabData = tabs?.find((tab) => tab.id === activeTab);
   const tableData = React.useMemo(
@@ -235,9 +234,16 @@ export function DataTable<TData extends { name: string | number }, TValue>({
   }, []);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (tableContainerRef.current) {
+    if (tooltipRef.current && tableContainerRef.current) {
       const rect = tableContainerRef.current.getBoundingClientRect();
-      setTooltipState((prev) => ({ ...prev, x: e.clientX - rect.left, y: e.clientY - rect.top }));
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      requestAnimationFrame(() => {
+        if (tooltipRef.current) {
+          tooltipRef.current.style.transform = `translate(${x + 16}px, ${y}px) translateY(-50%)`;
+        }
+      });
     }
   }, []);
 
@@ -245,7 +251,7 @@ export function DataTable<TData extends { name: string | number }, TValue>({
     (row: TData, rowId: string) => {
       if (!renderTooltipContent) return;
       const content = renderTooltipContent(row);
-      setTooltipState((prev) => ({ ...prev, visible: true, content }));
+      setTooltipState({ visible: true, content });
       setHoveredRow(rowId);
     },
     [renderTooltipContent]
@@ -253,7 +259,7 @@ export function DataTable<TData extends { name: string | number }, TValue>({
 
   const handleMouseLeave = useCallback(() => {
     if (!renderTooltipContent) return;
-    setTooltipState((prev) => ({ ...prev, visible: false }));
+    setTooltipState({ visible: false, content: null });
     setHoveredRow(null);
   }, [renderTooltipContent]);
 
@@ -406,13 +412,14 @@ export function DataTable<TData extends { name: string | number }, TValue>({
           <AnimatePresence>
             {renderTooltipContent && tooltipState.visible && (
               <motion.div
-                animate={{ opacity: 1, scale: 1, y: "-50%" }}
-                className="pointer-events-none absolute z-30 translate-x-4"
-                exit={{ opacity: 0, scale: 0.9, y: "-50%" }}
-                initial={{ opacity: 0, scale: 0.9, y: "-50%" }}
+                ref={tooltipRef}
+                animate={{ opacity: 1, scale: 1 }}
+                className="pointer-events-none absolute z-30"
+                exit={{ opacity: 0, scale: 0.9 }}
+                initial={{ opacity: 0, scale: 0.9 }}
                 style={{
-                  top: tooltipState.y,
-                  left: tooltipState.x,
+                  top: 0,
+                  left: 0,
                 }}
                 transition={{ duration: 0.15, ease: "easeOut" }}
               >

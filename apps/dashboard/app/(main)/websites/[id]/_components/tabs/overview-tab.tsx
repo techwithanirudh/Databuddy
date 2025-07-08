@@ -40,52 +40,6 @@ import {
 import type { FullTabProps, MetricPoint } from "../utils/types";
 import { MetricToggles } from "../utils/ui-components";
 
-// Types
-interface TrendCalculation {
-  visitors?: {
-    change?: number;
-    current: number;
-    previous: number;
-    currentPeriod: { start: string; end: string };
-    previousPeriod: { start: string; end: string };
-  };
-  sessions?: {
-    change?: number;
-    current: number;
-    previous: number;
-    currentPeriod: { start: string; end: string };
-    previousPeriod: { start: string; end: string };
-  };
-  pageviews?: {
-    change?: number;
-    current: number;
-    previous: number;
-    currentPeriod: { start: string; end: string };
-    previousPeriod: { start: string; end: string };
-  };
-  bounce_rate?: {
-    change?: number;
-    current: number;
-    previous: number;
-    currentPeriod: { start: string; end: string };
-    previousPeriod: { start: string; end: string };
-  };
-  session_duration?: {
-    change?: number;
-    current: number;
-    previous: number;
-    currentPeriod: { start: string; end: string };
-    previousPeriod: { start: string; end: string };
-  };
-  pages_per_session?: {
-    change?: number;
-    current: number;
-    previous: number;
-    currentPeriod: { start: string; end: string };
-    previousPeriod: { start: string; end: string };
-  };
-}
-
 import { useTableTabs } from "@/lib/table-tabs";
 
 interface ChartDataPoint {

@@ -44,7 +44,9 @@ const testimonials = [
 	{
 		name: "Maze",
 		profession: "Founder, OpenCut",
-		description: "Adding analytics to my apps used to be a hassle, Databuddy changed that.",
+		link: "https://x.com/mazeincoding/status/1943019005339455631",
+		social: <XIcon />,
+		description: "@trydatabuddy is the only analytics i love, it's so simple and easy to use.",
 		avatar: "maze.jpg",
 	},
 	{

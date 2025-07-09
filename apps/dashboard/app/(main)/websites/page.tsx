@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 
 function WebsiteLoadingSkeleton() {
   return (
-    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div className="grid select-none gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {[1, 2, 3, 4, 5, 6].map((num) => (
         <Card className="animate-pulse overflow-hidden" key={`website-skeleton-${num}`}>
           <CardHeader className="pb-2">
@@ -50,13 +50,23 @@ function WebsiteLoadingSkeleton() {
 
 function EnhancedEmptyState({ onAddWebsite }: { onAddWebsite: () => void }) {
   return (
-    <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
+    <div className="flex select-none flex-col items-center justify-center px-4 py-16 text-center">
       <div className="relative mb-8">
         <div className="rounded-full border bg-muted/50 p-8">
-          <GlobeIcon className="h-16 w-16 text-muted-foreground" size={64} weight="duotone" />
+          <GlobeIcon
+            aria-hidden="true"
+            className="h-16 w-16 text-muted-foreground"
+            size={64}
+            weight="duotone"
+          />
         </div>
         <div className="-top-2 -right-2 absolute rounded-full border border-primary/20 bg-primary/10 p-2">
-          <ChartLineIcon className="h-6 w-6 text-primary" size={24} weight="fill" />
+          <ChartLineIcon
+            aria-hidden="true"
+            className="h-6 w-6 text-primary"
+            size={24}
+            weight="fill"
+          />
         </div>
       </div>
 
@@ -88,7 +98,12 @@ function EnhancedEmptyState({ onAddWebsite }: { onAddWebsite: () => void }) {
       <div className="mt-8 max-w-md rounded-xl border bg-muted/50 p-6">
         <div className="flex items-start gap-3">
           <div className="rounded-lg bg-primary/10 p-2">
-            <SparkleIcon className="h-5 w-5 text-primary" size={24} weight="fill" />
+            <SparkleIcon
+              aria-hidden="true"
+              className="h-5 w-5 text-primary"
+              size={24}
+              weight="fill"
+            />
           </div>
           <div className="text-left">
             <p className="mb-2 font-semibold text-sm">💡 Quick tip</p>
@@ -105,9 +120,14 @@ function EnhancedEmptyState({ onAddWebsite }: { onAddWebsite: () => void }) {
 
 function ErrorState({ onRetry }: { onRetry: () => void }) {
   return (
-    <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
-      <div className="mb-8 rounded-full border border-red-200 bg-red-50 p-8">
-        <GlobeIcon className="h-16 w-16 text-red-500" size={64} weight="duotone" />
+    <div className="flex select-none flex-col items-center justify-center px-4 py-16 text-center">
+      <div className="mb-8 rounded-full border border-destructive/20 bg-destructive/10 p-8">
+        <GlobeIcon
+          aria-hidden="true"
+          className="h-16 w-16 text-destructive"
+          size={64}
+          weight="duotone"
+        />
       </div>
       <h3 className="mb-4 font-bold text-2xl">Failed to Load Websites</h3>
       <p className="mb-8 max-w-md text-muted-foreground leading-relaxed">
@@ -146,7 +166,12 @@ export default function WebsitesPage() {
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-3">
               <div className="rounded-lg border border-primary/20 bg-primary/10 p-2">
-                <TrendUpIcon className="h-5 w-5 text-primary" size={24} weight="fill" />
+                <TrendUpIcon
+                  aria-hidden="true"
+                  className="h-5 w-5 text-primary"
+                  size={24}
+                  weight="fill"
+                />
               </div>
               <div>
                 <h1 className="truncate font-bold text-foreground text-xl tracking-tight sm:text-2xl">
@@ -185,7 +210,12 @@ export default function WebsitesPage() {
         {!isLoading && websites && websites.length > 0 && (
           <div className="mb-6">
             <div className="flex items-center gap-2 rounded-lg border border-muted bg-muted/30 px-3 py-2 text-muted-foreground text-sm">
-              <GlobeIcon className="h-4 w-4 flex-shrink-0" size={24} weight="duotone" />
+              <GlobeIcon
+                aria-hidden="true"
+                className="h-4 w-4 flex-shrink-0"
+                size={24}
+                weight="duotone"
+              />
               <span>
                 Tracking <span className="font-medium text-foreground">{websites.length}</span>{" "}
                 website{websites.length !== 1 ? "s" : ""}

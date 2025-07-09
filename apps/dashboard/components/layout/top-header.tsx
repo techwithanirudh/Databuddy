@@ -31,7 +31,7 @@ export function TopHeader({ setMobileOpen }: TopHeaderProps) {
             <span className="sr-only">Toggle menu</span>
           </Button>
 
-          <div className="flex items-center gap-3">
+          <div className="flex select-none items-center gap-3">
             <div className="flex flex-row items-center gap-3">
               <Logo />
             </div>

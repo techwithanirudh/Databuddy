@@ -212,7 +212,7 @@ function WebsiteDetailsPage() {
 
   if (isError || !data) {
     return (
-      <div className="pt-8">
+      <div className="select-none pt-8">
         <EmptyState
           action={
             <Link href="/websites">
@@ -220,7 +220,7 @@ function WebsiteDetailsPage() {
             </Link>
           }
           description="The website you are looking for does not exist or you do not have access."
-          icon={<WarningIcon className="h-10 w-10" weight="duotone" />}
+          icon={<WarningIcon aria-hidden="true" className="h-10 w-10" weight="duotone" />}
           title="Website not found"
         />
       </div>
@@ -268,19 +268,17 @@ function WebsiteDetailsPage() {
               </div>
 
               <Button
-                className="h-8 cursor-pointer touch-manipulation gap-1.5 bg-background font-medium text-xs shadow-sm"
-                disabled={isRefreshing || isLoading}
+                aria-label="Refresh data"
+                className="h-8 w-8"
+                disabled={isRefreshing}
                 onClick={handleRefresh}
-                size="sm"
+                size="icon"
                 variant="outline"
               >
                 <ArrowClockwiseIcon
-                  className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`}
-                  weight="fill"
+                  aria-hidden="true"
+                  className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
                 />
-                <span className="hidden sm:inline">
-                  {isRefreshing ? "Refreshing..." : "Refresh"}
-                </span>
               </Button>
             </div>
 
@@ -369,7 +367,7 @@ function WebsiteDetailsPage() {
 
 function TabLoadingSkeleton() {
   return (
-    <div className="space-y-6 p-4 py-8">
+    <div className="select-none space-y-6 p-4 py-8">
       {/* Key metrics cards skeleton */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
         {[1, 2, 3, 4, 5, 6].map((num) => (
@@ -469,47 +467,20 @@ export default function Page() {
 
 function PageLoadingSkeleton() {
   return (
-    <div className="mx-auto max-w-7xl space-y-6 p-4 py-12">
-      {/* Header skeleton */}
-      <div className="space-y-4">
+    <div className="mx-auto max-w-[1600px] select-none p-3 sm:p-4 lg:p-6">
+      <header className="border-b pb-3">
         <div className="flex items-center justify-between">
           <div className="space-y-2">
             <Skeleton className="h-8 w-48" />
-            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-4 w-64" />
           </div>
-          <Skeleton className="h-9 w-24" />
+          <Skeleton className="h-8 w-32" />
         </div>
+      </header>
 
-        {/* Date range controls skeleton */}
-        <div className="space-y-3 rounded-lg border bg-muted/30 p-3">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex overflow-hidden rounded-md border">
-              <Skeleton className="h-8 w-16" />
-              <Skeleton className="h-8 w-16" />
-            </div>
-            <Skeleton className="h-8 w-20" />
-          </div>
-          <div className="flex gap-2">
-            <Skeleton className="h-6 w-16" />
-            <Skeleton className="h-6 w-20" />
-            <Skeleton className="h-6 w-16" />
-            <Skeleton className="h-6 w-32" />
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs skeleton */}
-      <div className="space-y-4">
-        <div className="border-b">
-          <div className="flex gap-4">
-            {[1, 2, 3, 4, 5].map((num) => (
-              <Skeleton className="h-10 w-20" key={`tab-${num}`} />
-            ))}
-          </div>
-        </div>
-
-        {/* Tab content skeleton */}
-        <TabLoadingSkeleton />
+      <div className="mt-4 space-y-4">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-64 w-full" />
       </div>
     </div>
   );

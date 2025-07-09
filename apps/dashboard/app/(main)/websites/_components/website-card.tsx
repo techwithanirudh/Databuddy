@@ -108,7 +108,7 @@ export const WebsiteCard = memo(({ website }: WebsiteCardProps) => {
       data-website-name={website.name}
       href={`/websites/${website.id}`}
     >
-      <Card className="flex h-full flex-col bg-background transition-all duration-300 ease-in-out group-hover:border-primary/60 group-hover:shadow-primary/5 group-hover:shadow-xl">
+      <Card className="flex h-full select-none flex-col bg-background transition-all duration-300 ease-in-out group-hover:border-primary/60 group-hover:shadow-primary/5 group-hover:shadow-xl">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <div className="min-w-0 flex-1">
@@ -126,6 +126,7 @@ export const WebsiteCard = memo(({ website }: WebsiteCardProps) => {
               </CardDescription>
             </div>
             <ArrowRightIcon
+              aria-hidden="true"
               className="h-4 w-4 flex-shrink-0 text-muted-foreground transition-all duration-200 group-hover:translate-x-1 group-hover:text-primary"
               weight="fill"
             />
@@ -152,18 +153,18 @@ export const WebsiteCard = memo(({ website }: WebsiteCardProps) => {
                 {trend && (
                   <div
                     className={`flex items-center gap-1 font-medium text-xs ${trend.type === "up"
-                      ? "text-green-600"
+                      ? "text-success"
                       : trend.type === "down"
-                        ? "text-red-600"
+                        ? "text-destructive"
                         : "text-muted-foreground"
                       }`}
                   >
                     {trend.type === "up" ? (
-                      <TrendUpIcon className="h-4 w-4" weight="fill" />
+                      <TrendUpIcon aria-hidden="true" className="h-4 w-4" weight="fill" />
                     ) : trend.type === "down" ? (
-                      <TrendDownIcon className="h-4 w-4" weight="fill" />
+                      <TrendDownIcon aria-hidden="true" className="h-4 w-4" weight="fill" />
                     ) : (
-                      <MinusIcon className="h-4 w-4" weight="fill" />
+                      <MinusIcon aria-hidden="true" className="h-4 w-4" weight="fill" />
                     )}
                     <span>
                       {trend.type === "neutral"

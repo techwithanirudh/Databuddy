@@ -143,7 +143,7 @@ export function Sidebar() {
         </Button>
 
         <ScrollArea className="h-[calc(100vh-4rem)]">
-          <div className="space-y-4 p-3">
+          <div className="select-none space-y-4 p-3">
             {renderNavigation()}
           </div>
         </ScrollArea>

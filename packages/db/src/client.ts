@@ -1,4 +1,5 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
+import { Pool } from 'pg';
 import * as schema from './drizzle/schema';
 import * as relations from './drizzle/relations';
 
@@ -11,4 +12,6 @@ if (!databaseUrl) {
     throw new Error('DATABASE_URL is not set');
 }
 
-export const db = drizzle(databaseUrl, { schema: fullSchema });
+const pool = new Pool({ connectionString: databaseUrl });
+
+export const db = drizzle(pool, { schema: fullSchema });

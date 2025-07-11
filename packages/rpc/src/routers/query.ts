@@ -8,21 +8,22 @@ export const queryRouter = createTRPCRouter({
             name: z.string(),
             websiteId: z.string(),
             dateRange: z.object({
-                from: z.string().datetime(),
-                to: z.string().datetime(),
+                from: z.string(),
+                to: z.string(),
             }),
-            filters: z.record(z.union([
+            filters: z.record(z.string(), z.union([
                 z.string(),
                 z.number(),
                 z.array(z.string()),
                 z.array(z.number()),
             ])).optional(),
-            limit: z.number().optional(),
-            offset: z.number().optional(),
+            limit: z.number().optional().default(100),
+            offset: z.number().optional().default(0),
+            groupBy: z.string().optional(),
         }))
         .query(async ({ input }) => {
-            const { name, websiteId, dateRange, filters, limit, offset } = input
-            const data = await executeQuery(name, websiteId, dateRange, filters, limit, offset)
+            const { name, websiteId, dateRange, filters, limit, offset, groupBy } = input
+            const data = await executeQuery(name, websiteId, dateRange.from, dateRange.to, limit, offset, filters, groupBy)
             return data
         }),
 }) 

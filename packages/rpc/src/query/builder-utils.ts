@@ -1,91 +1,101 @@
-import type { QueryDateRange, QueryFilters, QueryWithParams } from './types'
-import { buildCommonWhereClauses, getWhereClause } from './utils'
+import type { Filters, Params, QueryWithParams } from './types'
 
-type QueryOptions = {
-  select: string
-  groupBy?: string
-  orderBy?: string
-  baseWhere?: string[]
-}
-
-export function createQueryBuilder(table: string, baseWhereClauses: string[] = []) {
-  return (
-    websiteId: string,
-    dateRange: QueryDateRange,
-    options: QueryOptions,
-    filters?: QueryFilters,
-    limit = 100,
-    offset = 0
-  ): QueryWithParams => {
-    const { select, groupBy, orderBy, baseWhere } = options
-
-    // Build base where clauses
-    const { clause: baseWhereClause, params: baseParams } = buildCommonWhereClauses(
-      websiteId,
-      dateRange.from,
-      dateRange.to,
-      { event_filter: 'event_name = \'error\'' }
-    )
-
-    // Add base where clauses
-    const allBaseWhere = [...baseWhereClauses, ...(baseWhere || [])]
-    const baseWhereClauseWithExtras = allBaseWhere.length > 0
-      ? `${baseWhereClause} AND ${allBaseWhere.join(' AND ')}`
-      : baseWhereClause
-
-    // Build filter where clauses
-    const { clause: filterWhereClause, params: filterParams } = getWhereClause(filters)
-
-    // Combine all where clauses
-    const whereClause = [baseWhereClauseWithExtras, filterWhereClause]
-      .filter(Boolean)
-      .join(' AND ')
-
-    // Build the final query
-    const query = `
-      SELECT ${select}
-      FROM ${table}
-      WHERE ${whereClause}
-      ${groupBy ? `GROUP BY ${groupBy}` : ''}
-      ${orderBy ? `ORDER BY ${orderBy}` : ''}
-      LIMIT {limit:UInt64} OFFSET {offset:UInt64}
-    `
-
-    // Combine all parameters
-    const params: Record<string, unknown> = {
-      ...baseParams,
-      ...filterParams,
-      limit,
-      offset
+function applyFilters(sql: string, params: Params, filters?: Filters): { sql: string, params: Params } {
+    if (!filters || Object.keys(filters).length === 0) {
+        return { sql, params }
     }
 
-    return { query, params }
-  }
+    const filterClauses: string[] = []
+    const newParams: Params = { ...params }
+
+    for (const [key, value] of Object.entries(filters)) {
+        const paramName = key.replace(/[^a-zA-Z0-9_]/g, '')
+        if (Array.isArray(value)) {
+            filterClauses.push(`${key} IN {${paramName}:Array(String)}`)
+            newParams[paramName] = value
+        } else {
+            filterClauses.push(`${key} = {${paramName}:String}`)
+            newParams[paramName] = value
+        }
+    }
+
+    const whereClause = `WHERE ${filterClauses.join(' AND ')}`
+
+    if (sql.includes('WHERE')) {
+        const newSql = sql.replace('WHERE', `${whereClause} AND`)
+        return { sql: newSql, params: newParams }
+    }
+
+    const insertionPoints = ['GROUP BY', 'ORDER BY', 'LIMIT']
+    for (const point of insertionPoints) {
+        if (sql.includes(point)) {
+            const newSql = sql.replace(point, `${whereClause} ${point}`)
+            return { sql: newSql, params: newParams }
+        }
+    }
+
+    return { sql: `${sql} ${whereClause}`, params: newParams }
 }
 
-export function createStandardQuery(
-  nameColumn: string,
-  groupByColumns: string[],
-  extraWhere?: string,
-  orderBy = 'visitors DESC'
-) {
-  return (
-    websiteId: string,
-    dateRange: QueryDateRange,
-    filters?: QueryFilters,
-    limit?: number,
-    offset?: number
-  ): QueryWithParams => {
-    const builder = createQueryBuilder('analytics.events', extraWhere ? [extraWhere] : [])
-    return builder(websiteId, dateRange, {
-      select: `
-        ${nameColumn} as name,
-        uniq(anonymous_id) as visitors,
-        COUNT(*) as pageviews,
-        uniq(session_id) as sessions
-      `,
-      groupBy: groupByColumns.join(', '),
-      orderBy
-    }, filters, limit, offset)
-  }
+interface QueryOptions {
+    select: string
+    groupBy?: string
+    orderBy?: string
+    where?: string
+}
+
+export function createQueryBuilder(table: string, baseWhere: string[] = []) {
+    return (
+        websiteId: string,
+        startDate: string,
+        endDate: string,
+        limit: number,
+        offset: number,
+        options: QueryOptions,
+        filters?: Filters
+    ): QueryWithParams => {
+        const allWheres = [
+            'website_id = {websiteId:UUID}',
+            'timestamp >= {startDate:DateTime}',
+            'timestamp <= {endDate:DateTime}',
+            ...baseWhere
+        ];
+
+        if (options.where) {
+            allWheres.push(options.where)
+        }
+
+        const sqlParts = [
+            'SELECT',
+            `  ${options.select}`,
+            `FROM ${table}`,
+            `WHERE ${allWheres.join(' AND ')}`,
+        ]
+
+        if (options.groupBy) {
+            sqlParts.push(`GROUP BY ${options.groupBy}`)
+        }
+        if (options.orderBy) {
+            sqlParts.push(`ORDER BY ${options.orderBy}`)
+        }
+
+        sqlParts.push('LIMIT {limit:UInt64}', 'OFFSET {offset:UInt64}')
+
+        const sql = sqlParts.join('\n')
+
+        const initialParams: Params = {
+            websiteId,
+            startDate,
+            endDate,
+            limit,
+            offset,
+        };
+
+        const { sql: finalSql, params: finalParams } = applyFilters(sql, initialParams, filters);
+
+        return {
+            query: finalSql.trim(),
+            params: finalParams
+        }
+    }
 } 

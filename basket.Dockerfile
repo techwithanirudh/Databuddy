@@ -31,6 +31,7 @@ FROM gcr.io/distroless/base
 WORKDIR /app
 
 COPY --from=build /app/server server
+COPY --from=build /app/maxmind ./maxmind
 
 ENV NODE_ENV=production
 

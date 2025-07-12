@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import type { CreateRevenueConfigData, OnboardingStep, RevenueConfig } from "../utils/types";
 
 // API client functions - self-contained to avoid double API calls
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 async function apiRequest<T>(
   endpoint: string,

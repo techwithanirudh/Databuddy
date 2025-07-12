@@ -9,7 +9,7 @@ import type {
 } from "@/app/(main)/revenue/utils/types";
 
 // API client functions - following the same pattern as use-websites.ts
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 async function apiRequest<T>(
   endpoint: string,

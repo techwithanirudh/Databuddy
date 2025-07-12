@@ -37,6 +37,11 @@ export interface SimpleQueryConfig {
     timeField?: string;
     allowedFilters?: string[];
     customizable?: boolean;
+    plugins?: {
+        parseReferrers?: boolean;
+        normalizeUrls?: boolean;
+        [key: string]: any;
+    };
 }
 
 export interface QueryRequest {

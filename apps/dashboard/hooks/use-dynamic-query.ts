@@ -354,7 +354,7 @@ interface ApiResponse {
   error?: string;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 // Base params builder - following use-analytics.ts pattern
 function buildParams(
@@ -621,18 +621,19 @@ export function useBatchDynamicQuery(
     return query.data.results.map((result, index) => {
       const processedResult = {
         queryId: result.queryId,
-        success: result.success,
+        success: false, // Will be set based on parameter results
         data: {} as Record<string, any>,
         errors: [] as Array<{ parameter: string; error?: string }>,
-        meta: result.success ? result.meta : undefined,
+        meta: result.meta,
         rawResult: result, // Keep raw result for debugging
       };
 
-      if (result.success && result.data) {
+      if (result.data && Array.isArray(result.data)) {
         // Process each parameter result
         for (const paramResult of result.data) {
           if (paramResult.success && paramResult.data) {
             processedResult.data[paramResult.parameter] = paramResult.data;
+            processedResult.success = true; // At least one parameter succeeded
           } else {
             processedResult.errors.push({
               parameter: paramResult.parameter,
@@ -643,7 +644,7 @@ export function useBatchDynamicQuery(
       } else {
         processedResult.errors.push({
           parameter: "query",
-          error: result.error || "Unknown query error",
+          error: "No data array found in response",
         });
       }
 
@@ -710,25 +711,22 @@ export function useBatchDynamicQuery(
   };
 }
 
-/**
- * Hook to fetch available parameters
- */
-export function useAvailableParameters(
-  websiteId: string,
-  options?: Partial<UseQueryOptions<ParametersResponse>>
-) {
+// --- NEW: Hook to fetch available query types and filter options from backend ---
+export interface QueryOptionsResponse {
+  success: boolean;
+  types: string[];
+  configs: Record<string, { allowedFilters: string[]; customizable: boolean; defaultLimit?: number }>;
+}
+
+export function useQueryOptions(options?: Partial<UseQueryOptions<QueryOptionsResponse>>) {
   return useQuery({
-    queryKey: ["dynamic-query-parameters", websiteId],
-    queryFn: ({ signal }) =>
-      fetchAnalyticsData<ParametersResponse>(
-        "/query/parameters",
-        websiteId,
-        undefined,
-        undefined,
-        signal
-      ),
-    ...defaultQueryOptions,
-    staleTime: 60 * 60 * 1000, // 1 hour - parameters don't change often
+    queryKey: ["query-options"],
+    queryFn: async () => {
+      const res = await fetch("/api/query/types");
+      if (!res.ok) throw new Error("Failed to fetch query options");
+      return res.json();
+    },
+    staleTime: 60 * 60 * 1000, // 1 hour
     ...options,
   });
 }

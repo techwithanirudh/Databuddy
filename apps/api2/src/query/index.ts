@@ -20,7 +20,7 @@ const QuerySchema = z.object({
     offset: z.number().min(0).optional()
 });
 
-export const executeQuery = async (request: QueryRequest) => {
+export const executeQuery = async (request: QueryRequest, websiteDomain?: string | null) => {
     const validated = QuerySchema.parse(request);
 
     const config = QueryBuilders[validated.type];
@@ -28,11 +28,11 @@ export const executeQuery = async (request: QueryRequest) => {
         throw new Error(`Unknown query type: ${validated.type}`);
     }
 
-    const builder = new SimpleQueryBuilder(config, validated);
+    const builder = new SimpleQueryBuilder(config, validated, websiteDomain);
     return await builder.execute();
 };
 
-export const compileQuery = (request: QueryRequest) => {
+export const compileQuery = (request: QueryRequest, websiteDomain?: string | null) => {
     const validated = QuerySchema.parse(request);
 
     const config = QueryBuilders[validated.type];
@@ -40,7 +40,7 @@ export const compileQuery = (request: QueryRequest) => {
         throw new Error(`Unknown query type: ${validated.type}`);
     }
 
-    const builder = new SimpleQueryBuilder(config, validated);
+    const builder = new SimpleQueryBuilder(config, validated, websiteDomain);
     return builder.compile();
 };
 

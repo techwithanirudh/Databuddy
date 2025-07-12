@@ -1,14 +1,17 @@
 import { chQuery } from "@databuddy/db";
 import type { SimpleQueryConfig, QueryRequest, CompiledQuery, Filter } from "./types";
 import { FilterOperators, TimeGranularity } from "./types";
+import { applyPlugins } from "./utils";
 
 export class SimpleQueryBuilder {
     private config: SimpleQueryConfig;
     private request: QueryRequest;
+    private websiteDomain?: string | null;
 
-    constructor(config: SimpleQueryConfig, request: QueryRequest) {
+    constructor(config: SimpleQueryConfig, request: QueryRequest, websiteDomain?: string | null) {
         this.config = config;
         this.request = request;
+        this.websiteDomain = websiteDomain;
     }
 
     private buildFilter(filter: Filter, index: number): { clause: string, params: Record<string, unknown> } {
@@ -35,25 +38,41 @@ export class SimpleQueryBuilder {
         };
     }
 
+    private replaceDomainPlaceholders(sql: string): string {
+        if (!this.websiteDomain) {
+            return sql
+                .replace(/domain\(referrer\) != '\{websiteDomain\}'/g, '1=1')
+                .replace(/NOT domain\(referrer\) ILIKE '%.{websiteDomain}'/g, '1=1')
+                .replace(/domain\(referrer\) NOT IN \('localhost', '127\.0\.0\.1'\)/g, '1=1');
+        }
+
+        return sql
+            .replace(/\{websiteDomain\}/g, this.websiteDomain)
+            .replace(/%.{websiteDomain}/g, `%.${this.websiteDomain}`);
+    }
+
+    private formatDateTime(dateStr: string): string {
+        // Remove milliseconds and timezone info for ClickHouse compatibility
+        const parts = dateStr.split('.');
+        return parts[0]?.replace('T', ' ') || dateStr;
+    }
+
     compile(): CompiledQuery {
         const params: Record<string, unknown> = {
-            projectId: this.request.projectId,
-            from: this.request.from,
-            to: this.request.to
+            websiteId: this.request.projectId,
+            from: this.formatDateTime(this.request.from),
+            to: this.formatDateTime(this.request.to)
         };
 
-        // SELECT
         let sql = `SELECT ${this.config.fields.join(', ')} FROM ${this.config.table}`;
 
-        // WHERE
         const whereClause = [
             ...(this.config.where || []),
-            "project_id = {projectId:String}",
-            `${this.config.timeField || 'timestamp'} >= {from:DateTime}`,
-            `${this.config.timeField || 'timestamp'} <= {to:DateTime}`
+            "client_id = {websiteId:String}",
+            `${this.config.timeField || 'time'} >= parseDateTimeBestEffort({from:String})`,
+            `${this.config.timeField || 'time'} <= parseDateTimeBestEffort({to:String})`
         ];
 
-        // Add filters
         if (this.request.filters) {
             this.request.filters.forEach((filter, i) => {
                 if (this.config.allowedFilters?.includes(filter.field)) {
@@ -66,25 +85,23 @@ export class SimpleQueryBuilder {
 
         sql += ` WHERE ${whereClause.join(' AND ')}`;
 
-        // GROUP BY
+        sql = this.replaceDomainPlaceholders(sql);
+
         const groupBy = this.request.groupBy || this.config.groupBy;
         if (groupBy?.length) {
             sql += ` GROUP BY ${groupBy.join(', ')}`;
         }
 
-        // ORDER BY
         const orderBy = this.request.orderBy || this.config.orderBy;
         if (orderBy) {
             sql += ` ORDER BY ${orderBy}`;
         }
 
-        // LIMIT
         const limit = this.request.limit || this.config.limit;
         if (limit) {
             sql += ` LIMIT ${limit}`;
         }
 
-        // OFFSET
         if (this.request.offset) {
             sql += ` OFFSET ${this.request.offset}`;
         }
@@ -94,6 +111,7 @@ export class SimpleQueryBuilder {
 
     async execute(): Promise<Record<string, unknown>[]> {
         const { sql, params } = this.compile();
-        return await chQuery(sql, params);
+        const rawData = await chQuery(sql, params);
+        return applyPlugins(rawData, this.config, this.websiteDomain);
     }
 } 

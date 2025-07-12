@@ -1,6 +1,6 @@
 import type { SimpleQueryConfig } from "../types";
 
-export const ErrorBuilders: Record<string, SimpleQueryConfig> = {
+export const ErrorsBuilders: Record<string, SimpleQueryConfig> = {
     recent_errors: {
         table: 'analytics.errors',
         fields: [
@@ -14,7 +14,7 @@ export const ErrorBuilders: Record<string, SimpleQueryConfig> = {
             'os_name',
             'country'
         ],
-        where: ["message != ''"],
+        where: ['message != \'\''],
         orderBy: 'timestamp DESC',
         limit: 100,
         timeField: 'timestamp',
@@ -30,7 +30,7 @@ export const ErrorBuilders: Record<string, SimpleQueryConfig> = {
             'uniq(anonymous_id) as users',
             'MAX(timestamp) as last_seen'
         ],
-        where: ["message != ''"],
+        where: ['message != \'\''],
         groupBy: ['message'],
         orderBy: 'count DESC',
         limit: 50,
@@ -46,7 +46,7 @@ export const ErrorBuilders: Record<string, SimpleQueryConfig> = {
             'COUNT(*) as errors',
             'uniq(anonymous_id) as users'
         ],
-        where: ["message != ''"],
+        where: ['message != \'\''],
         groupBy: ['toDate(timestamp)'],
         orderBy: 'date ASC',
         timeField: 'timestamp',
@@ -60,12 +60,25 @@ export const ErrorBuilders: Record<string, SimpleQueryConfig> = {
             'COUNT(*) as errors',
             'uniq(anonymous_id) as users'
         ],
-        where: ["message != ''", "path != ''"],
+        where: ['message != \'\'', 'path != \'\''],
         groupBy: ['path'],
         orderBy: 'errors DESC',
         limit: 25,
         timeField: 'timestamp',
         allowedFilters: ['path', 'message', 'browser_name'],
         customizable: true
+    },
+
+    error_frequency: {
+        table: 'analytics.errors',
+        fields: [
+            'toDate(timestamp) as date',
+            'COUNT(*) as count'
+        ],
+        where: ['message != \'\''],
+        groupBy: ['toDate(timestamp)'],
+        orderBy: 'date ASC',
+        timeField: 'timestamp',
+        allowedFilters: ['message', 'path', 'browser_name', 'country']
     }
 }; 

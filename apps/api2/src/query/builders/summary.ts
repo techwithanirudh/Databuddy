@@ -1,8 +1,8 @@
 import type { SimpleQueryConfig, Filter, TimeUnit } from "../types";
 
 export const SummaryBuilders: Record<string, SimpleQueryConfig> = {
-    summary_metrics: {
-        customSql: (websiteId: string, startDate: string, endDate: string) => `
+  summary_metrics: {
+    customSql: (websiteId: string, startDate: string, endDate: string) => `
             WITH session_metrics AS (
               SELECT
                 session_id,
@@ -55,36 +55,36 @@ export const SummaryBuilders: Record<string, SimpleQueryConfig> = {
             FROM session_metrics
             LEFT JOIN session_durations as sd ON session_metrics.session_id = sd.session_id
         `,
-        timeField: 'time',
-        allowedFilters: ['path', 'referrer', 'device_type', 'browser_name', 'country'],
-        customizable: true
-    },
+    timeField: 'time',
+    allowedFilters: ['path', 'referrer', 'device_type', 'browser_name', 'country'],
+    customizable: true
+  },
 
-    today_metrics: {
-        table: 'analytics.events',
-        fields: [
-            'COUNT(*) as pageviews',
-            'COUNT(DISTINCT anonymous_id) as visitors',
-            'COUNT(DISTINCT session_id) as sessions',
-            'AVG(CASE WHEN is_bounce = 1 THEN 100 ELSE 0 END) as bounce_rate'
-        ],
-        where: [
-            'event_name = \'screen_view\'',
-            'toDate(time) = today()'
-        ],
-        timeField: 'time',
-        allowedFilters: ['path', 'referrer', 'device_type'],
-        customizable: true
-    },
+  today_metrics: {
+    table: 'analytics.events',
+    fields: [
+      'COUNT(*) as pageviews',
+      'COUNT(DISTINCT anonymous_id) as visitors',
+      'COUNT(DISTINCT session_id) as sessions',
+      'AVG(CASE WHEN is_bounce = 1 THEN 100 ELSE 0 END) as bounce_rate'
+    ],
+    where: [
+      'event_name = \'screen_view\'',
+      'toDate(time) = today()'
+    ],
+    timeField: 'time',
+    allowedFilters: ['path', 'referrer', 'device_type'],
+    customizable: true
+  },
 
-    events_by_date: {
-        customSql: (websiteId: string, startDate: string, endDate: string, filters?: Filter[], granularity?: TimeUnit) => {
-            const isHourly = granularity === 'hour' || granularity === 'hourly';
-            const timeGroup = isHourly ? 'toStartOfHour(time)' : 'toDate(time)';
-            const dateFormat = isHourly ? '%Y-%m-%d %H:00:00' : '%Y-%m-%d';
-            const dateRange = isHourly ? 'hour' : 'day';
+  events_by_date: {
+    customSql: (websiteId: string, startDate: string, endDate: string, filters?: Filter[], granularity?: TimeUnit) => {
+      const isHourly = granularity === 'hour' || granularity === 'hourly';
+      const timeGroup = isHourly ? 'toStartOfHour(time)' : 'toDate(time)';
+      const dateFormat = isHourly ? '%Y-%m-%d %H:00:00' : '%Y-%m-%d';
+      const dateRange = isHourly ? 'hour' : 'day';
 
-            return `
+      return `
                 WITH date_range AS (
                   SELECT 
                     ${isHourly ? `toStartOfHour(parseDateTimeBestEffort('${startDate}')) + INTERVAL number HOUR` : `toDate(parseDateTimeBestEffort('${startDate}')) + number`} as date
@@ -142,27 +142,26 @@ export const SummaryBuilders: Record<string, SimpleQueryConfig> = {
                 FROM date_range dr
                 LEFT JOIN time_metrics tm ON dr.date = tm.date
                 LEFT JOIN time_visitors tv ON dr.date = tv.date
-                WHERE dr.date <= ${isHourly ? 'toStartOfHour(now())' : 'today()'}
                 ORDER BY dr.date ASC
             `;
-        },
-        timeField: 'time',
-        allowedFilters: ['path', 'referrer', 'device_type'],
-        customizable: true
     },
+    timeField: 'time',
+    allowedFilters: ['path', 'referrer', 'device_type'],
+    customizable: true
+  },
 
-    active_stats: {
-        table: 'analytics.events',
-        fields: [
-            'COUNT(DISTINCT anonymous_id) as active_users',
-            'COUNT(DISTINCT session_id) as active_sessions'
-        ],
-        where: [
-            'event_name = \'screen_view\'',
-            'time >= now() - INTERVAL 5 MINUTE'
-        ],
-        timeField: 'time',
-        allowedFilters: ['path', 'referrer'],
-        customizable: true
-    }
+  active_stats: {
+    table: 'analytics.events',
+    fields: [
+      'COUNT(DISTINCT anonymous_id) as active_users',
+      'COUNT(DISTINCT session_id) as active_sessions'
+    ],
+    where: [
+      'event_name = \'screen_view\'',
+      'time >= now() - INTERVAL 5 MINUTE'
+    ],
+    timeField: 'time',
+    allowedFilters: ['path', 'referrer'],
+    customizable: true
+  }
 }; 

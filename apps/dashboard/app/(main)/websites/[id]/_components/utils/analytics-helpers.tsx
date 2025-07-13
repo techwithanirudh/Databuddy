@@ -1,8 +1,13 @@
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
 import { toast } from "sonner";
+import { getUserTimezone } from "@/lib/timezone";
 
 dayjs.extend(relativeTime);
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 type Granularity = "daily" | "hourly";
 
@@ -55,12 +60,13 @@ export const safeParseDate = (date: string | Date | null | undefined): dayjs.Day
   }
 };
 
-// Format date for display based on granularity
+// Format date for display based on granularity with timezone conversion
 export const formatDateByGranularity = (
   date: string | Date,
   granularity: Granularity = "daily"
 ): string => {
-  const dateObj = safeParseDate(date);
+  const userTimezone = getUserTimezone();
+  const dateObj = dayjs.utc(date).tz(userTimezone);
   return granularity === "hourly" ? dateObj.format("MMM D, h:mm A") : dateObj.format("MMM D");
 };
 
@@ -85,7 +91,7 @@ export const formatDistributionData = <T extends DataItem>(
     name:
       typeof item[nameField] === "string"
         ? (item[nameField] as string)?.charAt(0).toUpperCase() +
-            (item[nameField] as string)?.slice(1) || "Unknown"
+        (item[nameField] as string)?.slice(1) || "Unknown"
         : String(item[nameField] || "Unknown"),
     value: Number(item[valueField]) || 0,
   }));

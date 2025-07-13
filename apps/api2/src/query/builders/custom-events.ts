@@ -28,14 +28,22 @@ export const CustomEventsBuilders: Record<string, SimpleQueryConfig> = {
         table: 'analytics.events',
         fields: [
             'event_name',
-            'properties',
-            'COUNT(*) as count'
+            'time',
+            'path',
+            'anonymous_id',
+            'session_id',
+            'country',
+            'region',
+            'device_type',
+            'browser_name',
+            'os_name',
+            'properties'
         ],
         where: [
             'event_name NOT IN (\'screen_view\', \'page_exit\', \'error\', \'web_vitals\', \'link_out\')',
-            'event_name != \'\'',
-            'properties != \'\''
+            'event_name != \'\''
         ],
+        orderBy: 'time DESC',
         timeField: 'time',
         allowedFilters: ['event_name', 'path', 'device_type'],
         customizable: true

@@ -75,8 +75,12 @@ export const query = new Elysia({ prefix: '/v1/query' })
         try {
             const { website_id } = query;
             const websiteDomain = website_id ? await getWebsiteDomain(website_id) : null;
+
             const result = compileQuery(body, websiteDomain);
-            return { success: true, ...result };
+            return {
+                success: true,
+                ...result
+            };
         } catch (error) {
             return {
                 success: false,
@@ -111,7 +115,10 @@ export const query = new Elysia({ prefix: '/v1/query' })
             }
 
             const result = await executeDynamicQuery(body, query);
-            return { success: true, ...result };
+            return {
+                success: true,
+                ...result
+            };
         } catch (error) {
             return {
                 success: false,

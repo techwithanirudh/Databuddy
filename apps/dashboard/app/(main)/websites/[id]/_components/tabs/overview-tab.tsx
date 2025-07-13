@@ -50,9 +50,22 @@ interface ChartDataPoint {
   [key: string]: unknown;
 }
 
+// Constants
 const MIN_PREVIOUS_SESSIONS_FOR_TREND = 5;
 const MIN_PREVIOUS_VISITORS_FOR_TREND = 5;
 const MIN_PREVIOUS_PAGEVIEWS_FOR_TREND = 10;
+
+// Configuration
+const QUERY_CONFIG = {
+  limit: 100,
+  parameters: {
+    summary: ["summary_metrics", "today_metrics", "events_by_date"] as string[],
+    pages: ["top_pages", "entry_pages", "exit_pages"] as string[],
+    traffic: ["top_referrers", "utm_sources", "utm_mediums", "utm_campaigns"] as string[],
+    tech: ["device_types", "browsers"] as string[],
+    customEvents: ["custom_events"] as string[],
+  },
+} as const;
 
 function LiveUserIndicator({ websiteId }: { websiteId: string }) {
   const { activeUsers: count } = useRealTimeStats(websiteId);
@@ -144,32 +157,32 @@ export function WebsiteOverviewTab({
     () => [
       {
         id: "overview-summary",
-        parameters: ["summary_metrics", "today_metrics", "events_by_date"],
-        limit: 100,
+        parameters: QUERY_CONFIG.parameters.summary,
+        limit: QUERY_CONFIG.limit,
         granularity: dateRange.granularity,
       },
       {
         id: "overview-pages",
-        parameters: ["top_pages", "entry_pages", "exit_pages"],
-        limit: 100,
+        parameters: QUERY_CONFIG.parameters.pages,
+        limit: QUERY_CONFIG.limit,
         granularity: dateRange.granularity,
       },
       {
         id: "overview-traffic",
-        parameters: ["top_referrers", "utm_sources", "utm_mediums", "utm_campaigns"],
-        limit: 100,
+        parameters: QUERY_CONFIG.parameters.traffic,
+        limit: QUERY_CONFIG.limit,
         granularity: dateRange.granularity,
       },
       {
         id: "overview-tech",
-        parameters: ["device_types", "browsers"],
-        limit: 100,
+        parameters: QUERY_CONFIG.parameters.tech,
+        limit: QUERY_CONFIG.limit,
         granularity: dateRange.granularity,
       },
       {
         id: "overview-custom-events",
-        parameters: ["custom_events", "custom_event_details"],
-        limit: 100,
+        parameters: QUERY_CONFIG.parameters.customEvents,
+        limit: QUERY_CONFIG.limit,
         granularity: dateRange.granularity,
       },
     ],
@@ -208,7 +221,6 @@ export function WebsiteOverviewTab({
   const customEventsData = useMemo(
     () => ({
       custom_events: getDataForQuery("overview-custom-events", "custom_events") || [],
-      custom_event_details: getDataForQuery("overview-custom-events", "custom_event_details") || [],
     }),
     [getDataForQuery]
   );
@@ -264,106 +276,81 @@ export function WebsiteOverviewTab({
     return <ReferrerSourceCell {...cellData} />;
   }, []);
 
+  // Utility functions for data processing
+  const filterFutureEvents = useCallback((events: any[]) => {
+    const endOfToday = dayjs().utc().endOf('day');
+    return events.filter((event: any) => {
+      const eventDate = dayjs(event.date);
+      return eventDate.isBefore(endOfToday) || eventDate.isSame(endOfToday, 'day');
+    });
+  }, []);
+
   const chartData = useMemo(() => {
     if (!analytics.events_by_date?.length) return [];
 
-    const now = dayjs().utc();
-    const endOfToday = dayjs().utc().endOf('day');
+    const filteredEvents = filterFutureEvents(analytics.events_by_date);
 
-    return analytics.events_by_date
-      .filter((event: any) => {
-        const eventDate = dayjs(event.date);
-        // Only include dates that are in the past or today, never future dates
-        return eventDate.isBefore(endOfToday) || eventDate.isSame(endOfToday, 'day');
-      })
-      .map((event: any): ChartDataPoint => {
-        const filtered: ChartDataPoint = {
-          date: formatDateByGranularity(event.date, dateRange.granularity),
-        };
+    return filteredEvents.map((event: any): ChartDataPoint => {
+      const filtered: ChartDataPoint = {
+        date: formatDateByGranularity(event.date, dateRange.granularity),
+      };
 
-        if (visibleMetrics.pageviews) {
-          filtered.pageviews = event.pageviews;
-        }
+      if (visibleMetrics.pageviews) {
+        filtered.pageviews = event.pageviews;
+      }
 
-        if (visibleMetrics.visitors) {
-          filtered.visitors = event.visitors || event.unique_visitors || 0;
-        }
+      if (visibleMetrics.visitors) {
+        filtered.visitors = event.visitors || event.unique_visitors || 0;
+      }
 
-        if (visibleMetrics.sessions) {
-          filtered.sessions = event.sessions;
-        }
+      if (visibleMetrics.sessions) {
+        filtered.sessions = event.sessions;
+      }
 
-        return filtered;
-      });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [analytics.events_by_date, visibleMetrics, dateRange.granularity]);
+      return filtered;
+    });
+  }, [analytics.events_by_date, visibleMetrics, dateRange.granularity, filterFutureEvents]);
 
   const miniChartData = useMemo(() => {
     if (!analytics.events_by_date?.length) return {};
 
-    const now = dayjs().utc();
-    const endOfToday = dayjs().utc().endOf('day');
+    const filteredEvents = filterFutureEvents(analytics.events_by_date);
 
-    // Filter out future data points, same as main chart
-    const filteredEvents = analytics.events_by_date.filter((event: any) => {
-      const eventDate = dayjs(event.date);
-      // Only include dates that are in the past or today, never future dates
-      return eventDate.isBefore(endOfToday) || eventDate.isSame(endOfToday, 'day');
-    });
-
-    const visitors = filteredEvents.map((event: any) => ({
-      date: event.date,
-      value: event.visitors || 0,
-    }));
-
-    const sessions = filteredEvents.map((event: any) => ({
-      date: event.date,
-      value: event.sessions || 0,
-    }));
-
-    const pageviews = filteredEvents.map((event: any) => ({
-      date: event.date,
-      value: event.pageviews || 0,
-    }));
-
-    const pagesPerSession = filteredEvents.map((event: any) => ({
-      date: event.date,
-      value: event.sessions > 0 ? (event.pageviews || 0) / event.sessions : 0,
-    }));
-
-    const bounceRate = filteredEvents.map((event: any) => ({
-      date: event.date,
-      value: event.bounce_rate || 0,
-    }));
-
-    const sessionDuration = filteredEvents.map((event: any) => ({
-      date: event.date,
-      value: event.avg_session_duration || 0,
-    }));
+    const createChartSeries = (field: string, transform?: (value: any) => number) =>
+      filteredEvents.map((event: any) => ({
+        date: event.date,
+        value: transform ? transform(event[field]) : (event[field] || 0),
+      }));
 
     return {
-      visitors,
-      sessions,
-      pageviews,
-      pagesPerSession,
-      bounceRate,
-      sessionDuration,
+      visitors: createChartSeries('visitors'),
+      sessions: createChartSeries('sessions'),
+      pageviews: createChartSeries('pageviews'),
+      pagesPerSession: createChartSeries('pageviews', (pageviews) => {
+        const event = filteredEvents.find(e => e.pageviews === pageviews);
+        return event?.sessions > 0 ? pageviews / event.sessions : 0;
+      }),
+      bounceRate: createChartSeries('bounce_rate'),
+      sessionDuration: createChartSeries('avg_session_duration'),
     };
-  }, [analytics.events_by_date]);
+  }, [analytics.events_by_date, filterFutureEvents]);
 
-  const processedTopPages = useMemo(() => {
-    if (!analytics.top_pages?.length) return [];
+  // Page processing utilities
+  const processPagesWithPercentage = useCallback((pages: any[], field = 'pageviews') => {
+    if (!pages?.length) return [];
 
-    const totalPageviews = analytics.top_pages.reduce(
-      (sum: number, page: any) => sum + (page.pageviews || 0),
-      0
-    );
+    const total = pages.reduce((sum, page: any) => sum + (page[field] || 0), 0);
 
-    return analytics.top_pages.map((page: any) => ({
+    return pages.map((page: any) => ({
       ...page,
-      percentage: totalPageviews > 0 ? Math.round((page.pageviews / totalPageviews) * 100) : 0,
+      percentage: total > 0 ? Math.round((page[field] / total) * 100) : 0,
     }));
-  }, [analytics.top_pages]);
+  }, []);
+
+  const processedTopPages = useMemo(() =>
+    processPagesWithPercentage(analytics.top_pages),
+    [analytics.top_pages, processPagesWithPercentage]
+  );
 
   const processedEntryPages = useMemo(() => {
     if (!analytics.entry_pages?.length) return [];
@@ -385,6 +372,7 @@ export function WebsiteOverviewTab({
     }));
   }, [analytics.exit_pages]);
 
+  // Table configurations
   const referrerTabs = useTableTabs({
     referrers: {
       data: analytics.top_referrers || [],
@@ -614,7 +602,6 @@ export function WebsiteOverviewTab({
     }
 
     const customEvents = customEventsData.custom_events;
-    const eventDetails = customEventsData.custom_event_details || [];
 
     const totalEvents = customEvents.reduce(
       (sum: number, event: any) => sum + (event.total_events || 0),
@@ -622,47 +609,6 @@ export function WebsiteOverviewTab({
     );
 
     return customEvents.map((event: any) => {
-      // Find all detail records for this event
-      const eventDetailRecords = eventDetails.filter(
-        (detail: any) => detail.event_name === event.name
-      );
-
-      // Group property values by key
-      const propertyBreakdown: Record<string, Record<string, number>> = {};
-
-      for (const record of eventDetailRecords) {
-        if (record.properties && typeof record.properties === "object") {
-          for (const [key, value] of Object.entries(record.properties)) {
-            if (key && value !== null && value !== undefined) {
-              if (!propertyBreakdown[key]) propertyBreakdown[key] = {};
-              const stringValue = String(value);
-              propertyBreakdown[key][stringValue] = (propertyBreakdown[key][stringValue] || 0) + 1;
-            }
-          }
-        }
-      }
-
-      // Create property categories for sub-rows
-      const propertyCategories = Object.entries(propertyBreakdown)
-        .map(([propertyKey, values]) => {
-          const propertyTotal = Object.values(values).reduce((sum, count) => sum + count, 0);
-
-          const propertyValues = Object.entries(values)
-            .map(([propertyValue, count]) => ({
-              value: propertyValue,
-              count,
-              percentage: propertyTotal > 0 ? Math.round((count / propertyTotal) * 100) : 0,
-            }))
-            .sort((a, b) => b.count - a.count);
-
-          return {
-            key: propertyKey,
-            total: propertyTotal,
-            values: propertyValues,
-          };
-        })
-        .sort((a, b) => b.total - a.total);
-
       return {
         ...event,
         percentage: totalEvents > 0 ? Math.round((event.total_events / totalEvents) * 100) : 0,
@@ -672,10 +618,47 @@ export function WebsiteOverviewTab({
         first_occurrence_formatted: event.first_occurrence
           ? new Date(event.first_occurrence).toLocaleDateString()
           : "N/A",
-        propertyCategories,
+        propertyCategories: [],
       };
     });
   }, [customEventsData]);
+
+  // Utility functions to reduce duplication
+  const createTechnologyCell = useCallback((header: string) => (info: any) => {
+    const entry = info.row.original;
+    return (
+      <div className="flex items-center gap-3">
+        <TechnologyIcon entry={entry} size="md" />
+        <span className="font-medium">{entry.name}</span>
+      </div>
+    );
+  }, []);
+
+  const createPercentageCell = useCallback(() => (info: any) => {
+    const percentage = info.getValue() as number;
+    return <PercentageBadge percentage={percentage} />;
+  }, []);
+
+  const createMetricCell = useCallback((label: string) => (info: any) => (
+    <div>
+      <div className="font-medium text-foreground">{info.getValue()?.toLocaleString()}</div>
+      <div className="text-muted-foreground text-xs">{label}</div>
+    </div>
+  ), []);
+
+  const baseTechnologyColumns = useMemo(() => [
+    {
+      id: "visitors",
+      accessorKey: "visitors",
+      header: "Visitors",
+    },
+    {
+      id: "percentage",
+      accessorKey: "percentage",
+      header: "Share",
+      cell: createPercentageCell(),
+    },
+  ], [createPercentageCell]);
 
   const deviceColumns = useMemo(
     () => [
@@ -683,32 +666,11 @@ export function WebsiteOverviewTab({
         id: "name",
         accessorKey: "name",
         header: "Device Type",
-        cell: (info: any) => {
-          const entry = info.row.original;
-          return (
-            <div className="flex items-center gap-3">
-              <TechnologyIcon entry={entry} size="md" />
-              <span className="font-medium">{entry.name}</span>
-            </div>
-          );
-        },
+        cell: createTechnologyCell("Device Type"),
       },
-      {
-        id: "visitors",
-        accessorKey: "visitors",
-        header: "Visitors",
-      },
-      {
-        id: "percentage",
-        accessorKey: "percentage",
-        header: "Share",
-        cell: (info: any) => {
-          const percentage = info.getValue() as number;
-          return <PercentageBadge percentage={percentage} />;
-        },
-      },
+      ...baseTechnologyColumns,
     ],
-    []
+    [createTechnologyCell, baseTechnologyColumns]
   );
 
   const browserColumns = useMemo(
@@ -717,32 +679,11 @@ export function WebsiteOverviewTab({
         id: "name",
         accessorKey: "name",
         header: "Browser",
-        cell: (info: any) => {
-          const entry = info.row.original;
-          return (
-            <div className="flex items-center gap-3">
-              <TechnologyIcon entry={entry} size="md" />
-              <span className="font-medium">{entry.name}</span>
-            </div>
-          );
-        },
+        cell: createTechnologyCell("Browser"),
       },
-      {
-        id: "visitors",
-        accessorKey: "visitors",
-        header: "Visitors",
-      },
-      {
-        id: "percentage",
-        accessorKey: "percentage",
-        header: "Share",
-        cell: (info: any) => {
-          const percentage = info.getValue() as number;
-          return <PercentageBadge percentage={percentage} />;
-        },
-      },
+      ...baseTechnologyColumns,
     ],
-    []
+    [createTechnologyCell, baseTechnologyColumns]
   );
 
   const osColumns = useMemo(
@@ -751,32 +692,11 @@ export function WebsiteOverviewTab({
         id: "name",
         accessorKey: "name",
         header: "Operating System",
-        cell: (info: any) => {
-          const entry = info.row.original;
-          return (
-            <div className="flex items-center gap-3">
-              <TechnologyIcon entry={entry} size="md" />
-              <span className="font-medium">{entry.name}</span>
-            </div>
-          );
-        },
+        cell: createTechnologyCell("Operating System"),
       },
-      {
-        id: "visitors",
-        accessorKey: "visitors",
-        header: "Visitors",
-      },
-      {
-        id: "percentage",
-        accessorKey: "percentage",
-        header: "Share",
-        cell: (info: any) => {
-          const percentage = info.getValue() as number;
-          return <PercentageBadge percentage={percentage} />;
-        },
-      },
+      ...baseTechnologyColumns,
     ],
-    []
+    [createTechnologyCell, baseTechnologyColumns]
   );
 
   const customEventsColumns = useMemo(
@@ -799,148 +719,123 @@ export function WebsiteOverviewTab({
         id: "total_events",
         accessorKey: "total_events",
         header: "Events",
-        cell: (info: any) => (
-          <div>
-            <div className="font-medium text-foreground">{info.getValue()?.toLocaleString()}</div>
-            <div className="text-muted-foreground text-xs">total</div>
-          </div>
-        ),
+        cell: createMetricCell("total"),
       },
       {
         id: "unique_users",
         accessorKey: "unique_users",
         header: "Users",
-        cell: (info: any) => (
-          <div>
-            <div className="font-medium text-foreground">{info.getValue()?.toLocaleString()}</div>
-            <div className="text-muted-foreground text-xs">unique</div>
-          </div>
-        ),
+        cell: createMetricCell("unique"),
       },
       {
         id: "percentage",
         accessorKey: "percentage",
         header: "Share",
-        cell: (info: any) => {
-          const percentage = info.getValue() as number;
-          return <PercentageBadge percentage={percentage} />;
-        },
+        cell: createPercentageCell(),
       },
     ],
-    []
+    [createMetricCell, createPercentageCell]
   );
 
   return (
     <div className="space-y-6">
       {/* Metrics */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-6">
-        <StatCard
-          chartData={isLoading ? undefined : miniChartData.visitors}
-          className="h-full"
-          description={`${analytics.today?.visitors || 0} today`}
-          icon={UsersIcon}
-          id="visitors-chart"
-          isLoading={isLoading}
-          showChart={true}
-          title="UNIQUE VISITORS"
-          trend={calculateTrends.visitors}
-          trendLabel={calculateTrends.visitors !== undefined ? "vs previous period" : undefined}
-          value={analytics.summary?.unique_visitors || 0}
-          variant="default"
-        />
-        <StatCard
-          chartData={isLoading ? undefined : miniChartData.sessions}
-          className="h-full"
-          description={`${analytics.today?.sessions || 0} today`}
-          icon={ChartLineIcon}
-          id="sessions-chart"
-          isLoading={isLoading}
-          showChart={true}
-          title="SESSIONS"
-          trend={calculateTrends.sessions}
-          trendLabel={calculateTrends.sessions !== undefined ? "vs previous period" : undefined}
-          value={analytics.summary?.sessions || 0}
-          variant="default"
-        />
-        <StatCard
-          chartData={isLoading ? undefined : miniChartData.pageviews}
-          className="h-full"
-          description={`${analytics.today?.pageviews || 0} today`}
-          icon={GlobeIcon}
-          id="pageviews-chart"
-          isLoading={isLoading}
-          showChart={true}
-          title="PAGEVIEWS"
-          trend={calculateTrends.pageviews}
-          trendLabel={calculateTrends.pageviews !== undefined ? "vs previous period" : undefined}
-          value={analytics.summary?.pageviews || 0}
-          variant="default"
-        />
-        <StatCard
-          chartData={isLoading ? undefined : miniChartData.pagesPerSession}
-          className="h-full"
-          formatValue={(value) => value.toFixed(1)}
-          icon={LayoutIcon}
-          id="pages-per-session-chart"
-          isLoading={isLoading}
-          showChart={true}
-          title="PAGES/SESSION"
-          trend={calculateTrends.pages_per_session}
-          trendLabel={
-            calculateTrends.pages_per_session !== undefined ? "vs previous period" : undefined
-          }
-          value={
-            analytics.summary
+        {[
+          {
+            id: "visitors-chart",
+            title: "UNIQUE VISITORS",
+            value: analytics.summary?.unique_visitors || 0,
+            description: `${analytics.today?.visitors || 0} today`,
+            icon: UsersIcon,
+            chartData: miniChartData.visitors,
+            trend: calculateTrends.visitors,
+          },
+          {
+            id: "sessions-chart",
+            title: "SESSIONS",
+            value: analytics.summary?.sessions || 0,
+            description: `${analytics.today?.sessions || 0} today`,
+            icon: ChartLineIcon,
+            chartData: miniChartData.sessions,
+            trend: calculateTrends.sessions,
+          },
+          {
+            id: "pageviews-chart",
+            title: "PAGEVIEWS",
+            value: analytics.summary?.pageviews || 0,
+            description: `${analytics.today?.pageviews || 0} today`,
+            icon: GlobeIcon,
+            chartData: miniChartData.pageviews,
+            trend: calculateTrends.pageviews,
+          },
+          {
+            id: "pages-per-session-chart",
+            title: "PAGES/SESSION",
+            value: analytics.summary
               ? analytics.summary.sessions > 0
                 ? (analytics.summary.pageviews / analytics.summary.sessions).toFixed(1)
                 : "0"
-              : "0"
-          }
-          variant="default"
-        />
-        <StatCard
-          chartData={isLoading ? undefined : miniChartData.bounceRate}
-          className="h-full"
-          formatValue={(value) => `${value.toFixed(1)}%`}
-          icon={CursorIcon}
-          id="bounce-rate-chart"
-          invertTrend={true}
-          isLoading={isLoading}
-          showChart={true}
-          title="BOUNCE RATE"
-          trend={calculateTrends.bounce_rate}
-          trendLabel={calculateTrends.bounce_rate !== undefined ? "vs previous period" : undefined}
-          value={analytics.summary?.bounce_rate ? `${analytics.summary.bounce_rate.toFixed(1)}%` : "0%"}
-          variant={getColorVariant(analytics.summary?.bounce_rate || 0, 70, 50)}
-        />
-        <StatCard
-          chartData={isLoading ? undefined : miniChartData.sessionDuration}
-          className="h-full"
-          formatValue={(value) => {
-            if (value < 60) return `${value.toFixed(1)}s`;
-            const minutes = Math.floor(value / 60);
-            const seconds = Math.round(value % 60);
-            return `${minutes}m ${seconds}s`;
-          }}
-          icon={TimerIcon}
-          id="session-duration-chart"
-          isLoading={isLoading}
-          showChart={true}
-          title="SESSION DURATION"
-          trend={calculateTrends.session_duration}
-          trendLabel={
-            calculateTrends.session_duration !== undefined ? "vs previous period" : undefined
-          }
-          value={(() => {
-            const duration = analytics.summary?.avg_session_duration;
-            if (!duration) return "0s";
-            if (duration < 60) return `${duration.toFixed(1)}s`;
-            const minutes = Math.floor(duration / 60);
-            const seconds = Math.round(duration % 60);
-            return `${minutes}m ${seconds}s`;
-          })()}
-          variant="default"
-        />
+              : "0",
+            description: "",
+            icon: LayoutIcon,
+            chartData: miniChartData.pagesPerSession,
+            trend: calculateTrends.pages_per_session,
+            formatValue: (value: number) => value.toFixed(1),
+          },
+          {
+            id: "bounce-rate-chart",
+            title: "BOUNCE RATE",
+            value: analytics.summary?.bounce_rate ? `${analytics.summary.bounce_rate.toFixed(1)}%` : "0%",
+            description: "",
+            icon: CursorIcon,
+            chartData: miniChartData.bounceRate,
+            trend: calculateTrends.bounce_rate,
+            formatValue: (value: number) => `${value.toFixed(1)}%`,
+            invertTrend: true,
+            variant: getColorVariant(analytics.summary?.bounce_rate || 0, 70, 50),
+          },
+          {
+            id: "session-duration-chart",
+            title: "SESSION DURATION",
+            value: (() => {
+              const duration = analytics.summary?.avg_session_duration;
+              if (!duration) return "0s";
+              if (duration < 60) return `${duration.toFixed(1)}s`;
+              const minutes = Math.floor(duration / 60);
+              const seconds = Math.round(duration % 60);
+              return `${minutes}m ${seconds}s`;
+            })(),
+            description: "",
+            icon: TimerIcon,
+            chartData: miniChartData.sessionDuration,
+            trend: calculateTrends.session_duration,
+            formatValue: (value: number) => {
+              if (value < 60) return `${value.toFixed(1)}s`;
+              const minutes = Math.floor(value / 60);
+              const seconds = Math.round(value % 60);
+              return `${minutes}m ${seconds}s`;
+            },
+          },
+        ].map((metric) => (
+          <StatCard
+            key={metric.id}
+            chartData={isLoading ? undefined : metric.chartData}
+            className="h-full"
+            description={metric.description}
+            icon={metric.icon}
+            id={metric.id}
+            isLoading={isLoading}
+            showChart={true}
+            title={metric.title}
+            trend={metric.trend}
+            trendLabel={metric.trend !== undefined ? "vs previous period" : undefined}
+            value={metric.value}
+            variant={metric.variant || "default"}
+            formatValue={metric.formatValue}
+            invertTrend={metric.invertTrend}
+          />
+        ))}
       </div>
 
       {/* Chart */}

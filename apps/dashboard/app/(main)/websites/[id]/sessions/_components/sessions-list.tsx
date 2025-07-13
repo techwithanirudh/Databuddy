@@ -24,7 +24,7 @@ export function SessionsList({ websiteId }: SessionsListProps) {
   const [hasIntersected, setHasIntersected] = useState(false);
 
   const { sessions, pagination, isLoading, isError, error } =
-    useSessionsData(websiteId, dateRange, 25, page);
+    useSessionsData(websiteId, dateRange, 50, page);
 
   const toggleSession = useCallback((sessionId: string) => {
     setExpandedSessionId(currentId => currentId === sessionId ? null : sessionId);

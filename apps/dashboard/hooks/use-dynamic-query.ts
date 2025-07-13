@@ -3,7 +3,7 @@ import { useCallback, useMemo } from "react";
 import type { DateRange } from "./use-analytics";
 import { usePreferences } from "./use-preferences";
 import { formatDuration } from "../app/(main)/websites/[id]/profiles/_components/profile-utils";
-import { getCountryCode } from "@databuddy/shared";
+import { getCountryCode, getCountryName } from "@databuddy/shared";
 
 // API Request Types
 export interface DynamicQueryRequest {
@@ -221,6 +221,34 @@ export interface SessionData {
   user_agent: string;
 }
 
+export interface ProfileSessionData {
+  session_id: string;
+  time: string;
+  event_name: string;
+  path: string;
+  error_message?: string;
+  error_type?: string;
+  properties: Record<string, any>;
+  country_name?: string;
+}
+
+export interface ProfileData {
+  visitor_id: string;
+  first_visit: string;
+  last_visit: string;
+  total_sessions: number;
+  total_pageviews: number;
+  total_duration: number;
+  total_duration_formatted: string;
+  device: string;
+  browser: string;
+  os: string;
+  country: string;
+  country_name: string;
+  region: string;
+  sessions: ProfileSessionData[];
+}
+
 export interface SessionsResponse {
   sessions: SessionData[];
   pagination: {
@@ -368,6 +396,8 @@ export type ParameterDataMap = {
   latest_events: LatestEventData;
   // Sessions
   session_list: SessionData;
+  // Profiles
+  profile_list: ProfileData;
 };
 
 // Helper type to extract data types from parameters
@@ -1513,6 +1543,148 @@ export function useSessionsData(
   return {
     ...queryResult,
     sessions,
+    pagination: {
+      page,
+      limit,
+      hasNext: hasNextPage,
+      hasPrev: hasPrevPage,
+    },
+  };
+}
+
+/**
+ * Transform profiles data from API2 format to frontend format
+ */
+function transformProfilesData(profiles: any[]): ProfileData[] {
+  // Group profiles by visitor_id to combine sessions
+  const profilesByVisitor = new Map();
+
+  for (const profile of profiles) {
+    if (!profilesByVisitor.has(profile.visitor_id)) {
+      // Initialize profile data
+      profilesByVisitor.set(profile.visitor_id, {
+        visitor_id: profile.visitor_id,
+        first_visit: profile.first_visit,
+        last_visit: profile.last_visit,
+        total_sessions: profile.session_count,
+        total_pageviews: profile.total_events,
+        total_duration: 0,
+        total_duration_formatted: "0s",
+        device: profile.device_type,
+        browser: profile.browser_name,
+        os: profile.os_name,
+        country: getCountryCode(profile.country || ''),
+        country_name: getCountryName(profile.country || ''),
+        region: profile.region,
+        sessions: []
+      });
+    }
+
+    // Add session data if available
+    if (profile.session_id) {
+      const sessionData = {
+        session_id: profile.session_id,
+        session_name: `Session ${profile.session_id.slice(-8)}`,
+        first_visit: profile.session_start,
+        last_visit: profile.session_end,
+        duration: profile.duration || 0,
+        duration_formatted: formatDuration(profile.duration || 0),
+        page_views: profile.page_views || 0,
+        unique_pages: profile.session_unique_pages || 0,
+        device: profile.session_device_type || profile.device_type,
+        browser: profile.session_browser_name || profile.browser_name,
+        os: profile.session_os_name || profile.os_name,
+        country: getCountryCode(profile.session_country || profile.country || ''),
+        country_name: getCountryName(profile.session_country || profile.country || ''),
+        region: profile.session_region || profile.region,
+        referrer: profile.session_referrer || profile.referrer,
+        events: []
+      };
+
+      // Parse events if available
+      if (profile.events && Array.isArray(profile.events)) {
+        sessionData.events = profile.events.map((eventTuple: any) => {
+          if (Array.isArray(eventTuple) && eventTuple.length >= 7) {
+            const [id, time, event_name, path, error_message, error_type, properties] = eventTuple;
+
+            let propertiesObj: Record<string, any> = {};
+            if (properties) {
+              try {
+                propertiesObj = JSON.parse(properties);
+              } catch {
+                // If parsing fails, keep empty object
+              }
+            }
+
+            return {
+              event_id: id,
+              time,
+              event_name,
+              path,
+              error_message,
+              error_type,
+              properties: propertiesObj
+            };
+          }
+          return null;
+        }).filter(Boolean);
+      }
+
+      profilesByVisitor.get(profile.visitor_id).sessions.push(sessionData);
+    }
+  }
+
+  // Convert to array and sort sessions by start time
+  return Array.from(profilesByVisitor.values()).map(profile => ({
+    ...profile,
+    sessions: profile.sessions.sort((a: any, b: any) =>
+      new Date(b.first_visit).getTime() - new Date(a.first_visit).getTime()
+    )
+  }));
+}
+
+/**
+ * Hook for profiles with pagination support
+ */
+export function useProfilesData(
+  websiteId: string,
+  dateRange: DateRange,
+  limit = 50,
+  page = 1,
+  options?: Partial<UseQueryOptions<DynamicQueryResponse>>
+) {
+  const queryResult = useDynamicQuery(
+    websiteId,
+    dateRange,
+    {
+      id: "profiles-list",
+      parameters: ["profile_list"],
+      limit,
+      page,
+    },
+    {
+      ...options,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes
+    }
+  );
+
+  const profiles = useMemo(() => {
+    const rawProfiles = (queryResult.data as any)?.profile_list || [];
+    return transformProfilesData(rawProfiles);
+  }, [queryResult.data]);
+
+  const hasNextPage = useMemo(() => {
+    return profiles.length === limit;
+  }, [profiles.length, limit]);
+
+  const hasPrevPage = useMemo(() => {
+    return page > 1;
+  }, [page]);
+
+  return {
+    ...queryResult,
+    profiles,
     pagination: {
       page,
       limit,

@@ -7,6 +7,7 @@ import { ErrorsBuilders } from "./errors";
 import { PerformanceBuilders } from "./performance";
 import { SessionsBuilders } from "./sessions";
 import { CustomEventsBuilders } from "./custom-events";
+import { ProfilesBuilders } from "./profiles";
 
 export const QueryBuilders = {
     ...SummaryBuilders,
@@ -17,7 +18,8 @@ export const QueryBuilders = {
     ...ErrorsBuilders,
     ...PerformanceBuilders,
     ...SessionsBuilders,
-    ...CustomEventsBuilders
+    ...CustomEventsBuilders,
+    ...ProfilesBuilders
 };
 
 export type QueryType = keyof typeof QueryBuilders; 

@@ -1,10 +1,28 @@
 "use client";
 
 import { Loader2Icon, UserRound } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useInfiniteAnalyticsProfiles } from "@/hooks/use-analytics";
+import { Card, CardContent } from "@/components/ui/card";
+import { useProfilesData } from "@/hooks/use-dynamic-query";
+import type { ProfileData as AnalyticsProfileData } from "@/hooks/use-analytics";
+
+// Type adapter for the new profile data structure
+type ProfileData = {
+  visitor_id: string;
+  first_visit: string;
+  last_visit: string;
+  total_sessions: number;
+  total_pageviews: number;
+  total_duration: number;
+  total_duration_formatted: string;
+  device: string;
+  browser: string;
+  os: string;
+  country: string;
+  region: string;
+  sessions: any[];
+};
 import { WebsitePageHeader } from "../../_components/website-page-header";
 import { ProfileRow } from "./profile-row";
 import { getDefaultDateRange } from "./profile-utils";
@@ -16,25 +34,29 @@ interface ProfilesListProps {
 export function ProfilesList({ websiteId }: ProfilesListProps) {
   const [dateRange] = useState(() => getDefaultDateRange());
   const [expandedProfileId, setExpandedProfileId] = useState<string | null>(null);
-
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError, error } =
-    useInfiniteAnalyticsProfiles(websiteId, dateRange, 25);
-
-  const toggleProfile = (profileKey: string) => {
-    setExpandedProfileId(expandedProfileId === profileKey ? null : profileKey);
-  };
-
-  // Intersection Observer for infinite scrolling
+  const [page, setPage] = useState(1);
+  const [allProfiles, setAllProfiles] = useState<ProfileData[]>([]);
   const [loadMoreRef, setLoadMoreRef] = useState<HTMLDivElement | null>(null);
+  const [showLoadMore, setShowLoadMore] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [hasIntersected, setHasIntersected] = useState(false);
+
+  const { profiles, pagination, isLoading, isError, error } =
+    useProfilesData(websiteId, dateRange, 25, page);
+
+  const toggleProfile = useCallback((profileId: string) => {
+    setExpandedProfileId(currentId => currentId === profileId ? null : profileId);
+  }, []);
 
   const handleIntersection = useCallback(
     (entries: IntersectionObserverEntry[]) => {
       const [entry] = entries;
-      if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
-        fetchNextPage();
+      if (entry.isIntersecting && pagination.hasNext && !isLoading) {
+        setHasIntersected(true);
+        setPage(prev => prev + 1);
       }
     },
-    [fetchNextPage, hasNextPage, isFetchingNextPage]
+    [pagination.hasNext, isLoading]
   );
 
   useEffect(() => {
@@ -42,7 +64,7 @@ export function ProfilesList({ websiteId }: ProfilesListProps) {
 
     const observer = new IntersectionObserver(handleIntersection, {
       threshold: 0.1,
-      rootMargin: "200px", // Increased for better UX
+      rootMargin: "300px",
     });
 
     observer.observe(loadMoreRef);
@@ -52,10 +74,36 @@ export function ProfilesList({ websiteId }: ProfilesListProps) {
     };
   }, [loadMoreRef, handleIntersection]);
 
-  // Flatten all profiles from all pages (memoized for performance)
-  const allProfiles = useMemo(() => {
-    return data?.pages.flatMap((page) => page.profiles) || [];
-  }, [data?.pages]);
+  useEffect(() => {
+    if (profiles?.length) {
+      setAllProfiles(prev => {
+        const existingProfiles = new Map(prev.map(p => [p.visitor_id, p]));
+        for (const profile of profiles) {
+          if (!existingProfiles.has(profile.visitor_id)) {
+            existingProfiles.set(profile.visitor_id, profile);
+          }
+        }
+        return Array.from(existingProfiles.values());
+      });
+      setIsInitialLoad(false);
+    }
+  }, [profiles]);
+
+  useEffect(() => {
+    if (pagination.hasNext && !isLoading && !isInitialLoad && !hasIntersected) {
+      const timer = setTimeout(() => {
+        setShowLoadMore(true);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+    setShowLoadMore(false);
+  }, [pagination.hasNext, isLoading, isInitialLoad, hasIntersected]);
+
+  useEffect(() => {
+    if (isLoading) {
+      setHasIntersected(false);
+    }
+  }, [isLoading]);
 
   if (isLoading) {
     return (
@@ -140,34 +188,34 @@ export function ProfilesList({ websiteId }: ProfilesListProps) {
       <Card>
         <CardContent className="p-0">
           <div className="divide-y divide-border">
-            {allProfiles.map((profile, index) => {
-              const profileKey = `${profile.visitor_id}-${profile.first_visit}-${profile.last_visit}-${index}`;
-              return (
-                <ProfileRow
-                  index={index}
-                  isExpanded={expandedProfileId === profileKey}
-                  key={profileKey}
-                  onToggle={() => toggleProfile(profileKey)}
-                  profile={profile}
-                />
-              );
-            })}
+            {allProfiles.map((profile: ProfileData, index: number) => (
+              <ProfileRow
+                index={index}
+                isExpanded={expandedProfileId === profile.visitor_id}
+                key={`${profile.visitor_id}-${index}`}
+                onToggle={() => toggleProfile(profile.visitor_id)}
+                profile={profile}
+              />
+            ))}
           </div>
 
-          {/* Load More Trigger */}
-          <div className="border-border border-t p-4">
-            {hasNextPage ? (
-              <div className="flex justify-center" ref={setLoadMoreRef}>
-                {isFetchingNextPage ? (
+          <div className="border-t p-4" ref={setLoadMoreRef}>
+            {pagination.hasNext ? (
+              <div className="flex justify-center">
+                {isLoading ? (
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Loader2Icon className="h-4 w-4 animate-spin" />
                     <span className="text-sm">Loading more profiles...</span>
                   </div>
-                ) : (
-                  <Button className="w-full" onClick={() => fetchNextPage()} variant="outline">
+                ) : showLoadMore ? (
+                  <Button
+                    className="w-full"
+                    onClick={() => setPage(prev => prev + 1)}
+                    variant="outline"
+                  >
                     Load More Profiles
                   </Button>
-                )}
+                ) : null}
               </div>
             ) : (
               <div className="text-center text-muted-foreground text-sm">All profiles loaded</div>

@@ -13,7 +13,45 @@ import {
 import { FaviconImage } from "@/components/analytics/favicon-image";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import type { ProfileData } from "@/hooks/use-analytics";
+type ProfileData = {
+  visitor_id: string;
+  first_visit: string;
+  last_visit: string;
+  total_sessions: number;
+  total_pageviews: number;
+  total_duration: number;
+  total_duration_formatted: string;
+  device: string;
+  browser: string;
+  os: string;
+  country: string;
+  region: string;
+  sessions: Array<{
+    session_id: string;
+    session_name: string;
+    first_visit: string;
+    last_visit: string;
+    duration: number;
+    duration_formatted: string;
+    page_views: number;
+    unique_pages: number;
+    device: string;
+    browser: string;
+    os: string;
+    country: string;
+    region: string;
+    referrer: string;
+    events: Array<{
+      event_id: string;
+      time: string;
+      event_name: string;
+      path: string;
+      error_message?: string;
+      error_type?: string;
+      properties: Record<string, any>;
+    }>;
+  }>;
+};
 import {
   formatDuration,
   getBrowserIconComponent,
@@ -224,7 +262,7 @@ export function ProfileRow({ profile, index, isExpanded, onToggle }: ProfileRowP
                 {profile.sessions.slice(0, 5).map((session, sessionIndex) => (
                   <div
                     className="flex items-center justify-between rounded border bg-background p-3"
-                    key={session.session_id}
+                    key={`${profile.visitor_id}-session-${sessionIndex}`}
                   >
                     <div className="flex items-center gap-3">
                       <div className="flex h-6 w-6 items-center justify-center rounded bg-primary/10 font-medium text-primary text-xs">

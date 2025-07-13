@@ -40,11 +40,9 @@ export function MapComponent({
 }) {
   const locationsData = locationData;
 
-  // Process country data from locations data
   const countryData = useMemo(() => {
     if (!locationsData?.countries) return null;
 
-    // Filter out empty country codes and ensure proper formatting
     const validCountries = locationsData.countries.filter(
       (country: any) => country.country && country.country.trim() !== ""
     );
@@ -53,7 +51,7 @@ export function MapComponent({
 
     return {
       data: validCountries.map((country: any) => ({
-        value: country.country.toUpperCase(), // Ensure uppercase for ISO matching
+        value: country.country.toUpperCase(),
         count: country.visitors,
         percentage: (country.visitors / totalVisitors) * 100,
       })),
@@ -63,7 +61,6 @@ export function MapComponent({
   const subdivisionData = useMemo(() => {
     if (!locationsData?.cities) return null;
 
-    // Group cities by region
     const regions: Record<string, { visitors: number; pageviews: number }> = {};
 
     for (const city of locationsData.cities) {
@@ -103,7 +100,6 @@ export function MapComponent({
   const [mapView] = useState<"countries" | "subdivisions">("countries");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
-  // Process data to include per capita metrics
   const processedCountryData = useMemo(() => {
     if (!countryData?.data) return null;
 
@@ -120,28 +116,24 @@ export function MapComponent({
   const colorScale = useMemo(() => {
     if (!processedCountryData) return () => "#e5e7eb";
 
-    // Get the range of values
     const metricToUse = mode === "perCapita" ? "perCapita" : "count";
     const values = processedCountryData?.map((d: any) => d[metricToUse]) || [0];
     const maxValue = Math.max(...values);
     const minValue = Math.min(...values.filter((v: number) => v > 0));
 
-    // Better blue color scheme with improved contrast
-    const baseBlue = "59, 130, 246"; // Blue-500 RGB values
-    const lightBlue = "147, 197, 253"; // Blue-300 RGB values
+    const baseBlue = "59, 130, 246";
+    const lightBlue = "147, 197, 253";
 
-    // Use a square root scale (exponent 0.5) for better visual distribution
     const scale = scalePow<number>()
       .exponent(0.5)
       .domain([minValue || 0, maxValue])
       .range([0.1, 1]);
 
     return (value: number) => {
-      if (value === 0) return "rgba(229, 231, 235, 0.6)"; // Higher opacity for no data
+      if (value === 0) return "rgba(229, 231, 235, 0.6)";
 
       const intensity = scale(value);
 
-      // Use a gradient from light blue to dark blue based on intensity
       if (intensity < 0.3) {
         return `rgba(${lightBlue}, ${0.4 + intensity * 0.3})`;
       }
@@ -162,20 +154,16 @@ export function MapComponent({
     const metricValue = mode === "perCapita" ? foundData?.perCapita || 0 : foundData?.count || 0;
     const fillColor = colorScale(metricValue);
 
-    // Enhanced border styling based on data and hover state
     const isHovered = hoveredId === dataKey?.toString();
     const hasData = metricValue > 0;
 
-    // Dynamic border color and weight for better visual hierarchy
     const borderColor = hasData
       ? isHovered
         ? "rgba(59, 130, 246, 0.9)"
         : "rgba(59, 130, 246, 0.6)"
-      : "rgba(156, 163, 175, 0.5)"; // Higher opacity for no data borders
+      : "rgba(156, 163, 175, 0.5)";
 
     const borderWeight = hasData ? (isHovered ? 2.5 : 1.5) : 1.0;
-
-    // Enhanced fill opacity with better contrast
     const fillOpacity = hasData ? (isHovered ? 0.95 : 0.85) : 0.4;
 
     return {
@@ -185,11 +173,8 @@ export function MapComponent({
       fillColor,
       fillOpacity,
       opacity: 1,
-      // Smooth transitions for better UX
       transition: "all 0.2s ease-in-out",
-      // Add slight shadow effect for hovered countries
-      ...(isHovered &&
-        hasData && {
+      ...(isHovered && hasData && {
         filter: "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1))",
       }),
     };
@@ -254,9 +239,7 @@ export function MapComponent({
         }
       }}
       ref={containerRef}
-      style={{
-        height,
-      }}
+      style={{ height }}
     >
       {passedIsLoading && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 backdrop-blur-sm dark:bg-gray-900/70">
@@ -276,7 +259,7 @@ export function MapComponent({
           preferCanvas={true}
           style={{
             height: "100%",
-            background: "rgba(248, 250, 252, 0.8)", // Light gray background for better visibility
+            background: "rgba(248, 250, 252, 0.8)",
             cursor: "default",
             outline: "none",
             zIndex: "1",
@@ -294,6 +277,7 @@ export function MapComponent({
           )}
         </MapContainer>
       )}
+
       {tooltipContent && (
         <div
           className="pointer-events-none fixed z-50 rounded-lg border border-gray-200 bg-white p-3 text-gray-900 text-sm shadow-xl backdrop-blur-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white"

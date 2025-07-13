@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import { websites } from "@databuddy/db";
 import { cacheable } from "@databuddy/redis";
 
+// Schema definitions
 const FilterSchema = t.Object({
     field: t.String(),
     op: t.Enum({
@@ -33,6 +34,25 @@ const DynamicQueryRequestSchema = t.Object({
         t.Literal('day')
     ])),
     groupBy: t.Optional(t.String())
+});
+
+const CompileRequestSchema = t.Object({
+    projectId: t.String(),
+    type: t.Enum(Object.fromEntries(Object.keys(QueryBuilders).map(k => [k, k]))),
+    from: t.String(),
+    to: t.String(),
+    timeUnit: t.Optional(t.Enum({
+        minute: 'minute',
+        hour: 'hour',
+        day: 'day',
+        week: 'week',
+        month: 'month'
+    })),
+    filters: t.Optional(t.Array(FilterSchema)),
+    groupBy: t.Optional(t.Array(t.String())),
+    orderBy: t.Optional(t.String()),
+    limit: t.Optional(t.Number({ minimum: 1, maximum: 1000 })),
+    offset: t.Optional(t.Number({ minimum: 0 }))
 });
 
 export const query = new Elysia({ prefix: '/v1/query' })
@@ -64,41 +84,25 @@ export const query = new Elysia({ prefix: '/v1/query' })
             };
         }
     }, {
-        body: t.Object({
-            projectId: t.String(),
-            type: t.Enum(Object.fromEntries(Object.keys(QueryBuilders).map(k => [k, k]))),
-            from: t.String(),
-            to: t.String(),
-            timeUnit: t.Optional(t.Enum({
-                minute: 'minute',
-                hour: 'hour',
-                day: 'day',
-                week: 'week',
-                month: 'month'
-            })),
-            filters: t.Optional(t.Array(FilterSchema)),
-            groupBy: t.Optional(t.Array(t.String())),
-            orderBy: t.Optional(t.String()),
-            limit: t.Optional(t.Number({ minimum: 1, maximum: 1000 })),
-            offset: t.Optional(t.Number({ minimum: 0 }))
-        })
+        body: CompileRequestSchema
     })
 
     .post('/', async ({ body, query }) => {
         try {
             if (Array.isArray(body)) {
-                const results = [];
-                for (const queryRequest of body) {
-                    try {
-                        const result = await executeDynamicQuery(queryRequest, query);
-                        results.push(result);
-                    } catch (error) {
-                        results.push({
-                            success: false,
-                            error: error instanceof Error ? error.message : 'Query failed'
-                        });
-                    }
-                }
+                const results = await Promise.all(
+                    body.map(async (queryRequest) => {
+                        try {
+                            return await executeDynamicQuery(queryRequest, query);
+                        } catch (error) {
+                            return {
+                                success: false,
+                                error: error instanceof Error ? error.message : 'Query failed'
+                            };
+                        }
+                    })
+                );
+
                 return {
                     success: true,
                     batch: true,
@@ -139,71 +143,58 @@ const getWebsiteDomain = cacheable(
 );
 
 async function executeDynamicQuery(request: any, queryParams: any) {
-    const { website_id, start_date, end_date, timezone } = queryParams;
-
+    const { website_id, start_date, end_date } = queryParams;
     const websiteDomain = website_id ? await getWebsiteDomain(website_id) : null;
 
-    const results = [];
+    const getTimeUnit = (granularity?: string): 'hour' | 'day' => {
+        if (['hourly', 'hour'].includes(granularity || '')) return 'hour';
+        return 'day';
+    };
 
-    const parameterPromises = request.parameters.map(async (parameter: string) => {
-        try {
-            const queryType = parameter;
+    const parameterResults = await Promise.all(
+        request.parameters.map(async (parameter: string) => {
+            try {
+                if (!QueryBuilders[parameter]) {
+                    return {
+                        parameter,
+                        success: false,
+                        error: `Unknown query type: ${parameter}`,
+                        data: []
+                    };
+                }
 
-            if (!QueryBuilders[queryType]) {
+                const queryRequest = {
+                    projectId: website_id,
+                    type: parameter,
+                    from: start_date,
+                    to: end_date,
+                    timeUnit: getTimeUnit(request.granularity),
+                    filters: request.filters || [],
+                    limit: request.limit || 100,
+                    offset: request.page ? (request.page - 1) * (request.limit || 100) : 0
+                };
+
+                const data = await executeQuery(queryRequest, websiteDomain);
+
+                return {
+                    parameter,
+                    success: true,
+                    data: data || []
+                };
+            } catch (error) {
                 return {
                     parameter,
                     success: false,
-                    error: `Unknown query type: ${queryType}`,
+                    error: error instanceof Error ? error.message : 'Query failed',
                     data: []
                 };
             }
-
-            let timeUnit: 'hour' | 'day' = 'day';
-            if (request.granularity === 'hourly') {
-                timeUnit = 'hour';
-            } else if (request.granularity === 'daily') {
-                timeUnit = 'day';
-            } else if (request.granularity === 'hour') {
-                timeUnit = 'hour';
-            } else if (request.granularity === 'day') {
-                timeUnit = 'day';
-            }
-
-            const queryRequest = {
-                projectId: website_id,
-                type: queryType,
-                from: start_date,
-                to: end_date,
-                timeUnit,
-                filters: request.filters || [],
-                limit: request.limit || 100,
-                offset: (request.page || 1) - 1
-            };
-
-            const data = await executeQuery(queryRequest, websiteDomain);
-
-            return {
-                parameter,
-                success: true,
-                data: data || []
-            };
-
-        } catch (error) {
-            return {
-                parameter,
-                success: false,
-                error: error instanceof Error ? error.message : 'Query failed',
-                data: []
-            };
-        }
-    });
-
-    const parameterResults = await Promise.all(parameterPromises);
-    results.push(...parameterResults);
+        })
+    );
 
     return {
         queryId: request.id,
-        data: results,
+        data: parameterResults,
         meta: {
             parameters: request.parameters,
             total_parameters: request.parameters.length,

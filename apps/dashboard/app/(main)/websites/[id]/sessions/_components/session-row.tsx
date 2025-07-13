@@ -7,7 +7,6 @@ import {
   ClockIcon,
   ExternalLinkIcon,
   EyeIcon,
-  MousePointerClickIcon,
   SparklesIcon,
 } from "lucide-react";
 import React, { useCallback } from "react";
@@ -29,29 +28,41 @@ interface SessionRowProps {
   onToggle: (sessionId: string) => void;
 }
 
-function getReferrerDisplayInfo(session: any) {
+function getReferrerInfo(session: any) {
   if (session.referrer_parsed) {
     return {
       name: session.referrer_parsed.name || session.referrer_parsed.domain || "Unknown",
       domain: session.referrer_parsed.domain,
-      type: session.referrer_parsed.type,
     };
+  }
+
+  if (session.referrer) {
+    try {
+      const url = new URL(session.referrer);
+      return {
+        name: url.hostname,
+        domain: url.hostname,
+      };
+    } catch {
+      return {
+        name: "Direct",
+        domain: null,
+      };
+    }
   }
 
   return {
     name: "Direct",
     domain: null,
-    type: "direct",
   };
 }
 
 function SessionRowInternal({ session, index, isExpanded, onToggle }: SessionRowProps) {
-  const errorCount = session.events?.filter((e: any) => e.error_message).length || 0;
-  const customEventCount =
-    session.events?.filter((e: any) => e.properties && Object.keys(e.properties).length > 0)
-      .length || 0;
-
-  const referrerInfo = getReferrerDisplayInfo(session);
+  const errorCount = session.events?.filter((event: any) => event.event_name === 'error').length || 0;
+  const customEventCount = session.events?.filter((event: any) =>
+    !['screen_view', 'page_exit', 'error', 'web_vitals', 'link_out'].includes(event.event_name)
+  ).length || 0;
+  const referrerInfo = getReferrerInfo(session);
 
   const handleToggle = useCallback(() => {
     onToggle(session.session_id);
@@ -60,35 +71,35 @@ function SessionRowInternal({ session, index, isExpanded, onToggle }: SessionRow
   return (
     <Collapsible onOpenChange={handleToggle} open={isExpanded}>
       <CollapsibleTrigger asChild>
-        <div className="flex cursor-pointer items-center justify-between border-transparent border-l-4 p-5 transition-all duration-200 hover:border-primary/20 hover:bg-muted/30">
+        <div className="group flex cursor-pointer items-center justify-between border-l-4 border-transparent p-5 hover:border-primary/20 hover:bg-muted/30">
           <div className="flex min-w-0 flex-1 items-center gap-4">
-            {/* Expand/Collapse and Session Number */}
             <div className="flex flex-shrink-0 items-center gap-3">
-              {isExpanded ? (
-                <ChevronDownIcon className="h-4 w-4 text-muted-foreground transition-transform" />
-              ) : (
-                <ChevronRightIcon className="h-4 w-4 text-muted-foreground transition-transform" />
-              )}
+              <div>
+                {isExpanded ? (
+                  <ChevronDownIcon className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <ChevronRightIcon className="h-4 w-4 text-muted-foreground" />
+                )}
+              </div>
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 font-semibold text-primary text-sm">
                 {index + 1}
               </div>
             </div>
             <div className="flex flex-shrink-0 items-center gap-2">
-              {getCountryFlag(session.country)}
-              {getDeviceIcon(session.device)}
-              {getBrowserIconComponent(session.browser)}
-              {getOSIconComponent(session.os)}
+              {getCountryFlag(session.country || "")}
+              {getDeviceIcon(session.device || session.device_type || "")}
+              {getBrowserIconComponent(session.browser || session.browser_name || "")}
+              {getOSIconComponent(session.os || "")}
             </div>
 
-            {/* Session Info */}
             <div className="min-w-0 flex-1">
               <div className="truncate font-semibold text-base text-foreground">
-                {session.session_name}
+                {session.session_name || `Session ${session.session_id?.slice(-8)}`}
               </div>
               <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                <span>{session.browser}</span>
+                <span>{session.browser || session.browser_name || "Unknown"}</span>
                 <span className="text-muted-foreground/60">•</span>
-                <span>{session.country || "Unknown"}</span>
+                <span>{session.country_name || session.country || "Unknown"}</span>
                 {session.is_returning_visitor && (
                   <>
                     <span className="text-muted-foreground/60">•</span>
@@ -98,7 +109,6 @@ function SessionRowInternal({ session, index, isExpanded, onToggle }: SessionRow
               </div>
             </div>
 
-            {/* Referrer Info */}
             <div className="hidden min-w-[120px] flex-shrink-0 items-center gap-2 lg:flex">
               <div className="flex items-center gap-2">
                 {referrerInfo.domain ? (
@@ -111,29 +121,25 @@ function SessionRowInternal({ session, index, isExpanded, onToggle }: SessionRow
             </div>
           </div>
 
-          {/* Key Metrics - More Prominent */}
           <div className="ml-4 flex flex-shrink-0 items-center gap-4 text-sm">
-            {/* Duration */}
             <div className="hidden min-w-[60px] flex-col items-center gap-1 sm:flex">
               <div className="flex items-center gap-1 text-muted-foreground text-xs">
                 <ClockIcon className="h-3 w-3" />
                 <span>Duration</span>
               </div>
               <span className="font-semibold text-foreground text-sm">
-                {session.duration_formatted}
+                {session.duration_formatted || "0s"}
               </span>
             </div>
 
-            {/* Page Views */}
             <div className="hidden min-w-[60px] flex-col items-center gap-1 sm:flex">
               <div className="flex items-center gap-1 text-muted-foreground text-xs">
                 <EyeIcon className="h-3 w-3" />
                 <span>Pages</span>
               </div>
-              <span className="font-semibold text-foreground text-sm">{session.page_views}</span>
+              <span className="font-semibold text-foreground text-sm">{session.page_views || 1}</span>
             </div>
 
-            {/* Events Count */}
             <div className="flex min-w-[60px] flex-col items-center gap-1">
               <div className="text-muted-foreground text-xs">Events</div>
               <div className="flex items-center gap-2">
@@ -143,24 +149,21 @@ function SessionRowInternal({ session, index, isExpanded, onToggle }: SessionRow
               </div>
             </div>
 
-            {/* Special Badges */}
             <div className="flex items-center gap-2">
-              {/* Custom Events */}
               {customEventCount > 0 && (
                 <div className="flex flex-col items-center gap-1">
                   <div className="font-medium text-violet-600 text-xs">Custom</div>
-                  <Badge className="border-0 bg-gradient-to-r from-violet-500 to-purple-500 font-semibold text-white text-xs shadow-sm">
+                  <Badge className="border-0 bg-gradient-to-r from-violet-500 to-purple-500 font-semibold text-white text-xs">
                     <SparklesIcon className="mr-1 h-3 w-3" />
                     {customEventCount}
                   </Badge>
                 </div>
               )}
 
-              {/* Errors */}
               {errorCount > 0 && (
                 <div className="flex flex-col items-center gap-1">
                   <div className="font-medium text-red-600 text-xs">Errors</div>
-                  <Badge className="border-0 bg-gradient-to-r from-red-500 to-red-600 font-semibold text-white text-xs shadow-sm">
+                  <Badge className="border-0 bg-gradient-to-r from-red-500 to-red-600 font-semibold text-white text-xs">
                     <AlertTriangleIcon className="mr-1 h-3 w-3" />
                     {errorCount}
                   </Badge>
@@ -172,20 +175,19 @@ function SessionRowInternal({ session, index, isExpanded, onToggle }: SessionRow
       </CollapsibleTrigger>
 
       <CollapsibleContent>
-        <div className="border-border border-t bg-muted/20 px-4 pb-4">
-          {/* Session Info Row */}
-          <div className="grid grid-cols-1 gap-4 border-border/50 border-b py-4 text-sm sm:grid-cols-2 lg:grid-cols-5">
+        <div className="border-t bg-muted/20 px-4 pb-4">
+          <div className="grid grid-cols-1 gap-4 border-b py-4 text-sm sm:grid-cols-2 lg:grid-cols-5">
             <div className="text-center">
               <span className="mb-2 block text-muted-foreground text-xs uppercase tracking-wide">
                 Duration
               </span>
-              <div className="font-bold text-foreground text-lg">{session.duration_formatted}</div>
+              <div className="font-bold text-foreground text-lg">{session.duration_formatted || "0s"}</div>
             </div>
             <div className="text-center">
               <span className="mb-2 block text-muted-foreground text-xs uppercase tracking-wide">
                 Page Views
               </span>
-              <div className="font-bold text-foreground text-lg">{session.page_views}</div>
+              <div className="font-bold text-foreground text-lg">{session.page_views || 1}</div>
             </div>
             <div className="text-center">
               <span className="mb-2 block text-muted-foreground text-xs uppercase tracking-wide">
@@ -224,7 +226,6 @@ function SessionRowInternal({ session, index, isExpanded, onToggle }: SessionRow
             </div>
           </div>
 
-          {/* Events Timeline */}
           <div className="pt-6">
             <div className="mb-6 flex items-center justify-between">
               <h4 className="font-semibold text-foreground text-lg">Event Timeline</h4>
@@ -259,4 +260,5 @@ function SessionRowInternal({ session, index, isExpanded, onToggle }: SessionRow
     </Collapsible>
   );
 }
+
 export const SessionRow = React.memo(SessionRowInternal);

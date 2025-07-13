@@ -1,10 +1,10 @@
 "use client";
 
 import { Loader2Icon, UsersIcon } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useInfiniteAnalyticsSessions } from "@/hooks/use-analytics";
+import { Card, CardContent } from "@/components/ui/card";
+import { useSessionsData } from "@/hooks/use-dynamic-query";
 import { WebsitePageHeader } from "../../_components/website-page-header";
 import { SessionRow } from "./session-row";
 import { getDefaultDateRange } from "./session-utils";
@@ -16,24 +16,29 @@ interface SessionsListProps {
 export function SessionsList({ websiteId }: SessionsListProps) {
   const [dateRange] = useState(() => getDefaultDateRange());
   const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [allSessions, setAllSessions] = useState<any[]>([]);
+  const [loadMoreRef, setLoadMoreRef] = useState<HTMLDivElement | null>(null);
+  const [showLoadMore, setShowLoadMore] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [hasIntersected, setHasIntersected] = useState(false);
 
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError, error } =
-    useInfiniteAnalyticsSessions(websiteId, dateRange, 25);
+  const { sessions, pagination, isLoading, isError, error } =
+    useSessionsData(websiteId, dateRange, 25, page);
 
   const toggleSession = useCallback((sessionId: string) => {
-    setExpandedSessionId((currentId) => (currentId === sessionId ? null : sessionId));
+    setExpandedSessionId(currentId => currentId === sessionId ? null : sessionId);
   }, []);
-
-  const [loadMoreRef, setLoadMoreRef] = useState<HTMLDivElement | null>(null);
 
   const handleIntersection = useCallback(
     (entries: IntersectionObserverEntry[]) => {
       const [entry] = entries;
-      if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
-        fetchNextPage();
+      if (entry.isIntersecting && pagination.hasNext && !isLoading) {
+        setHasIntersected(true);
+        setPage(prev => prev + 1);
       }
     },
-    [fetchNextPage, hasNextPage, isFetchingNextPage]
+    [pagination.hasNext, isLoading]
   );
 
   useEffect(() => {
@@ -41,7 +46,7 @@ export function SessionsList({ websiteId }: SessionsListProps) {
 
     const observer = new IntersectionObserver(handleIntersection, {
       threshold: 0.1,
-      rootMargin: "200px",
+      rootMargin: "300px",
     });
 
     observer.observe(loadMoreRef);
@@ -51,11 +56,38 @@ export function SessionsList({ websiteId }: SessionsListProps) {
     };
   }, [loadMoreRef, handleIntersection]);
 
-  const allSessions = useMemo(() => {
-    return data?.pages.flatMap((page) => page.sessions) || [];
-  }, [data?.pages]);
+  useEffect(() => {
+    if (sessions?.length) {
+      setAllSessions(prev => {
+        const existingSessions = new Map(prev.map(s => [s.session_id, s]));
+        for (const session of sessions) {
+          if (!existingSessions.has(session.session_id)) {
+            existingSessions.set(session.session_id, session);
+          }
+        }
+        return Array.from(existingSessions.values());
+      });
+      setIsInitialLoad(false);
+    }
+  }, [sessions]);
 
-  if (isLoading) {
+  useEffect(() => {
+    if (pagination.hasNext && !isLoading && !isInitialLoad && !hasIntersected) {
+      const timer = setTimeout(() => {
+        setShowLoadMore(true);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+    setShowLoadMore(false);
+  }, [pagination.hasNext, isLoading, isInitialLoad, hasIntersected]);
+
+  useEffect(() => {
+    if (isLoading) {
+      setHasIntersected(false);
+    }
+  }, [isLoading]);
+
+  if (isLoading && isInitialLoad) {
     return (
       <div className="space-y-6">
         <WebsitePageHeader
@@ -68,8 +100,8 @@ export function SessionsList({ websiteId }: SessionsListProps) {
         <Card>
           <CardContent>
             <div className="space-y-3">
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                <div className="h-16 animate-pulse rounded bg-muted/20" key={i} />
+              {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+                <div className="h-16 animate-pulse rounded bg-muted/20" key={`skeleton-${i}`} />
               ))}
             </div>
             <div className="flex items-center justify-center pt-4">
@@ -100,7 +132,7 @@ export function SessionsList({ websiteId }: SessionsListProps) {
     );
   }
 
-  if (!allSessions || allSessions.length === 0) {
+  if (!allSessions.length) {
     return (
       <div className="space-y-6">
         <WebsitePageHeader
@@ -136,7 +168,7 @@ export function SessionsList({ websiteId }: SessionsListProps) {
       <Card>
         <CardContent className="p-0">
           <div className="divide-y divide-border">
-            {allSessions.map((session, index) => (
+            {allSessions.map((session: any, index: number) => (
               <SessionRow
                 index={index}
                 isExpanded={expandedSessionId === session.session_id}
@@ -147,23 +179,28 @@ export function SessionsList({ websiteId }: SessionsListProps) {
             ))}
           </div>
 
-          {/* Load More Trigger */}
-          <div className="border-border border-t p-4">
-            {hasNextPage ? (
-              <div className="flex justify-center" ref={setLoadMoreRef}>
-                {isFetchingNextPage ? (
+          <div className="border-t p-4" ref={setLoadMoreRef}>
+            {pagination.hasNext ? (
+              <div className="flex justify-center">
+                {isLoading ? (
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Loader2Icon className="h-4 w-4 animate-spin" />
                     <span className="text-sm">Loading more sessions...</span>
                   </div>
-                ) : (
-                  <Button className="w-full" onClick={() => fetchNextPage()} variant="outline">
+                ) : showLoadMore ? (
+                  <Button
+                    className="w-full"
+                    onClick={() => setPage(prev => prev + 1)}
+                    variant="outline"
+                  >
                     Load More Sessions
                   </Button>
-                )}
+                ) : null}
               </div>
             ) : (
-              <div className="text-center text-muted-foreground text-sm">All sessions loaded</div>
+              <div className="text-center text-muted-foreground text-sm">
+                {allSessions.length > 0 ? "All sessions loaded" : "No more sessions"}
+              </div>
             )}
           </div>
         </CardContent>

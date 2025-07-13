@@ -42,7 +42,7 @@ export interface SimpleQueryConfig {
         normalizeUrls?: boolean;
         [key: string]: any;
     };
-    customSql?: (websiteId: string, startDate: string, endDate: string, filters?: Filter[], granularity?: TimeUnit) => string;
+    customSql?: (websiteId: string, startDate: string, endDate: string, filters?: Filter[], granularity?: TimeUnit, limit?: number, offset?: number) => string;
 }
 
 export interface QueryRequest {

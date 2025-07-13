@@ -100,5 +100,101 @@ export const SessionsBuilders: Record<string, SimpleQueryConfig> = {
         timeField: 'time',
         allowedFilters: ['path', 'referrer', 'device_type'],
         customizable: true
+    },
+
+    session_list: {
+        customSql: (websiteId: string, startDate: string, endDate: string, filters?: any[], granularity?: any, limit?: number, offset?: number) => `
+    WITH session_list AS (
+      SELECT
+        session_id,
+        MIN(time) as first_visit,
+        MAX(time) as last_visit,
+        LEAST(dateDiff('second', MIN(time), MAX(time)), 28800) as duration,
+        countIf(event_name = 'screen_view') as page_views,
+        any(anonymous_id) as visitor_id,
+        any(user_agent) as user_agent,
+        any(country) as country,
+        any(referrer) as referrer,
+        any(device_type) as device_type,
+        any(browser_name) as browser_name,
+        any(os_name) as os_name
+      FROM analytics.events
+      WHERE 
+        client_id = '${websiteId}'
+        AND time >= parseDateTimeBestEffort('${startDate}')
+        AND time <= parseDateTimeBestEffort('${endDate} 23:59:59')
+      GROUP BY session_id
+      ORDER BY first_visit DESC
+      LIMIT ${limit || 25} OFFSET ${offset || 0}
+    ),
+    session_events AS (
+      SELECT
+        e.session_id,
+        groupArray(
+          tuple(
+            e.id,
+            e.time,
+            e.event_name,
+            e.path,
+            e.error_message,
+            e.error_type,
+            CASE 
+              WHEN e.event_name NOT IN ('screen_view', 'page_exit', 'error', 'web_vitals', 'link_out') 
+                AND e.properties IS NOT NULL 
+                AND e.properties != '{}' 
+              THEN CAST(e.properties AS String)
+              ELSE NULL
+            END
+          )
+        ) as events
+      FROM analytics.events e
+      INNER JOIN session_list sl ON e.session_id = sl.session_id
+      WHERE e.client_id = '${websiteId}'
+      GROUP BY e.session_id
+    )
+    SELECT
+      sl.session_id,
+      sl.first_visit,
+      sl.last_visit,
+      sl.duration,
+      sl.page_views,
+      sl.visitor_id,
+      sl.user_agent,
+      sl.country,
+      sl.referrer,
+      sl.device_type,
+      sl.browser_name,
+      sl.os_name,
+      COALESCE(se.events, []) as events
+    FROM session_list sl
+    LEFT JOIN session_events se ON sl.session_id = se.session_id
+    ORDER BY sl.first_visit DESC
+  `,
+        timeField: 'time',
+        allowedFilters: ['path', 'referrer', 'device_type', 'browser_name', 'country'],
+        customizable: true
+    },
+
+    session_events: {
+        table: 'analytics.events',
+        fields: [
+            'session_id',
+            'event_id',
+            'time',
+            'event_name',
+            'path',
+            'error_message',
+            'error_type',
+            'properties_json',
+            'device_type',
+            'browser_name',
+            'country',
+            'user_agent'
+        ],
+        where: ['session_id = ?'],
+        orderBy: 'time ASC',
+        timeField: 'time',
+        allowedFilters: ['event_name', 'path', 'error_type'],
+        customizable: true
     }
 }; 

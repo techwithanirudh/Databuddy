@@ -1,8 +1,9 @@
 import { Elysia } from "elysia";
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import { appRouter, createTRPCContext } from '@databuddy/rpc';
-import cors from '@elysiajs/cors';
 import { query } from "./routes/query";
+
+import cors from '@elysiajs/cors';
 
 const app = new Elysia();
 
@@ -11,7 +12,7 @@ app.get('/', () => {
 })
   .use(cors({
     credentials: true,
-    origin: true
+    origin: process.env.NODE_ENV === 'production' ? 'https://app.databuddy.cc' : true
   }))
   .use(query)
   .all('/trpc/*', async ({ request }) => {

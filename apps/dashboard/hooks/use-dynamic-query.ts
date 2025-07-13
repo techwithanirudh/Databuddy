@@ -1,7 +1,9 @@
-import { type UseQueryOptions, useQuery } from "@tanstack/react-query";
+import { type UseQueryOptions, type UseInfiniteQueryOptions, useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 import type { DateRange } from "./use-analytics";
 import { usePreferences } from "./use-preferences";
+import { formatDuration } from "../app/(main)/websites/[id]/profiles/_components/profile-utils";
+import { getCountryCode } from "@databuddy/shared";
 
 // API Request Types
 export interface DynamicQueryRequest {
@@ -206,6 +208,29 @@ export interface SessionsSummaryData {
   total_users: number;
 }
 
+export interface SessionData {
+  session_id: string;
+  anonymous_id: string;
+  session_start: string;
+  path: string;
+  referrer: string;
+  device_type: string;
+  browser_name: string;
+  country: string;
+  time_on_page: number;
+  user_agent: string;
+}
+
+export interface SessionsResponse {
+  sessions: SessionData[];
+  pagination: {
+    page: number;
+    limit: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+}
+
 // Custom Events data interfaces
 export interface CustomEventData {
   name: string; // event name
@@ -341,6 +366,8 @@ export type ParameterDataMap = {
   // Real-time
   active_stats: ActiveStatsData;
   latest_events: LatestEventData;
+  // Sessions
+  session_list: SessionData;
 };
 
 // Helper type to extract data types from parameters
@@ -383,35 +410,6 @@ function buildParams(
   params.append("_t", Date.now().toString());
 
   return params;
-}
-
-// Base fetcher function - following use-analytics.ts pattern
-async function fetchAnalyticsData<T extends ApiResponse>(
-  endpoint: string,
-  websiteId: string,
-  dateRange?: DateRange,
-  additionalParams?: Record<string, string | number>,
-  signal?: AbortSignal
-): Promise<T> {
-  const params = buildParams(websiteId, dateRange, additionalParams);
-  const url = `${API_BASE_URL}/v1${endpoint}?${params}`;
-
-  const response = await fetch(url, {
-    credentials: "include",
-    signal,
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch data from ${endpoint}`);
-  }
-
-  const data = await response.json();
-
-  if (!data.success) {
-    throw new Error(data.error || `Failed to fetch data from ${endpoint}`);
-  }
-
-  return data;
 }
 
 // Common query options
@@ -1326,6 +1324,205 @@ export function useRevenueAnalytics(
     hasCardBrandData: batchResult.hasDataForQuery("revenue-by-card-brand", "revenue_by_card_brand"),
   };
 }
+
+/**
+ * Hook for sessions with infinite scrolling support
+ */
+export function useInfiniteSessionsData(
+  websiteId: string,
+  dateRange: DateRange,
+  limit = 25,
+  options?: Partial<UseInfiniteQueryOptions<DynamicQueryResponse>>
+) {
+  return useInfiniteQuery({
+    queryKey: ["sessions-infinite", websiteId, dateRange, limit],
+    queryFn: async ({ pageParam = 1, signal }) => {
+      const result = await fetchDynamicQuery(
+        websiteId,
+        dateRange,
+        {
+          id: "sessions-list",
+          parameters: ["session_list"],
+          limit,
+          page: pageParam as number,
+        },
+        signal
+      );
+      // Ensure we return DynamicQueryResponse
+      if ('batch' in result) {
+        throw new Error('Batch queries not supported for infinite sessions');
+      }
+      return result;
+    },
+    enabled: !!websiteId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const sessions = (lastPage.data as any)?.session_list || [];
+      return sessions.length === limit ? lastPage.meta.page + 1 : undefined;
+    },
+    getPreviousPageParam: (firstPage) => {
+      return firstPage.meta.page > 1 ? firstPage.meta.page - 1 : undefined;
+    },
+    ...options,
+  });
+}
+
+/**
+ * Transform sessions data from API2 format to frontend format
+ */
+function transformSessionsData(sessions: any[]): any[] {
+  return sessions.map(session => {
+    // Parse events from tuples to objects
+    let events: any[] = [];
+    if (session.events && Array.isArray(session.events)) {
+      events = session.events.map((eventTuple: any) => {
+        // Handle tuple format: [id, time, event_name, path, error_message, error_type, properties]
+        if (Array.isArray(eventTuple) && eventTuple.length >= 7) {
+          const [id, time, event_name, path, error_message, error_type, properties] = eventTuple;
+
+          let propertiesObj: Record<string, any> = {};
+          if (properties) {
+            try {
+              propertiesObj = JSON.parse(properties);
+            } catch {
+              // If parsing fails, keep empty object
+            }
+          }
+
+          return {
+            event_id: id,
+            time,
+            event_name,
+            path,
+            error_message,
+            error_type,
+            properties: propertiesObj
+          };
+        }
+        return null;
+      }).filter(Boolean);
+    }
+
+    // Calculate visitor session count - for now default to 1 since we don't have this data
+    const visitorSessionCount = 1;
+    const isReturningVisitor = false;
+
+    // Generate session name
+    const sessionName = session.session_id ? `Session ${session.session_id.slice(-8)}` : 'Unknown Session';
+
+    // Format duration
+    const durationFormatted = formatDuration(session.duration || 0);
+
+    // Parse referrer
+    let referrerParsed = null;
+    if (session.referrer) {
+      try {
+        const url = new URL(session.referrer);
+        referrerParsed = {
+          type: url.hostname === window.location.hostname ? 'internal' : 'external',
+          name: url.hostname,
+          domain: url.hostname,
+        };
+      } catch {
+        referrerParsed = {
+          type: 'direct',
+          name: 'Direct',
+          domain: null,
+        };
+      }
+    }
+
+    // Map country code and preserve original name
+    const countryCode = getCountryCode(session.country || '');
+    const countryName = session.country || 'Unknown';
+
+    return {
+      session_id: session.session_id,
+      session_name: sessionName,
+      anonymous_id: session.visitor_id,
+      session_start: session.first_visit,
+      path: session.path,
+      referrer: session.referrer,
+      device_type: session.device_type,
+      browser_name: session.browser_name,
+      country: countryCode,
+      country_name: countryName,
+      user_agent: session.user_agent,
+      duration: session.duration,
+      duration_formatted: durationFormatted,
+      page_views: session.page_views,
+      unique_pages: session.unique_pages,
+      first_event_time: session.first_visit,
+      last_event_time: session.last_visit,
+      event_types: session.event_types,
+      page_sequence: session.page_sequence,
+      visitor_total_sessions: visitorSessionCount,
+      is_returning_visitor: isReturningVisitor,
+      visitor_session_count: visitorSessionCount,
+      referrer_parsed: referrerParsed,
+      events,
+      // Additional fields for compatibility
+      device: session.device_type,
+      browser: session.browser_name,
+      os: session.os_name,
+    };
+  });
+}
+
+/**
+ * Hook for sessions with pagination support
+ */
+export function useSessionsData(
+  websiteId: string,
+  dateRange: DateRange,
+  limit = 50,
+  page = 1,
+  options?: Partial<UseQueryOptions<DynamicQueryResponse>>
+) {
+  const queryResult = useDynamicQuery(
+    websiteId,
+    dateRange,
+    {
+      id: "sessions-list",
+      parameters: ["session_list"],
+      limit,
+      page,
+    },
+    {
+      ...options,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes
+    }
+  );
+
+  const sessions = useMemo(() => {
+    const rawSessions = (queryResult.data as any)?.session_list || [];
+    return transformSessionsData(rawSessions);
+  }, [queryResult.data]);
+
+  const hasNextPage = useMemo(() => {
+    return sessions.length === limit;
+  }, [sessions.length, limit]);
+
+  const hasPrevPage = useMemo(() => {
+    return page > 1;
+  }, [page]);
+
+  return {
+    ...queryResult,
+    sessions,
+    pagination: {
+      page,
+      limit,
+      hasNext: hasNextPage,
+      hasPrev: hasPrevPage,
+    },
+  };
+}
+
+
 
 /**
  * Hook for real-time active user stats. Polls every 5 seconds.

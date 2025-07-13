@@ -6,14 +6,12 @@ import {
   SparklesIcon,
   ZapIcon,
 } from "lucide-react";
-import Image from "next/image";
 import {
   getBrowserIcon,
   getDeviceTypeIcon,
   getOSIcon,
 } from "../../_components/utils/technology-helpers";
 
-// Default date range for testing
 export const getDefaultDateRange = () => {
   const today = new Date();
   const thirtyDaysAgo = new Date(today);
@@ -25,7 +23,6 @@ export const getDefaultDateRange = () => {
   };
 };
 
-// Helper function to get device icon
 export const getDeviceIcon = (device: string) => {
   return getDeviceTypeIcon(device, "md");
 };
@@ -59,14 +56,14 @@ export const getOSIconComponent = (os: string) => {
 };
 
 export const getCountryFlag = (country: string) => {
-  if (!country || country === "Unknown") {
+  if (!country || country === "Unknown" || country === "") {
     return <GlobeIcon className="h-4 w-4 text-muted-foreground" />;
   }
 
   return (
     <img
       alt={`${country} flag`}
-      className="h-4 w-5 rounded-sm object-cover"
+      className="h-4 w-6"
       height={20}
       src={`https://flagcdn.com/w40/${country.toLowerCase()}.png`}
       width={20}
@@ -74,7 +71,6 @@ export const getCountryFlag = (country: string) => {
   );
 };
 
-// Helper function to get event icon and color
 export const getEventIconAndColor = (
   eventName: string,
   hasError: boolean,
@@ -130,48 +126,33 @@ export const getEventIconAndColor = (
   }
 };
 
-// Helper function to clean up URLs and make them more readable
 export const cleanUrl = (url: string) => {
   if (!url) return "";
   try {
     const urlObj = new URL(url);
     let path = urlObj.pathname;
-
-    // Remove trailing slash unless it's the root
     if (path.length > 1 && path.endsWith("/")) {
       path = path.slice(0, -1);
     }
-
-    // Add query params if they exist
-    const search = urlObj.search;
-    return path + search;
+    return path + urlObj.search;
   } catch {
-    // If it's not a full URL, clean it up
     let cleanPath = url.startsWith("/") ? url : `/${url}`;
-
-    // Remove trailing slash unless it's the root
     if (cleanPath.length > 1 && cleanPath.endsWith("/")) {
       cleanPath = cleanPath.slice(0, -1);
     }
-
     return cleanPath;
   }
 };
 
-// Helper function to get a shorter display version of the path
 export const getDisplayPath = (path: string) => {
   if (!path || path === "/") return "/";
-
   const cleanPath = cleanUrl(path);
-
-  // If path is too long, show first part + ... + last part
   if (cleanPath.length > 40) {
     const parts = cleanPath.split("/").filter(Boolean);
     if (parts.length > 2) {
       return `/${parts[0]}/.../${parts[parts.length - 1]}`;
     }
   }
-
   return cleanPath;
 };
 

@@ -24,7 +24,7 @@ interface SessionEventTimelineProps {
 }
 
 export function SessionEventTimeline({ events }: SessionEventTimelineProps) {
-  if (!events || events.length === 0) {
+  if (!events?.length) {
     return (
       <div className="py-8 text-center text-muted-foreground">
         <FileTextIcon className="mx-auto mb-2 h-8 w-8 opacity-50" />
@@ -47,7 +47,7 @@ export function SessionEventTimeline({ events }: SessionEventTimelineProps) {
 
         return (
           <div
-            className={`flex items-start gap-3 rounded-lg border-2 p-4 ${bgColor} ${borderColor} ${hasProperties ? "shadow-sm" : ""}`}
+            className={`group flex items-start gap-3 rounded-lg border-2 p-4 ${bgColor} ${borderColor} ${hasProperties ? "shadow-sm" : ""}`}
             key={event.event_id || eventIndex}
           >
             <div
@@ -61,13 +61,12 @@ export function SessionEventTimeline({ events }: SessionEventTimelineProps) {
                 <div className="mb-2 flex items-start justify-between gap-2">
                   <div className="flex min-w-0 flex-wrap items-center gap-2">
                     <span
-                      className={`font-semibold text-sm ${
-                        event.error_message
-                          ? "text-destructive"
-                          : hasProperties
-                            ? "text-accent-foreground"
-                            : "text-foreground"
-                      }`}
+                      className={`font-semibold text-sm ${event.error_message
+                        ? "text-destructive"
+                        : hasProperties
+                          ? "text-accent-foreground"
+                          : "text-foreground"
+                        }`}
                     >
                       {event.error_message ? "Error" : event.event_name}
                     </span>

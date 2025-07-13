@@ -55,37 +55,49 @@ function getReferrerByDomain(domain: string): { type: string; name: string } | n
 export function applyPlugins(data: Record<string, any>[], config: any, websiteDomain?: string | null): Record<string, any>[] {
     let result = data;
 
-    if (config.plugins?.parseReferrers || shouldAutoParseReferrers(config)) {
-        result = result.map(row => {
-            const referrerUrl = row.name || row.referrer;
-            if (!referrerUrl) return row;
-
-            const parsed = parseReferrer(referrerUrl, websiteDomain);
-
-            return {
-                ...row,
-                name: parsed.name,
-                referrer: referrerUrl,
-                domain: parsed.domain
-            };
-        });
+    if (shouldApplyReferrerParsing(config)) {
+        result = applyReferrerParsing(result, websiteDomain);
     }
 
     if (config.plugins?.normalizeUrls) {
-        result = result.map(row => {
-            if (row.path) {
-                try {
-                    const url = new URL(row.path.startsWith('http') ? row.path : `https://example.com${row.path}`);
-                    row.path_clean = url.pathname;
-                } catch {
-                    row.path_clean = row.path;
-                }
-            }
-            return row;
-        });
+        result = applyUrlNormalization(result);
     }
 
     return result;
+}
+
+function shouldApplyReferrerParsing(config: any): boolean {
+    return config.plugins?.parseReferrers || shouldAutoParseReferrers(config);
+}
+
+function applyReferrerParsing(data: Record<string, any>[], websiteDomain?: string | null): Record<string, any>[] {
+    return data.map(row => {
+        const referrerUrl = row.name || row.referrer;
+        if (!referrerUrl) return row;
+
+        const parsed = parseReferrer(referrerUrl, websiteDomain);
+
+        return {
+            ...row,
+            name: parsed.name,
+            referrer: referrerUrl,
+            domain: parsed.domain
+        };
+    });
+}
+
+function applyUrlNormalization(data: Record<string, any>[]): Record<string, any>[] {
+    return data.map(row => {
+        if (row.path) {
+            try {
+                const url = new URL(row.path.startsWith('http') ? row.path : `https://example.com${row.path}`);
+                row.path_clean = url.pathname;
+            } catch {
+                row.path_clean = row.path;
+            }
+        }
+        return row;
+    });
 }
 
 function shouldAutoParseReferrers(config: any): boolean {

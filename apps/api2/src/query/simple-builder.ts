@@ -1,18 +1,14 @@
 import { chQuery } from "@databuddy/db";
 import type { SimpleQueryConfig, QueryRequest, CompiledQuery, Filter } from "./types";
-import { FilterOperators, TimeGranularity } from "./types";
+import { FilterOperators } from "./types";
 import { applyPlugins } from "./utils";
 
 export class SimpleQueryBuilder {
-    private config: SimpleQueryConfig;
-    private request: QueryRequest;
-    private websiteDomain?: string | null;
-
-    constructor(config: SimpleQueryConfig, request: QueryRequest, websiteDomain?: string | null) {
-        this.config = config;
-        this.request = request;
-        this.websiteDomain = websiteDomain;
-    }
+    constructor(
+        private config: SimpleQueryConfig,
+        private request: QueryRequest,
+        private websiteDomain?: string | null
+    ) { }
 
     private buildFilter(filter: Filter, index: number): { clause: string, params: Record<string, unknown> } {
         const key = `f${index}`;
@@ -26,9 +22,10 @@ export class SimpleQueryBuilder {
         }
 
         if (filter.op === 'in' || filter.op === 'notIn') {
+            const values = Array.isArray(filter.value) ? filter.value : [filter.value];
             return {
                 clause: `${filter.field} ${operator} {${key}:Array(String)}`,
-                params: { [key]: Array.isArray(filter.value) ? filter.value : [filter.value] }
+                params: { [key]: values }
             };
         }
 
@@ -63,11 +60,17 @@ export class SimpleQueryBuilder {
                 this.formatDateTime(this.request.from),
                 this.formatDateTime(this.request.to),
                 this.request.filters,
-                this.request.timeUnit
+                this.request.timeUnit,
+                this.request.limit,
+                this.request.offset
             );
             return { sql, params: {} };
         }
 
+        return this.buildStandardQuery();
+    }
+
+    private buildStandardQuery(): CompiledQuery {
         const params: Record<string, unknown> = {
             websiteId: this.request.projectId,
             from: this.formatDateTime(this.request.from),
@@ -75,7 +78,19 @@ export class SimpleQueryBuilder {
         };
 
         let sql = `SELECT ${this.config.fields?.join(', ') || '*'} FROM ${this.config.table}`;
+        const whereClause = this.buildWhereClause(params);
 
+        sql += ` WHERE ${whereClause.join(' AND ')}`;
+        sql = this.replaceDomainPlaceholders(sql);
+        sql += this.buildGroupByClause();
+        sql += this.buildOrderByClause();
+        sql += this.buildLimitClause();
+        sql += this.buildOffsetClause();
+
+        return { sql, params };
+    }
+
+    private buildWhereClause(params: Record<string, unknown>): string[] {
         const whereClause = [
             ...(this.config.where || []),
             "client_id = {websiteId:String}",
@@ -93,30 +108,26 @@ export class SimpleQueryBuilder {
             });
         }
 
-        sql += ` WHERE ${whereClause.join(' AND ')}`;
+        return whereClause;
+    }
 
-        sql = this.replaceDomainPlaceholders(sql);
-
+    private buildGroupByClause(): string {
         const groupBy = this.request.groupBy || this.config.groupBy;
-        if (groupBy?.length) {
-            sql += ` GROUP BY ${groupBy.join(', ')}`;
-        }
+        return groupBy?.length ? ` GROUP BY ${groupBy.join(', ')}` : '';
+    }
 
+    private buildOrderByClause(): string {
         const orderBy = this.request.orderBy || this.config.orderBy;
-        if (orderBy) {
-            sql += ` ORDER BY ${orderBy}`;
-        }
+        return orderBy ? ` ORDER BY ${orderBy}` : '';
+    }
 
+    private buildLimitClause(): string {
         const limit = this.request.limit || this.config.limit;
-        if (limit) {
-            sql += ` LIMIT ${limit}`;
-        }
+        return limit ? ` LIMIT ${limit}` : '';
+    }
 
-        if (this.request.offset) {
-            sql += ` OFFSET ${this.request.offset}`;
-        }
-
-        return { sql, params };
+    private buildOffsetClause(): string {
+        return this.request.offset ? ` OFFSET ${this.request.offset}` : '';
     }
 
     async execute(): Promise<Record<string, unknown>[]> {

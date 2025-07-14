@@ -14,6 +14,10 @@ app.get('/', () => {
     credentials: true,
     origin: "https://staging.databuddy.cc"
   }))
+  .onRequest(({ set, request }) => {
+    set.headers.Vary = 'Origin, Access-Control-Request-Headers';
+    set.headers['Access-Control-Allow-Origin'] = 'https://staging.databuddy.cc';
+  })
   .use(query)
   .all('/trpc/*', async ({ request }) => {
     return fetchRequestHandler({

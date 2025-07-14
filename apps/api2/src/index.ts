@@ -19,6 +19,15 @@ app.get('/', () => {
     set.headers['Access-Control-Allow-Origin'] = 'https://staging.databuddy.cc';
   })
   .use(query)
+  .options('/trpc/*', ({ set }) => {
+    set.status = 204;
+    set.headers['Access-Control-Allow-Origin'] = 'https://staging.databuddy.cc';
+    set.headers['Access-Control-Allow-Credentials'] = 'true';
+    set.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
+    set.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, Cookie, Cache-Control, X-Website-Id';
+    set.headers.Vary = 'Origin, Access-Control-Request-Headers';
+    return new Response(null, { status: 204 });
+  })
   .all('/trpc/*', async ({ request, set }) => {
     const response = await fetchRequestHandler({
       endpoint: '/trpc',

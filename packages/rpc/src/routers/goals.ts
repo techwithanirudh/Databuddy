@@ -249,6 +249,17 @@ export const goalsRouter = createTRPCRouter({
             const filters = goalData.filters as Array<{ field: string; operator: string; value: string | string[] }> || [];
             const filterConditions = buildFilterConditions(filters, 'f', {});
 
+            // Get total unique users for the website in the date range
+            const totalWebsiteUsersQuery = `
+                SELECT COUNT(DISTINCT session_id) as total_users
+                FROM analytics.events
+                WHERE client_id = '${input.websiteId}'
+                    AND time >= parseDateTimeBestEffort('${startDate}')
+                    AND time <= parseDateTimeBestEffort('${endDate} 23:59:59')
+            `;
+            const totalWebsiteUsersResult = await chQuery<{ total_users: number }>(totalWebsiteUsersQuery);
+            const totalWebsiteUsers = totalWebsiteUsersResult[0]?.total_users || 0;
+
             // Build the step query (copied from funnels.ts, but only one step)
             let whereCondition = '';
             if (steps[0].type === 'PAGE_VIEW') {
@@ -317,25 +328,24 @@ export const goalsRouter = createTRPCRouter({
                 }
             }
             // Build analytics results
-            const users = stepCounts.get(1)?.size || 0;
-            const total_users = users;
-            const conversion_rate = 100.0;
+            const goalCompletions = stepCounts.get(1)?.size || 0;
+            const conversion_rate = totalWebsiteUsers > 0 ? (goalCompletions / totalWebsiteUsers) * 100 : 0;
             const dropoffs = 0;
             const dropoff_rate = 0;
             const analyticsResults = [{
                 step_number: 1,
                 step_name: steps[0].name,
-                users,
-                total_users,
+                users: goalCompletions,
+                total_users: totalWebsiteUsers,
                 conversion_rate,
                 dropoffs,
                 dropoff_rate,
                 avg_time_to_complete: 0
             }];
             return {
-                overall_conversion_rate: users > 0 ? 100.0 : 0,
-                total_users_entered: total_users,
-                total_users_completed: users,
+                overall_conversion_rate: conversion_rate,
+                total_users_entered: totalWebsiteUsers,
+                total_users_completed: goalCompletions,
                 avg_completion_time: 0,
                 avg_completion_time_formatted: '0s',
                 steps_analytics: analyticsResults
@@ -363,6 +373,18 @@ export const goalsRouter = createTRPCRouter({
                     input.goalIds.length > 0 ? inArray(goals.id, input.goalIds) : sql`1=0`
                 ))
                 .orderBy(desc(goals.createdAt));
+
+            // Get total unique users for the website in the date range
+            const totalWebsiteUsersQuery = `
+                SELECT COUNT(DISTINCT session_id) as total_users
+                FROM analytics.events
+                WHERE client_id = '${input.websiteId}'
+                    AND time >= parseDateTimeBestEffort('${startDate}')
+                    AND time <= parseDateTimeBestEffort('${endDate} 23:59:59')
+            `;
+            const totalWebsiteUsersResult = await chQuery<{ total_users: number }>(totalWebsiteUsersQuery);
+            const totalWebsiteUsers = totalWebsiteUsersResult[0]?.total_users || 0;
+
             const analyticsResults: Record<string, any> = {};
             for (const goalData of goalsList) {
                 const steps = [{
@@ -435,25 +457,24 @@ export const goalsRouter = createTRPCRouter({
                         }
                     }
                 }
-                const users = stepCounts.get(1)?.size || 0;
-                const total_users = users;
-                const conversion_rate = 100.0;
+                const goalCompletions = stepCounts.get(1)?.size || 0;
+                const conversion_rate = totalWebsiteUsers > 0 ? (goalCompletions / totalWebsiteUsers) * 100 : 0;
                 const dropoffs = 0;
                 const dropoff_rate = 0;
                 const analyticsStep = {
                     step_number: 1,
                     step_name: steps[0].name,
-                    users,
-                    total_users,
+                    users: goalCompletions,
+                    total_users: totalWebsiteUsers,
                     conversion_rate,
                     dropoffs,
                     dropoff_rate,
                     avg_time_to_complete: 0
                 };
                 analyticsResults[goalData.id] = {
-                    overall_conversion_rate: users > 0 ? 100.0 : 0,
-                    total_users_entered: total_users,
-                    total_users_completed: users,
+                    overall_conversion_rate: conversion_rate,
+                    total_users_entered: totalWebsiteUsers,
+                    total_users_completed: goalCompletions,
                     avg_completion_time: 0,
                     avg_completion_time_formatted: '0s',
                     steps_analytics: [analyticsStep]

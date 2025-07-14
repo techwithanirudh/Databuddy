@@ -20,17 +20,25 @@ app.get('/', () => {
   })
   .use(query)
   .all('/trpc/*', async ({ request, set }) => {
-    set.headers['Access-Control-Allow-Origin'] = 'https://staging.databuddy.cc';
-    set.headers['Access-Control-Allow-Credentials'] = 'true';
-    set.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
-    set.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, Cookie, Cache-Control, X-Website-Id';
-    set.headers.Vary = 'Origin, Access-Control-Request-Headers';
-
-    return fetchRequestHandler({
+    const response = await fetchRequestHandler({
       endpoint: '/trpc',
       router: appRouter,
       req: request,
       createContext: () => createTRPCContext({ headers: request.headers }),
+    });
+
+    // Add CORS headers to tRPC response
+    const newHeaders = new Headers(response.headers);
+    newHeaders.set('Access-Control-Allow-Origin', 'https://staging.databuddy.cc');
+    newHeaders.set('Access-Control-Allow-Credentials', 'true');
+    newHeaders.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    newHeaders.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie, Cache-Control, X-Website-Id');
+    newHeaders.set('Vary', 'Origin, Access-Control-Request-Headers');
+
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: newHeaders,
     });
   });
 

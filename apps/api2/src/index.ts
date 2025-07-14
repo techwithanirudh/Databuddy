@@ -15,10 +15,24 @@ const allowedOrigins = [
 app.get('/', () => {
   return 'Hello World';
 })
-  .use(cors({
-    credentials: true,
-    origin: isDev ? 'http://localhost:3000' : allowedOrigins
-  }))
+  .onBeforeHandle(({ request, set }) => {
+    const origin = request.headers.get('origin');
+    const allowOrigin = isDev
+      ? 'http://localhost:3000'
+      : allowedOrigins.includes(origin || '')
+        ? origin
+        : '';
+    if (allowOrigin) {
+      set.headers ??= {};
+      set.headers['Access-Control-Allow-Origin'] = allowOrigin;
+      set.headers['Access-Control-Allow-Credentials'] = 'true';
+      set.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, Cookie, Cache-Control, X-Website-Id';
+      set.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS, GET, DELETE, PUT, PATCH, HEAD';
+      set.headers['Access-Control-Expose-Headers'] = 'Content-Type, Set-Cookie';
+      set.headers['Access-Control-Max-Age'] = '600';
+      set.headers.Vary = 'Origin, Access-Control-Request-Headers';
+    }
+  })
   .use(query)
   .all('/trpc/*', async ({ request }) => {
     return fetchRequestHandler({

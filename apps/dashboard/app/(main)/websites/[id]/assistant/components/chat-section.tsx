@@ -326,14 +326,8 @@ export default function ChatSection() {
 
       {/* Chat History Sidebar */}
       <ChatHistorySheet
-        currentWebsiteId={websiteId || ''}
-        currentWebsiteName={websiteData?.name}
         isOpen={showChatHistory}
         onClose={() => setShowChatHistory(false)}
-        onSelectChat={(websiteId, websiteName) => {
-          setShowChatHistory(false);
-          // onSelectChat?.(websiteId, websiteName); // This function is no longer passed as a prop
-        }}
       />
     </div>
   );

@@ -1,7 +1,6 @@
 "use client";
 
 import {
-    ChevronLeft,
     Clock,
     Download,
     History,
@@ -9,9 +8,9 @@ import {
     MoreVertical,
     Search,
     Trash2,
-    Upload,
 } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import type React from "react";
+import { useEffect, useState } from "react";
 import {
     AlertDialog,
     AlertDialogAction,

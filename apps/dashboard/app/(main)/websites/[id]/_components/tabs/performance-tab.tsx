@@ -340,7 +340,7 @@ export function WebsitePerformanceTab({
 
     const configs = [
       { id: "pages", label: "Pages", data: processedData.pages, iconRenderer: undefined, nameFormatter: formatPageName },
-      { id: "countries", label: "Countries", data: processedData.countries, iconRenderer: getCountryIcon },
+      { id: "countries", label: "Country", data: processedData.countries, iconRenderer: getCountryIcon },
       { id: "regions", label: "Regions", data: processedData.regions, iconRenderer: () => <MapPin className="h-4 w-4 text-primary" /> },
       { id: "devices", label: "Device Types", data: processedData.devices, iconRenderer: getDeviceIcon },
       { id: "browsers", label: "Browsers", data: processedData.browsers, iconRenderer: (name: string) => <BrowserIcon name={name} size="sm" /> },
@@ -364,7 +364,7 @@ export function WebsitePerformanceTab({
         _uniqueKey: `${config.id}-${i}`,
       })),
       columns: [
-        createNameColumn(config.label.slice(0, -1), config.iconRenderer, config.nameFormatter),
+        createNameColumn(config.label, config.iconRenderer, config.nameFormatter),
         ...performanceColumns,
       ],
     }));

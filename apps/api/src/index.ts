@@ -7,13 +7,14 @@ import { health } from "./routes/health";
 import { autumnHandler } from "autumn-js/elysia";
 import cors from "@elysiajs/cors";
 import { auth } from "@databuddy/auth";
+
 const app = new Elysia()
   .use(cors({
     credentials: true,
-    origin: process.env.NODE_ENV === 'development'
-      ? 'http://localhost:3000'
-      : 'https://staging.databuddy.cc',
-    // origin: (origin) => ['http://localhost:3000', 'https://staging.databuddy.cc'].includes(origin ?? '') ? origin : false
+    origin: [
+      /(?:^|\.)databuddy\.cc$/,
+      ...(process.env.NODE_ENV === 'development' ? ['http://localhost:3000'] : [])
+    ]
   }))
   .use(autumnHandler({
     identify: async ({ request }) => {

@@ -503,47 +503,30 @@ export function WebsiteAudienceTab({
   const countryColumns = useMemo(
     (): ColumnDef<GeographicEntry>[] => [
       {
-        id: "country_code",
-        accessorKey: "country_code",
-        header: "Flag",
-        cell: (info: CellContext<GeographicEntry, any>) => {
-          const code = info.getValue() as string;
-          return code && code !== "Unknown" ? (
-            <div className="relative h-4 w-5 overflow-hidden rounded-sm bg-muted">
-              <img
-                alt={code}
-                className="absolute inset-0 h-full w-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = "none";
-                  const parent = (e.target as HTMLImageElement).parentElement;
-                  if (parent) {
-                    const helpCircle = parent.querySelector(".fallback-icon");
-                    if (helpCircle) (helpCircle as HTMLElement).style.display = "flex";
-                  }
-                }}
-                src={`https://purecatamphetamine.github.io/country-flag-icons/3x2/${code.toUpperCase()}.svg`}
-              />
-              <div
-                className="fallback-icon h-4 w-5 items-center justify-center rounded-sm bg-muted"
-                style={{ display: "none" }}
-              >
-                <Globe className="h-3 w-3 text-muted-foreground" />
-              </div>
-            </div>
-          ) : (
-            <div className="flex h-4 w-5 items-center justify-center rounded-sm bg-muted">
-              <Globe className="h-3 w-3 text-muted-foreground" />
-            </div>
-          );
-        },
-      },
-      {
-        id: "country_name",
+        id: "country",
         accessorKey: "country_name",
         header: "Country",
         cell: (info: CellContext<GeographicEntry, any>) => {
-          const name = info.getValue() as string;
-          return <span className="font-medium">{name || "Unknown"}</span>;
+          const entry = info.row.original;
+          const code = entry.country_code;
+          const name = entry.country_name || entry.name || "Unknown";
+          return (
+            <div className="flex items-center gap-2">
+              {code && code !== "Unknown" ? (
+                <img
+                  alt={code}
+                  className="h-4 w-5 rounded-sm bg-muted object-cover"
+                  src={`https://purecatamphetamine.github.io/country-flag-icons/3x2/${code.toUpperCase()}.svg`}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
+                />
+              ) : (
+                <Globe className="h-3 w-3 text-muted-foreground" />
+              )}
+              <span className="font-medium">{name}</span>
+            </div>
+          );
         },
       },
       {
@@ -669,7 +652,7 @@ export function WebsiteAudienceTab({
         label: "Countries",
         data: processedData.geographic.countries.map((item, index) => ({
           ...item,
-          _uniqueKey: `country-${item.country_code || item.name}-${index}`, // Ensure unique row keys
+          _uniqueKey: `country-${item.country_code || item.name}-${index}`,
         })),
         columns: countryColumns,
       },

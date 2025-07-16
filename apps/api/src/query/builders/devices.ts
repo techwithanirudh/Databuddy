@@ -1,23 +1,6 @@
 import type { SimpleQueryConfig } from "../types";
 
 export const DevicesBuilders: Record<string, SimpleQueryConfig> = {
-    device_type: {
-        table: 'analytics.events',
-        fields: [
-            'device_type as name',
-            'COUNT(*) as pageviews',
-            'COUNT(DISTINCT anonymous_id) as visitors',
-            'ROUND((COUNT(*) / SUM(COUNT(*)) OVER()) * 100, 2) as percentage'
-        ],
-        where: ['device_type != \'\'', 'event_name = \'screen_view\''],
-        groupBy: ['device_type'],
-        orderBy: 'pageviews DESC',
-        limit: 100,
-        timeField: 'time',
-        allowedFilters: ['path', 'referrer', 'browser_name'],
-        customizable: true
-    },
-
     browser_name: {
         table: 'analytics.events',
         fields: [
@@ -111,17 +94,18 @@ export const DevicesBuilders: Record<string, SimpleQueryConfig> = {
     device_types: {
         table: 'analytics.events',
         fields: [
-            'device_type as name',
+            'screen_resolution as name',
             'COUNT(*) as pageviews',
             'COUNT(DISTINCT anonymous_id) as visitors'
         ],
-        where: ['device_type != \'\'', 'event_name = \'screen_view\''],
-        groupBy: ['device_type'],
+        where: ["screen_resolution != ''", 'event_name = \'screen_view\''],
+        groupBy: ['screen_resolution'],
         orderBy: 'pageviews DESC',
         limit: 100,
         timeField: 'time',
         allowedFilters: ['path', 'referrer', 'browser_name'],
-        customizable: true
+        customizable: true,
+        plugins: { mapDeviceTypes: true }
     },
 
     browsers: {

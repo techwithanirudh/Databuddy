@@ -1,5 +1,6 @@
 import { referrers } from "@databuddy/shared";
 import { getCountryCode, getCountryName } from "@databuddy/shared";
+import { mapScreenResolutionToDeviceType } from "./screen-resolution-to-device-type";
 
 export interface ParsedReferrer {
     type: string;
@@ -70,6 +71,10 @@ export function applyPlugins(data: Record<string, any>[], config: any, websiteDo
 
     if (config.plugins?.deduplicateGeo) {
         result = deduplicateGeoRows(result);
+    }
+
+    if (config.plugins?.mapDeviceTypes) {
+        result = mapDeviceTypesPlugin(result);
     }
 
     return result;
@@ -153,4 +158,23 @@ function applyGeoNormalization(data: Record<string, any>[]): Record<string, any>
 function shouldAutoParseReferrers(config: any): boolean {
     const referrerConfigs = ['top_referrers', 'referrer', 'traffic_sources'];
     return referrerConfigs.includes(config.type || config.name);
+}
+
+/**
+ * Groups and maps screen resolutions to device types, summing pageviews/visitors by type.
+ */
+export function mapDeviceTypesPlugin(rows: Record<string, any>[]): Record<string, any>[] {
+    const map = new Map<string, { name: string; pageviews: number; visitors: number }>();
+    for (const row of rows) {
+        const deviceType = mapScreenResolutionToDeviceType(row.name);
+        if (!map.has(deviceType)) {
+            map.set(deviceType, { name: deviceType, pageviews: 0, visitors: 0 });
+        }
+        const agg = map.get(deviceType);
+        if (agg) {
+            agg.pageviews += row.pageviews || 0;
+            agg.visitors += row.visitors || 0;
+        }
+    }
+    return Array.from(map.values());
 } 

@@ -5,7 +5,7 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import {
   Area,
   AreaChart,
@@ -20,7 +20,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { cn } from "@/lib/utils";
 import { SkeletonChart } from "./skeleton-chart";
 
-// Enhanced color palette with gradients
 const METRIC_COLORS = {
   pageviews: {
     primary: "#3b82f6",
@@ -54,34 +53,49 @@ const METRIC_COLORS = {
   },
 };
 
-// Enhanced tooltip with glass morphism effect
-const CustomTooltip = ({ active, payload, label }: any) => {
+// --- Types ---
+interface ChartDataRow {
+  date: string;
+  pageviews?: number;
+  visitors?: number;
+  unique_visitors?: number;
+  sessions?: number;
+  bounce_rate?: number;
+  avg_session_duration?: number;
+  avg_session_duration_formatted?: string;
+  [key: string]: unknown;
+}
+
+interface MetricConfig {
+  key: string;
+  label: string;
+  color: string;
+  gradient: string;
+  yAxisId: string;
+  icon: React.ComponentType<{ className?: string }>;
+  formatValue?: (value: number, row: ChartDataRow) => string;
+}
+
+// --- Duration formatter for session duration ---
+function formatDuration(seconds: number): string {
+  if (seconds < 60) return `${Math.round(seconds)}s`;
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainingSeconds = Math.floor(seconds % 60);
+  let result = "";
+  if (hours > 0) result += `${hours}h `;
+  if (minutes > 0 || hours > 0) result += `${minutes}m `;
+  if (remainingSeconds > 0 || (hours === 0 && minutes === 0)) result += `${remainingSeconds}s`;
+  return result.trim();
+}
+
+// --- CustomTooltip using config ---
+const CustomTooltip = ({ active, payload, label }: {
+  active?: boolean;
+  payload?: Array<{ name: string; value: number; color: string; payload: ChartDataRow }>;
+  label?: string;
+}) => {
   if (!(active && payload && payload.length)) return null;
-
-  const formatDuration = (seconds: number): string => {
-    if (seconds < 60) return `${Math.round(seconds)}s`;
-
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const remainingSeconds = Math.floor(seconds % 60);
-
-    let result = "";
-    if (hours > 0) result += `${hours}h `;
-    if (minutes > 0 || hours > 0) result += `${minutes}m `;
-    if (remainingSeconds > 0 || (hours === 0 && minutes === 0)) result += `${remainingSeconds}s`;
-
-    return result.trim();
-  };
-
-  const getMetricIcon = (name: string) => {
-    if (name.toLowerCase().includes("pageview")) return <Eye className="h-3 w-3" />;
-    if (name.toLowerCase().includes("visitor")) return <Users className="h-3 w-3" />;
-    if (name.toLowerCase().includes("session") && !name.toLowerCase().includes("duration"))
-      return <TrendingUp className="h-3 w-3" />;
-    if (name.toLowerCase().includes("bounce")) return <MousePointer className="h-3 w-3" />;
-    return <TrendingUp className="h-3 w-3" />;
-  };
-
   return (
     <div className="min-w-[200px] rounded-xl border border-border/50 bg-card p-4 shadow-2xl backdrop-blur-md">
       <div className="mb-3 flex items-center gap-2 border-border/30 border-b pb-2">
@@ -89,22 +103,18 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         <p className="font-semibold text-foreground text-sm">{label}</p>
       </div>
       <div className="space-y-2.5">
-        {payload.map((entry: any, index: number) => {
+        {payload.map((entry, index) => {
           const dataPoint = entry.payload;
-
-          let displayValue: string;
-          if (entry.name.toLowerCase().includes("bounce rate")) {
-            displayValue = `${entry.value.toFixed(1)}%`;
-          } else if (entry.name.toLowerCase().includes("session duration")) {
-            displayValue = dataPoint.avg_session_duration_formatted || formatDuration(entry.value);
-          } else {
-            displayValue = entry.value.toLocaleString();
-          }
-
+          const metric = METRICS.find((m) => m.label === entry.name || m.key === entry.name);
+          if (!metric) return null;
+          const Icon = metric.icon;
+          const displayValue = metric.formatValue
+            ? metric.formatValue(entry.value, dataPoint)
+            : entry.value.toLocaleString();
           return (
             <div
               className="group flex items-center justify-between gap-3"
-              key={`item-${entry.name}`}
+              key={`item-${metric.key}`}
             >
               <div className="flex items-center gap-2.5">
                 <div
@@ -112,8 +122,8 @@ const CustomTooltip = ({ active, payload, label }: any) => {
                   style={{ backgroundColor: entry.color }}
                 />
                 <div className="flex items-center gap-1.5">
-                  {getMetricIcon(entry.name)}
-                  <span className="font-medium text-muted-foreground text-xs">{entry.name}</span>
+                  <Icon className="h-3 w-3" />
+                  <span className="font-medium text-muted-foreground text-xs">{metric.label}</span>
                 </div>
               </div>
               <span className="font-bold text-foreground text-sm group-hover:text-primary">
@@ -147,6 +157,57 @@ interface MetricsChartProps {
   className?: string;
 }
 
+const METRICS: MetricConfig[] = [
+  {
+    key: "pageviews",
+    label: "Pageviews",
+    color: METRIC_COLORS.pageviews.primary,
+    gradient: "pageviews",
+    yAxisId: "left",
+    icon: Eye,
+    formatValue: (value) => value.toLocaleString(),
+  },
+  {
+    key: "visitors",
+    label: "Visitors",
+    color: METRIC_COLORS.visitors.primary,
+    gradient: "visitors",
+    yAxisId: "left",
+    icon: Users,
+    formatValue: (value) => value.toLocaleString(),
+  },
+  {
+    key: "sessions",
+    label: "Sessions",
+    color: METRIC_COLORS.sessions.primary,
+    gradient: "sessions",
+    yAxisId: "left",
+    icon: TrendingUp,
+    formatValue: (value) => value.toLocaleString(),
+  },
+  {
+    key: "bounce_rate",
+    label: "Bounce Rate",
+    color: METRIC_COLORS.bounce_rate.primary,
+    gradient: "bounce_rate",
+    yAxisId: "right",
+    icon: MousePointer,
+    formatValue: (value) => `${value.toFixed(1)}%`,
+  },
+  {
+    key: "avg_session_duration",
+    label: "Session Duration",
+    color: METRIC_COLORS.session_duration.primary,
+    gradient: "session_duration",
+    yAxisId: "duration",
+    icon: TrendingUp,
+    formatValue: (value, row) =>
+      typeof row.avg_session_duration_formatted === "string"
+        ? row.avg_session_duration_formatted
+        : formatDuration(value),
+  },
+];
+
 export function MetricsChart({
   data,
   isLoading,
@@ -156,20 +217,74 @@ export function MetricsChart({
   className,
 }: MetricsChartProps) {
   const chartData = useMemo(() => data || [], [data]);
-
   const [hoveredMetric, setHoveredMetric] = useState<string | null>(null);
 
-  const valueFormatter = (value: number): string => {
+  const presentMetrics = useMemo(() =>
+    METRICS.filter((metric) =>
+      chartData.some((item) => metric.key in item && item[metric.key] !== undefined)
+    ), [chartData]
+  );
+
+  const valueFormatter = useCallback((value: number): string => {
     if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
     if (value >= 1000) return `${(value / 1000).toFixed(1)}k`;
     return value.toString();
-  };
+  }, []);
 
-  const durationFormatter = (seconds: number): string => {
+  const durationFormatter = useCallback((seconds: number): string => {
     if (seconds < 60) return `${seconds}s`;
     if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
     return `${Math.floor(seconds / 3600)}h`;
-  };
+  }, []);
+
+  const yAxes = useMemo(() => {
+    const axes: Array<{
+      yAxisId: string;
+      props: Record<string, unknown>;
+    }> = [
+        {
+          yAxisId: "left",
+          props: {
+            axisLine: false,
+            tick: { fontSize: 11, fill: "var(--muted-foreground)", fontWeight: 500 },
+            tickFormatter: valueFormatter,
+            tickLine: false,
+            width: 45,
+            yAxisId: "left",
+          },
+        },
+      ];
+    if (presentMetrics.some((m) => m.key === "bounce_rate")) {
+      axes.push({
+        yAxisId: "right",
+        props: {
+          axisLine: false,
+          domain: [0, 100],
+          orientation: "right",
+          tick: { fontSize: 11, fill: "var(--muted-foreground)", fontWeight: 500 },
+          tickFormatter: (value: number) => `${value}%`,
+          tickLine: false,
+          width: 45,
+          yAxisId: "right",
+        },
+      });
+    }
+    if (presentMetrics.some((m) => m.key === "avg_session_duration")) {
+      axes.push({
+        yAxisId: "duration",
+        props: {
+          axisLine: false,
+          orientation: "right",
+          tick: { fontSize: 11, fill: "var(--muted-foreground)", fontWeight: 500 },
+          tickFormatter: durationFormatter,
+          tickLine: false,
+          width: 50,
+          yAxisId: "duration",
+        },
+      });
+    }
+    return axes;
+  }, [presentMetrics, valueFormatter, durationFormatter]);
 
   if (isLoading) {
     return <SkeletonChart className="w-full" height={height} title={title} />;
@@ -206,18 +321,6 @@ export function MetricsChart({
     );
   }
 
-  const hasPageviews = chartData.some(
-    (item) => "pageviews" in item && item.pageviews !== undefined
-  );
-  const hasVisitors = chartData.some((item) => "visitors" in item && item.visitors !== undefined);
-  const hasSessions = chartData.some((item) => "sessions" in item && item.sessions !== undefined);
-  const hasBounceRate = chartData.some(
-    (item) => "bounce_rate" in item && item.bounce_rate !== undefined
-  );
-  const hasAvgSessionDuration = chartData.some(
-    (item) => "avg_session_duration" in item && item.avg_session_duration !== undefined
-  );
-
   return (
     <Card
       className={cn(
@@ -243,8 +346,6 @@ export function MetricsChart({
                     <stop offset="100%" stopColor={colors.primary} stopOpacity={0.02} />
                   </linearGradient>
                 ))}
-
-                {/* Glow effects */}
                 {Object.entries(METRIC_COLORS).map(([key, colors]) => (
                   <filter id={`glow-${key}`} key={`glow-${key}`}>
                     <feGaussianBlur result="coloredBlur" stdDeviation="3" />
@@ -255,14 +356,12 @@ export function MetricsChart({
                   </filter>
                 ))}
               </defs>
-
               <CartesianGrid
                 stroke="var(--border)"
                 strokeDasharray="2 4"
                 strokeOpacity={0.3}
                 vertical={false}
               />
-
               <XAxis
                 axisLine={{ stroke: "var(--border)", strokeOpacity: 0.5 }}
                 dataKey="date"
@@ -270,41 +369,10 @@ export function MetricsChart({
                 tick={{ fontSize: 11, fill: "var(--muted-foreground)", fontWeight: 500 }}
                 tickLine={false}
               />
-
-              <YAxis
-                axisLine={false}
-                tick={{ fontSize: 11, fill: "var(--muted-foreground)", fontWeight: 500 }}
-                tickFormatter={valueFormatter}
-                tickLine={false}
-                width={45}
-                yAxisId="left"
-              />
-
-              {hasBounceRate && (
-                <YAxis
-                  axisLine={false}
-                  domain={[0, 100]}
-                  orientation="right"
-                  tick={{ fontSize: 11, fill: "var(--muted-foreground)", fontWeight: 500 }}
-                  tickFormatter={(value) => `${value}%`}
-                  tickLine={false}
-                  width={45}
-                  yAxisId="right"
-                />
-              )}
-
-              {hasAvgSessionDuration && (
-                <YAxis
-                  axisLine={false}
-                  orientation="right"
-                  tick={{ fontSize: 11, fill: "var(--muted-foreground)", fontWeight: 500 }}
-                  tickFormatter={durationFormatter}
-                  tickLine={false}
-                  width={50}
-                  yAxisId="duration"
-                />
-              )}
-
+              {/* Y Axes */}
+              {yAxes.map((axis) => (
+                <YAxis key={axis.yAxisId} {...axis.props} />
+              ))}
               <Tooltip
                 content={<CustomTooltip />}
                 cursor={{
@@ -315,7 +383,6 @@ export function MetricsChart({
                 }}
                 wrapperStyle={{ outline: "none" }}
               />
-
               <Legend
                 formatter={(value, entry: any) => (
                   <span
@@ -340,69 +407,28 @@ export function MetricsChart({
                   fontWeight: 500,
                 }}
               />
-
-              {hasPageviews && (
+              {/* --- Render all present metrics as Area --- */}
+              {presentMetrics.map((metric) => (
                 <Area
+                  key={metric.key}
                   activeDot={{
                     r: 6,
                     strokeWidth: 3,
-                    stroke: METRIC_COLORS.pageviews.primary,
+                    stroke: metric.color,
                     fill: "var(--background)",
-                    filter: "url(#glow-pageviews)",
+                    filter: `url(#glow-${metric.gradient})`,
                   }}
-                  dataKey="pageviews"
+                  dataKey={metric.key}
                   dot={{ r: 0 }}
-                  fill="url(#gradient-pageviews)"
+                  fill={`url(#gradient-${metric.gradient})`}
                   fillOpacity={1}
-                  name="Pageviews"
-                  stroke={METRIC_COLORS.pageviews.primary}
+                  name={metric.label}
+                  stroke={metric.color}
                   strokeWidth={2.5}
                   type="monotone"
-                  yAxisId="left"
+                  yAxisId={metric.yAxisId}
                 />
-              )}
-
-              {hasVisitors && (
-                <Area
-                  activeDot={{
-                    r: 6,
-                    strokeWidth: 3,
-                    stroke: METRIC_COLORS.visitors.primary,
-                    fill: "var(--background)",
-                    filter: "url(#glow-visitors)",
-                  }}
-                  dataKey="visitors"
-                  dot={{ r: 0 }}
-                  fill="url(#gradient-visitors)"
-                  fillOpacity={1}
-                  name="Visitors"
-                  stroke={METRIC_COLORS.visitors.primary}
-                  strokeWidth={2.5}
-                  type="monotone"
-                  yAxisId="left"
-                />
-              )}
-
-              {hasSessions && (
-                <Area
-                  activeDot={{
-                    r: 6,
-                    strokeWidth: 3,
-                    stroke: METRIC_COLORS.sessions.primary,
-                    fill: "var(--background)",
-                    filter: "url(#glow-sessions)",
-                  }}
-                  dataKey="sessions"
-                  dot={{ r: 0 }}
-                  fill="url(#gradient-sessions)"
-                  fillOpacity={1}
-                  name="Sessions"
-                  stroke={METRIC_COLORS.sessions.primary}
-                  strokeWidth={2.5}
-                  type="monotone"
-                  yAxisId="left"
-                />
-              )}
+              ))}
             </AreaChart>
           </ResponsiveContainer>
         </div>

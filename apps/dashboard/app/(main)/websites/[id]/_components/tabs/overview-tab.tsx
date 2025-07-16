@@ -24,7 +24,7 @@ import {
 import { MetricsChart } from "@/components/charts/metrics-chart";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useBatchDynamicQuery, useDynamicQuery, useRealTimeStats } from "@/hooks/use-dynamic-query";
+import { useBatchDynamicQuery, useRealTimeStats } from "@/hooks/use-dynamic-query";
 import {
   calculatePercentChange,
   formatDateByGranularity,

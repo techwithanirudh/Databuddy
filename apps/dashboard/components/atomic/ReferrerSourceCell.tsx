@@ -1,6 +1,7 @@
 "use client";
 
 import type React from "react";
+import { FaviconImage } from "../analytics/favicon-image";
 
 // Mirroring the ReferrerItem type from WebsiteOverviewTab.tsx
 // Ideally, this would be a shared type if used in multiple places outside atomic components.
@@ -39,15 +40,6 @@ export const ReferrerSourceCell: React.FC<ReferrerSourceCellProps> = ({
     );
   }
 
-  const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=16`;
-
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    // Attempt to hide the image, or you could replace it with a placeholder
-    e.currentTarget.style.display = "none";
-    // Optionally, add a class to the parent to indicate no icon
-    // e.currentTarget.parentElement?.classList.add("no-favicon");
-  };
-
   return (
     <span
       className={
@@ -57,14 +49,7 @@ export const ReferrerSourceCell: React.FC<ReferrerSourceCellProps> = ({
       }
       id={id}
     >
-      <img
-        alt={`${displayName} favicon`}
-        className="rounded-sm"
-        height={16}
-        onError={handleImageError}
-        src={faviconUrl}
-        width={16}
-      />
+      <FaviconImage domain={domain} altText={`${displayName} favicon`} size={16} className="rounded-sm" />
       {displayName}
     </span>
   );

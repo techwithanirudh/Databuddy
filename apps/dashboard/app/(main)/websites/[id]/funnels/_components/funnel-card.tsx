@@ -2,26 +2,18 @@
 
 import {
   CaretDownIcon,
+  CaretUpIcon,
   CaretRightIcon,
-  ChartBarIcon,
-  CheckCircleIcon,
-  DotsThreeIcon,
-  FunnelIcon,
   PencilIcon,
-  TargetIcon,
   TrashIcon,
-  XCircleIcon,
+  FileTextIcon,
+  FunnelIcon,
+  MouseRightClickIcon,
+  DotsThreeIcon,
 } from "@phosphor-icons/react";
-import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Card } from "@/components/ui/card";
 import type { Funnel } from "@/hooks/use-funnels";
 
 interface FunnelCardProps {
@@ -41,194 +33,136 @@ export function FunnelCard({
   onDelete,
   children,
 }: FunnelCardProps) {
+  // Make the entire card clickable
+  const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Prevent toggling if clicking on a button inside the card
+    const target = e.target as HTMLElement;
+    if (target.closest("button")) return;
+    onToggle(funnel.id);
+  };
+
   return (
     <Card
-      className={`group transition-all duration-200 ${isExpanded
-          ? "border-primary/30 bg-gradient-to-r from-background to-primary/5 shadow-lg"
-          : "hover:border-border hover:shadow-md"
-        } cursor-pointer rounded`}
-      onClick={() => onToggle(funnel.id)}
+      className="mb-4 border bg-background rounded overflow-hidden cursor-pointer select-none transition focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+      tabIndex={0}
+      onClick={handleCardClick}
+      onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { onToggle(funnel.id); } }}
+      style={{ outline: "none" }}
     >
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          {/* Left side - Main info */}
-          <div className="min-w-0 flex-1">
-            <div className="mb-2 flex items-center gap-3">
-              <CardTitle className="truncate font-semibold text-foreground text-lg">
-                {funnel.name}
-              </CardTitle>
-              <CaretDownIcon
-                className={`h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform duration-200 ${isExpanded ? "rotate-180 text-primary" : ""
-                  }`}
-                size={16}
-                weight="fill"
-              />
-            </div>
-
-            <div className="flex items-center gap-4">
-              <Badge className="text-xs" variant={funnel.isActive ? "default" : "secondary"}>
-                <CheckCircleIcon className="mr-1" size={12} />
-                {funnel.isActive ? "Active" : "Inactive"}
-              </Badge>
-
-              <div className="flex items-center gap-1 text-muted-foreground text-sm">
-                <ChartBarIcon size={14} />
-                <span>{funnel.steps?.length || 0} steps</span>
-              </div>
-
-              {funnel.filters && funnel.filters.length > 0 && (
-                <div className="flex items-center gap-1 text-muted-foreground text-sm">
-                  <FunnelIcon size={14} />
-                  <span>
-                    {funnel.filters.length} filter{funnel.filters.length !== 1 ? "s" : ""}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Right side - Actions */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                className="h-8 w-8 rounded p-0"
-                onClick={(e) => e.stopPropagation()}
-                size="sm"
-                variant="ghost"
-              >
-                <DotsThreeIcon size={16} />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="rounded">
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit(funnel);
-                }}
-              >
-                <PencilIcon className="mr-2" size={16} />
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="text-destructive focus:text-destructive"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(funnel.id);
-                }}
-              >
-                <TrashIcon className="mr-2" size={16} />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        {/* Description */}
-        {funnel.description && (
-          <p className="mt-3 text-muted-foreground text-sm leading-relaxed">{funnel.description}</p>
-        )}
-
-        {/* Steps preview */}
-        <div className="mt-4">
-          <div className="mb-3 flex items-center gap-2">
-            <TargetIcon className="text-muted-foreground" size={16} />
-            <span className="font-medium text-muted-foreground text-sm">Steps</span>
-          </div>
-
-          <div className="flex items-center gap-2 overflow-x-auto">
+      <div className="flex items-center justify-between px-4 py-3 gap-2 sm:px-6">
+        <div className="flex flex-col flex-grow text-left">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <h3 className="font-semibold text-base truncate mr-2" style={{ color: "var(--color-foreground)" }}>
+              {funnel.name}
+            </h3>
             {(funnel.steps || []).map((step, index) => (
-              <div className="flex flex-shrink-0 items-center gap-2" key={index}>
-                <div className="flex items-center gap-2 rounded border bg-muted/50 px-3 py-1.5">
-                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary font-medium text-primary-foreground text-xs">
-                    {index + 1}
-                  </div>
-                  <span
-                    className="max-w-32 truncate whitespace-nowrap font-medium text-sm"
-                    title={step?.name || "Unnamed Step"}
-                  >
-                    {step?.name || "Unnamed Step"}
-                  </span>
-                </div>
-                {index < (funnel.steps?.length || 0) - 1 && (
-                  <CaretRightIcon className="flex-shrink-0 text-muted-foreground" size={14} />
+              <div key={step.name + step.type + step.target} className="flex items-center">
+                {index > 0 && (
+                  <CaretRightIcon className="h-3 w-3 mx-1" style={{ color: "var(--color-muted-foreground)" }} weight="fill" />
                 )}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span
+                        className="rounded flex items-center gap-1 px-2 py-0.5 border text-xs"
+                        style={{ background: "var(--color-muted)", color: "var(--color-foreground)", borderColor: "var(--color-border)" }}
+                      >
+                        {step.type === "PAGE_VIEW" ? (
+                          <FileTextIcon className="h-3 w-3 mr-1" style={{ color: "var(--color-primary)" }} weight="duotone" />
+                        ) : step.type === "EVENT" ? (
+                          <MouseRightClickIcon className="h-3 w-3 mr-1" style={{ color: "var(--color-warning)" }} weight="duotone" />
+                        ) : (
+                          <DotsThreeIcon className="h-3 w-3 mr-1" style={{ color: "var(--color-muted-foreground)" }} weight="duotone" />
+                        )}
+                        <span className="max-w-[120px] overflow-hidden text-ellipsis inline-block">
+                          {step.name || step.target}
+                        </span>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="text-xs px-2 py-1">
+                      {step.type === "PAGE_VIEW"
+                        ? `Page: ${step.target}`
+                        : step.type === "EVENT"
+                          ? `Event: ${step.target}`
+                          : step.target}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
             ))}
           </div>
-        </div>
-
-        {/* Filters preview */}
-        {funnel.filters && funnel.filters.length > 0 && (
-          <div className="mt-4">
-            <div className="mb-3 flex items-center gap-2">
-              <FunnelIcon className="text-muted-foreground" size={16} />
-              <span className="font-medium text-muted-foreground text-sm">Filters</span>
-            </div>
-
-            <div className="flex items-center gap-2 overflow-x-auto">
-              {(funnel.filters || []).map((filter, index) => {
-                const getFieldLabel = (field: string) => {
-                  const fieldMap: Record<string, string> = {
-                    browser_name: "Browser",
-                    os_name: "OS",
-                    country: "Country",
-                    device_type: "Device",
-                    utm_source: "UTM Source",
-                    utm_medium: "UTM Medium",
-                    utm_campaign: "UTM Campaign",
-                  };
-                  return fieldMap[field] || field;
-                };
-
-                const getOperatorSymbol = (operator: string) => {
-                  const operatorMap: Record<string, string> = {
-                    equals: "=",
-                    contains: "⊃",
-                    not_equals: "≠",
-                    in: "∈",
-                    not_in: "∉",
-                  };
-                  return operatorMap[operator] || operator;
-                };
-
-                return (
-                  <div
-                    className="flex flex-shrink-0 items-center gap-1 rounded border bg-muted/30 px-2 py-1"
-                    key={index}
+          {funnel.filters && funnel.filters.length > 0 && (
+            <div className="flex items-center gap-2 mt-1">
+              <FunnelIcon className="h-3 w-3" style={{ color: "var(--color-muted-foreground)" }} weight="duotone" />
+              <div className="flex flex-wrap gap-2">
+                {funnel.filters.map((filter) => (
+                  <span
+                    key={filter.field + filter.operator + String(filter.value)}
+                    className="rounded flex items-center gap-1 px-2 py-0.5 border text-xs"
+                    style={{ background: "var(--color-muted)", color: "var(--color-foreground)", borderColor: "var(--color-border)" }}
                   >
-                    <span className="font-medium text-foreground text-xs">
-                      {getFieldLabel(filter?.field || "unknown")}
-                    </span>
-                    <span className="text-muted-foreground text-xs">
-                      {getOperatorSymbol(filter?.operator || "equals")}
-                    </span>
+                    <span style={{ color: "var(--color-muted-foreground)" }}>{filter.field}</span>
                     <span
-                      className="max-w-20 truncate font-medium text-foreground text-xs"
-                      title={(filter?.value as string) || "No value"}
+                      className="mx-1"
+                      style={{ color: filter.operator === "not_equals" || filter.operator === "not_in" ? "var(--color-destructive)" : "var(--color-success)" }}
                     >
-                      {filter?.value || "No value"}
+                      {filter.operator}
                     </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </CardHeader>
-
-      {isExpanded && (
-        <div className="border-t">
-          <CardContent className="pt-6">
-            {children || (
-              <div className="flex items-center justify-center py-8">
-                <div className="relative">
-                  <div className="h-6 w-6 rounded-full border-2 border-muted" />
-                  <div className="absolute top-0 left-0 h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                </div>
-                <div className="ml-3 text-muted-foreground text-sm">Loading analytics...</div>
+                    <span className="max-w-[100px] overflow-hidden text-ellipsis inline-block" style={{ color: "var(--color-foreground)" }}>
+                      {filter.value && typeof filter.value === "string" && filter.value.length > 0 ? filter.value : "empty"}
+                    </span>
+                  </span>
+                ))}
               </div>
+            </div>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={e => {
+              e.stopPropagation();
+              onEdit(funnel);
+            }}
+            type="button"
+            className="focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+          >
+            <PencilIcon className="h-4 w-4" weight="duotone" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={e => {
+              e.stopPropagation();
+              onDelete(funnel.id);
+            }}
+            type="button"
+            className="focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+          >
+            <TrashIcon className="h-4 w-4" weight="duotone" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={e => {
+              e.stopPropagation();
+              onToggle(funnel.id);
+            }}
+            type="button"
+            className="focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+          >
+            {isExpanded ? (
+              <CaretUpIcon className="h-4 w-4" weight="fill" />
+            ) : (
+              <CaretDownIcon className="h-4 w-4" weight="fill" />
             )}
-          </CardContent>
+          </Button>
+        </div>
+      </div>
+      {isExpanded && (
+        <div className="border-t border-border bg-muted/30">
+          <div className="p-4">{children}</div>
         </div>
       )}
     </Card>

@@ -96,7 +96,8 @@ export const DevicesBuilders: Record<string, SimpleQueryConfig> = {
         fields: [
             'screen_resolution as name',
             'COUNT(*) as pageviews',
-            'COUNT(DISTINCT anonymous_id) as visitors'
+            'COUNT(DISTINCT anonymous_id) as visitors',
+            'ROUND((COUNT(*) / SUM(COUNT(*)) OVER()) * 100, 2) as percentage'
         ],
         where: ["screen_resolution != ''", 'event_name = \'screen_view\''],
         groupBy: ['screen_resolution'],

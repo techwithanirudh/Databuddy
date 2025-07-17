@@ -595,7 +595,7 @@ export function WebsiteOverviewTab({
     return deviceData.map((item: any) => ({
       name: item.name,
       visitors: item.visitors,
-      pageviews: item.pageviews,
+      percentage: item.percentage,
     }));
   }, [analytics.device_types]);
 
@@ -707,9 +707,20 @@ export function WebsiteOverviewTab({
           return <DeviceTypeCell device_type={row.name} name={row.name} />;
         },
       },
-      ...baseTechnologyColumns,
+      {
+        id: "visitors",
+        accessorKey: "visitors",
+        header: "Visitors",
+        cell: (info: any) => <span className="font-medium">{info.getValue()?.toLocaleString()}</span>,
+      },
+      {
+        id: "percentage",
+        accessorKey: "percentage",
+        header: "Share",
+        cell: createPercentageCell(),
+      },
     ],
-    [baseTechnologyColumns]
+    [createPercentageCell]
   );
 
   const browserColumns = useMemo(

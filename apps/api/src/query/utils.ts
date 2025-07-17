@@ -162,19 +162,30 @@ function shouldAutoParseReferrers(config: any): boolean {
 
 /**
  * Groups and maps screen resolutions to device types, summing pageviews/visitors by type.
+ * Preserves all original fields (e.g., percentage) from the first row of each device type.
  */
 export function mapDeviceTypesPlugin(rows: Record<string, any>[]): Record<string, any>[] {
-    const map = new Map<string, { name: string; pageviews: number; visitors: number }>();
+    const map = new Map<string, Record<string, any>>();
     for (const row of rows) {
         const deviceType = mapScreenResolutionToDeviceType(row.name);
         if (!map.has(deviceType)) {
-            map.set(deviceType, { name: deviceType, pageviews: 0, visitors: 0 });
+            map.set(deviceType, { ...row, name: deviceType });
         }
         const agg = map.get(deviceType);
         if (agg) {
-            agg.pageviews += row.pageviews || 0;
-            agg.visitors += row.visitors || 0;
+            agg.pageviews = (agg.pageviews || 0) + (row.pageviews || 0);
+            agg.visitors = (agg.visitors || 0) + (row.visitors || 0);
+            if (typeof agg.percentage === 'number' && typeof row.percentage === 'number') {
+                agg.percentage += row.percentage;
+            }
         }
+    }
+    let totalPageviews = 0;
+    for (const row of map.values()) {
+        totalPageviews += row.pageviews || 0;
+    }
+    for (const row of map.values()) {
+        row.percentage = totalPageviews > 0 ? Math.round((row.pageviews / totalPageviews) * 10000) / 100 : 0;
     }
     return Array.from(map.values());
 } 

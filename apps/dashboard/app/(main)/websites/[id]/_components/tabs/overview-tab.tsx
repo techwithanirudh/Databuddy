@@ -171,13 +171,28 @@ const deviceTypeIconMap: Record<string, React.ElementType> = {
   unknown: QuestionIcon,
 };
 
+const deviceTypeColorMap: Record<string, string> = {
+  mobile: 'text-blue-500',
+  tablet: 'text-teal-500',
+  laptop: 'text-purple-500',
+  desktop: 'text-green-500',
+  ultrawide: 'text-pink-500',
+  watch: 'text-yellow-500',
+  unknown: 'text-gray-400',
+};
+
 function DeviceTypeCell({ device_type, name }: { device_type: string; name: string }) {
   const Icon = deviceTypeIconMap[device_type] || QuestionIcon;
+  const colorClass = deviceTypeColorMap[device_type] || deviceTypeColorMap.unknown;
   return (
     <div className="flex items-center gap-3">
-      <Icon size={20} weight="duotone" />
+      <Icon
+        size={20}
+        weight="duotone"
+        className={colorClass}
+        style={{ minWidth: 20, minHeight: 20 }}
+      />
       <span className="font-medium">{device_type.charAt(0).toUpperCase() + device_type.slice(1)}</span>
-      <span className="text-muted-foreground text-xs ml-2">{name}</span>
     </div>
   );
 }
@@ -578,7 +593,6 @@ export function WebsiteOverviewTab({
   const processedDeviceData = useMemo(() => {
     const deviceData = analytics.device_types || [];
     return deviceData.map((item: any) => ({
-      device_type: item.device_type || item.name || 'unknown',
       name: item.name,
       visitors: item.visitors,
       pageviews: item.pageviews,
@@ -690,7 +704,7 @@ export function WebsiteOverviewTab({
         header: "Device Type",
         cell: (info: any) => {
           const row = info.row.original;
-          return <DeviceTypeCell device_type={row.device_type} name={row.name} />;
+          return <DeviceTypeCell device_type={row.name} name={row.name} />;
         },
       },
       ...baseTechnologyColumns,

@@ -4,7 +4,7 @@ import { signIn } from "@databuddy/auth/client";
 import { Eye, EyeOff, Github, Loader2, Mail, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,20 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [lastUsed, setLastUsed] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLastUsed(localStorage.getItem("lastUsedLogin"));
+  }, []);
+
+  const handleLastUsed = () => {
+    if (lastUsed === "github") handleGithubLogin();
+    else if (lastUsed === "google") handleGoogleLogin();
+    else if (lastUsed === "email") {
+      // Focus email input
+      document.getElementById("email")?.focus();
+    }
+  };
 
   const handleGoogleLogin = () => {
     setIsLoading(true);
@@ -25,6 +39,7 @@ function LoginPage() {
       callbackURL: "/home",
       fetchOptions: {
         onSuccess: () => {
+          localStorage.setItem("lastUsedLogin", "google");
           toast.success("Login successful!");
         },
         onError: () => {
@@ -42,6 +57,7 @@ function LoginPage() {
       callbackURL: "/home",
       fetchOptions: {
         onSuccess: () => {
+          localStorage.setItem("lastUsedLogin", "github");
           toast.success("Login successful!");
         },
         onError: () => {
@@ -67,6 +83,7 @@ function LoginPage() {
         callbackURL: "/home",
         fetchOptions: {
           onSuccess: () => {
+            localStorage.setItem("lastUsedLogin", "email");
             toast.success("Login successful!");
           },
           onError: (error) => {
@@ -79,7 +96,7 @@ function LoginPage() {
             } else {
               toast.error(
                 error?.error?.message ||
-                  "Login failed. Please check your credentials and try again."
+                "Login failed. Please check your credentials and try again."
               );
             }
           },
@@ -112,24 +129,34 @@ function LoginPage() {
           <div className="space-y-6">
             <div className="space-y-3">
               <Button
-                className="flex h-11 w-full cursor-pointer items-center justify-center transition-all duration-200 hover:bg-primary/5"
+                className="flex h-11 w-full cursor-pointer items-center justify-center transition-all duration-200 hover:bg-primary/5 relative"
                 disabled={isLoading}
                 onClick={handleGithubLogin}
                 type="button"
                 variant="outline"
               >
                 <Github className="mr-2 h-5 w-5" />
-                Sign in with GitHub
+                <span className="flex items-center gap-2">
+                  Sign in with GitHub
+                  {lastUsed === "github" && (
+                    <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary border border-primary/20 ml-2">Last used</span>
+                  )}
+                </span>
               </Button>
               <Button
-                className="flex h-11 w-full cursor-pointer items-center justify-center transition-all duration-200 hover:bg-primary/5"
+                className="flex h-11 w-full cursor-pointer items-center justify-center transition-all duration-200 hover:bg-primary/5 relative"
                 disabled={isLoading}
                 onClick={handleGoogleLogin}
                 type="button"
                 variant="outline"
               >
                 <Mail className="mr-2 h-5 w-5" />
-                Sign in with Google
+                <span className="flex items-center gap-2">
+                  Sign in with Google
+                  {lastUsed === "google" && (
+                    <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary border border-primary/20 ml-2">Last used</span>
+                  )}
+                </span>
               </Button>
             </div>
             <div className="relative">
@@ -147,17 +174,22 @@ function LoginPage() {
                 <Label className="font-medium text-foreground" htmlFor="email">
                   Email
                 </Label>
-                <Input
-                  autoComplete="email"
-                  className="h-11 transition-all duration-200 focus:ring-2 focus:ring-primary/20"
-                  id="email"
-                  name="email"
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  required
-                  type="email"
-                  value={email}
-                />
+                <div className="relative">
+                  <Input
+                    autoComplete="email"
+                    className="h-11 transition-all duration-200 focus:ring-2 focus:ring-primary/20"
+                    id="email"
+                    name="email"
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    required
+                    type="email"
+                    value={email}
+                  />
+                  {lastUsed === "email" && (
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary border border-primary/20">Last used</span>
+                  )}
+                </div>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">

@@ -24,29 +24,37 @@ export class RateLimiter {
         const windowSeconds = parseDurationToSeconds(this.config.duration)
         const key = `${this.config.namespace}:${identifier}`
         const now = Date.now()
+        const windowStart = now - (windowSeconds * 1000)
 
         try {
             const pipeline = redis.pipeline()
-            pipeline.incr(key)
+
+            pipeline.zremrangebyscore(key, 0, windowStart)
+
+            pipeline.zcard(key)
+
+            pipeline.zadd(key, now, now.toString())
+
             pipeline.expire(key, windowSeconds)
-            pipeline.ttl(key)
+
+            pipeline.zcard(key)
 
             const results = await pipeline.exec()
 
-            if (!results || results.length < 3) {
+            if (!results || results.length < 5) {
                 throw new Error('Redis pipeline failed')
             }
 
-            const newCount = results[0]?.[1] as number
-            const ttl = results[2]?.[1] as number
+            const currentCount = results[3]?.[1] as number
 
-            if (typeof newCount !== 'number' || typeof ttl !== 'number') {
+            if (typeof currentCount !== 'number') {
                 throw new Error('Invalid Redis response')
             }
 
-            const resetTime = now + ((ttl > 0 ? ttl : windowSeconds) * 1000)
+            // Calculate reset time (current time + window duration)
+            const resetTime = now + (windowSeconds * 1000)
 
-            if (newCount > this.config.limit) {
+            if (currentCount > this.config.limit) {
                 return {
                     success: false,
                     limit: this.config.limit,
@@ -58,7 +66,7 @@ export class RateLimiter {
             return {
                 success: true,
                 limit: this.config.limit,
-                remaining: Math.max(0, this.config.limit - newCount),
+                remaining: Math.max(0, this.config.limit - currentCount),
                 reset: resetTime,
             }
         } catch (error) {
@@ -76,11 +84,17 @@ export class RateLimiter {
     async getStatus(identifier: string): Promise<RateLimitResult> {
         const key = `${this.config.namespace}:${identifier}`
         const now = Date.now()
+        const windowSeconds = parseDurationToSeconds(this.config.duration)
+        const windowStart = now - (windowSeconds * 1000)
 
         try {
             const pipeline = redis.pipeline()
-            pipeline.get(key)
-            pipeline.ttl(key)
+
+            // Remove expired entries
+            pipeline.zremrangebyscore(key, 0, windowStart)
+
+            // Count current entries in the window
+            pipeline.zcard(key)
 
             const results = await pipeline.exec()
 
@@ -88,14 +102,13 @@ export class RateLimiter {
                 throw new Error('Redis pipeline failed')
             }
 
-            const currentCount = results[0]?.[1] ? Number.parseInt(results[0][1] as string) : 0
-            const ttl = results[1]?.[1] as number || 0
+            const currentCount = results[1]?.[1] as number || 0
 
             return {
                 success: currentCount < this.config.limit,
                 limit: this.config.limit,
                 remaining: Math.max(0, this.config.limit - currentCount),
-                reset: now + (ttl * 1000)
+                reset: now + (windowSeconds * 1000)
             }
         } catch (error) {
             console.error('[Rate Limiter] Redis error:', error)
@@ -103,7 +116,7 @@ export class RateLimiter {
                 success: true,
                 limit: this.config.limit,
                 remaining: this.config.limit,
-                reset: now + (parseDurationToSeconds(this.config.duration) * 1000)
+                reset: now + (windowSeconds * 1000)
             }
         }
     }

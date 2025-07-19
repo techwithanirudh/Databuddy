@@ -1,14 +1,17 @@
 "use client";
 
-import { BuildingsIcon, GearIcon, PlusIcon, UsersIcon } from "@phosphor-icons/react";
+import { BuildingsIcon, GearIcon, PlusIcon, UsersIcon, ArrowRightIcon, CheckIcon } from "@phosphor-icons/react";
 import dynamic from "next/dynamic";
 import { Suspense, useState } from "react";
 import { CreateOrganizationDialog } from "@/components/organizations/create-organization-dialog";
+import { OrganizationSwitcher } from "./components/organization-switcher";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
 import { useOrganizations } from "@/hooks/use-organizations";
+import { cn } from "@/lib/utils";
 
 // Skeletons
 function PageSkeleton() {
@@ -21,6 +24,7 @@ function PageSkeleton() {
         </div>
         <Skeleton className="h-9 w-40" />
       </div>
+      <Skeleton className="h-32 w-full rounded-lg" />
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <Skeleton className="h-24 w-full" />
         <Skeleton className="h-24 w-full" />
@@ -60,8 +64,73 @@ const TeamsTab = dynamic(
   }
 );
 
+// Active Organization Banner
+function ActiveOrganizationBanner({ activeOrg, organizations }: { activeOrg: any; organizations: any[] }) {
+  if (!activeOrg) {
+    return (
+      <Card className="border-warning/20 bg-warning/5">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-4">
+            <div className="rounded-full bg-warning/10 p-3">
+              <UsersIcon className="h-6 w-6 text-warning" size={24} weight="duotone" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-lg">Personal Workspace</h3>
+              <p className="text-muted-foreground text-sm">
+                You're currently in personal mode. Create or switch to an organization for team collaboration.
+              </p>
+            </div>
+            {organizations.length > 0 && (
+              <OrganizationSwitcher
+                activeOrganization={activeOrg}
+                organizations={organizations}
+              />
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="border-primary/20 bg-primary/5">
+      <CardContent className="p-6">
+        <div className="flex items-center gap-4">
+          <div className="rounded-full bg-primary/10 p-3">
+            <BuildingsIcon className="h-6 w-6 text-primary" size={24} weight="duotone" />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-lg">{activeOrg.name}</h3>
+              <Badge className="bg-primary/10 text-primary" variant="secondary">
+                <CheckIcon className="mr-1 h-3 w-3" size={16} />
+                Active
+              </Badge>
+            </div>
+            <p className="text-muted-foreground text-sm">
+              Team workspace • {organizations.length} organization{organizations.length !== 1 ? 's' : ''} available
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <OrganizationSwitcher
+              activeOrganization={activeOrg}
+              organizations={organizations}
+            />
+            <Button asChild className="rounded" size="sm" variant="outline">
+              <a href={`/organizations/${activeOrg.slug}`}>
+                <GearIcon className="mr-2 h-4 w-4" size={16} />
+                Settings
+              </a>
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 // Sub-components
-function PageHeader({ onNewOrg, activeOrg }: any) {
+function PageHeader({ onNewOrg }: { onNewOrg: () => void }) {
   return (
     <div className="flex items-center justify-between">
       <div>
@@ -70,23 +139,15 @@ function PageHeader({ onNewOrg, activeOrg }: any) {
           Manage your organizations and team collaboration
         </p>
       </div>
-      <div className="flex items-center gap-2">
-        {activeOrg && (
-          <Badge className="px-2 py-1" variant="outline">
-            <BuildingsIcon className="mr-1 h-3 w-3" size={16} />
-            {activeOrg.name}
-          </Badge>
-        )}
-        <Button className="rounded" onClick={onNewOrg} size="sm">
-          <PlusIcon className="mr-1 h-3 w-3" size={16} />
-          New Organization
-        </Button>
-      </div>
+      <Button className="rounded" onClick={onNewOrg} size="sm">
+        <PlusIcon className="mr-2 h-4 w-4" size={16} />
+        New Organization
+      </Button>
     </div>
   );
 }
 
-function QuickStats({ orgCount, activeOrg }: any) {
+function QuickStats({ orgCount, activeOrg }: { orgCount: number; activeOrg: any }) {
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
       <div className="rounded border border-border/50 bg-muted/30 p-4">
@@ -106,7 +167,7 @@ function QuickStats({ orgCount, activeOrg }: any) {
             <UsersIcon className="h-5 w-5 text-primary" size={16} weight="duotone" />
           </div>
           <div>
-            <p className="text-muted-foreground text-sm">Active Workspace</p>
+            <p className="text-muted-foreground text-sm">Current Workspace</p>
             <p className="max-w-[120px] truncate font-medium text-sm">
               {activeOrg?.name || "Personal"}
             </p>
@@ -119,7 +180,7 @@ function QuickStats({ orgCount, activeOrg }: any) {
             <GearIcon className="h-5 w-5 text-primary" size={16} weight="duotone" />
           </div>
           <div>
-            <p className="text-muted-foreground text-sm">Status</p>
+            <p className="text-muted-foreground text-sm">Mode</p>
             <p className="font-medium text-sm">{activeOrg ? "Team Mode" : "Personal Mode"}</p>
           </div>
         </div>
@@ -148,7 +209,11 @@ function MainView({ organizations, activeOrganization, isLoading, onNewOrg }: an
               )}
             </TabsTrigger>
             <TabsTrigger
-              className="relative h-10 cursor-pointer touch-manipulation whitespace-nowrap rounded-none px-2 text-xs transition-colors hover:bg-muted/50 sm:px-4 sm:text-sm"
+              className={cn(
+                "relative h-10 cursor-pointer touch-manipulation whitespace-nowrap rounded-none px-2 text-xs transition-colors hover:bg-muted/50 sm:px-4 sm:text-sm",
+                !activeOrganization && "opacity-50 cursor-not-allowed"
+              )}
+              disabled={!activeOrganization}
               value="teams"
             >
               <UsersIcon className="mr-1 h-3 w-3" size={16} />
@@ -194,13 +259,18 @@ export default function OrganizationsPage() {
 
   return (
     <div className="container mx-auto max-w-6xl space-y-6 px-4 py-6">
-      <PageHeader activeOrg={activeOrganization} onNewOrg={() => setShowCreateDialog(true)} />
+      <PageHeader onNewOrg={() => setShowCreateDialog(true)} />
+
+      {/* Active Organization Banner */}
+      <ActiveOrganizationBanner activeOrg={activeOrganization} organizations={organizations} />
+
       <MainView
         activeOrganization={activeOrganization}
         isLoading={isLoading}
         onNewOrg={() => setShowCreateDialog(true)}
         organizations={organizations}
       />
+
       <CreateOrganizationDialog
         isOpen={showCreateDialog}
         onClose={() => setShowCreateDialog(false)}

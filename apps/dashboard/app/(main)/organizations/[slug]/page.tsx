@@ -17,19 +17,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useOrganizations } from "@/hooks/use-organizations";
+import { getOrganizationInitials } from "@/lib/utils";
 import { OrganizationPageSkeleton } from "./components/organization-page-skeleton";
 import { OverviewTab } from "./components/overview-tab";
 import { SettingsTab } from "./components/settings-tab";
 import { TeamsTab } from "./components/teams-tab";
-
-const getOrganizationInitials = (name: string) => {
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-};
 
 function SetActiveButton({ onSetActive, isSettingActive, isCurrentlyActive }: any) {
   if (isCurrentlyActive) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { FloppyDiskIcon, GearIcon, ImageIcon, TrashIcon, WarningIcon } from "@phosphor-icons/react";
+import { FloppyDiskIcon, GearIcon, TrashIcon, WarningIcon, GlobeIcon } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -14,12 +14,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useOrganizations } from "@/hooks/use-organizations";
+import { trpc } from "@/lib/trpc";
 import { OrganizationLogoUploader } from "./organization-logo-uploader";
 import { TransferAssets } from "./transfer-assets";
 
@@ -37,14 +39,10 @@ export function SettingsTab({ organization }: SettingsTabProps) {
 
   const { updateOrganization, deleteOrganization } = useOrganizations();
 
-  const getOrganizationInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
+  // Fetch organization websites using tRPC
+  const { data: websites, isLoading: isLoadingWebsites } = trpc.websites.list.useQuery({
+    organizationId: organization.id,
+  });
 
   const cleanSlug = (value: string) => {
     return value
@@ -106,13 +104,17 @@ export function SettingsTab({ organization }: SettingsTabProps) {
   return (
     <div className="space-y-8">
       {/* Organization Settings */}
-      <div className="rounded border border-border/50 bg-muted/30 p-6">
-        <h3 className="mb-6 flex items-center gap-2 font-semibold text-lg">
-          <GearIcon className="h-5 w-5" size={16} weight="duotone" />
-          Organization Settings
-        </h3>
-
-        <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <GearIcon className="h-5 w-5" size={16} weight="duotone" />
+            Organization Settings
+          </CardTitle>
+          <CardDescription>
+            Update your organization's basic information
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
           {/* Logo Section */}
           <OrganizationLogoUploader organization={organization} />
 
@@ -120,7 +122,7 @@ export function SettingsTab({ organization }: SettingsTabProps) {
           <div className="space-y-2">
             <Label htmlFor="org-name">Organization Name</Label>
             <Input
-              className="rounded"
+              className="rounded-lg"
               id="org-name"
               onChange={(e) => setName(e.target.value)}
               placeholder="My Organization"
@@ -132,7 +134,7 @@ export function SettingsTab({ organization }: SettingsTabProps) {
           <div className="space-y-2">
             <Label htmlFor="org-slug">Organization Slug</Label>
             <Input
-              className="rounded font-mono"
+              className="rounded-lg font-mono"
               id="org-slug"
               onChange={(e) => handleSlugChange(e.target.value)}
               placeholder="my-organization"
@@ -145,7 +147,7 @@ export function SettingsTab({ organization }: SettingsTabProps) {
 
           {/* Save Button */}
           <div className="flex justify-end pt-4">
-            <Button className="rounded" disabled={!hasChanges || isSaving} onClick={handleSave}>
+            <Button className="rounded-lg" disabled={!hasChanges || isSaving} onClick={handleSave}>
               {isSaving ? (
                 <>
                   <div className="mr-2 h-3 w-3 animate-spin rounded-full border border-primary-foreground/30 border-t-primary-foreground" />
@@ -159,27 +161,95 @@ export function SettingsTab({ organization }: SettingsTabProps) {
               )}
             </Button>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
+
+      {/* Organization Websites */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <GlobeIcon className="h-5 w-5" size={16} weight="duotone" />
+            Organization Websites
+          </CardTitle>
+          <CardDescription>
+            Websites that belong to this organization
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoadingWebsites ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center gap-3 rounded-lg border border-border/50 bg-background/50 p-3">
+                  <Skeleton className="h-10 w-10 rounded-lg" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : websites && websites.length > 0 ? (
+            <div className="space-y-3">
+              {websites.map((website) => (
+                <div
+                  key={website.id}
+                  className="flex items-center justify-between rounded-lg border border-border/50 bg-background/50 p-3"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="rounded bg-primary/10 p-2">
+                      <GlobeIcon className="h-4 w-4 text-primary" size={16} />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm text-foreground">{website.name}</p>
+                      <p className="text-muted-foreground text-xs">{website.domain}</p>
+                    </div>
+                  </div>
+                  <Badge className="px-2 py-1 text-xs" variant="secondary">
+                    {website.status}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-8 text-center">
+              <GlobeIcon
+                className="mx-auto mb-2 h-8 w-8 text-muted-foreground"
+                size={32}
+                weight="duotone"
+              />
+              <p className="text-muted-foreground text-sm">No websites in this organization</p>
+              <p className="text-muted-foreground text-xs mt-1">
+                Transfer websites from your personal account or create new ones
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Danger Zone */}
-      <div className="rounded border border-destructive/20 bg-destructive/5 p-6">
-        <h3 className="mb-4 flex items-center gap-2 font-semibold text-destructive text-lg">
-          <WarningIcon className="h-5 w-5" size={16} weight="duotone" />
-          Danger Zone
-        </h3>
-
-        <div className="space-y-6">
+      <Card className="border-destructive/20 bg-destructive/5">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-destructive">
+            <WarningIcon className="h-5 w-5" size={16} weight="duotone" />
+            Danger Zone
+          </CardTitle>
+          <CardDescription className="text-destructive/70">
+            Irreversible actions that will permanently affect your organization
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
           <TransferAssets organizationId={organization.id} />
 
-          <div>
-            <h4 className="mb-2 font-medium">Delete Organization</h4>
-            <p className="mb-4 text-muted-foreground text-sm">
-              Permanently delete this organization and all associated data. This action cannot be
-              undone. All team members will lose access and any shared resources will be removed.
-            </p>
+          <div className="space-y-3">
+            <div>
+              <h4 className="mb-2 font-medium text-foreground">Delete Organization</h4>
+              <p className="text-muted-foreground text-sm">
+                Permanently delete this organization and all associated data. This action cannot be
+                undone. All team members will lose access and any shared resources will be removed.
+              </p>
+            </div>
             <Button
-              className="rounded"
+              className="rounded-lg"
               onClick={() => setShowDeleteDialog(true)}
               variant="destructive"
             >
@@ -187,8 +257,8 @@ export function SettingsTab({ organization }: SettingsTabProps) {
               Delete Organization
             </Button>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog onOpenChange={setShowDeleteDialog} open={showDeleteDialog}>

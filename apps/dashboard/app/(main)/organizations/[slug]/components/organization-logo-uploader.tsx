@@ -15,8 +15,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useOrganizations } from "@/hooks/use-organizations";
+import { getOrganizationInitials } from "@/lib/utils";
 import "react-image-crop/dist/ReactCrop.css";
-import { UploadSimple } from "@phosphor-icons/react";
+import { UploadSimpleIcon } from "@phosphor-icons/react";
 import { getCroppedImage } from "@/lib/canvas-utils";
 
 interface OrganizationLogoUploaderProps {
@@ -119,26 +120,28 @@ export function OrganizationLogoUploader({ organization }: OrganizationLogoUploa
   };
 
   return (
-    <div>
+    <div className="space-y-3">
       <Label>Organization Logo</Label>
-      <div className="mt-2 flex items-center gap-4">
+      <div className="flex items-center gap-4">
         <div className="group relative">
-          <Avatar className="h-20 w-20">
+          <Avatar className="h-20 w-20 border-2 border-border/50 shadow-sm">
             <AvatarImage alt={organization.name} src={preview || undefined} />
-            <AvatarFallback>{organization.name.charAt(0)}</AvatarFallback>
+            <AvatarFallback className="bg-accent font-medium text-lg">
+              {getOrganizationInitials(organization.name)}
+            </AvatarFallback>
           </Avatar>
           <button
             type="button"
-            className="absolute inset-0 flex cursor-pointer items-center justify-center rounded-full bg-black bg-opacity-50 opacity-0 transition-opacity group-hover:opacity-100"
+            className="absolute inset-0 flex cursor-pointer items-center justify-center rounded-full bg-black/50 opacity-0 transition-opacity group-hover:opacity-100"
             onClick={() => fileInputRef.current?.click()}
             aria-label="Upload new organization logo"
           >
-            <UploadSimple className="text-white" size={24} />
+            <UploadSimpleIcon className="text-white" size={24} />
           </button>
         </div>
-        <div className="grid gap-2">
-          <p className="font-medium">Update your logo</p>
-          <p className="text-muted-foreground text-xs">Click the image to upload a new one.</p>
+        <div className="space-y-2">
+          <p className="font-medium text-foreground">Update your logo</p>
+          <p className="text-muted-foreground text-sm">Click the image to upload a new one.</p>
           <Input
             accept="image/png, image/jpeg, image/gif"
             className="hidden"
@@ -175,7 +178,14 @@ export function OrganizationLogoUploader({ organization }: OrganizationLogoUploa
               disabled={isUploadingOrganizationLogo || !imageSrc || !completedCrop}
               onClick={handleUpload}
             >
-              {isUploadingOrganizationLogo ? "Uploading..." : "Save and Upload"}
+              {isUploadingOrganizationLogo ? (
+                <>
+                  <div className="mr-2 h-3 w-3 animate-spin rounded-full border border-primary-foreground/30 border-t-primary-foreground" />
+                  Uploading...
+                </>
+              ) : (
+                "Save and Upload"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

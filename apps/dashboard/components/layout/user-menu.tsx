@@ -1,4 +1,4 @@
-import { authClient } from "@databuddy/auth/client";
+import { authClient, useSession } from "@databuddy/auth/client";
 import { CreditCardIcon, HouseIcon, SignOutIcon, UserIcon } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -17,7 +17,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function UserMenu() {
-  const { data: session, isPending: isSessionPending } = useSession();
+  const { data: session } = useSession();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const router = useRouter();
 
@@ -25,7 +25,7 @@ export function UserMenu() {
     if (!session?.user?.name) return "U";
     return session.user.name
       .split(" ")
-      .map((n) => n[0])
+      .map((n: string) => n[0])
       .join("")
       .toUpperCase()
       .slice(0, 2);

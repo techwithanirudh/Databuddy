@@ -15,10 +15,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useSession } from "./session-provider";
 
 export function UserMenu() {
-  const { session } = useSession();
+  const { data: session, isPending: isSessionPending } = useSession();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const router = useRouter();
 

@@ -142,27 +142,27 @@ function parseDurationToSeconds(duration: string): number {
 export const rateLimiters = {
     api: new RateLimiter({
         namespace: 'api',
-        limit: 1000,
+        limit: 600,
         duration: '1m',
     }),
     auth: new RateLimiter({
         namespace: 'auth',
-        limit: 50,
+        limit: 30,
         duration: '1m',
     }),
     expensive: new RateLimiter({
         namespace: 'expensive',
-        limit: 150,
+        limit: 100,
         duration: '1m',
     }),
     admin: new RateLimiter({
         namespace: 'admin',
-        limit: 2000,
+        limit: 1200,
         duration: '1m',
     }),
     public: new RateLimiter({
         namespace: 'public',
-        limit: 200,
+        limit: 120,
         duration: '1m',
     }),
 }

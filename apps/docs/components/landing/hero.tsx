@@ -18,6 +18,12 @@ export default function Hero() {
 
 	return (
 		<section className="relative overflow-hidden min-h-screen">
+			{/* Startup Fame Badge */}
+			<div className="relative z-20 flex justify-center pt-6">
+				<a href="https://startupfa.me/s/databuddy?utm_source=www.databuddy.cc" target="_blank" rel="noopener noreferrer">
+					<img src="https://startupfa.me/badges/featured-badge.webp" alt="Featured on Startup Fame" width={171} height={54} />
+				</a>
+			</div>
 			{/* Cool Grid Background */}
 			<div className="absolute inset-0 bg-background" />
 			<div className="absolute inset-0 bg-[linear-gradient(rgba(var(--primary),0.03)_2px,transparent_2px),linear-gradient(90deg,rgba(var(--primary),0.03)_2px,transparent_2px)] bg-[size:60px_60px]" />

@@ -6,6 +6,8 @@ import { nanoid } from 'nanoid';
 import { checkAndTrackWebsiteCreation, getBillingCustomerId, trackWebsiteUsage } from '../utils/billing';
 import { authorizeWebsiteAccess } from '../utils/auth';
 import { logger as discordLogger } from '../utils/discord-webhook';
+import { createDrizzleCache, redis } from '@databuddy/redis';
+
 
 const websiteNameSchema = z
     .string()
@@ -54,24 +56,41 @@ const transferWebsiteSchema = z.object({
     organizationId: z.string().optional(),
 });
 
+const drizzleCache = createDrizzleCache({ redis, namespace: 'websites' });
+
 export const websitesRouter = createTRPCRouter({
     list: protectedProcedure
         .input(z.object({ organizationId: z.string().optional() }).default({}))
         .query(async ({ ctx, input }) => {
-            const where = input.organizationId
-                ? eq(websites.organizationId, input.organizationId)
-                : and(eq(websites.userId, ctx.user.id), isNull(websites.organizationId));
-
-            return ctx.db.query.websites.findMany({
-                where,
-                orderBy: (websites, { desc }) => [desc(websites.createdAt)],
+            const userId = ctx.user.id;
+            const orgId = input.organizationId || '';
+            const cacheKey = `list:${userId}:${orgId}`;
+            return drizzleCache.withCache({
+                key: cacheKey,
+                ttl: 60,
+                tables: ['websites'],
+                queryFn: async () => {
+                    const where = input.organizationId
+                        ? eq(websites.organizationId, input.organizationId)
+                        : and(eq(websites.userId, ctx.user.id), isNull(websites.organizationId));
+                    return ctx.db.query.websites.findMany({
+                        where,
+                        orderBy: (websites, { desc }) => [desc(websites.createdAt)],
+                    });
+                },
             });
         }),
 
     getById: publicProcedure
         .input(z.object({ id: z.string() }))
         .query(async ({ ctx, input }) => {
-            return authorizeWebsiteAccess(ctx, input.id, 'read');
+            const cacheKey = `getById:${input.id}`;
+            return drizzleCache.withCache({
+                key: cacheKey,
+                ttl: 60,
+                tables: ['websites'],
+                queryFn: async () => authorizeWebsiteAccess(ctx, input.id, 'read'),
+            });
         }),
 
     create: protectedProcedure
@@ -137,6 +156,9 @@ export const websitesRouter = createTRPCRouter({
                 }
             );
 
+            // Invalidate cache for this user's websites
+            await drizzleCache.invalidateByTables(['websites']);
+
             return website;
         }),
 
@@ -162,6 +184,11 @@ export const websitesRouter = createTRPCRouter({
                 }
             );
 
+            // Invalidate cache for this user's websites
+            await drizzleCache.invalidateByTables(['websites']);
+            // Invalidate getById cache for this website
+            await drizzleCache.invalidateByKey(`getById:${input.id}`);
+
             return updatedWebsite;
         }),
 
@@ -184,6 +211,11 @@ export const websitesRouter = createTRPCRouter({
                     userId: ctx.user.id,
                 }
             );
+
+            // Invalidate cache for this user's websites
+            await drizzleCache.invalidateByTables(['websites']);
+            // Invalidate getById cache for this website
+            await drizzleCache.invalidateByKey(`getById:${input.id}`);
 
             return { success: true };
         }),
@@ -218,6 +250,11 @@ export const websitesRouter = createTRPCRouter({
                     userId: ctx.user.id,
                 }
             );
+
+            // Invalidate cache for this user's websites
+            await drizzleCache.invalidateByTables(['websites']);
+            // Invalidate getById cache for this website
+            await drizzleCache.invalidateByKey(`getById:${input.websiteId}`);
 
             return updatedWebsite;
         }),

@@ -522,6 +522,15 @@ const app = new Elysia()
 			if (eventType === "track") {
 				const parseResult = analyticsEventSchema.safeParse(body);
 				if (!parseResult.success) {
+					await logBlockedTraffic(
+						request,
+						body,
+						query,
+						"invalid_schema",
+						"Schema Validation",
+						undefined,
+						clientId
+					);
 					return { status: "error", message: "Invalid event schema", errors: parseResult.error.issues };
 				}
 				insertTrackEvent(body, clientId, userAgent, ip);
@@ -531,6 +540,15 @@ const app = new Elysia()
 			if (eventType === "error") {
 				const parseResult = errorEventSchema.safeParse(body);
 				if (!parseResult.success) {
+					await logBlockedTraffic(
+						request,
+						body,
+						query,
+						"invalid_schema",
+						"Schema Validation",
+						undefined,
+						clientId
+					);
 					return { status: "error", message: "Invalid event schema", errors: parseResult.error.issues };
 				}
 				insertError(body, clientId);
@@ -540,6 +558,15 @@ const app = new Elysia()
 			if (eventType === "web_vitals") {
 				const parseResult = webVitalsEventSchema.safeParse(body);
 				if (!parseResult.success) {
+					await logBlockedTraffic(
+						request,
+						body,
+						query,
+						"invalid_schema",
+						"Schema Validation",
+						undefined,
+						clientId
+					);
 					return { status: "error", message: "Invalid event schema", errors: parseResult.error.issues };
 				}
 				insertWebVitals(body, clientId);
@@ -588,6 +615,15 @@ const app = new Elysia()
 				if (eventType === "track") {
 					const parseResult = analyticsEventSchema.safeParse(event);
 					if (!parseResult.success) {
+						await logBlockedTraffic(
+							request,
+							event,
+							query,
+							"invalid_schema",
+							"Schema Validation",
+							undefined,
+							clientId
+						);
 						return {
 							status: "error",
 							message: "Invalid event schema",
@@ -615,6 +651,15 @@ const app = new Elysia()
 				if (eventType === "error") {
 					const parseResult = errorEventSchema.safeParse(event);
 					if (!parseResult.success) {
+						await logBlockedTraffic(
+							request,
+							event,
+							query,
+							"invalid_schema",
+							"Schema Validation",
+							undefined,
+							clientId
+						);
 						return {
 							status: "error",
 							message: "Invalid event schema",
@@ -642,6 +687,15 @@ const app = new Elysia()
 				if (eventType === "web_vitals") {
 					const parseResult = webVitalsEventSchema.safeParse(event);
 					if (!parseResult.success) {
+						await logBlockedTraffic(
+							request,
+							event,
+							query,
+							"invalid_schema",
+							"Schema Validation",
+							undefined,
+							clientId
+						);
 						return {
 							status: "error",
 							message: "Invalid event schema",

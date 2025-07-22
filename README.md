@@ -95,17 +95,19 @@ bun run dev
 
 ### Available Scripts
 
-- `bun run dev` - Start all applications in development mode
-- `bun run build` - Build all applications and packages
-- `bun run lint` - Run linting across all packages
-- `bun run test` - Run tests across all packages
-- `bun run clean` - Clean all build artifacts
-- `bun run typecheck` - Run TypeScript type checking
-- `bun run format` - Format all files
-- `bun run prepare` - Prepare all packages for development
-- `bun run changeset` - Create a new changeset
-- `bun run version` - Version all packages
-- `bun run publish` - Publish all packages
+Check the root `package.json` for available scripts. Here are some common ones:
+
+- `bun run dev` - Start all applications in development mode (if defined)
+- `bun run db:studio` - Open Drizzle Studio for database management
+- `bun run clickhouse:init` - Initialize ClickHouse tables
+- `bun run db:generate` - Generate Drizzle ORM types
+- `bun run db:push` - Apply database migrations
+- `bun run db:migrate` - Generate and run migrations
+- `bun run db:deploy` - Deploy database migrations
+- `bun run sdk:build` - Build the SDK package
+- `bun run email:dev` - Start the email development server
+
+You can also `cd` into any package and run its scripts directly.
 
 ### Development Workflow
 

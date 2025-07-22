@@ -315,7 +315,7 @@
       if (this.isServer()) return;
       const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
       const currentScroll = window.scrollY;
-      const scrollPercent = Math.round((currentScroll / scrollHeight) * 100);
+      const scrollPercent = Math.min(100, Math.round((currentScroll / scrollHeight) * 100));
       this.maxScrollDepth = Math.max(this.maxScrollDepth, scrollPercent);
     }
 
@@ -565,6 +565,8 @@
     collectNavigationTiming() {
       if (this.isServer() || !this.options.trackPerformance) return {};
 
+      const clampTime = (v) => typeof v === "number" ? Math.min(60000, Math.max(0, v)) : v;
+
       try {
         if (window.performance?.getEntriesByType) {
           const navEntries = window.performance.getEntriesByType("navigation");
@@ -574,11 +576,11 @@
             const navigationStart = navEntry.startTime || 0;
 
             return {
-              load_time: Math.round(navEntry.loadEventEnd - navigationStart),
-              dom_ready_time: Math.round(navEntry.domContentLoadedEventEnd - navigationStart),
-              ttfb: Math.round(navEntry.responseStart - navigationStart),
-              request_time: Math.round(navEntry.responseEnd - navEntry.responseStart),
-              render_time: Math.round(navEntry.domComplete - navEntry.domContentLoadedEventEnd),
+              load_time: clampTime(Math.round(navEntry.loadEventEnd - navigationStart)),
+              dom_ready_time: clampTime(Math.round(navEntry.domContentLoadedEventEnd - navigationStart)),
+              ttfb: clampTime(Math.round(navEntry.responseStart - navigationStart)),
+              request_time: clampTime(Math.round(navEntry.responseEnd - navEntry.responseStart)),
+              render_time: Math.max(0, Math.round(navEntry.domComplete - navEntry.domContentLoadedEventEnd)),
             };
           }
         }
@@ -590,24 +592,24 @@
           if (navigationStart === 0) return {};
 
           return {
-            load_time: timing.loadEventEnd > 0 ? timing.loadEventEnd - navigationStart : 0,
+            load_time: timing.loadEventEnd > 0 ? clampTime(timing.loadEventEnd - navigationStart) : 0,
             dom_ready_time:
               timing.domContentLoadedEventEnd > 0
-                ? timing.domContentLoadedEventEnd - navigationStart
+                ? clampTime(timing.domContentLoadedEventEnd - navigationStart)
                 : 0,
             dom_interactive:
-              timing.domInteractive > 0 ? timing.domInteractive - navigationStart : 0,
+              timing.domInteractive > 0 ? Math.max(0, timing.domInteractive - navigationStart) : 0,
             ttfb:
               timing.responseStart > 0 && timing.requestStart > 0
-                ? timing.responseStart - timing.requestStart
+                ? clampTime(timing.responseStart - timing.requestStart)
                 : 0,
             request_time:
               timing.responseEnd > 0 && timing.requestStart > 0
-                ? timing.responseEnd - timing.requestStart
+                ? clampTime(timing.responseEnd - timing.requestStart)
                 : 0,
             render_time:
               timing.domComplete > 0 && timing.domContentLoadedEventEnd > 0
-                ? timing.domComplete - timing.domContentLoadedEventEnd
+                ? Math.max(0, timing.domComplete - timing.domContentLoadedEventEnd)
                 : 0,
           };
         }
@@ -659,7 +661,7 @@
         () => {
           const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
           const currentScroll = window.scrollY;
-          const scrollPercent = Math.round((currentScroll / scrollHeight) * 100);
+          const scrollPercent = Math.min(100, Math.round((currentScroll / scrollHeight) * 100));
           this.maxScrollDepth = Math.max(this.maxScrollDepth, scrollPercent);
         },
         { passive: true }
@@ -710,6 +712,11 @@
       // Create consistent exit event ID based on session, path, and page start time
       const exitEventId = `exit_${this.sessionId}_${btoa(window.location.pathname)}_${this.pageEngagementStart}`;
 
+      // Clamp page_count, interaction_count, time_on_page
+      const page_count = Math.min(10000, this.pageCount);
+      const interaction_count = Math.min(10000, this.interactionCount);
+      const time_on_page = Math.min(86400, Math.round((Date.now() - this.pageEngagementStart) / 1000));
+
       const exitEvent = {
         type: "track",
         payload: {
@@ -720,12 +727,12 @@
           sessionStartTime: this.sessionStartTime,
           timestamp: Date.now(),
           ...baseContext,
-          time_on_page: Math.round((Date.now() - this.pageEngagementStart) / 1000),
+          time_on_page,
           scroll_depth: Math.round(this.maxScrollDepth),
-          interaction_count: this.interactionCount,
+          interaction_count,
           has_exit_intent: this.hasExitIntent,
-          page_count: this.pageCount,
-          is_bounce: this.pageCount <= 1 ? 1 : 0,
+          page_count,
+          is_bounce: page_count <= 1 ? 1 : 0,
         },
       };
 
@@ -785,10 +792,19 @@
         const metrics = { fcp: null, lcp: null, cls: 0, fid: null, inp: null };
         let reported = false;
 
+        const clamp = (v) => typeof v === "number" ? Math.min(60000, Math.max(0, v)) : v;
+
         const report = () => {
           if (reported || !Object.values(metrics).some((m) => m !== null && m !== 0)) return;
           reported = true;
-          this.trackWebVitals({ timestamp: Date.now(), ...metrics });
+          this.trackWebVitals({
+            timestamp: Date.now(),
+            fcp: clamp(metrics.fcp),
+            lcp: clamp(metrics.lcp),
+            cls: metrics.cls,
+            fid: metrics.fid,
+            inp: metrics.inp,
+          });
           this.cleanupWebVitals();
         };
 
@@ -892,14 +908,60 @@
       const utmParams = this.getUtmParams();
       const connectionInfo = this.getConnectionInfo();
 
+      // Clamp viewport size
+      let width = window.innerWidth;
+      let height = window.innerHeight;
+      if (
+        typeof width !== "number" ||
+        typeof height !== "number" ||
+        width < 240 ||
+        width > 10000 ||
+        height < 240 ||
+        height > 10000
+      ) {
+        width = null;
+        height = null;
+      }
+      const viewport_size = width && height ? `${width}x${height}` : null;
+
+      // Clamp screen resolution
+      let screenWidth = window.screen.width;
+      let screenHeight = window.screen.height;
+      if (
+        typeof screenWidth !== "number" ||
+        typeof screenHeight !== "number" ||
+        screenWidth < 240 ||
+        screenWidth > 10000 ||
+        screenHeight < 240 ||
+        screenHeight > 10000
+      ) {
+        screenWidth = null;
+        screenHeight = null;
+      }
+      const screen_resolution = screenWidth && screenHeight ? `${screenWidth}x${screenHeight}` : null;
+
+      // Validate referrer and path as URLs
+      let referrer = this.global?.referrer || document.referrer || "direct";
+      try {
+        if (referrer && referrer !== "direct") new URL(referrer);
+      } catch {
+        referrer = null;
+      }
+      let path = window.location.href;
+      try {
+        if (path) new URL(path);
+      } catch {
+        path = null;
+      }
+
       return {
         // Page context
-        path: window.location.href,
+        path,
         title: document.title,
-        referrer: this.global?.referrer || document.referrer || "direct",
+        referrer,
         // User context
-        screen_resolution: `${window.screen.width}x${window.screen.height}`,
-        viewport_size: `${window.innerWidth}x${window.innerHeight}`,
+        screen_resolution,
+        viewport_size,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         language: navigator.language,
         // Connection info
@@ -952,6 +1014,9 @@
     async trackWebVitals(vitalsData) {
       if (this.isServer()) return;
 
+      // Clamp fcp and lcp to 60000
+      const clamp = (v) => typeof v === "number" ? Math.min(60000, Math.max(0, v)) : v;
+
       const webVitalsEvent = {
         type: "web_vitals",
         payload: {
@@ -960,8 +1025,8 @@
           sessionId: this.sessionId,
           timestamp: vitalsData.timestamp || Date.now(),
           path: window.location.pathname,
-          fcp: vitalsData.fcp,
-          lcp: vitalsData.lcp,
+          fcp: clamp(vitalsData.fcp),
+          lcp: clamp(vitalsData.lcp),
           cls: vitalsData.cls,
           fid: vitalsData.fid,
           inp: vitalsData.inp,
@@ -1131,8 +1196,9 @@
 
         this.isInternalNavigation = false;
 
+        // Clamp page_count
         const pageData = {
-          page_count: this.pageCount,
+          page_count: Math.min(10000, this.pageCount),
           ...(n ?? {}),
         };
 

@@ -11,6 +11,9 @@ export class SimpleQueryBuilder {
     ) { }
 
     private buildFilter(filter: Filter, index: number): { clause: string, params: Record<string, unknown> } {
+        if (this.config.allowedFilters && !this.config.allowedFilters.includes(filter.field)) {
+            throw new Error(`Filter on field '${filter.field}' is not permitted.`);
+        }
         const key = `f${index}`;
         const operator = FilterOperators[filter.op];
 
@@ -117,11 +120,9 @@ export class SimpleQueryBuilder {
             for (let i = 0; i < this.request.filters.length; i++) {
                 const filter = this.request.filters[i];
                 if (!filter) continue;
-                if (this.config.allowedFilters?.includes(filter.field)) {
-                    const { clause, params: filterParams } = this.buildFilter(filter, i);
-                    whereClause.push(clause);
-                    Object.assign(params, filterParams);
-                }
+                const { clause, params: filterParams } = this.buildFilter(filter, i);
+                whereClause.push(clause);
+                Object.assign(params, filterParams);
             }
         }
 

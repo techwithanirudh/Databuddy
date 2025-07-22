@@ -10,6 +10,7 @@
 [![Bun](https://img.shields.io/badge/Bun-1.2-blue.svg)](https://bun.sh/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-blue.svg)](https://tailwindcss.com/)
 
+[![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/databuddy-analytics/Databuddy?utm_source=oss&utm_medium=github&utm_campaign=databuddy-analytics%2FDatabuddy&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)](https://coderabbit.ai)
 [![CI/CD](https://github.com/databuddy/databuddy/actions/workflows/ci.yml/badge.svg)](https://github.com/databuddy/databuddy/actions/workflows/ci.yml)
 [![Code Coverage](https://img.shields.io/badge/coverage-85%25-green.svg)](https://github.com/databuddy/databuddy/actions/workflows/coverage.yml)
 [![Security Scan](https://img.shields.io/badge/security-A%2B-green.svg)](https://github.com/databuddy/databuddy/actions/workflows/security.yml)

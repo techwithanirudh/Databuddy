@@ -17,7 +17,7 @@
 
 [![Discord](https://img.shields.io/discord/123456789?label=Discord&logo=discord)](https://discord.gg/JTk7a38tCZ)
 [![Twitter](https://img.shields.io/twitter/follow/databuddy?style=social)](https://twitter.com/databuddy)
-[![GitHub Stars](https://img.shields.io/github/stars/databuddy/databuddy?style=social)](https://github.com/databuddy/databuddy/stargazers)
+[![GitHub Stars](https://img.shields.io/github/stars/databuddy-analytics/Databuddy?style=social)](https://github.com/databuddy-analytics/Databuddy/stargazers)
 
 </div>
 

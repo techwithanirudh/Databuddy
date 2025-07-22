@@ -597,6 +597,14 @@ export function WebsiteAudienceTab({
     []
   );
 
+  const displayNames = useMemo(
+    () =>
+      typeof window !== "undefined"
+        ? new Intl.DisplayNames([navigator.language || "en"], { type: "language" })
+        : null,
+    []
+  );
+
   const languageColumns = useMemo(
     (): ColumnDef<GeographicEntry>[] => [
       {
@@ -607,11 +615,12 @@ export function WebsiteAudienceTab({
           const entry = info.row.original;
           const language = entry.name;
           const code = (entry as any).code;
+          const readableName = displayNames?.of(language) || language;
           return (
             <div className="flex items-center gap-2">
               <Languages className="h-4 w-4 text-primary" />
               <div>
-                <div className="font-medium">{language}</div>
+                <div className="font-medium">{readableName}</div>
                 {code && code !== language && (
                   <div className="text-muted-foreground text-xs">{code}</div>
                 )}
@@ -646,7 +655,7 @@ export function WebsiteAudienceTab({
         },
       },
     ],
-    []
+    [displayNames]
   );
 
   const cityColumns = useMemo(

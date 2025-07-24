@@ -148,31 +148,18 @@ export default function Hero() {
 
 			{/* Trust indicators */}
 			<div className="relative z-10 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-				<div className="container mx-auto px-4 py-8">
+				<div className="container py-8">
 					<div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-6">
 						<div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 w-full md:w-auto">
 							<span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">Trusted by developers at</span>
 							<div className="flex flex-wrap items-center gap-2 sm:gap-4 text-muted-foreground">
 								<a href="https://rivo.gg" className="text-xs sm:text-sm hover:text-foreground transition-colors" target="_blank" rel="noopener noreferrer">Rivo.gg</a>
 								<a href="https://better-auth.com" className="text-xs sm:text-sm hover:text-foreground transition-colors" target="_blank" rel="noopener noreferrer">Better-auth</a>
+								<a href="https://opencut.app" className="text-xs sm:text-sm hover:text-foreground transition-colors" target="_blank" rel="noopener noreferrer">OpenCut</a>
 								<a href="https://www.confinity.com" className="text-xs sm:text-sm hover:text-foreground transition-colors" target="_blank" rel="noopener noreferrer">Confinity</a>
 								<a href="https://useautumn.com" className="cursor-pointer text-xs sm:text-sm hover:text-foreground transition-colors" target="_blank" rel="noopener noreferrer">Autumn</a>
-								<span className="text-xs sm:text-sm text-muted-foreground">+496 more</span>
+								<span className="text-xs sm:text-sm text-muted-foreground">+495 more</span>
 							</div>
-						</div>
-						<div className="flex flex-wrap items-center gap-3 sm:gap-6 text-xs text-muted-foreground">
-							<span className="flex items-center gap-2 whitespace-nowrap">
-								<div className="w-1.5 h-1.5 bg-primary rounded-full" />
-								Free 30-day trial
-							</span>
-							<span className="flex items-center gap-2 whitespace-nowrap">
-								<div className="w-1.5 h-1.5 bg-primary rounded-full" />
-								No credit card required
-							</span>
-							<span className="flex items-center gap-2 whitespace-nowrap">
-								<div className="w-1.5 h-1.5 bg-primary rounded-full" />
-								Setup in 5 minutes
-							</span>
 						</div>
 					</div>
 				</div>

@@ -5,3 +5,4 @@ export { ProfileForm } from "./profile-form";
 export { SessionsForm } from "./sessions-form";
 export { TimezonePreferences } from "./timezone-preferences";
 export { TwoFactorForm } from "./two-factor-form";
+export { ApiKeysSection } from "./api-keys-section";

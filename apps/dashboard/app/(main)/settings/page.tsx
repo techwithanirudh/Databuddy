@@ -1,6 +1,6 @@
 "use client"
 
-import { BellIcon, GearSixIcon, InfoIcon, ShieldIcon, UserIcon } from "@phosphor-icons/react"
+import { BellIcon, GearSixIcon, InfoIcon, ShieldIcon, UserIcon, KeyIcon } from "@phosphor-icons/react"
 import dynamic from "next/dynamic"
 import { useQueryState } from "nuqs"
 
@@ -8,6 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { type NavItem, SettingsSidebar } from "./_components/settings-sidebar"
+import { ApiKeysSection } from "./_components";
 
 const EmailForm = dynamic(
   () => import("./_components/email-form").then((mod) => ({ default: mod.EmailForm })),
@@ -68,7 +69,7 @@ const TimezonePreferences = dynamic(
   },
 )
 
-type SettingsTab = "profile" | "account" | "security" | "notifications"
+type SettingsTab = "profile" | "account" | "security" | "notifications" | "apiKeys"
 
 const tabs: NavItem[] = [
   {
@@ -85,6 +86,11 @@ const tabs: NavItem[] = [
     id: "security",
     label: "Security",
     icon: ShieldIcon,
+  },
+  {
+    id: "apiKeys",
+    label: "API Keys",
+    icon: KeyIcon,
   },
   {
     id: "notifications",
@@ -222,6 +228,9 @@ export default function SettingsPage() {
                 </div>
               </CardContent>
             </Card>
+          )}
+          {activeTab === "apiKeys" && (
+            <ApiKeysSection />
           )}
           {activeTab === "notifications" && (
             <div className="flex h-full items-center justify-center">

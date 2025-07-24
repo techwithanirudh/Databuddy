@@ -220,6 +220,12 @@ export const auth = betterAuth({
     ]
 })
 
+export const OrganizationAPI = {
+    hasPermission: auth.api.hasPermission,
+    listOrganizations: auth.api.listOrganizations,
+    getFullOrganization: auth.api.getFullOrganization,
+}
+
 export type User = (typeof auth)["$Infer"]["Session"]["user"] & {
     role?: string;
 };

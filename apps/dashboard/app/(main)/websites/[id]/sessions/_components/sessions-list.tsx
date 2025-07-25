@@ -97,7 +97,7 @@ export function SessionsList({ websiteId }: SessionsListProps) {
           websiteId={websiteId}
           variant="minimal"
         />
-        <Card>
+        <Card className="py-0">
           <CardContent>
             <div className="space-y-3">
               {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (

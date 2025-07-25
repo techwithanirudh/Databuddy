@@ -150,7 +150,7 @@ function SessionRowInternal({ session, index, isExpanded, onToggle }: SessionRow
             </div>
 
             <div className="flex items-center gap-2">
-              {customEventCount > 0 && (
+              {/* {customEventCount > 0 && (
                 <div className="flex flex-col items-center gap-1">
                   <div className="font-medium text-violet-600 text-xs">Custom</div>
                   <Badge className="border-0 bg-gradient-to-r from-violet-500 to-purple-500 font-semibold text-white text-xs">
@@ -158,7 +158,7 @@ function SessionRowInternal({ session, index, isExpanded, onToggle }: SessionRow
                     {customEventCount}
                   </Badge>
                 </div>
-              )}
+              )} */}
 
               {errorCount > 0 && (
                 <div className="flex flex-col items-center gap-1">

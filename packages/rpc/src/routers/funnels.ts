@@ -1,5 +1,5 @@
 import { chQuery, funnelDefinitions } from '@databuddy/db';
-import { discordLogger as logger } from '@databuddy/shared';
+import { logger } from '@databuddy/shared';
 import { TRPCError } from '@trpc/server';
 import { and, desc, eq, isNull, sql } from 'drizzle-orm';
 import { z } from 'zod/v4';

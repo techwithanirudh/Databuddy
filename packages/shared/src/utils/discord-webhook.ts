@@ -2,7 +2,6 @@
  * Discord Webhook Utility
  * Manages sending messages and logs to Discord channels via webhooks
  */
-import { logger } from './logger';
 
 export interface DiscordEmbed {
 	title?: string;
@@ -287,7 +286,7 @@ class DiscordWebhook {
 					});
 
 					if (!response.ok) {
-						logger.error(
+						console.error(
 							`Discord webhook failed: ${response.status} ${response.statusText}`
 						);
 						resolve(false);
@@ -296,7 +295,7 @@ class DiscordWebhook {
 
 					resolve(true);
 				} catch (error) {
-					logger.error('Discord webhook error:', error);
+					console.error('Discord webhook error:', error);
 					resolve(false);
 				}
 			});
@@ -319,8 +318,9 @@ class DiscordWebhook {
 			const task = this.rateLimitQueue.shift();
 			if (task) {
 				task();
+				// Discord rate limit: 5 requests per 2 seconds
 				setTimeout(() => {
-					logger.info('Discord webhook rate limit timeout');
+					console.log('Discord webhook rate limit timeout');
 				}, 400);
 			}
 		}
@@ -475,7 +475,8 @@ initializeDiscordWebhook(DATABUDDY_WEBHOOK_URL, {
 	defaultUsername: 'DataBuddy',
 });
 
-export const discordLogger = {
+// Export ready-to-use logger instance
+export const logger = {
 	info: (title: string, message: string, metadata?: Record<string, unknown>) =>
 		dataBuddyWebhook.logInfo(title, message, metadata),
 	success: (

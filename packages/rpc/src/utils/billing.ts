@@ -59,9 +59,10 @@ async function _getOrganizationOwnerId(
 		});
 		return orgMember?.userId || null;
 	} catch (error) {
-		logger.error('[Billing Util] Error with _getOrganizationOwnerId:', {
-			error,
-		});
+		logger.error(
+			'[Billing Util] Error with _getOrganizationOwnerId:',
+			error as Error
+		);
 		return null;
 	}
 }

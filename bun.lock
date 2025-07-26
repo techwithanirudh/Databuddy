@@ -44,6 +44,7 @@
         "@elysiajs/cors": "^1.3.3",
         "@elysiajs/server-timing": "^1.3.0",
         "@logtail/edge": "^0.5.4",
+        "@logtail/js": "^0.5.5",
         "@logtail/pino": "^0.5.5",
         "@maxmind/geoip2-node": "^6.1.0",
         "@types/ua-parser-js": "^0.7.39",
@@ -732,9 +733,13 @@
 
     "@levischuck/tiny-cbor": ["@levischuck/tiny-cbor@0.2.11", "", {}, "sha512-llBRm4dT4Z89aRsm6u2oEZ8tfwL/2l6BwpZ7JcyieouniDECM5AqNgr/y08zalEIvW3RSK4upYyybDcmjXqAow=="],
 
+    "@logtail/browser": ["@logtail/browser@0.5.4", "", { "dependencies": { "@logtail/core": "^0.5.4", "@logtail/tools": "^0.5.4" } }, "sha512-heSzSbwbw5DPH7/DdFbszxlxTPqN0EnzCqk0AHPQIbbJMF9afYnLyBQB7qi8SfM7xrTrb0BO4IeBTTzzm9m//w=="],
+
     "@logtail/core": ["@logtail/core@0.5.4", "", { "dependencies": { "@logtail/tools": "^0.5.4", "@logtail/types": "^0.5.3", "serialize-error": "8.1.0" } }, "sha512-UlbxvUg5MDroqk6gEhtfKuuBShrvD/VaXl3T3jGU1U6I19Y1OwfB7e681LvH7RbsCAnOJFziM/7rMQib/CJTdg=="],
 
     "@logtail/edge": ["@logtail/edge@0.5.5", "", { "dependencies": { "@cloudflare/workers-types": "^4.20230904.0", "@logtail/core": "^0.5.4", "@logtail/types": "^0.5.3", "@msgpack/msgpack": "^2.5.1", "@types/stack-trace": "^0.0.33", "minimatch": "^9.0.5", "stack-trace": "0.0.10" } }, "sha512-f69bnzGdmbHuGWCbXy+Qa01CVcNTchSqGgOjqpzdlcmjXtENG9rWRw3siLw7n21v13EbTCGJXBanX8lwCM1nEQ=="],
+
+    "@logtail/js": ["@logtail/js@0.5.5", "", { "dependencies": { "@logtail/browser": "^0.5.4", "@logtail/node": "^0.5.5" } }, "sha512-uGoVChzUmmCOmopk8be4wWKx5YMOBWiAz70xaDNh4OKVSQqTOnnVSEb6xNM5lcxhsKIY7YOPzDcx4MB+hUsNYg=="],
 
     "@logtail/node": ["@logtail/node@0.5.5", "", { "dependencies": { "@logtail/core": "^0.5.4", "@logtail/types": "^0.5.3", "@msgpack/msgpack": "^2.5.1", "@types/stack-trace": "^0.0.33", "minimatch": "^9.0.5", "stack-trace": "0.0.10" } }, "sha512-hSZDjl2wFRxe/+pxSlYNSpm0V3a2ZsiWqBifvtCBHTriwrNkd0LjQtedRlrjoBBumVxIMGdDOCPayAIbcux5YQ=="],
 

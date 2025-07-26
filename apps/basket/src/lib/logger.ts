@@ -1,7 +1,7 @@
-import pino from 'pino';
+import { Node } from '@logtail/js';
 
-const logger = pino({
-	level: 'info',
+const logger = new Node(process.env.LOGTAIL_SOURCE_TOKEN as string, {
+	endpoint: 'https://s1447431.eu-nbg-2.betterstackdata.com',
 });
 
 export { logger };

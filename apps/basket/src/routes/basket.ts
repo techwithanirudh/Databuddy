@@ -42,12 +42,11 @@ function saltAnonymousId(anonymousId: string, salt: string): string {
 		.digest('hex');
 }
 
-async function validateRequest(body: any, query: any, request: Request) {
+async function validateRequest(body: any, request: Request) {
 	if (!validatePayloadSize(body, VALIDATION_LIMITS.PAYLOAD_MAX_SIZE)) {
 		await logBlockedTraffic(
 			request,
 			body,
-			query,
 			'payload_too_large',
 			'Validation Error'
 		);
@@ -55,14 +54,13 @@ async function validateRequest(body: any, query: any, request: Request) {
 	}
 
 	const clientId = sanitizeString(
-		query.client_id,
+		request.headers.get('client-id'),
 		VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH
 	);
 	if (!clientId) {
 		await logBlockedTraffic(
 			request,
 			body,
-			query,
 			'missing_client_id',
 			'Validation Error'
 		);
@@ -74,7 +72,6 @@ async function validateRequest(body: any, query: any, request: Request) {
 		await logBlockedTraffic(
 			request,
 			body,
-			query,
 			'invalid_client_id',
 			'Validation Error',
 			undefined,
@@ -96,7 +93,6 @@ async function validateRequest(body: any, query: any, request: Request) {
 			await logBlockedTraffic(
 				request,
 				body,
-				query,
 				'exceeded_event_limit',
 				'Validation Error',
 				undefined,
@@ -111,7 +107,6 @@ async function validateRequest(body: any, query: any, request: Request) {
 		await logBlockedTraffic(
 			request,
 			body,
-			query,
 			'origin_not_authorized',
 			'Security Check',
 			undefined,
@@ -130,7 +125,6 @@ async function validateRequest(body: any, query: any, request: Request) {
 		await logBlockedTraffic(
 			request,
 			body,
-			query,
 			botCheck.reason || 'unknown_bot',
 			botCheck.category || 'Bot Detection',
 			botCheck.botName,
@@ -445,7 +439,6 @@ async function checkDuplicate(
 async function logBlockedTraffic(
 	request: Request,
 	body: any,
-	query: any,
 	blockReason: string,
 	blockCategory: string,
 	botName?: string,
@@ -523,7 +516,11 @@ async function logBlockedTraffic(
 				values: [blockedEvent],
 				format: 'JSONEachRow',
 			})
-			.then(() => {})
+			.then(() => {
+				logger.info('Logged blocked traffic', {
+					blockedEvent,
+				});
+			})
 			.catch((err) => {
 				logger.error('Failed to log blocked traffic', { error: err as Error });
 			});
@@ -533,129 +530,101 @@ async function logBlockedTraffic(
 }
 
 const app = new Elysia()
-	.post(
-		'/',
-		async ({
-			body,
-			query,
-			request,
-		}: {
-			body: any;
-			query: any;
-			request: Request;
-		}) => {
-			const validation = await validateRequest(body, query, request);
-			if (!validation.success) {
-				return validation.error;
-			}
-
-			const { clientId, userAgent, ip } = validation;
-
-			const salt = await getDailySalt();
-			if (body.anonymous_id) {
-				body.anonymous_id = saltAnonymousId(body.anonymous_id, salt);
-			}
-
-			const eventType = body.type || 'track';
-
-			if (eventType === 'track') {
-				const parseResult = analyticsEventSchema.safeParse(body);
-				if (!parseResult.success) {
-					console.error(
-						'Blocked event schema errors:',
-						parseResult.error.issues,
-						'Payload:',
-						body
-					);
-					await logBlockedTraffic(
-						request,
-						body,
-						query,
-						'invalid_schema',
-						'Schema Validation',
-						undefined,
-						clientId
-					);
-					return {
-						status: 'error',
-						message: 'Invalid event schema',
-						errors: parseResult.error.issues,
-					};
-				}
-				insertTrackEvent(body, clientId, userAgent, ip);
-				return { status: 'success', type: 'track' };
-			}
-
-			if (eventType === 'error') {
-				const parseResult = errorEventSchema.safeParse(body);
-				if (!parseResult.success) {
-					console.error(
-						'Blocked event schema errors:',
-						parseResult.error.issues,
-						'Payload:',
-						body
-					);
-					await logBlockedTraffic(
-						request,
-						body,
-						query,
-						'invalid_schema',
-						'Schema Validation',
-						undefined,
-						clientId
-					);
-					return {
-						status: 'error',
-						message: 'Invalid event schema',
-						errors: parseResult.error.issues,
-					};
-				}
-				insertError(body, clientId, userAgent, ip);
-				return { status: 'success', type: 'error' };
-			}
-
-			if (eventType === 'web_vitals') {
-				const parseResult = webVitalsEventSchema.safeParse(body);
-				if (!parseResult.success) {
-					console.error(
-						'Blocked event schema errors:',
-						parseResult.error.issues,
-						'Payload:',
-						body
-					);
-					await logBlockedTraffic(
-						request,
-						body,
-						query,
-						'invalid_schema',
-						'Schema Validation',
-						undefined,
-						clientId
-					);
-					return {
-						status: 'error',
-						message: 'Invalid event schema',
-						errors: parseResult.error.issues,
-					};
-				}
-				insertWebVitals(body, clientId, userAgent, ip);
-				return { status: 'success', type: 'web_vitals' };
-			}
-
-			return { status: 'error', message: 'Unknown event type' };
+	.post('/', async ({ body, request }: { body: any; request: Request }) => {
+		const validation = await validateRequest(body, request);
+		if (!validation.success) {
+			return validation.error;
 		}
-	)
+
+		const { clientId, userAgent, ip } = validation;
+
+		const salt = await getDailySalt();
+		if (body.anonymous_id) {
+			body.anonymous_id = saltAnonymousId(body.anonymous_id, salt);
+		}
+
+		const eventType = body.type || 'track';
+
+		if (eventType === 'track') {
+			const parseResult = analyticsEventSchema.safeParse(body);
+			if (!parseResult.success) {
+				logger.error('Blocked event schema errors:', {
+					issues: parseResult.error.issues,
+					payload: body,
+				});
+				await logBlockedTraffic(
+					request,
+					body,
+					'invalid_schema',
+					'Schema Validation',
+					undefined,
+					clientId
+				);
+				return {
+					status: 'error',
+					message: 'Invalid event schema',
+					errors: parseResult.error.issues,
+				};
+			}
+			insertTrackEvent(body, clientId, userAgent, ip);
+			return { status: 'success', type: 'track' };
+		}
+
+		if (eventType === 'error') {
+			const parseResult = errorEventSchema.safeParse(body);
+			if (!parseResult.success) {
+				logger.error('Blocked event schema errors:', {
+					issues: parseResult.error.issues,
+					payload: body,
+				});
+				await logBlockedTraffic(
+					request,
+					body,
+					'invalid_schema',
+					'Schema Validation',
+					undefined,
+					clientId
+				);
+				return {
+					status: 'error',
+					message: 'Invalid event schema',
+					errors: parseResult.error.issues,
+				};
+			}
+			insertError(body, clientId, userAgent, ip);
+			return { status: 'success', type: 'error' };
+		}
+
+		if (eventType === 'web_vitals') {
+			const parseResult = webVitalsEventSchema.safeParse(body);
+			if (!parseResult.success) {
+				logger.error('Blocked event schema errors:', {
+					issues: parseResult.error.issues,
+					payload: body,
+				});
+				await logBlockedTraffic(
+					request,
+					body,
+					'invalid_schema',
+					'Schema Validation',
+					undefined,
+					clientId
+				);
+				return {
+					status: 'error',
+					message: 'Invalid event schema',
+					errors: parseResult.error.issues,
+				};
+			}
+			insertWebVitals(body, clientId, userAgent, ip);
+			return { status: 'success', type: 'web_vitals' };
+		}
+
+		return { status: 'error', message: 'Unknown event type' };
+	})
 	.post(
 		'/batch',
-		async ({
-			body,
-			query,
-			request,
-		}: {
-			body: any;
-			query: any;
-			request: Request;
-		}) => {
+		async ({ body, request }: { body: any; request: Request }) => {
 			if (!Array.isArray(body)) {
 				return {
 					status: 'error',
@@ -667,7 +636,7 @@ const app = new Elysia()
 				return { status: 'error', message: 'Batch too large' };
 			}
 
-			const validation = await validateRequest(body, query, request);
+			const validation = await validateRequest(body, request);
 			if (!validation.success) {
 				return { ...validation.error, batch: true };
 			}
@@ -688,16 +657,13 @@ const app = new Elysia()
 				if (eventType === 'track') {
 					const parseResult = analyticsEventSchema.safeParse(event);
 					if (!parseResult.success) {
-						console.error(
-							'Blocked event schema errors:',
-							parseResult.error.issues,
-							'Payload:',
-							event
-						);
+						logger.error('Blocked event schema errors:', {
+							issues: parseResult.error.issues,
+							payload: event,
+						});
 						await logBlockedTraffic(
 							request,
 							event,
-							query,
 							'invalid_schema',
 							'Schema Validation',
 							undefined,
@@ -730,16 +696,14 @@ const app = new Elysia()
 				if (eventType === 'error') {
 					const parseResult = errorEventSchema.safeParse(event);
 					if (!parseResult.success) {
-						console.error(
-							'Blocked event schema errors:',
-							parseResult.error.issues,
-							'Payload:',
-							event
-						);
+						logger.error('Blocked event schema errors:', {
+							issues: parseResult.error.issues,
+							payload: event,
+							event,
+						});
 						await logBlockedTraffic(
 							request,
 							event,
-							query,
 							'invalid_schema',
 							'Schema Validation',
 							undefined,
@@ -772,16 +736,14 @@ const app = new Elysia()
 				if (eventType === 'web_vitals') {
 					const parseResult = webVitalsEventSchema.safeParse(event);
 					if (!parseResult.success) {
-						console.error(
-							'Blocked event schema errors:',
-							parseResult.error.issues,
-							'Payload:',
-							event
-						);
+						logger.error('Blocked event schema errors:', {
+							issues: parseResult.error.issues,
+							payload: event,
+							event,
+						});
 						await logBlockedTraffic(
 							request,
 							event,
-							query,
 							'invalid_schema',
 							'Schema Validation',
 							undefined,

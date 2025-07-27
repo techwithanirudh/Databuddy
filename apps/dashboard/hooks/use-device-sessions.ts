@@ -17,12 +17,10 @@ interface DeviceSessionDetails {
 }
 
 export interface DeviceSessionEntry {
-	// Exporting for use in TopHeader
 	session: DeviceSessionDetails;
 	user?: {
 		email?: string;
 		name?: string;
-		// other user properties from auth
 	};
 	sessionToken: string;
 	isCurrent: boolean;
@@ -73,9 +71,6 @@ export function useDeviceSessions() {
 		} catch (err: any) {
 			const errorMessage = err.message || 'Failed to fetch sessions.';
 			setError(errorMessage);
-			// Toasting errors here might be too aggressive if the hook is used in a non-UI critical way
-			// Consider letting the component using the hook decide on toast notifications
-			// toast.error(errorMessage);
 		} finally {
 			setIsLoading(false);
 		}
@@ -94,7 +89,6 @@ export function useDeviceSessions() {
 			}
 			toast.success('Session switched successfully. Reloading...');
 			window.location.reload();
-			// No need to call fetchSessions() here as the page reloads
 			return { success: true };
 		} catch (err: any) {
 			toast.error(err.message || 'Failed to switch session.');
@@ -115,7 +109,7 @@ export function useDeviceSessions() {
 				throw new Error(result.error.message);
 			}
 			toast.success('Session revoked successfully.');
-			fetchSessions(); // Refresh the list after revoking
+			fetchSessions();
 			return { success: true };
 		} catch (err: any) {
 			toast.error(err.message || 'Failed to revoke session.');
@@ -133,7 +127,7 @@ export function useDeviceSessions() {
 		isLoading,
 		error,
 		operatingSession,
-		fetchSessions, // Expose fetchSessions if manual refresh is needed
+		fetchSessions,
 		setActiveSession,
 		revokeSession,
 	};

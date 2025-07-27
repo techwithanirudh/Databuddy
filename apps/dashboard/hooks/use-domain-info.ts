@@ -19,8 +19,8 @@ interface BatchDomainRankResponse {
 	data: Record<string, DomainRankData | null>;
 }
 
-const CACHE_TIME = 60 * 60 * 1000; // 1 hour
-const STALE_TIME = 30 * 60 * 1000; // 30 minutes
+const CACHE_TIME = 60 * 60 * 1000;
+const STALE_TIME = 30 * 60 * 1000;
 
 const queryOptions = {
 	staleTime: STALE_TIME,
@@ -28,14 +28,12 @@ const queryOptions = {
 	refetchOnWindowFocus: false,
 	refetchOnMount: true,
 	retry: (failureCount: number, error: Error) => {
-		// Don't retry on 4xx errors except 408 (timeout)
 		if (
 			error.message.includes('HTTP 4') &&
 			!error.message.includes('HTTP 408')
 		) {
 			return false;
 		}
-		// Retry up to 3 times for other errors
 		return failureCount < 3;
 	},
 	retryDelay: (attemptIndex: number) =>
@@ -84,32 +82,25 @@ export function useDomainRanks() {
 	};
 
 	return {
-		// Data
 		ranks: query.data?.data ?? {},
 
-		// Loading states
 		isLoading: query.isLoading,
 		isFetching: query.isFetching,
 		isRefetching: query.isRefetching,
 
-		// Error states
 		isError: query.isError,
 		error: query.error,
 
-		// Status
 		status: query.status,
 		fetchStatus: query.fetchStatus,
 
-		// Actions
 		refetch: query.refetch,
 		invalidateAndRefetch,
 		forceRefresh,
 
-		// Timestamps
 		dataUpdatedAt: query.dataUpdatedAt,
 		errorUpdatedAt: query.errorUpdatedAt,
 
-		// Helper functions
 		isStale: query.isStale,
 		isPending: query.isPending,
 	};

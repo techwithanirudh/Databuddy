@@ -1,7 +1,9 @@
 import { auth } from '@databuddy/auth';
 import { db, websites } from '@databuddy/db';
+import { cacheable } from '@databuddy/redis';
 import { eq } from 'drizzle-orm';
-import { Elysia, t } from 'elysia';
+import { Elysia } from 'elysia';
+import type { StreamingUpdate } from '../agent';
 import {
 	type AssistantContext,
 	type AssistantRequest,
@@ -9,34 +11,43 @@ import {
 	processAssistantRequest,
 } from '../agent';
 import { createRateLimitMiddleware } from '../middleware/rate-limit';
+import { AssistantRequestSchema } from '../schemas';
 
-// ============================================================================
-// SCHEMAS
-// ============================================================================
+// biome-ignore lint/suspicious/useAwait: async generator function doesn't need await
+async function* createErrorResponse(
+	message: string
+): AsyncGenerator<StreamingUpdate> {
+	yield { type: 'error', content: message };
+}
 
-const AssistantRequestSchema = t.Object({
-	message: t.String(),
-	website_id: t.String(),
-	model: t.Optional(
-		t.Union([t.Literal('chat'), t.Literal('agent'), t.Literal('agent-max')])
-	),
-	context: t.Optional(
-		t.Object({
-			previousMessages: t.Optional(
-				t.Array(
-					t.Object({
-						role: t.Optional(t.String()),
-						content: t.String(),
-					})
-				)
-			),
-		})
-	),
-});
+const getCachedWebsite = cacheable(
+	async (websiteId: string) => {
+		try {
+			const website = await db.query.websites.findFirst({
+				where: eq(websites.id, websiteId),
+			});
+			return website || null;
+		} catch {
+			return null;
+		}
+	},
+	{
+		expireInSec: 300,
+		prefix: 'assistant-website',
+		staleWhileRevalidate: true,
+		staleTime: 60,
+	}
+);
 
-// ============================================================================
-// ROUTER SETUP
-// ============================================================================
+async function validateWebsite(websiteId: string) {
+	const website = await getCachedWebsite(websiteId);
+
+	if (!website) {
+		return { success: false, error: 'Website not found' };
+	}
+
+	return { success: true, website };
+}
 
 export const assistant = new Elysia({ prefix: '/v1/assistant' })
 	.use(createRateLimitMiddleware({ type: 'expensive' }))
@@ -56,39 +67,47 @@ export const assistant = new Elysia({ prefix: '/v1/assistant' })
 		async ({ body, user }) => {
 			const { message, website_id, model, context } = body;
 
-			// Get website info from the website_id in the body
-			const website = await db.query.websites.findFirst({
-				where: eq(websites.id, website_id),
-			});
+			try {
+				const websiteValidation = await validateWebsite(website_id);
 
-			if (!website) {
-				return createStreamingResponse(
-					(async function* () {
-						yield { type: 'error', content: 'Website not found' };
-					})()
+				if (!websiteValidation.success) {
+					return createStreamingResponse(
+						createErrorResponse(websiteValidation.error || 'Website not found')
+					);
+				}
+
+				const { website } = websiteValidation;
+
+				if (!website) {
+					return createStreamingResponse(
+						createErrorResponse('Website not found')
+					);
+				}
+
+				const assistantRequest: AssistantRequest = {
+					message,
+					website_id,
+					website_hostname: website.domain,
+					model: model || 'chat',
+					context,
+				};
+
+				const assistantContext: AssistantContext = {
+					user,
+					website,
+					debugInfo: {},
+				};
+
+				const updates = processAssistantRequest(
+					assistantRequest,
+					assistantContext
 				);
+				return createStreamingResponse(updates);
+			} catch (error) {
+				const errorMessage =
+					error instanceof Error ? error.message : 'Unknown error occurred';
+				return createStreamingResponse(createErrorResponse(errorMessage));
 			}
-
-			const assistantRequest: AssistantRequest = {
-				message,
-				website_id,
-				website_hostname: website.domain,
-				model: model || 'chat',
-				context,
-			};
-
-			const assistantContext: AssistantContext = {
-				user,
-				website,
-				debugInfo: {},
-			};
-
-			// Process the assistant request and create streaming response
-			const updates = processAssistantRequest(
-				assistantRequest,
-				assistantContext
-			);
-			return createStreamingResponse(updates);
 		},
 		{
 			body: AssistantRequestSchema,

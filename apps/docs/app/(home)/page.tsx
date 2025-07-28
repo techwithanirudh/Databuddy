@@ -28,7 +28,7 @@ import Hero from '@/components/landing/hero';
 // 	}
 // }
 
-export default async function HomePage() {
+export default function HomePage() {
 	// const stars = await getGitHubStars();
 
 	return (

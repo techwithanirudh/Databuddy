@@ -26,7 +26,7 @@ export const Navbar = () => {
 						{/* Desktop Navigation */}
 						<div className="hidden md:block">
 							<ul className="flex items-center divide-x divide-border/30">
-								{navMenu.map((menu, i) => (
+								{navMenu.map((menu) => (
 									<NavLink
 										external={menu.external}
 										href={menu.path}
@@ -62,6 +62,7 @@ export const Navbar = () => {
 							aria-label="Toggle mobile menu"
 							className="group relative rounded-lg border border-transparent p-2.5 transition-all duration-200 hover:border-border/30 hover:bg-muted/50 active:bg-muted/70 md:hidden"
 							onClick={toggleMobileMenu}
+							type="button"
 						>
 							<div className="relative h-6 w-6">
 								<Menu

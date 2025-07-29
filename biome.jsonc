@@ -6,5 +6,16 @@
       "indentStyle": "tab",
       "indentWidth": 2
     }
+  },
+  "linter": {
+    "rules": {
+      "suspicious": {
+        "noConsole": {
+          "options": {
+            "allow": ["assert", "error", "info", "warn"]
+          }
+        }
+      }
+    }
   }
 }

@@ -1,7 +1,5 @@
 import {
-	Activity,
 	AlertCircle,
-	BarChart,
 	Bell,
 	Database,
 	FileText,
@@ -40,7 +38,9 @@ function getResourceIcon(resourceType: string) {
 
 // Helper function to format percentage
 function formatPercentage(value: number | undefined) {
-	if (typeof value !== 'number') return '';
+	if (typeof value !== 'number') {
+		return '';
+	}
 	return `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`;
 }
 

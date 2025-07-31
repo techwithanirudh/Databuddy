@@ -1,6 +1,7 @@
 import {
 	BugIcon,
 	ChatCircleIcon,
+	CodeIcon,
 	CurrencyDollarIcon,
 	FileTextIcon,
 	FunnelIcon,
@@ -82,6 +83,19 @@ export const websiteNavigation: NavigationSection[] = [
 			{ name: 'Sessions', icon: UserIcon, href: '/sessions', highlight: true },
 			{ name: 'Errors', icon: BugIcon, href: '/errors', highlight: true },
 			{ name: 'Map', icon: MapPinIcon, href: '/map', highlight: true },
+		],
+	},
+	{
+		title: 'API Analytics',
+		items: [
+			{
+				name: 'API Metrics',
+				icon: CodeIcon,
+				href: '/api-analytics',
+				highlight: true,
+				alpha: true,
+				production: false,
+			},
 		],
 	},
 	{

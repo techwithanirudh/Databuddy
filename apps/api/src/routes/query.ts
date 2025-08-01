@@ -143,7 +143,7 @@ export const query = new Elysia({ prefix: '/v1/query' })
 		}
 	);
 
-async function executeDynamicQuery(
+export async function executeDynamicQuery(
 	request: DynamicQueryRequestType,
 	queryParams: QueryParams,
 	domainCache?: Record<string, string | null>

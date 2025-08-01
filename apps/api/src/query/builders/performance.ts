@@ -23,7 +23,7 @@ export const PerformanceBuilders: Record<string, SimpleQueryConfig> = {
 	slow_pages: {
 		table: Analytics.events,
 		fields: [
-			"trimRight(path(path), '/') as name",
+			"CASE WHEN trimRight(path(path), '/') = '' THEN '/' ELSE trimRight(path(path), '/') END as name",
 			'COUNT(DISTINCT anonymous_id) as visitors',
 			'AVG(CASE WHEN load_time > 0 THEN load_time ELSE NULL END) as avg_load_time',
 			'AVG(CASE WHEN ttfb > 0 THEN ttfb ELSE NULL END) as avg_ttfb',

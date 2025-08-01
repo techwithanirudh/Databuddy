@@ -77,5 +77,8 @@
     }
   },
   "module": "index.ts",
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "dayjs-plugin-utc": "^0.1.2"
+  }
 }

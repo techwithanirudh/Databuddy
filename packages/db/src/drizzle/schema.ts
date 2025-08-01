@@ -737,3 +737,159 @@ export const abGoals = pgTable(
 			.onDelete('cascade'),
 	]
 );
+
+export const reportTemplateType = pgEnum('report_template_type', [
+	'executive',
+	'detailed',
+	'performance',
+	'traffic',
+	'custom',
+]);
+
+export const reportScheduleType = pgEnum('report_schedule_type', [
+	'daily',
+	'weekly',
+	'monthly',
+	'quarterly',
+]);
+
+export const reportExecutionStatus = pgEnum('report_execution_status', [
+	'pending',
+	'generating',
+	'sent',
+	'failed',
+]);
+
+export const reportTemplates = pgTable(
+	'report_templates',
+	{
+		id: text().primaryKey().notNull(),
+		websiteId: text('website_id'),
+		userId: text('user_id').notNull(),
+		organizationId: text('organization_id'),
+		name: text().notNull(),
+		description: text(),
+		type: reportTemplateType().notNull(),
+
+		scheduleType: reportScheduleType('schedule_type'),
+		scheduleDay: integer('schedule_day'),
+		scheduleTime: text('schedule_time').default('09:00:00'),
+		timezone: text().default('UTC'),
+		recipients: jsonb(),
+
+		sections: jsonb().notNull(),
+		customization: jsonb(),
+
+		isPublic: boolean('is_public').default(false).notNull(),
+		isMarketplace: boolean('is_marketplace').default(false).notNull(),
+		downloads: integer().default(0).notNull(),
+		rating: integer().default(0),
+
+		enabled: boolean().default(true).notNull(),
+		lastSentAt: timestamp('last_sent_at', { precision: 3, mode: 'string' }),
+		nextScheduledAt: timestamp('next_scheduled_at', {
+			precision: 3,
+			mode: 'string',
+		}),
+
+		createdAt: timestamp('created_at', { precision: 3, mode: 'string' })
+			.default(sql`CURRENT_TIMESTAMP`)
+			.notNull(),
+		updatedAt: timestamp('updated_at', { precision: 3, mode: 'string' })
+			.default(sql`CURRENT_TIMESTAMP`)
+			.notNull(),
+	},
+	(table) => [
+		index('report_templates_websiteId_idx').using(
+			'btree',
+			table.websiteId.asc().nullsLast().op('text_ops')
+		),
+		index('report_templates_userId_idx').using(
+			'btree',
+			table.userId.asc().nullsLast().op('text_ops')
+		),
+		index('report_templates_marketplace_idx').using(
+			'btree',
+			table.isMarketplace.asc().nullsLast(),
+			table.isPublic.asc().nullsLast()
+		),
+		index('report_templates_scheduled_idx')
+			.using(
+				'btree',
+				table.nextScheduledAt.asc().nullsLast(),
+				table.enabled.asc().nullsLast()
+			)
+			.where(isNotNull(table.nextScheduledAt)),
+		foreignKey({
+			columns: [table.websiteId],
+			foreignColumns: [websites.id],
+			name: 'report_templates_websiteId_fkey',
+		})
+			.onUpdate('cascade')
+			.onDelete('cascade'),
+		foreignKey({
+			columns: [table.userId],
+			foreignColumns: [user.id],
+			name: 'report_templates_userId_fkey',
+		})
+			.onUpdate('cascade')
+			.onDelete('cascade'),
+		foreignKey({
+			columns: [table.organizationId],
+			foreignColumns: [organization.id],
+			name: 'report_templates_organizationId_fkey',
+		})
+			.onUpdate('cascade')
+			.onDelete('cascade'),
+	]
+);
+
+export const reportExecutions = pgTable(
+	'report_executions',
+	{
+		id: text().primaryKey().notNull(),
+		templateId: text('template_id').notNull(),
+		websiteId: text('website_id').notNull(),
+		executedAt: timestamp('executed_at', {
+			precision: 3,
+			mode: 'string',
+		}).notNull(),
+		status: reportExecutionStatus().notNull(),
+		generationTimeMs: integer('generation_time_ms'),
+		reportData: jsonb('report_data'),
+		emailSubject: text('email_subject'),
+		recipientsSent: jsonb('recipients_sent'),
+		emailOpens: integer('email_opens').default(0).notNull(),
+		emailClicks: integer('email_clicks').default(0).notNull(),
+		errorMessage: text('error_message'),
+		retryCount: integer('retry_count').default(0).notNull(),
+		createdAt: timestamp('created_at', { precision: 3, mode: 'string' })
+			.default(sql`CURRENT_TIMESTAMP`)
+			.notNull(),
+	},
+	(table) => [
+		index('report_executions_templateId_idx').using(
+			'btree',
+			table.templateId.asc().nullsLast().op('text_ops')
+		),
+		index('report_executions_websiteId_executedAt_idx').using(
+			'btree',
+			table.websiteId.asc().nullsLast().op('text_ops'),
+			table.executedAt.desc().nullsLast()
+		),
+		foreignKey({
+			columns: [table.templateId],
+			foreignColumns: [reportTemplates.id],
+			name: 'report_executions_templateId_fkey',
+		})
+			.onUpdate('cascade')
+			.onDelete('cascade'),
+		foreignKey({
+			columns: [table.websiteId],
+			foreignColumns: [websites.id],
+			name: 'report_executions_websiteId_fkey',
+		})
+			.onUpdate('cascade')
+			.onDelete('cascade'),
+	]
+);

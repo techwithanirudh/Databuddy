@@ -11,14 +11,11 @@ const options: RedisOptions = {
 		const delay = Math.min(times * 100, 3000);
 		return delay;
 	},
-	maxRetriesPerRequest: 3,
 };
 
-export { Redis };
-
 interface ExtendedRedis extends Redis {
-	getJson: <T = any>(key: string) => Promise<T | null>;
-	setJson: <T = any>(
+	getJson: <T = unknown>(key: string) => Promise<T | null>;
+	setJson: <T = unknown>(
 		key: string,
 		value: T,
 		expireInSec: number
@@ -50,7 +47,7 @@ const createRedisClient = (
 		// logger.debug('Redis client reconnecting');
 	});
 
-	client.getJson = async <T = any>(key: string): Promise<T | null> => {
+	client.getJson = async <T = unknown>(key: string): Promise<T | null> => {
 		const value = await client.get(key);
 		if (!value) {
 			return null;
@@ -74,7 +71,7 @@ const createRedisClient = (
 		}
 	};
 
-	client.setJson = async <T = any>(
+	client.setJson = async <T = unknown>(
 		key: string,
 		value: T,
 		expireInSec: number
@@ -85,10 +82,8 @@ const createRedisClient = (
 	return client;
 };
 
-// Singleton instance
 let redisInstance: ExtendedRedis | null = null;
 
-// Create singleton Redis instance
 export function getRedisCache(): ExtendedRedis {
 	if (!redisInstance) {
 		const redisUrl = process.env.REDIS_URL;
@@ -102,7 +97,6 @@ export function getRedisCache(): ExtendedRedis {
 		// Handle graceful shutdown - but allow reconnection
 		process.on('SIGINT', () => {
 			// Don't disconnect Redis on SIGINT as it may be used for hot reloads
-			// Only disconnect on actual process termination
 		});
 
 		process.on('SIGTERM', () => {
@@ -125,7 +119,12 @@ export const getRawRedis = () => {
 	return rawRedis;
 };
 
-// Helper for distributed locks
+export const getBullMqRedis = () => {
+	return new Redis(process.env.REDIS_URL as string, {
+		maxRetriesPerRequest: null,
+	});
+};
+
 export async function getLock(
 	key: string,
 	value: string,
@@ -135,7 +134,6 @@ export async function getLock(
 	return lock === 'OK';
 }
 
-// Helper to release lock
 export async function releaseLock(
 	key: string,
 	value: string
@@ -151,12 +149,10 @@ export async function releaseLock(
 	return result === 1;
 }
 
-// Helper to get connection status
 export function isRedisConnected(): boolean {
 	return redisInstance?.status === 'ready';
 }
 
-// Helper to manually disconnect (for testing)
 export async function disconnectRedis(): Promise<void> {
 	if (redisInstance) {
 		await redisInstance.disconnect();

@@ -10,6 +10,7 @@ import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 interface WebsitePageHeaderProps {
 	// Basic page info
@@ -168,11 +169,19 @@ export function WebsitePageHeader({
 						)}
 						{onCreateAction && (
 							<Button
-								className="gap-2 bg-gradient-to-r from-primary to-primary/90 shadow-lg transition-all duration-200 hover:from-primary/90 hover:to-primary hover:shadow-xl"
+								className={cn(
+									'gap-2 font-medium',
+									'bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary',
+									'group relative overflow-hidden shadow-lg transition-all duration-300 hover:shadow-xl'
+								)}
 								onClick={onCreateAction}
 							>
-								<PlusIcon size={16} />
-								{createActionLabel}
+								<div className="absolute inset-0 translate-x-[-100%] bg-gradient-to-r from-white/0 via-white/20 to-white/0 transition-transform duration-700 group-hover:translate-x-[100%]" />
+								<PlusIcon
+									className="relative z-10 transition-transform duration-300 group-hover:rotate-90"
+									size={16}
+								/>
+								<span className="relative z-10">{createActionLabel}</span>
 							</Button>
 						)}
 						{additionalActions}

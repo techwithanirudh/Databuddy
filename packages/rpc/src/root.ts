@@ -3,6 +3,7 @@ import { funnelsRouter } from './routers/funnels';
 import { goalsRouter } from './routers/goals';
 import { miniChartsRouter } from './routers/mini-charts';
 import { preferencesRouter } from './routers/preferences';
+import { reportsRouter } from './routers/reports';
 import { websitesRouter } from './routers/websites';
 import { createTRPCRouter } from './trpc';
 
@@ -13,6 +14,7 @@ export const appRouter = createTRPCRouter({
 	preferences: preferencesRouter,
 	goals: goalsRouter,
 	autocomplete: autocompleteRouter,
+	reports: reportsRouter,
 });
 
 export type AppRouter = typeof appRouter;

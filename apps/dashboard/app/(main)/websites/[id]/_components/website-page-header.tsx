@@ -12,36 +12,28 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface WebsitePageHeaderProps {
-	// Basic page info
 	title: string;
 	description?: string;
 	icon: ReactNode;
 
-	// Website context
 	websiteId: string;
 	websiteName?: string;
 
-	// Loading states
 	isLoading?: boolean;
 	isRefreshing?: boolean;
 
-	// Error handling
 	hasError?: boolean;
 	errorMessage?: string;
 
-	// Actions
 	onRefresh?: () => void;
 	onCreateAction?: () => void;
 	createActionLabel?: string;
 
-	// Additional info
 	subtitle?: string | ReactNode;
 
-	// Layout options
 	showBackButton?: boolean;
 	variant?: 'default' | 'minimal';
 
-	// Custom actions
 	additionalActions?: ReactNode;
 }
 
@@ -127,7 +119,6 @@ export function WebsitePageHeader({
 
 	return (
 		<div className="space-y-6">
-			{/* Main Header */}
 			<div className="border-b pb-6">
 				<div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
 					<div className="space-y-2">
@@ -180,7 +171,6 @@ export function WebsitePageHeader({
 				</div>
 			</div>
 
-			{/* Error State */}
 			{hasError && (
 				<Card className="rounded-xl border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950">
 					<CardContent className="pt-6">
@@ -216,7 +206,6 @@ export function WebsitePageHeader({
 	);
 }
 
-// Skeleton component for loading states
 export function WebsitePageHeaderSkeleton() {
 	return (
 		<div className="space-y-6">

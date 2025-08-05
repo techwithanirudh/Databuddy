@@ -214,12 +214,12 @@ export default function ChatSection() {
 										<Sparkle className="h-8 w-8 text-primary" />
 									</div>
 									<h3 className="mb-2 font-semibold text-lg">
-										Welcome to Nova
+										Welcome to Databunny
 									</h3>
 									<p className="mx-auto max-w-md text-muted-foreground text-sm">
-										I'm Nova, your AI analytics partner. I can help you
-										understand your website data through charts, metrics, and
-										insights. Just ask me anything!
+										I'm Databunny, your data analyst. I can help you understand
+										your website data through charts, metrics, and insights.
+										Just ask me anything!
 									</p>
 								</div>
 

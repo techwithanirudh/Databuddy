@@ -94,7 +94,7 @@ const QUERY_CONFIG = {
 			'utm_campaigns',
 		] as string[],
 		tech: ['device_types', 'browsers', 'operating_systems'] as string[], // <-- add 'operating_systems' here
-		customEvents: ['custom_events'] as string[],
+		customEvents: ['custom_events', 'custom_event_properties'] as string[],
 	},
 } as const;
 
@@ -347,6 +347,9 @@ export function WebsiteOverviewTab({
 	const customEventsData = {
 		custom_events:
 			getDataForQuery('overview-custom-events', 'custom_events') || [],
+		custom_event_properties:
+			getDataForQuery('overview-custom-events', 'custom_event_properties') ||
+			[],
 	};
 
 	const loading = {
@@ -596,7 +599,58 @@ export function WebsiteOverviewTab({
 			return [];
 		}
 		const customEvents = customEventsData.custom_events;
+		const propertiesData = customEventsData.custom_event_properties || [];
+
 		return customEvents.map((event: any) => {
+			// Find properties for this event
+			const eventProperties = propertiesData.filter(
+				(prop: any) => prop.name === event.name
+			);
+
+			// Group properties by key and aggregate values
+			const propertyCategories = [];
+			const propertyMap = new Map();
+
+			eventProperties.forEach((prop: any) => {
+				// Data is already pre-aggregated from API with percentages
+				const key = prop.property_key;
+				const value = prop.property_value;
+				const data = {
+					count: prop.count,
+					percentage_within_property: prop.percentage_within_property,
+					percentage_within_event: prop.percentage_within_event,
+					unique_users_with_property: prop.unique_users_with_property,
+					unique_sessions_with_property: prop.unique_sessions_with_property,
+				};
+
+				if (!propertyMap.has(key)) {
+					propertyMap.set(key, new Map());
+				}
+
+				const valueMap = propertyMap.get(key);
+				valueMap.set(value, data);
+			});
+
+			// Convert to array format for display - use pre-computed percentages
+			propertyMap.forEach((valueMap, key) => {
+				const values = Array.from(valueMap.entries()).map(([value, data]) => ({
+					value,
+					count: data.count,
+					percentage: data.percentage_within_property,
+					percentage_within_event: data.percentage_within_event,
+					unique_users: data.unique_users_with_property,
+					unique_sessions: data.unique_sessions_with_property,
+				}));
+
+				const total = values.reduce((sum, item) => sum + item.count, 0);
+
+				propertyCategories.push({
+					key,
+					total,
+					values: values.sort((a, b) => b.count - a.count),
+				});
+			});
+
 			return {
 				...event,
 				percentage: event.percentage || 0,
@@ -606,7 +660,9 @@ export function WebsiteOverviewTab({
 				first_occurrence_formatted: event.first_occurrence
 					? new Date(event.first_occurrence).toLocaleDateString()
 					: 'N/A',
-				propertyCategories: [],
+				propertyCategories: propertyCategories.sort(
+					(a, b) => b.total - a.total
+				),
 			};
 		});
 	})();

@@ -25,4 +25,25 @@ export const CustomEventsBuilders: Record<string, SimpleQueryConfig> = {
 		allowedFilters: ['event_name', 'path', 'device_type', 'browser_name'],
 		customizable: true,
 	},
+	custom_event_properties: {
+		table: 'analytics.events',
+		fields: [
+			'event_name as name',
+			'arrayJoin(JSONExtractKeys(properties)) as property_key',
+			'JSONExtractRaw(properties, property_key) as property_value',
+			'COUNT(*) as count',
+		],
+		where: [
+			"event_name NOT IN ('screen_view', 'page_exit', 'error', 'web_vitals', 'link_out')",
+			"event_name != ''",
+			"properties != '{}'",
+			'isValidJSON(properties)',
+		],
+		groupBy: ['event_name', 'property_key', 'property_value'],
+		orderBy: 'count DESC',
+		limit: 10_000,
+		timeField: 'time',
+		allowedFilters: ['event_name', 'path', 'device_type', 'browser_name'],
+		customizable: true,
+	},
 };

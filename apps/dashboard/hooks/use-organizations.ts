@@ -2,6 +2,8 @@ import { authClient } from '@databuddy/auth/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
+export type OrganizationRole = 'owner' | 'admin' | 'member';
+
 type CreateOrganizationData = {
 	name: string;
 	slug?: string;
@@ -18,19 +20,18 @@ type UpdateOrganizationData = {
 
 type InviteMemberData = {
 	email: string;
-	role: 'owner' | 'admin' | 'member';
+	role: OrganizationRole;
 	organizationId?: string;
 	resend?: boolean;
 };
 
 export type UpdateMemberData = {
 	memberId: string;
-	role: 'owner' | 'admin' | 'member';
+	role: OrganizationRole;
 	organizationId?: string;
 };
 
 const QUERY_KEYS = {
-	organization: (slug: string) => ['organization', slug] as const,
 	organizationMembers: (orgId: string) =>
 		['organizations', orgId, 'members'] as const,
 	organizationInvitations: (orgId: string) =>
@@ -228,6 +229,7 @@ export function useOrganizations() {
 		hasError: !!organizationsError || !!activeOrganizationError,
 
 		createOrganization: createOrganizationMutation.mutate,
+		createOrganizationAsync: createOrganizationMutation.mutateAsync,
 		updateOrganization: updateOrganizationMutation.mutate,
 		updateOrganizationAsync: updateOrganizationMutation.mutateAsync,
 		deleteOrganization: deleteOrganizationMutation.mutate,
@@ -235,6 +237,7 @@ export function useOrganizations() {
 		setActiveOrganization: setActiveOrganizationMutation.mutate,
 		setActiveOrganizationAsync: setActiveOrganizationMutation.mutateAsync,
 		uploadOrganizationLogo: uploadOrganizationLogoMutation.mutate,
+		uploadOrganizationLogoAsync: uploadOrganizationLogoMutation.mutateAsync,
 
 		isCreatingOrganization: createOrganizationMutation.isPending,
 		isUpdatingOrganization: updateOrganizationMutation.isPending,
@@ -346,8 +349,11 @@ export function useOrganizationMembers(organizationId: string) {
 		refetch,
 
 		inviteMember: inviteMemberMutation.mutate,
+		inviteMemberAsync: inviteMemberMutation.mutateAsync,
 		updateMember: updateMemberMutation.mutate,
+		updateMemberAsync: updateMemberMutation.mutateAsync,
 		removeMember: removeMemberMutation.mutate,
+		removeMemberAsync: removeMemberMutation.mutateAsync,
 
 		isInvitingMember: inviteMemberMutation.isPending,
 		isUpdatingMember: updateMemberMutation.isPending,
@@ -407,6 +413,7 @@ export function useOrganizationInvitations(organizationId: string) {
 		refetch,
 
 		cancelInvitation: cancelInvitationMutation.mutate,
+		cancelInvitationAsync: cancelInvitationMutation.mutateAsync,
 
 		isCancellingInvitation: cancelInvitationMutation.isPending,
 	};
@@ -480,7 +487,9 @@ export function useUserInvitations() {
 		refetch,
 
 		acceptInvitation: acceptInvitationMutation.mutate,
+		acceptInvitationAsync: acceptInvitationMutation.mutateAsync,
 		rejectInvitation: rejectInvitationMutation.mutate,
+		rejectInvitationAsync: rejectInvitationMutation.mutateAsync,
 
 		isAcceptingInvitation: acceptInvitationMutation.isPending,
 		isRejectingInvitation: rejectInvitationMutation.isPending,

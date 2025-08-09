@@ -313,7 +313,10 @@ export function ApiKeyDetailDialog({
 				<SheetHeader className="space-y-3 border-border/50 border-b pb-6">
 					<div className="flex items-center gap-3">
 						<div className="rounded border p-3">
-							<KeyIcon className="h-6 w-6" weight="duotone" />
+							<KeyIcon
+								className="h-6 w-6 not-dark:text-primary"
+								weight="duotone"
+							/>
 						</div>
 						<div>
 							<SheetTitle className="font-semibold text-foreground text-xl">
@@ -335,7 +338,10 @@ export function ApiKeyDetailDialog({
 							<div className="rounded border p-4">
 								<div className="flex items-center gap-4">
 									<div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded bg-muted">
-										<KeyIcon className="h-6 w-6" weight="duotone" />
+										<KeyIcon
+											className="h-6 w-6 not-dark:text-primary"
+											weight="duotone"
+										/>
 									</div>
 									<div className="flex-1">
 										<div className="font-semibold text-foreground text-lg">
@@ -361,7 +367,10 @@ export function ApiKeyDetailDialog({
 							{/* Configuration Form */}
 							<div className="space-y-4">
 								<div className="flex items-center gap-2">
-									<PencilIcon className="h-5 w-5" weight="duotone" />
+									<PencilIcon
+										className="h-5 w-5 not-dark:text-primary"
+										weight="duotone"
+									/>
 									<h3 className="font-semibold text-base text-foreground">
 										Configuration
 									</h3>

@@ -75,7 +75,7 @@ export function ApiKeyList({
 		return (
 			<div className="rounded border p-6 text-center">
 				<div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-					<KeyIcon className="h-6 w-6 text-muted-foreground" weight="duotone" />
+					<KeyIcon className="h-6 w-6 not-dark:text-primary" weight="duotone" />
 				</div>
 				<div className="font-semibold text-foreground text-sm">
 					Failed to load API keys
@@ -108,7 +108,7 @@ export function ApiKeyList({
 					</div>
 				</div>
 				<Button onClick={onCreateNew} type="button">
-					<PlusIcon className="mr-2 h-4 w-4" />
+					<PlusIcon className="mr-2 h-4 w-4 not-dark:text-primary" />
 					Create Key
 				</Button>
 			</div>
@@ -215,7 +215,7 @@ export function ApiKeyList({
 				<div className="rounded border border-dashed p-8 text-center">
 					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
 						<KeyIcon
-							className="h-6 w-6 text-muted-foreground"
+							className="h-6 w-6 not-dark:text-primary text-muted-foreground"
 							weight="duotone"
 						/>
 					</div>
@@ -226,7 +226,7 @@ export function ApiKeyList({
 						Create your first API key to start integrating with our platform.
 					</div>
 					<Button onClick={onCreateNew} type="button">
-						<PlusIcon className="mr-2 h-4 w-4" />
+						<PlusIcon className="mr-2 h-4 w-4 not-dark:text-primary" />
 						Create Your First Key
 					</Button>
 				</div>

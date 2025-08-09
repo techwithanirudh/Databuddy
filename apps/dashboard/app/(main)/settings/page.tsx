@@ -3,6 +3,7 @@
 import {
 	BellIcon,
 	GearSixIcon,
+	KeyIcon,
 	ShieldIcon,
 	UserIcon,
 } from '@phosphor-icons/react';
@@ -125,7 +126,7 @@ const tabs: NavItem[] = [
 	{
 		id: 'api-keys',
 		label: 'API keys',
-		icon: GearSixIcon,
+		icon: KeyIcon,
 	},
 	{
 		id: 'notifications',
@@ -179,7 +180,7 @@ export default function SettingsPage() {
 								size="sm"
 								variant={activeTab === item.id ? 'secondary' : 'ghost'}
 							>
-								<item.icon className="mr-2 h-4 w-4" />
+								<item.icon className="mr-2 h-4 w-4" weight="duotone" />
 								{item.label}
 							</Button>
 						))}

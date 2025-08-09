@@ -207,7 +207,10 @@ export function ApiKeyCreateDialog({
 				<SheetHeader className="space-y-3 border-border/50 border-b pb-6">
 					<div className="flex items-center gap-3">
 						<div className="rounded border p-3">
-							<KeyIcon className="h-6 w-6" weight="duotone" />
+							<KeyIcon
+								className="h-6 w-6 not-dark:text-primary"
+								weight="duotone"
+							/>
 						</div>
 						<div>
 							<SheetTitle className="font-semibold text-foreground text-xl">
@@ -319,7 +322,7 @@ export function ApiKeyCreateDialog({
 												onClick={addWebsite}
 												type="button"
 											>
-												<PlusIcon className="mr-2 h-4 w-4" />
+												<PlusIcon className="mr-2 h-4 w-4 not-dark:text-primary" />
 												Add
 											</Button>
 										</div>

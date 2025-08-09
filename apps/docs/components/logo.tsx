@@ -40,7 +40,7 @@ export function Logo() {
 			<div className="relative flex-shrink-0">
 				<Image
 					alt="DataBuddy Logo"
-					className="drop-shadow-sm"
+					className="drop-shadow-sm invert dark:invert-0"
 					height={32}
 					priority
 					src="/logo.svg"

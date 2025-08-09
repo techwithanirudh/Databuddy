@@ -4,8 +4,9 @@ export const WorldMap = () => {
 	return (
 		<Image
 			alt="World map visualization"
+			draggable={false}
 			height={327}
-			priority={false}
+			priority={true}
 			src={'/world.svg'}
 			width={559}
 		/>

@@ -1,9 +1,14 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import DemoContainer from './demo';
-import { WorldMap } from './map';
 import { SciFiButton } from './scifi-btn';
 import { Spotlight } from './spotlight';
+
+const WorldMap = dynamic(() => import('./map').then((m) => m.WorldMap), {
+	ssr: false,
+	loading: () => null,
+});
 
 export default function Hero() {
 	const handleGetStarted = () => {
@@ -22,26 +27,31 @@ export default function Hero() {
 	};
 
 	return (
-		<section className="relative flex min-h-screen w-full flex-col items-center overflow-hidden">
+		<section className="relative flex min-h-[100svh] w-full flex-col items-center overflow-hidden">
 			<Spotlight transform="translateX(-60%) translateY(-50%)" />
 
 			<div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-				<div className="grid grid-cols-1 items-center gap-8 pt-16 pb-8 lg:grid-cols-2 lg:gap-12 lg:pt-20 lg:pb-12 xl:gap-16">
+				<div className="grid grid-cols-1 items-center gap-8 pt-12 pb-6 sm:pt-16 sm:pb-8 lg:grid-cols-2 lg:gap-12 lg:pt-20 lg:pb-12 xl:gap-16">
 					{/* Text Content */}
-					<div className="order-2 flex flex-col gap-6 lg:order-1 lg:gap-8">
-						<h1 className="font-semibold text-3xl leading-tight tracking-tight sm:text-5xl md:text-6xl lg:text-7xl xl:text-[72px]">
+					<div className="order-2 flex flex-col items-center gap-6 text-center lg:order-1 lg:items-start lg:gap-8 lg:text-left">
+						<h1 className="text-balance font-semibold text-3xl leading-tight tracking-tight sm:text-5xl md:text-6xl lg:text-7xl xl:text-[72px]">
 							Privacy <span className="text-muted-foreground">first</span>
 							<br />
 							Analytics for <span className="text-muted-foreground">devs</span>
 						</h1>
 
-						<p className="max-w-prose font-medium text-muted-foreground text-sm leading-relaxed tracking-tight sm:text-base lg:text-lg">
+						<p className="max-w-prose text-balance font-medium text-muted-foreground text-sm leading-relaxed tracking-tight sm:text-base lg:text-lg">
 							Track users, not identities. Get fast, accurate insights with zero
 							cookies and 100% GDPR compliance.
 						</p>
 
-						<div className="pt-2">
-							<SciFiButton onClick={handleGetStarted}>GET STARTED</SciFiButton>
+						<div className="flex w-full justify-center pt-2 lg:justify-start">
+							<SciFiButton
+								className="w-full sm:w-auto"
+								onClick={handleGetStarted}
+							>
+								GET STARTED
+							</SciFiButton>
 						</div>
 					</div>
 

@@ -27,7 +27,6 @@ const SciFiButton = forwardRef<HTMLButtonElement, SciFiButtonProps>(
 						className
 					)}
 					ref={ref}
-					// Ensure non-submit default when used in forms
 					{...(asChild
 						? {}
 						: {

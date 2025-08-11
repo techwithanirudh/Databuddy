@@ -24,21 +24,31 @@ interface QueryParams {
 export const query = new Elysia({ prefix: '/v1/query' })
 	.use(createRateLimitMiddleware({ type: 'api' }))
 	.use(websiteAuth())
-	.get('/types', () => ({
-		success: true,
-		types: Object.keys(QueryBuilders),
-		configs: Object.fromEntries(
-			Object.entries(QueryBuilders).map(([key, config]) => [
-				key,
-				{
+	.get('/types', ({ query: params }: { query: { include_meta?: string } }) => {
+		const includeMeta = params.include_meta === 'true';
+
+		const configs = Object.fromEntries(
+			Object.entries(QueryBuilders).map(([key, config]) => {
+				const baseConfig = {
 					allowedFilters: config.allowedFilters || [],
 					customizable: config.customizable,
 					defaultLimit: config.limit,
-					meta: config.meta,
-				},
-			])
-		),
-	}))
+				};
+
+				if (includeMeta) {
+					return [key, { ...baseConfig, meta: config.meta }];
+				}
+
+				return [key, baseConfig];
+			})
+		);
+
+		return {
+			success: true,
+			types: Object.keys(QueryBuilders),
+			configs,
+		};
+	})
 
 	.post(
 		'/compile',

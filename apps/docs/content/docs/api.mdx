@@ -7,23 +7,29 @@ description: Complete API reference for Databuddy analytics endpoints
 
 Access your analytics data programmatically with Databuddy's REST API. All endpoints require authentication and are rate-limited for security.
 
+import { Callout } from "fumadocs-ui/components/callout";
+
+<Callout type="info">
+  **🚀 Try it live!** Test all these endpoints interactively in our [API
+  Playground](/api) with real data and see instant responses. Perfect for
+  exploring query types and understanding the API structure.
+</Callout>
+
 ## 🔐 Authentication
 
-All API requests require authentication using your API key. You can use either header:
+All API requests require authentication using your API key in the `X-Api-Key` header:
 
 ```bash
-curl -H "Authorization: Bearer YOUR_API_KEY" \
-  https://api.databuddy.cc/v1/analytics
-```
-
-Or:
-
-```bash
-curl -H "x-api-key: YOUR_API_KEY" \
-  https://api.databuddy.cc/v1/analytics
+curl -H "X-Api-Key: YOUR_API_KEY" \
+  https://api.databuddy.cc/v1/query
 ```
 
 Get your API key from your [dashboard settings](https://app.databuddy.cc/settings/api). Learn more about scopes and resource access on the [API Keys](../api-keys) page.
+
+<Callout type="tip">
+  **Test your API key** instantly in the [API Playground](/api) - no need to
+  write code first!
+</Callout>
 
 ## 📊 Analytics Endpoints
 
@@ -46,7 +52,7 @@ GET /v1/websites/{website_id}/analytics
 **Example:**
 
 ```bash
-curl -H "Authorization: Bearer YOUR_API_KEY" \
+curl -H "X-Api-Key: YOUR_API_KEY" \
   "https://api.databuddy.cc/v1/websites/web_123/analytics?start_date=2024-01-01&end_date=2024-01-31&granularity=day"
 ```
 

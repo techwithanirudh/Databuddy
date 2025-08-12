@@ -77,7 +77,7 @@ async function checkEmailDuplicate(
 	return false;
 }
 
-const app = new Elysia()
+const app = new Elysia({ prefix: '/email' })
 	.post('/', async ({ body, request }: { body: unknown; request: Request }) => {
 		// Validate API key
 		if (!validateApiKey(request)) {

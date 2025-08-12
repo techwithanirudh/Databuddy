@@ -100,13 +100,15 @@ interface ProcessedRelease {
 function fetchWithRetry(
 	url: string,
 	options: RequestInit,
-	maxRetries = 3
+	maxRetries = 5
 ): Promise<Response> {
 	async function attemptFetch(attempt: number): Promise<Response> {
 		const response = await fetch(url, options);
 
+		// GitHub stats endpoints return 202 when computing - wait longer
 		if (response.status === 202 && attempt < maxRetries) {
-			await new Promise((resolve) => setTimeout(resolve, 1000));
+			const delay = Math.min(1000 * attempt, 5000); // Exponential backoff up to 5s
+			await new Promise((resolve) => setTimeout(resolve, delay));
 			return attemptFetch(attempt + 1);
 		}
 
@@ -175,14 +177,28 @@ async function fetchCommitActivity(
 		);
 
 		if (response.ok) {
-			const data: GitHubCommitActivity[] = await response.json();
-			if (Array.isArray(data)) {
-				return data.map((week) => ({
-					week: new Date(week.week * 1000).toISOString().split('T')[0],
-					commits: week.total,
-					date: new Date(week.week * 1000),
-				}));
+			const data = await response.json();
+			if (Array.isArray(data) && data.length > 0) {
+				return data
+					.filter(
+						(week: unknown): week is GitHubCommitActivity =>
+							week !== null &&
+							typeof week === 'object' &&
+							'week' in week &&
+							'total' in week &&
+							typeof (week as GitHubCommitActivity).week === 'number' &&
+							typeof (week as GitHubCommitActivity).total === 'number'
+					)
+					.map((week: GitHubCommitActivity) => ({
+						week: new Date(week.week * 1000).toISOString().split('T')[0],
+						commits: week.total,
+						date: new Date(week.week * 1000),
+					}));
 			}
+		} else {
+			console.warn(
+				`GitHub API returned ${response.status} for commit activity`
+			);
 		}
 	} catch (error) {
 		console.error('Failed to fetch commit activity:', error);
@@ -200,15 +216,19 @@ async function fetchCodeFrequency(
 		);
 
 		if (response.ok) {
-			const data: GitHubCodeFrequency[] = await response.json();
-			if (Array.isArray(data)) {
-				return data.map((week) => ({
-					week: new Date(week[0] * 1000).toISOString().split('T')[0],
-					additions: week[1],
-					deletions: Math.abs(week[2]), // Make deletions positive for display
-					date: new Date(week[0] * 1000),
-				}));
+			const data = await response.json();
+			if (Array.isArray(data) && data.length > 0) {
+				return data
+					.filter((week: unknown) => Array.isArray(week) && week.length === 3)
+					.map((week: GitHubCodeFrequency) => ({
+						week: new Date(week[0] * 1000).toISOString().split('T')[0],
+						additions: week[1],
+						deletions: Math.abs(week[2]), // Make deletions positive for display
+						date: new Date(week[0] * 1000),
+					}));
 			}
+		} else {
+			console.warn(`GitHub API returned ${response.status} for code frequency`);
 		}
 	} catch (error) {
 		console.error('Failed to fetch code frequency:', error);
@@ -226,16 +246,20 @@ async function fetchPunchCard(
 		);
 
 		if (response.ok) {
-			const data: GitHubPunchCard[] = await response.json();
-			if (Array.isArray(data)) {
+			const data = await response.json();
+			if (Array.isArray(data) && data.length > 0) {
 				const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-				return data.map((item) => ({
-					day: item[0],
-					hour: item[1],
-					commits: item[2],
-					dayName: dayNames[item[0]],
-				}));
+				return data
+					.filter((item: unknown) => Array.isArray(item) && item.length === 3)
+					.map((item: GitHubPunchCard) => ({
+						day: item[0],
+						hour: item[1],
+						commits: item[2],
+						dayName: dayNames[item[0]] || 'Unknown',
+					}));
 			}
+		} else {
+			console.warn(`GitHub API returned ${response.status} for punch card`);
 		}
 	} catch (error) {
 		console.error('Failed to fetch punch card:', error);
@@ -274,19 +298,24 @@ async function fetchReleases(
 }
 
 async function fetchGitHubData() {
-	const headers = {
+	const headers: Record<string, string> = {
 		Accept: 'application/vnd.github.v3+json',
 		'User-Agent': 'Databuddy-Docs',
 	};
 
+	// Add GitHub token if available for higher rate limits
+	if (process.env.GITHUB_TOKEN) {
+		headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
+	}
+
 	const requestInit: RequestInit = {
 		headers,
-		next: { revalidate: 600 }, // 10 minutes
+		next: { revalidate: 900 }, // 15 minutes - more consistent timing
 	};
 
 	const statsRequestInit: RequestInit = {
 		headers,
-		next: { revalidate: 3600 }, // 1 hour for stats
+		next: { revalidate: 900 }, // Same timing to avoid race conditions
 	};
 
 	try {

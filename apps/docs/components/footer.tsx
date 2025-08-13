@@ -57,6 +57,14 @@ export function Footer() {
 							<li>
 								<a
 									className="text-muted-foreground hover:text-foreground"
+									href="/api"
+								>
+									API
+								</a>
+							</li>
+							<li>
+								<a
+									className="text-muted-foreground hover:text-foreground"
 									href="/pricing"
 								>
 									Pricing
@@ -66,6 +74,8 @@ export function Footer() {
 								<a
 									className="text-muted-foreground hover:text-foreground"
 									href="https://app.databuddy.cc"
+									rel="noopener"
+									target="_blank"
 								>
 									Dashboard
 								</a>
@@ -95,17 +105,19 @@ export function Footer() {
 							<li>
 								<a
 									className="text-muted-foreground hover:text-foreground"
-									href="/privacy"
+									href="/ambassadors"
 								>
-									Privacy
+									Ambassadors
 								</a>
 							</li>
 							<li>
 								<a
 									className="text-muted-foreground hover:text-foreground"
-									href="/terms"
+									href="https://github.com/databuddy-analytics"
+									rel="noopener"
+									target="_blank"
 								>
-									Terms
+									Open Source
 								</a>
 							</li>
 						</ul>
@@ -159,7 +171,27 @@ export function Footer() {
 					</div>
 				</div>
 
-				<div className="mt-8 flex flex-col items-center justify-between gap-4 border-border border-t pt-6 sm:flex-row">
+				{/* Legal Links Row */}
+				<div className="mt-6">
+					<div className="flex flex-wrap items-center gap-4">
+						<a
+							className="text-muted-foreground/70 text-xs hover:text-muted-foreground sm:text-sm"
+							href="/privacy"
+						>
+							Privacy Policy
+						</a>
+						<span className="text-muted-foreground/50 text-xs">•</span>
+						<a
+							className="text-muted-foreground/70 text-xs hover:text-muted-foreground sm:text-sm"
+							href="/terms"
+						>
+							Terms of Service
+						</a>
+					</div>
+				</div>
+
+				{/* Copyright Row */}
+				<div className="mt-4 flex flex-col items-center justify-between gap-4 border-border border-t pt-4 sm:flex-row">
 					<p className="text-muted-foreground text-sm sm:text-base">
 						© {new Date().getFullYear()} Databuddy
 					</p>

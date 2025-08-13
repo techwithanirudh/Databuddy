@@ -1,4 +1,3 @@
-import { checkBotId } from 'botid/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/discord-webhook';
 import { formRateLimit } from '@/lib/rate-limit';

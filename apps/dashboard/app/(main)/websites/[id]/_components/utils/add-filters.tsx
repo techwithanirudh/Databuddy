@@ -1,6 +1,7 @@
 'use client';
 
-import { type DynamicQueryFilter, filterOptions } from '@databuddy/shared';
+import type { DynamicQueryFilter } from '@databuddy/shared/types';
+import { filterOptions } from '@databuddy/shared/lists';
 import { FunnelIcon } from '@phosphor-icons/react';
 import { useParams } from 'next/navigation';
 import { Suspense, useCallback, useState } from 'react';

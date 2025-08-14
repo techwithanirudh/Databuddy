@@ -1,6 +1,6 @@
 'use client';
 
-import type { LocationData } from '@databuddy/shared';
+import type { LocationData } from '@databuddy/shared/types';
 import { GlobeIcon, MapPinIcon, QuestionIcon } from '@phosphor-icons/react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';

@@ -7,7 +7,7 @@ import {
 	VerificationEmail,
 } from '@databuddy/email';
 import { getRedisCache } from '@databuddy/redis';
-import { logger } from '@databuddy/shared';
+import { logger } from '@databuddy/shared/utils';
 import { betterAuth } from 'better-auth';
 
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';

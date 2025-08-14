@@ -1,4 +1,4 @@
-import type { Website } from '@databuddy/shared';
+import type { Website } from '@databuddy/shared/types';
 import { CaretLeftIcon, PlanetIcon } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';

@@ -5,7 +5,8 @@
  * and platform identification.
  */
 
-import { bots, logger } from '@databuddy/shared';
+import { logger } from '@databuddy/shared/utils';
+import { bots } from '@databuddy/shared/lists';
 import { UAParser } from 'ua-parser-js';
 
 export interface UserAgentInfo {
@@ -76,6 +77,13 @@ export function parseUserAgent(userAgent: string): {
 	}
 }
 
+// Precompile bot regexes once to avoid per-request overhead
+const compiledBotRegexes = bots.map((bot) => ({
+	name: bot.name,
+	category: bot.category,
+	regex: new RegExp(bot.regex, 'i'),
+}));
+
 export function detectBot(
 	userAgent: string,
 	request: Request
@@ -87,7 +95,7 @@ export function detectBot(
 } {
 	const ua = userAgent || '';
 
-	const detectedBot = bots.find((bot) => new RegExp(bot.regex, 'i').test(ua));
+	const detectedBot = compiledBotRegexes.find((bot) => bot.regex.test(ua));
 	if (detectedBot) {
 		return {
 			isBot: true,

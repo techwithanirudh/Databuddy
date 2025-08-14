@@ -1,5 +1,5 @@
 import type { User } from '@databuddy/auth';
-import type { Website } from '@databuddy/shared';
+import type { Website } from '@databuddy/shared/types';
 import type { z } from 'zod';
 import type { AIResponseJsonSchema } from '../prompts/agent';
 import { executeQuery } from '../utils/query-executor';

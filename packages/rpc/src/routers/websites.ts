@@ -1,7 +1,8 @@
 import { websitesApi } from '@databuddy/auth';
 import { and, chQuery, eq, isNull, websites } from '@databuddy/db';
 import { createDrizzleCache, redis } from '@databuddy/redis';
-import { logger, type ProcessedMiniChartData } from '@databuddy/shared';
+import type { ProcessedMiniChartData } from '@databuddy/shared/types';
+import { logger } from '@databuddy/shared/utils';
 import {
 	createWebsiteSchema,
 	transferWebsiteSchema,

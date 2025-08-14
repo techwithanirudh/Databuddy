@@ -1,6 +1,6 @@
 'use client';
 
-import type { DateRange, DynamicQueryFilter } from '@databuddy/shared';
+import type { DateRange, DynamicQueryFilter } from '@databuddy/shared/types';
 import { ArrowClockwiseIcon, BugIcon } from '@phosphor-icons/react';
 import { use, useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';

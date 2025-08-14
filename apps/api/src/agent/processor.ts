@@ -1,5 +1,5 @@
 import type { User } from '@databuddy/auth';
-import type { Website } from '@databuddy/shared';
+import type { Website } from '@databuddy/shared/types';
 import { handleChartResponse } from './handlers/chart-handler';
 import { handleMetricResponse } from './handlers/metric-handler';
 import { comprehensiveUnifiedPrompt } from './prompts/agent';

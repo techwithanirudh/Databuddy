@@ -1,6 +1,6 @@
 'use client';
 
-import { getCountryCode, getCountryName } from '@databuddy/shared';
+import { getCountryCode, getCountryName } from '@databuddy/shared/country-codes';
 import { QuestionIcon } from '@phosphor-icons/react';
 import {
 	AlertTriangle,

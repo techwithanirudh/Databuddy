@@ -1,4 +1,4 @@
-import type { QueryBuilderMeta } from '@databuddy/shared';
+import type { QueryBuilderMeta } from '@databuddy/shared/types';
 
 export const FilterOperators = {
 	eq: '=',

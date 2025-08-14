@@ -1,4 +1,4 @@
-import type { DynamicQueryFilter } from '@databuddy/shared';
+import type { DynamicQueryFilter } from '@databuddy/shared/types';
 import { useCallback } from 'react';
 
 export const operatorOptions = [

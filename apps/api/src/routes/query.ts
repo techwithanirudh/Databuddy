@@ -1,4 +1,4 @@
-import { filterOptions } from '@databuddy/shared';
+import { filterOptions } from '@databuddy/shared/lists';
 import { Elysia, t } from 'elysia';
 import { getCachedWebsiteDomain, getWebsiteDomain } from '../lib/website-utils';
 // import { createRateLimitMiddleware } from '../middleware/rate-limit';

@@ -17,8 +17,8 @@ import type {
 	RevenueBreakdownData,
 	RevenueSummaryData,
 	RevenueTrendData,
-} from '@databuddy/shared';
-import { getCountryCode, getCountryName } from '@databuddy/shared';
+} from '@databuddy/shared/types';
+import { getCountryCode, getCountryName } from '@databuddy/shared/country-codes';
 import {
 	type UseInfiniteQueryOptions,
 	type UseQueryOptions,

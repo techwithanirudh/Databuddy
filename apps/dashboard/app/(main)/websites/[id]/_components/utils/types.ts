@@ -2,7 +2,7 @@ import type {
 	DateRange as BaseDateRange,
 	DynamicQueryFilter,
 	Website,
-} from '@databuddy/shared';
+} from '@databuddy/shared/types';
 
 // Extended date range with granularity
 export interface DateRange extends BaseDateRange {

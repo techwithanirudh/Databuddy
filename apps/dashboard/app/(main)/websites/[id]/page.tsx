@@ -1,6 +1,7 @@
 'use client';
 
-import { type DynamicQueryFilter, filterOptions } from '@databuddy/shared';
+import type { DynamicQueryFilter } from '@databuddy/shared/types';
+import { filterOptions } from '@databuddy/shared/lists';
 import { ArrowClockwiseIcon, WarningIcon, XIcon } from '@phosphor-icons/react';
 import { useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';

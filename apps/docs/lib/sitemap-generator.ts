@@ -14,7 +14,6 @@ const priorityMap: Record<string, number> = {
 	'/docs/comparisons/databuddy-vs-google-analytics': 0.95,
 	'/docs/compliance/gdpr-compliance-guide': 0.9,
 	'/docs/performance/core-web-vitals-guide': 0.85,
-	'/docs/domain-verification': 0.8,
 	'/docs/dashboard': 0.8,
 	'/docs/security': 0.8,
 	'/docs/Integrations': 0.8,
@@ -23,7 +22,6 @@ const priorityMap: Record<string, number> = {
 	'/api': 0.7,
 	'/contributors': 0.8,
 	'/privacy': 0.5,
-	'/demo': 0.6,
 	'/llms.txt': 0.4,
 };
 
@@ -35,7 +33,6 @@ const changeFrequencyMap: Record<string, 'weekly' | 'monthly' | 'yearly'> = {
 	'/docs/comparisons/databuddy-vs-google-analytics': 'monthly',
 	'/docs/compliance/gdpr-compliance-guide': 'monthly',
 	'/docs/performance/core-web-vitals-guide': 'monthly',
-	'/docs/domain-verification': 'monthly',
 	'/docs/dashboard': 'weekly',
 	'/docs/security': 'monthly',
 	'/docs/Integrations': 'weekly',
@@ -44,7 +41,6 @@ const changeFrequencyMap: Record<string, 'weekly' | 'monthly' | 'yearly'> = {
 	'/api': 'monthly',
 	'/contributors': 'monthly',
 	'/privacy': 'yearly',
-	'/demo': 'monthly',
 	'/llms.txt': 'weekly',
 };
 
@@ -132,11 +128,6 @@ function getFallbackEntries(): Array<{
 		{ url: '/docs', priority: 1.0, changeFrequency: 'weekly' },
 		{ url: '/docs/getting-started', priority: 0.9, changeFrequency: 'weekly' },
 		{ url: '/docs/sdk', priority: 0.9, changeFrequency: 'weekly' },
-		{
-			url: '/docs/domain-verification',
-			priority: 0.8,
-			changeFrequency: 'monthly',
-		},
 		{ url: '/docs/dashboard', priority: 0.8, changeFrequency: 'weekly' },
 		{ url: '/docs/security', priority: 0.8, changeFrequency: 'monthly' },
 		{ url: '/docs/api', priority: 0.7, changeFrequency: 'monthly' },
@@ -173,7 +164,6 @@ function getFallbackEntries(): Array<{
 		},
 		{ url: '/docs/Integrations/gtm', priority: 0.7, changeFrequency: 'weekly' },
 		{ url: '/privacy', priority: 0.5, changeFrequency: 'yearly' },
-		{ url: '/demo', priority: 0.6, changeFrequency: 'monthly' },
 		{ url: '/llms.txt', priority: 0.4, changeFrequency: 'weekly' },
 	];
 }
@@ -202,7 +192,6 @@ export async function generateSitemapEntries(): Promise<MetadataRoute.Sitemap> {
 		const pages = source.getPages();
 		const nonDocPages = [
 			'/privacy',
-			'/demo',
 			'/llms.txt',
 			'/contributors',
 			'/api',

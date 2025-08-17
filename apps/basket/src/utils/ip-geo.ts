@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { isIP } from 'node:net';
 import type { City } from '@maxmind/geoip2-node';
 import { AddressNotFoundError, Reader } from '@maxmind/geoip2-node';
 
@@ -80,21 +81,17 @@ async function loadDatabases() {
 
 const ignore = ['127.0.0.1', '::1'];
 
-const ipv4Regex =
-	/^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
-
-const ipv6Regex = /^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
-
-function getIpType(ip: string): 'ipv4' | 'ipv6' | null {
+export function getIpType(ip: string): 'ipv4' | 'ipv6' | null {
 	if (!ip) {
 		return null;
 	}
 
-	if (ipv4Regex.test(ip)) {
+	const ipVersion = isIP(ip);
+	if (ipVersion === 4) {
 		return 'ipv4';
 	}
 
-	if (ipv6Regex.test(ip)) {
+	if (ipVersion === 6) {
 		return 'ipv6';
 	}
 

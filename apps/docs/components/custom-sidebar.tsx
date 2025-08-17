@@ -64,7 +64,7 @@ export default function CustomSidebar() {
 										type="button"
 									>
 										<item.Icon
-											className="size-5 flex-shrink-0 text-muted-foreground"
+											className="size-5 flex-shrink-0 text-foreground"
 											weight="duotone"
 										/>
 										<span className="flex-1 text-sm">{item.title}</span>

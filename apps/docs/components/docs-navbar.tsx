@@ -26,7 +26,7 @@ export const DocsNavbar = ({ stars }: DocsNavbarProps) => {
 	};
 
 	return (
-		<div className="sticky top-0 z-30 flex flex-col border-b backdrop-blur-md">
+		<div className="sticky top-0 z-30 flex flex-col border-border border-b backdrop-blur-md">
 			<nav>
 				<div className="mx-auto w-full px-2 sm:px-2 md:px-6 lg:px-8">
 					<div className="flex h-16 items-center justify-between">
@@ -134,7 +134,7 @@ export const DocsNavbar = ({ stars }: DocsNavbarProps) => {
 									>
 										<div className="flex items-center gap-2">
 											<section.Icon
-												className="h-4 w-4 text-muted-foreground"
+												className="h-4 w-4 text-foreground"
 												weight="duotone"
 											/>
 											<h3 className="font-medium text-foreground text-sm">

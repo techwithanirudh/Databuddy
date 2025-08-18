@@ -1,6 +1,7 @@
 'use client';
 
-import { XIcon } from '@phosphor-icons/react';
+import { ListIcon, XIcon } from '@phosphor-icons/react';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -48,19 +49,18 @@ export function Sidebar() {
 		setIsMobileOpen(false);
 	}, []);
 
-	// const openSidebar = useCallback(() => {
-	// 	previousFocusRef.current = document.activeElement as HTMLElement;
-	// 	setIsMobileOpen(true);
-	// }, []);
+	const openSidebar = useCallback(() => {
+		previousFocusRef.current = document.activeElement as HTMLElement;
+		setIsMobileOpen(true);
+	}, []);
 
-	// Mobile sidebar toggle for hamburger menu (if needed later)
-	// const toggleSidebar = useCallback(() => {
-	// 	if (isMobileOpen) {
-	// 		closeSidebar();
-	// 	} else {
-	// 		openSidebar();
-	// 	}
-	// }, [isMobileOpen, closeSidebar, openSidebar]);
+	const toggleSidebar = useCallback(() => {
+		if (isMobileOpen) {
+			closeSidebar();
+		} else {
+			openSidebar();
+		}
+	}, [isMobileOpen, closeSidebar, openSidebar]);
 
 	const getNavigationConfig = useMemo((): NavigationConfig => {
 		const contextConfig = getNavigationWithWebsites(
@@ -144,6 +144,35 @@ export function Sidebar() {
 
 	return (
 		<>
+			{/* Mobile Header */}
+			<header className="fixed top-0 right-0 left-0 z-50 h-16 w-full border-b bg-background md:hidden">
+				<div className="flex h-full items-center justify-between px-4">
+					<div className="flex items-center gap-3">
+						<Button
+							aria-label="Toggle navigation menu"
+							onClick={toggleSidebar}
+							size="icon"
+							type="button"
+							variant="ghost"
+						>
+							<ListIcon className="h-5 w-5" weight="duotone" />
+						</Button>
+
+						<div className="flex items-center gap-2">
+							<Image
+								alt="Databuddy Logo"
+								className="drop-shadow-sm invert dark:invert-0"
+								height={24}
+								priority
+								src="/logo.svg"
+								width={24}
+							/>
+							<span className="font-semibold text-lg">Databuddy</span>
+						</div>
+					</div>
+				</div>
+			</header>
+
 			{/* Category Sidebar - Desktop only */}
 			<div className="hidden md:block">
 				<CategorySidebar
@@ -172,6 +201,7 @@ export function Sidebar() {
 					'fixed inset-y-0 z-40 w-64 bg-background',
 					'border-r transition-transform duration-200 ease-out',
 					'left-0 md:left-12', // Mobile: left-0, Desktop: left-12 (after category sidebar)
+					'pt-16 md:pt-0', // Mobile: account for mobile header, Desktop: no top padding
 					'md:translate-x-0',
 					isMobileOpen ? 'translate-x-0' : '-translate-x-full'
 				)}
@@ -189,7 +219,7 @@ export function Sidebar() {
 					<span className="sr-only">Close sidebar</span>
 				</Button>
 
-				<ScrollArea className="h-full">
+				<ScrollArea className="h-full md:h-full">
 					<div className="flex h-full flex-col">
 						{header}
 

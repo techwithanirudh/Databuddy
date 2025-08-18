@@ -21,7 +21,7 @@ import { toast } from 'sonner';
 import { AnalyticsToolbar } from '@/app/(main)/websites/[id]/_components/analytics-toolbar';
 import { Logo } from '@/components/layout/logo';
 import { ThemeToggle } from '@/components/layout/theme-toggle';
-import { UserMenu } from '@/components/layout/user-menu';
+import { SignOutButton } from '@/components/layout/sign-out-button';
 import { NotificationsPopover } from '@/components/notifications/notifications-popover';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -144,7 +144,7 @@ function Sidebar() {
 						</Button>
 
 						<NotificationsPopover />
-						<UserMenu />
+						<SignOutButton />
 					</div>
 				</div>
 			</header>

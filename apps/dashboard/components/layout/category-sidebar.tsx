@@ -18,8 +18,8 @@ import {
 	getDefaultCategory,
 	getNavigationWithWebsites,
 } from './navigation/navigation-config';
+import { SignOutButton } from './sign-out-button';
 import { ThemeToggle } from './theme-toggle';
-import { UserMenu } from './user-menu';
 
 const HelpDialog = dynamic(
 	() => import('./help-dialog').then((mod) => mod.HelpDialog),
@@ -161,16 +161,7 @@ export function CategorySidebar({
 
 					{/* Profile */}
 					<div className="flex justify-center">
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<div className="flex h-8 w-8 items-center justify-center">
-									<UserMenu />
-								</div>
-							</TooltipTrigger>
-							<TooltipContent side="right" sideOffset={8}>
-								Profile Menu
-							</TooltipContent>
-						</Tooltip>
+						<SignOutButton />
 					</div>
 				</div>
 

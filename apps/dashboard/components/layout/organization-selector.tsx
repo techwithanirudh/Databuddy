@@ -99,11 +99,11 @@ function OrganizationSelectorTrigger({
 							</AvatarFallback>
 						</Avatar>
 					</div>
-					<div className="min-w-0 flex-1">
-						<span className="truncate font-semibold text-foreground text-sm">
+					<div className="flex min-w-0 flex-1 flex-col items-start">
+						<span className="truncate text-left font-semibold text-foreground text-sm">
 							{activeOrganization?.name || 'Personal'}
 						</span>
-						<p className="truncate text-muted-foreground/80 text-xs">
+						<p className="truncate text-left text-muted-foreground/80 text-xs">
 							{activeOrganization?.slug || 'Your workspace'}
 						</p>
 					</div>
@@ -263,9 +263,9 @@ export function OrganizationSelector() {
 								<UserIcon className="not-dark:text-primary" weight="duotone" />
 							</AvatarFallback>
 						</Avatar>
-						<div className="flex min-w-0 flex-1 flex-col text-left">
-							<span className="font-medium text-sm">Personal</span>
-							<span className="text-muted-foreground text-xs">
+						<div className="flex min-w-0 flex-1 flex-col items-start text-left">
+							<span className="text-left font-medium text-sm">Personal</span>
+							<span className="text-left text-muted-foreground text-xs">
 								Your workspace
 							</span>
 						</div>
@@ -297,11 +297,11 @@ export function OrganizationSelector() {
 											{getOrganizationInitials(org.name)}
 										</AvatarFallback>
 									</Avatar>
-									<div className="flex min-w-0 flex-1 flex-col">
-										<span className="truncate font-medium text-sm">
+									<div className="flex min-w-0 flex-1 flex-col items-start text-left">
+										<span className="truncate text-left font-medium text-sm">
 											{org.name}
 										</span>
-										<span className="truncate text-muted-foreground text-xs">
+										<span className="truncate text-left text-muted-foreground text-xs">
 											{org.slug}
 										</span>
 									</div>

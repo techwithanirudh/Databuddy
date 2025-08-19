@@ -1,5 +1,6 @@
 import { CustomEventsBuilders } from './custom-events';
 import { DevicesBuilders } from './devices';
+import { EngagementBuilders } from './engagement';
 import { ErrorsBuilders } from './errors';
 import { GeoBuilders } from './geo';
 import { LinksBuilders } from './links';
@@ -22,6 +23,7 @@ export const QueryBuilders = {
 	...CustomEventsBuilders,
 	...ProfilesBuilders,
 	...LinksBuilders,
+	...EngagementBuilders,
 };
 
 export type QueryType = keyof typeof QueryBuilders;

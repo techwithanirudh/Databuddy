@@ -62,10 +62,10 @@ function buildParams(
 
 // Common query options
 const defaultQueryOptions = {
-	staleTime: 5 * 60 * 1000, // 5 minutes
+	staleTime: 2 * 60 * 1000, // 2 minutes (reduced to show loading states more often)
 	gcTime: 30 * 60 * 1000, // 30 minutes
 	refetchOnWindowFocus: false,
-	refetchOnMount: true, // Changed to true to show loading state on refresh
+	refetchOnMount: true, // Always refetch on mount to show loading state
 	refetchInterval: 10 * 60 * 1000, // Background refetch every 10 minutes
 	retry: (failureCount: number, error: Error) => {
 		if (error instanceof DOMException && error.name === 'AbortError') {
@@ -75,6 +75,8 @@ const defaultQueryOptions = {
 	},
 	networkMode: 'online' as const,
 	refetchIntervalInBackground: false,
+	// Force loading state to show for at least a brief moment
+	placeholderData: undefined, // Don't use placeholder data to ensure loading states show
 };
 
 /**
@@ -239,11 +241,12 @@ export function useDynamicQuery<T extends (keyof ParameterDataMap)[]>(
 		data: processedData as ExtractDataTypes<T>,
 		meta: query.data?.meta,
 		errors,
-		isLoading: query.isLoading,
+		isLoading: query.isLoading || query.isFetching || query.isPending,
 		isError: query.isError,
 		error: query.error,
 		refetch: query.refetch,
 		isFetching: query.isFetching,
+		isPending: query.isPending,
 	};
 }
 
@@ -369,11 +372,12 @@ export function useBatchDynamicQuery(
 	return {
 		results: processedResults,
 		meta: query.data?.meta,
-		isLoading: query.isLoading || query.isFetching,
+		isLoading: query.isLoading || query.isFetching || query.isPending,
 		isError: query.isError,
 		error: query.error,
 		refetch: query.refetch,
 		isFetching: query.isFetching,
+		isPending: query.isPending,
 		// Helper functions
 		getDataForQuery,
 		hasDataForQuery,

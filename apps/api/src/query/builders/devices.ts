@@ -402,4 +402,131 @@ export const DevicesBuilders: Record<string, SimpleQueryConfig> = {
 		timeField: 'time',
 		customizable: true,
 	},
+
+	viewport_vs_resolution: {
+		meta: {
+			title: 'Viewport vs Screen Resolution',
+			description:
+				'Comparison between actual screen resolution and browser viewport size, showing how users browse your site.',
+			category: 'Technology',
+			tags: ['viewport', 'resolution', 'browser', 'responsive'],
+			output_fields: [
+				{
+					name: 'screen_resolution',
+					type: 'string',
+					label: 'Screen Resolution',
+					description: 'Physical screen resolution',
+				},
+				{
+					name: 'viewport_size',
+					type: 'string',
+					label: 'Viewport Size',
+					description: 'Browser viewport dimensions',
+				},
+				{
+					name: 'visitors',
+					type: 'number',
+					label: 'Visitors',
+					description: 'Unique visitors with this combination',
+				},
+				{
+					name: 'device_type',
+					type: 'string',
+					label: 'Device Type',
+					description: 'Device category',
+				},
+				{
+					name: 'usage_pattern',
+					type: 'string',
+					label: 'Usage Pattern',
+					description: 'Browsing behavior pattern',
+				},
+			],
+			default_visualization: 'table',
+			supports_granularity: ['hour', 'day'],
+			version: '1.0',
+		},
+		table: Analytics.events,
+		fields: [
+			'screen_resolution',
+			'viewport_size',
+			'COUNT(DISTINCT anonymous_id) as visitors',
+			'COUNT(*) as pageviews',
+			'any(device_type) as device_type',
+			'CASE ' +
+				'WHEN screen_resolution = viewport_size THEN "Full Screen" ' +
+				'WHEN screen_resolution != viewport_size THEN "Windowed" ' +
+				'ELSE "Unknown" ' +
+				'END as usage_pattern',
+		],
+		where: [
+			"event_name = 'screen_view'",
+			"screen_resolution != ''",
+			"viewport_size != ''",
+			'screen_resolution IS NOT NULL',
+			'viewport_size IS NOT NULL',
+		],
+		groupBy: ['screen_resolution', 'viewport_size', 'device_type'],
+		orderBy: 'visitors DESC',
+		limit: 200,
+		timeField: 'time',
+		allowedFilters: ['device_type', 'browser_name', 'os_name', 'country'],
+		customizable: true,
+	},
+
+	viewport_patterns: {
+		meta: {
+			title: 'Viewport Usage Patterns',
+			description:
+				'Analysis of how users browse - full screen vs windowed, and common viewport sizes.',
+			category: 'Technology',
+			tags: ['viewport', 'browsing patterns', 'user behavior'],
+			output_fields: [
+				{
+					name: 'usage_pattern',
+					type: 'string',
+					label: 'Usage Pattern',
+					description: 'How users browse (full screen vs windowed)',
+				},
+				{
+					name: 'visitors',
+					type: 'number',
+					label: 'Visitors',
+					description: 'Unique visitors using this pattern',
+				},
+				{
+					name: 'percentage',
+					type: 'number',
+					label: 'Share',
+					description: 'Percentage of total visitors',
+					unit: '%',
+				},
+			],
+			default_visualization: 'pie',
+			supports_granularity: ['hour', 'day'],
+			version: '1.0',
+		},
+		table: Analytics.events,
+		fields: [
+			'CASE ' +
+				'WHEN screen_resolution = viewport_size THEN "Full Screen Browsing" ' +
+				'WHEN screen_resolution != viewport_size THEN "Windowed Browsing" ' +
+				'ELSE "Unknown Pattern" ' +
+				'END as usage_pattern',
+			'COUNT(DISTINCT anonymous_id) as visitors',
+			'COUNT(DISTINCT session_id) as sessions',
+			'ROUND((COUNT(DISTINCT anonymous_id) / SUM(COUNT(DISTINCT anonymous_id)) OVER()) * 100, 2) as percentage',
+		],
+		where: [
+			"event_name = 'screen_view'",
+			"screen_resolution != ''",
+			"viewport_size != ''",
+			'screen_resolution IS NOT NULL',
+			'viewport_size IS NOT NULL',
+		],
+		groupBy: ['usage_pattern'],
+		orderBy: 'visitors DESC',
+		timeField: 'time',
+		customizable: true,
+	},
 };

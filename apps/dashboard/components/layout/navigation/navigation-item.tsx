@@ -80,7 +80,7 @@ export function NavigationItem({
 			<div
 				aria-disabled="true"
 				className={cn(
-					'group flex items-center gap-3 px-6 py-2 text-sm transition-colors',
+					'group flex items-center gap-3 px-3 py-2 text-sm transition-colors',
 					'cursor-not-allowed text-muted-foreground/50'
 				)}
 			>

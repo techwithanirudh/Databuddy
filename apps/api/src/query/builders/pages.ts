@@ -247,4 +247,130 @@ export const PagesBuilders: Record<string, SimpleQueryConfig> = {
 		],
 		customizable: true,
 	},
+
+	page_time_analysis: {
+		allowedFilters: [
+			'path',
+			'country',
+			'device_type',
+			'browser_name',
+			'os_name',
+			'referrer',
+			'utm_source',
+			'utm_medium',
+			'utm_campaign',
+		],
+		customizable: true,
+		customSql: (
+			websiteId: string,
+			startDate: string,
+			endDate: string,
+			_filters?: unknown[],
+			_granularity?: unknown,
+			limit?: number,
+			offset?: number,
+			_timezone?: string,
+			filterConditions?: string[],
+			filterParams?: Record<string, Filter['value']>
+		) => {
+			const combinedWhereClause = buildWhereClause(filterConditions);
+
+			return {
+				sql: `
+            SELECT 
+                CASE WHEN trimRight(path(path), '/') = '' THEN '/' ELSE trimRight(path(path), '/') END as name,
+                COUNT(*) as sessions_with_time,
+                COUNT(DISTINCT anonymous_id) as visitors,
+                ROUND(quantile(0.5)(time_on_page), 2) as median_time_on_page,
+                ROUND((COUNT(*) / SUM(COUNT(*)) OVER()) * 100, 2) as percentage_of_sessions
+            FROM analytics.events
+            WHERE client_id = {websiteId:String}
+                AND time >= parseDateTimeBestEffort({startDate:String})
+                AND time <= parseDateTimeBestEffort({endDate:String})
+                AND event_name = 'page_exit'
+                AND time_on_page IS NOT NULL
+                AND time_on_page > 1
+                AND time_on_page < 3600
+                ${combinedWhereClause}
+            GROUP BY name
+            HAVING COUNT(*) >= 1
+            ORDER BY median_time_on_page DESC
+            LIMIT {limit:Int32} OFFSET {offset:Int32}
+            `,
+				params: {
+					websiteId,
+					startDate,
+					endDate,
+					limit: limit || 100,
+					offset: offset || 0,
+					...filterParams,
+				},
+			};
+		},
+		meta: {
+			title: 'Page Time Analysis',
+			description:
+				'Analysis of time spent on each page, showing median time with quality filters to ensure reliable data.',
+			category: 'Engagement',
+			tags: ['time', 'engagement', 'pages', 'performance'],
+			output_fields: [
+				{
+					name: 'name',
+					type: 'string',
+					label: 'Page Path',
+					description: 'The URL path of the page',
+					example: '/home',
+				},
+				{
+					name: 'sessions_with_time',
+					type: 'number',
+					label: 'Sessions with Time Data',
+					description: 'Number of sessions with valid time measurements',
+					example: 245,
+				},
+				{
+					name: 'visitors',
+					type: 'number',
+					label: 'Unique Visitors',
+					description: 'Number of unique visitors with time data',
+					example: 189,
+				},
+				{
+					name: 'median_time_on_page',
+					type: 'number',
+					label: 'Median Time (seconds)',
+					description: 'Median time spent on the page in seconds',
+					unit: 'seconds',
+					example: 32.5,
+				},
+				{
+					name: 'percentage_of_sessions',
+					type: 'number',
+					label: 'Session %',
+					description: 'Percentage of total sessions with time data',
+					unit: '%',
+					example: 15.8,
+				},
+			],
+			output_example: [
+				{
+					name: '/home',
+					sessions_with_time: 245,
+					visitors: 189,
+					median_time_on_page: 32.5,
+					percentage_of_sessions: 15.8,
+				},
+				{
+					name: '/about',
+					sessions_with_time: 156,
+					visitors: 134,
+					median_time_on_page: 54.2,
+					percentage_of_sessions: 10.1,
+				},
+			],
+			default_visualization: 'table',
+			supports_granularity: ['hour', 'day'],
+			version: '1.0',
+		},
+	},
 };

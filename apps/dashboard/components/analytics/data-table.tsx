@@ -70,12 +70,21 @@ interface DataTableProps<TData extends { name: string | number }, TValue> {
 }
 
 function getRowPercentage(row: any): number {
-	if (row.marketShare !== undefined)
+	if (row.marketShare !== undefined) {
 		return Number.parseFloat(row.marketShare) || 0;
-	if (row.percentage !== undefined)
+	}
+	if (row.percentage !== undefined) {
 		return Number.parseFloat(row.percentage) || 0;
-	if (row.percent !== undefined) return Number.parseFloat(row.percent) || 0;
-	if (row.share !== undefined) return Number.parseFloat(row.share) || 0;
+	}
+	if (row.percentage_of_sessions !== undefined) {
+		return Number.parseFloat(row.percentage_of_sessions) || 0;
+	}
+	if (row.percent !== undefined) {
+		return Number.parseFloat(row.percent) || 0;
+	}
+	if (row.share !== undefined) {
+		return Number.parseFloat(row.share) || 0;
+	}
 	return 0;
 }
 
@@ -153,7 +162,7 @@ const EnhancedSkeleton = ({ minHeight }: { minHeight: string | number }) => (
 	</div>
 );
 
-function FullScreenTable<TData extends { name: string | number }, TValue>({
+function FullScreenTable<TData extends { name: string | number }>({
 	data,
 	columns,
 	search,
@@ -172,7 +181,7 @@ function FullScreenTable<TData extends { name: string | number }, TValue>({
 	onAddFilter,
 }: {
 	data: TData[];
-	columns: any[];
+	columns: ColumnDef<TData, unknown>[];
 	search: string;
 	onClose: () => void;
 	initialPageSize?: number;
@@ -386,7 +395,8 @@ function FullScreenTable<TData extends { name: string | number }, TValue>({
 										}
 										className={cn(
 											'h-11 bg-muted/20 px-2 font-semibold text-muted-foreground text-xs uppercase tracking-wide backdrop-blur-sm sm:px-4',
-											(header.column.columnDef.meta as any)?.className,
+											(header.column.columnDef.meta as { className?: string })
+												?.className,
 											header.column.getCanSort()
 												? 'group cursor-pointer select-none transition-all duration-200 hover:bg-muted/30 hover:text-foreground'
 												: 'select-none'
@@ -464,7 +474,11 @@ function FullScreenTable<TData extends { name: string | number }, TValue>({
 													className={cn(
 														'px-2 py-3 font-medium text-sm transition-colors duration-150 sm:px-4',
 														cellIndex === 0 && 'font-semibold text-foreground',
-														(cell.column.columnDef.meta as any)?.className
+														(
+															cell.column.columnDef.meta as {
+																className?: string;
+															}
+														)?.className
 													)}
 													key={cell.id}
 													style={{

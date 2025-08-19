@@ -63,13 +63,6 @@ interface ChartDataPoint {
 	[key: string]: unknown;
 }
 
-interface PageData {
-	name: string;
-	visitors: number;
-	pageviews?: number;
-	percentage: number;
-}
-
 interface TechnologyData {
 	name: string;
 	visitors: number;
@@ -144,7 +137,12 @@ const QUERY_CONFIG = {
 	limit: 100,
 	parameters: {
 		summary: ['summary_metrics', 'today_metrics', 'events_by_date'] as string[],
-		pages: ['top_pages', 'entry_pages', 'exit_pages'] as string[],
+		pages: [
+			'top_pages',
+			'entry_pages',
+			'exit_pages',
+			'page_time_analysis',
+		] as string[],
 		traffic: [
 			'top_referrers',
 			'utm_sources',
@@ -261,6 +259,8 @@ export function WebsiteOverviewTab({
 		top_pages: getDataForQuery('overview-pages', 'top_pages') || [],
 		entry_pages: getDataForQuery('overview-pages', 'entry_pages') || [],
 		exit_pages: getDataForQuery('overview-pages', 'exit_pages') || [],
+		page_time_analysis:
+			getDataForQuery('overview-pages', 'page_time_analysis') || [],
 		top_referrers: getDataForQuery('overview-traffic', 'top_referrers') || [],
 		utm_sources: getDataForQuery('overview-traffic', 'utm_sources') || [],
 		utm_mediums: getDataForQuery('overview-traffic', 'utm_mediums') || [],
@@ -380,7 +380,7 @@ export function WebsiteOverviewTab({
 		},
 	});
 
-	const pagesTabs = useTableTabs({
+	const standardPagesTabs = useTableTabs({
 		top_pages: {
 			data: analytics.top_pages || [],
 			label: 'Top Pages',
@@ -601,11 +601,6 @@ export function WebsiteOverviewTab({
 		);
 	};
 
-	const createPercentageCell = () => (info: CellInfo) => {
-		const percentage = info.getValue() as number;
-		return <PercentageBadge percentage={percentage} />;
-	};
-
 	const formatNumber = useCallback(
 		(value: number | null | undefined): string => {
 			if (value == null || Number.isNaN(value)) {
@@ -627,6 +622,91 @@ export function WebsiteOverviewTab({
 			<div className="text-muted-foreground text-xs">{label}</div>
 		</div>
 	);
+
+	const formatTimeSeconds = useCallback((seconds: number): string => {
+		if (seconds < 60) {
+			return `${seconds.toFixed(1)}s`;
+		}
+		const minutes = Math.floor(seconds / 60);
+		const remainingSeconds = Math.round(seconds % 60);
+		return `${minutes}m ${remainingSeconds}s`;
+	}, []);
+
+	const createTimeCell = (info: CellInfo) => {
+		const seconds = info.getValue() as number;
+		return (
+			<span className="font-medium text-foreground">
+				{formatTimeSeconds(seconds)}
+			</span>
+		);
+	};
+
+	const createPercentageCell = () => (info: CellInfo) => {
+		const percentage = info.getValue() as number;
+		return <PercentageBadge percentage={percentage} />;
+	};
+
+	const pageTimeColumns = [
+		{
+			id: 'name',
+			accessorKey: 'name',
+			header: 'Page',
+			cell: (info: CellInfo) => {
+				const name = info.getValue() as string;
+				return (
+					<span className="font-medium text-foreground" title={name}>
+						{name}
+					</span>
+				);
+			},
+		},
+		{
+			id: 'median_time_on_page',
+			accessorKey: 'median_time_on_page',
+			header: 'Avg Time',
+			cell: createTimeCell,
+		},
+		{
+			id: 'sessions_with_time',
+			accessorKey: 'sessions_with_time',
+			header: 'Sessions',
+			cell: (info: CellInfo) => (
+				<span className="font-medium text-foreground">
+					{formatNumber(info.getValue() as number)}
+				</span>
+			),
+		},
+		{
+			id: 'visitors',
+			accessorKey: 'visitors',
+			header: 'Visitors',
+			cell: (info: CellInfo) => (
+				<span className="font-medium text-foreground">
+					{formatNumber(info.getValue() as number)}
+				</span>
+			),
+		},
+		{
+			id: 'percentage_of_sessions',
+			accessorKey: 'percentage_of_sessions',
+			header: 'Share',
+			cell: createPercentageCell(),
+		},
+	];
+
+	const pagesTabs = [
+		...standardPagesTabs,
+		{
+			id: 'page_time_analysis',
+			label: 'Time Analysis',
+			data: analytics.page_time_analysis || [],
+			columns: pageTimeColumns,
+			getFilter: (row: any) => ({
+				field: 'path',
+				value: row.name,
+			}),
+		},
+	];
 
 	const deviceColumns = [
 		{

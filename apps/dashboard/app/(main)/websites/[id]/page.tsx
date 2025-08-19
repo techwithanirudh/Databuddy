@@ -173,7 +173,7 @@ function WebsiteDetailsPage() {
 
 	if (isError || !data) {
 		return (
-			<div className="select-none pt-8">
+			<div className="select-none py-8">
 				<EmptyState
 					action={
 						<Link href="/websites">
@@ -209,7 +209,7 @@ function WebsiteDetailsPage() {
 	return (
 		<div>
 			<Tabs
-				className="mt-6 space-y-4"
+				className="space-y-4 py-6"
 				defaultValue="overview"
 				onValueChange={(value) => setActiveTab(value as TabId)}
 				value={activeTab}

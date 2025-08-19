@@ -25,7 +25,7 @@ import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { type FeatureUsage, useBillingData } from '../data/billing-data';
+import { type FeatureUsage, useBillingData } from '../hooks/use-billing';
 import { CancelSubscriptionDialog } from './cancel-subscription-dialog';
 import { NoPaymentMethodDialog } from './no-payment-method-dialog';
 

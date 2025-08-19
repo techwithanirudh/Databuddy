@@ -8,7 +8,7 @@ import {
 	type Customer,
 	type Invoice,
 	useBillingData,
-} from './data/billing-data';
+} from './hooks/use-billing';
 
 const OverviewTab = lazy(() =>
 	import('./components/overview-tab').then((m) => ({ default: m.OverviewTab }))

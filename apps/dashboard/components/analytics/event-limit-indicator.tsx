@@ -2,7 +2,7 @@
 
 import { WarningIcon } from '@phosphor-icons/react';
 import { useRouter } from 'next/navigation';
-import { useBillingData } from '@/app/(main)/billing/data/billing-data';
+import { useBillingData } from '@/app/(main)/billing/hooks/use-billing';
 import { Button } from '@/components/ui/button';
 
 export function EventLimitIndicator() {

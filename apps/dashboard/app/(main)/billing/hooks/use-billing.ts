@@ -1,9 +1,26 @@
-import { useAutumn } from 'autumn-js/react';
+import type { Customer, CustomerProduct } from 'autumn-js';
+import { useAutumn, useCustomer, usePricingTable } from 'autumn-js/react';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import AttachDialog from '@/components/autumn/attach-dialog';
-import type { Customer, CustomerProduct } from '../data/billing-data';
+
+export type FeatureUsage = {
+	id: string;
+	name: string;
+	used: number;
+	limit: number;
+	unlimited: boolean;
+	nextReset: string | null;
+	interval: string | null;
+};
+
+export type Usage = {
+	features: FeatureUsage[];
+};
+
+// Re-export types for compatibility
+export type { Customer, CustomerInvoice as Invoice } from 'autumn-js';
 
 export function useBilling(refetch?: () => void) {
 	const { attach, cancel, check, track, openBillingPortal } = useAutumn();
@@ -26,8 +43,12 @@ export function useBilling(refetch?: () => void) {
 				dialog: AttachDialog,
 				successUrl: `${window.location.origin}/billing`,
 			});
-		} catch (error: any) {
-			toast.error(error.message || 'An unexpected error occurred.');
+		} catch (error) {
+			const message =
+				error instanceof Error
+					? error.message
+					: 'An unexpected error occurred.';
+			toast.error(message);
 		} finally {
 			setIsActionLoading(false);
 		}
@@ -48,8 +69,12 @@ export function useBilling(refetch?: () => void) {
 			if (refetch) {
 				setTimeout(() => refetch(), 500);
 			}
-		} catch (error: any) {
-			toast.error(error.message || 'Failed to cancel subscription.');
+		} catch (error) {
+			const message =
+				error instanceof Error
+					? error.message
+					: 'Failed to cancel subscription.';
+			toast.error(message);
 		} finally {
 			setIsLoading(false);
 		}
@@ -79,14 +104,11 @@ export function useBilling(refetch?: () => void) {
 	};
 
 	const getSubscriptionStatus = (product: CustomerProduct) => {
-		if (product.status === 'canceled') {
-			return 'Cancelled';
+		if (product.canceled_at) {
+			return 'Cancelling';
 		}
 		if (product.status === 'scheduled') {
 			return 'Scheduled';
-		}
-		if (product.canceled_at) {
-			return 'Cancelling';
 		}
 		return 'Active';
 	};
@@ -114,13 +136,19 @@ export function useBilling(refetch?: () => void) {
 			return null;
 		}
 
+		const includedUsage = feature.included_usage || 0;
+		const balance = feature.balance || 0;
+		// Calculate used amount: included_usage - balance
+		// If usage field exists and is greater, use that instead (for accuracy)
+		const calculatedUsed = Math.max(0, includedUsage - balance);
+		const reportedUsage = feature.usage || 0;
+		const actualUsed = Math.max(calculatedUsed, reportedUsage);
+
 		return {
 			id: feature.id,
 			name: feature.name,
-			used: feature.usage,
-			limit: feature.unlimited
-				? Number.POSITIVE_INFINITY
-				: feature.included_usage,
+			used: actualUsed,
+			limit: feature.unlimited ? Number.POSITIVE_INFINITY : includedUsage,
 			unlimited: feature.unlimited,
 			nextReset: feature.next_reset_at
 				? dayjs(feature.next_reset_at).format('MMM D, YYYY')
@@ -146,5 +174,66 @@ export function useBilling(refetch?: () => void) {
 		getSubscriptionStatus,
 		getSubscriptionStatusDetails,
 		getFeatureUsage,
+	};
+}
+
+// Consolidated billing data hook
+export function useBillingData() {
+	const {
+		customer,
+		isLoading: isCustomerLoading,
+		refetch: refetchCustomer,
+	} = useCustomer({
+		expand: ['invoices'],
+	});
+
+	const {
+		products,
+		isLoading: isPricingLoading,
+		refetch: refetchPricing,
+	} = usePricingTable();
+
+	const isLoading = isCustomerLoading || isPricingLoading;
+
+	const refetch = () => {
+		refetchCustomer();
+		if (typeof refetchPricing === 'function') {
+			refetchPricing();
+		}
+	};
+
+	const usage: Usage = {
+		features: customer
+			? Object.values(customer.features).map((feature) => {
+					const includedUsage = feature.included_usage || 0;
+					const balance = feature.balance || 0;
+					// Calculate used amount: included_usage - balance
+					// If usage field exists and is greater, use that instead (for accuracy)
+					const calculatedUsed = Math.max(0, includedUsage - balance);
+					const reportedUsage = feature.usage || 0;
+					const actualUsed = Math.max(calculatedUsed, reportedUsage);
+
+					return {
+						id: feature.id,
+						name: feature.name,
+						used: actualUsed,
+						limit: feature.unlimited ? Number.POSITIVE_INFINITY : includedUsage,
+						unlimited: !!feature.unlimited,
+						nextReset: feature.next_reset_at
+							? new Date(feature.next_reset_at).toLocaleDateString()
+							: null,
+						interval: feature.interval || null,
+					};
+				})
+			: [],
+	};
+
+	return {
+		products: products || [],
+		usage,
+		customer,
+		customerData: customer, // Alias for backward compatibility
+		isLoading,
+		refetch,
 	};
 }

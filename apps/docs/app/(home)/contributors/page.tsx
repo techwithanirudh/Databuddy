@@ -31,6 +31,7 @@ export const metadata: Metadata = {
 		description:
 			'Meet the amazing developers building the future of privacy-first analytics',
 		url: 'https://www.databuddy.cc/contributors',
+		images: ['/og-image.png'],
 	},
 };
 

@@ -47,7 +47,7 @@ export const metadata: Metadata = {
 		siteName: 'Databuddy',
 		images: [
 			{
-				url: 'og.webp',
+				url: '/og-image.png',
 				width: 1200,
 				height: 630,
 				alt: 'Databuddy Dashboard',
@@ -60,7 +60,7 @@ export const metadata: Metadata = {
 			'Privacy-first web analytics (Google Analytics alternative) — 3 KB, GDPR-compliant | Databuddy',
 		description:
 			'Experience powerful, privacy-first analytics that matches Google Analytics feature-for-feature without compromising user data. Zero cookies required, 100% data ownership, and AI-powered insights to help your business grow while staying compliant.',
-		images: ['og.webp'],
+		images: ['/og-image.png'],
 		creator: '@databuddyps',
 		site: '@databuddyps',
 	},

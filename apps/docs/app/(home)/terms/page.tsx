@@ -25,6 +25,7 @@ export const metadata: Metadata = {
 		description:
 			"Clear and fair terms that govern your use of Databuddy's analytics platform. We believe in transparency and straightforward language.",
 		url,
+		images: ['/og-image.png'],
 	},
 };
 

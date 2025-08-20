@@ -32,6 +32,7 @@ export const metadata: Metadata = {
 		description:
 			'Insights, updates, and guides on privacy-first analytics, GDPR compliance, and modern web development.',
 		url: 'https://www.databuddy.cc/blog',
+		images: ['/og-image.png'],
 	},
 };
 

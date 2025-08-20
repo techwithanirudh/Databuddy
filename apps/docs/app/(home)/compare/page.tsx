@@ -19,12 +19,14 @@ export const metadata: Metadata = {
 		url: 'https://www.databuddy.cc/compare',
 		siteName: 'Databuddy',
 		type: 'website',
+		images: ['/og-image.png'],
 	},
 	twitter: {
 		card: 'summary_large_image',
 		title: 'Analytics Platform Comparisons | Databuddy',
 		description:
 			'Compare Databuddy with other analytics platforms. See why developers choose privacy-first analytics with better performance and data ownership.',
+		images: ['/og-image.png'],
 	},
 	alternates: {
 		canonical: 'https://www.databuddy.cc/compare',

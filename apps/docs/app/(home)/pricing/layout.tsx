@@ -14,6 +14,7 @@ export const metadata: Metadata = {
 		description:
 			'Simple, transparent pricing for privacy-first analytics. Start free with 10K events/month, then pay only for what you use with fair tiered overage.',
 		url: 'https://www.databuddy.cc/pricing',
+		images: ['/og-image.png'],
 	},
 };
 

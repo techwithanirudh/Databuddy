@@ -24,6 +24,7 @@ export const metadata: Metadata = {
 		title,
 		description,
 		url,
+		images: ['/og-image.png'],
 	},
 };
 

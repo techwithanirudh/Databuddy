@@ -20,6 +20,7 @@ export const metadata: Metadata = {
 		description:
 			'Support Databuddy and help us build the future of privacy-first analytics',
 		url: 'https://www.databuddy.cc/sponsors',
+		images: ['/og-image.png'],
 	},
 };
 

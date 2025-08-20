@@ -50,11 +50,13 @@ export async function generateMetadata({
 			url: `https://www.databuddy.cc/compare/${slug}`,
 			siteName: 'Databuddy',
 			type: 'website',
+			images: ['/og-image.png'],
 		},
 		twitter: {
 			card: 'summary_large_image',
 			title: data.seo.title,
 			description: data.seo.description,
+			images: ['/og-image.png'],
 		},
 		alternates: {
 			canonical: `https://www.databuddy.cc/compare/${slug}`,

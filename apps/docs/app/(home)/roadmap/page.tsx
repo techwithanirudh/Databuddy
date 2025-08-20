@@ -20,6 +20,7 @@ export const metadata: Metadata = {
 		description:
 			"Discover what we're building next. Our transparent roadmap shows upcoming features, current progress, and completed milestones.",
 		url: 'https://www.databuddy.cc/roadmap',
+		images: ['/og-image.png'],
 	},
 };
 

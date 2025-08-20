@@ -26,6 +26,7 @@ export const metadata: Metadata = {
 		description:
 			'Experience powerful, privacy-first analytics that matches Google Analytics feature-for-feature without compromising user data. Zero cookies required, 100% data ownership, and AI-powered insights to help your business grow while staying compliant.',
 		url: 'https://www.databuddy.cc/api',
+		images: ['/og-image.png'],
 	},
 };
 

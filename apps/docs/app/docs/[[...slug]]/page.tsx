@@ -117,7 +117,7 @@ export async function generateMetadata(props: {
 			locale: 'en_US',
 			images: [
 				{
-					url: 'https://www.databuddy.cc/og.webp',
+					url: 'https://www.databuddy.cc/og-image.png',
 					width: 1200,
 					height: 630,
 					alt: `${page.data.title} - Databuddy Documentation`,
@@ -128,7 +128,7 @@ export async function generateMetadata(props: {
 			card: 'summary_large_image',
 			title,
 			description,
-			images: ['https://www.databuddy.cc/og.webp'],
+			images: ['https://www.databuddy.cc/og-image.png'],
 			creator: '@databuddyps',
 			site: '@databuddyps',
 		},

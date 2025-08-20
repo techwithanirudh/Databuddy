@@ -19,6 +19,7 @@ export const metadata: Metadata = {
 		description:
 			'Join the Databuddy Ambassador Program and help us build the future of privacy-first analytics',
 		url: 'https://www.databuddy.cc/ambassadors',
+		images: ['/og-image.png'],
 	},
 };
 

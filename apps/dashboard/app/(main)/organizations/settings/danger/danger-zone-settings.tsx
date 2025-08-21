@@ -71,10 +71,8 @@ export function DangerZoneSettings({ organization }: DangerZoneSettingsProps) {
 					</div>
 				</CardHeader>
 				<CardContent className="space-y-6">
-					{/* Transfer Assets Section */}
 					<TransferAssets organizationId={organization.id} />
 
-					{/* Delete Organization Section */}
 					<div className="rounded border border-destructive/20 bg-destructive/5 p-4">
 						<div className="flex items-start justify-between">
 							<div className="flex-1">
@@ -100,7 +98,6 @@ export function DangerZoneSettings({ organization }: DangerZoneSettingsProps) {
 				</CardContent>
 			</Card>
 
-			{/* Delete Confirmation Dialog */}
 			<AlertDialog onOpenChange={setShowDeleteDialog} open={showDeleteDialog}>
 				<AlertDialogContent>
 					<AlertDialogHeader>

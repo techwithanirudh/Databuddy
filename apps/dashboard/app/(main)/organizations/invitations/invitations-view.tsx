@@ -14,7 +14,6 @@ import type {
 	ActiveOrganization,
 	Organization,
 } from '@/hooks/use-organizations';
-import type { InvitationTab } from '@/stores/jotai/organizationAtoms';
 import { InvitationList } from './invitation-list';
 
 function InvitationsSkeleton() {

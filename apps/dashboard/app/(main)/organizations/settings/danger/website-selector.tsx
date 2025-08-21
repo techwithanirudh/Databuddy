@@ -2,6 +2,7 @@
 
 import type { Website } from '@databuddy/shared';
 import { GlobeIcon } from '@phosphor-icons/react';
+import { FaviconImage } from '@/components/analytics/favicon-image';
 import { cn } from '@/lib/utils';
 
 function WebsiteCard({
@@ -24,9 +25,17 @@ function WebsiteCard({
 			onClick={onClick}
 			type="button"
 		>
-			<div className="flex-shrink-0 rounded bg-primary/10 p-1">
-				<GlobeIcon className="h-3 w-3 text-primary" size={12} />
-			</div>
+			<FaviconImage
+				altText={`${website.name} favicon`}
+				className="flex-shrink-0 rounded"
+				domain={website.domain}
+				fallbackIcon={
+					<div className="rounded bg-primary/10 p-1">
+						<GlobeIcon className="h-3 w-3 text-primary" size={12} />
+					</div>
+				}
+				size={16}
+			/>
 			<div className="min-w-0 flex-1">
 				<p className="truncate font-medium text-foreground text-xs">
 					{website.name}
@@ -42,11 +51,11 @@ function WebsiteCard({
 export function WebsiteSelector({
 	websites,
 	selectedWebsite,
-	onSelectWebsite,
+	onSelectWebsiteAction,
 }: {
 	websites: Website[];
 	selectedWebsite: string | null;
-	onSelectWebsite: (id: string | null) => void;
+	onSelectWebsiteAction: (id: string | null) => void;
 }) {
 	return (
 		<div className="max-h-48 space-y-1 overflow-y-auto p-1">
@@ -55,7 +64,7 @@ export function WebsiteSelector({
 					<WebsiteCard
 						key={website.id}
 						onClick={() =>
-							onSelectWebsite(
+							onSelectWebsiteAction(
 								website.id === selectedWebsite ? null : website.id
 							)
 						}

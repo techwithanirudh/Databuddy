@@ -3,6 +3,7 @@
 import { ArrowRightIcon, BuildingsIcon, UserIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { FaviconImage } from '@/components/analytics/favicon-image';
 import { Button } from '@/components/ui/button';
 import {
 	Card,
@@ -165,9 +166,17 @@ export function TransferAssets({ organizationId }: { organizationId: string }) {
 									: 'animate-[slide-left_1s_ease-in-out]'
 							}`}
 						>
-							<div className="rounded bg-primary/20 p-1">
-								<UserIcon className="h-3 w-3 text-primary" size={12} />
-							</div>
+							<FaviconImage
+								altText={`${transferringWebsite.name} favicon`}
+								className="rounded"
+								domain={transferringWebsite.domain}
+								fallbackIcon={
+									<div className="rounded bg-primary/20 p-1">
+										<UserIcon className="h-3 w-3 text-primary" size={12} />
+									</div>
+								}
+								size={16}
+							/>
 							<div className="min-w-0">
 								<p className="truncate font-medium text-foreground text-xs">
 									{transferringWebsite.name}
@@ -212,7 +221,7 @@ export function TransferAssets({ organizationId }: { organizationId: string }) {
 					</CardHeader>
 					<CardContent className="pt-0">
 						<WebsiteSelector
-							onSelectWebsite={setSelectedWebsite}
+							onSelectWebsiteAction={setSelectedWebsite}
 							selectedWebsite={selectedWebsite}
 							websites={personalWebsites}
 						/>
@@ -257,7 +266,7 @@ export function TransferAssets({ organizationId }: { organizationId: string }) {
 					</CardHeader>
 					<CardContent className="pt-0">
 						<WebsiteSelector
-							onSelectWebsite={setSelectedWebsite}
+							onSelectWebsiteAction={setSelectedWebsite}
 							selectedWebsite={selectedWebsite}
 							websites={organizationWebsites}
 						/>

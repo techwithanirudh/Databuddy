@@ -158,7 +158,6 @@ export function OrganizationProvider({
 	if (requiresOrg && !activeOrganization) {
 		return (
 			<div className="flex h-full flex-col">
-				{/* Header */}
 				<div className="border-b bg-gradient-to-r from-background via-background to-muted/20">
 					<div className="flex flex-col justify-between gap-3 p-4 sm:flex-row sm:items-center sm:gap-0 sm:px-6 sm:py-6">
 						<div className="min-w-0 flex-1">
@@ -228,7 +227,6 @@ export function OrganizationProvider({
 
 	return (
 		<div className="flex h-full flex-col">
-			{/* Header */}
 			<div className="border-b bg-gradient-to-r from-background via-background to-muted/20">
 				<div className="flex flex-col justify-between gap-3 p-4 sm:flex-row sm:items-center sm:gap-0 sm:px-6 sm:py-6">
 					<div className="min-w-0 flex-1">
@@ -272,7 +270,6 @@ export function OrganizationProvider({
 				onClose={() => setShowCreateDialog(false)}
 			/>
 
-			{/* Invite Member Dialog */}
 			{activeOrganization && (
 				<InviteMemberDialog
 					onOpenChange={setShowInviteMemberDialog}
@@ -281,7 +278,6 @@ export function OrganizationProvider({
 				/>
 			)}
 
-			{/* API Key Creation Dialog */}
 			{activeOrganization && (
 				<ApiKeyCreateDialog
 					onOpenChange={setShowCreateApiKeyDialog}

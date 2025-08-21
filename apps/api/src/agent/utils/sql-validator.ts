@@ -31,7 +31,7 @@ const DANGEROUS_PATTERNS = [
 	/--/,           // SQL comments
 	/\/\*/,         // Multi-line comments start
 	/\*\//,         // Multi-line comments end
-	/;/,            // Statement terminators
+	/;\s*(DROP|DELETE|UPDATE|INSERT|CREATE|ALTER|TRUNCATE)/i,  // Suspicious stacked queries
 	/\bINTO\s+OUTFILE\b/i,  // File operations
 	/\bLOAD_FILE\b/i,       // File reading
 	/\bINTO\s+DUMPFILE\b/i, // File writing

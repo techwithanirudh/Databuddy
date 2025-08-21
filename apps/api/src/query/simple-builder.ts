@@ -1,4 +1,5 @@
 import { chQuery } from '@databuddy/db';
+import { validateSQL } from '../agent/utils/sql-validator';
 import type { DeviceType } from './screen-resolution-to-device-type';
 import type {
 	CompiledQuery,
@@ -468,7 +469,7 @@ export class SimpleQueryBuilder {
 		const { sql, params } = this.compile();
 		
 		// Additional validation of the final SQL
-		if (!this.isValidSQL(sql)) {
+		if (!validateSQL(sql)) {
 			throw new Error('Generated SQL failed security validation');
 		}
 		
@@ -476,17 +477,5 @@ export class SimpleQueryBuilder {
 		return applyPlugins(rawData, this.config, this.websiteDomain);
 	}
 
-	private isValidSQL(sql: string): boolean {
-		// Basic SQL injection pattern detection
-		const dangerousPatterns = [
-			/;\s*(?:DROP|DELETE|UPDATE|INSERT|ALTER|CREATE|EXEC|EXECUTE)\b/i,
-			/UNION\s+SELECT/i,
-			/--[\s\S]*$/m,
-			/\/\*[\s\S]*?\*\//g,
-			/\bINTO\s+OUTFILE\b/i,
-			/\bLOAD_FILE\b/i,
-		];
-
-		return !dangerousPatterns.some(pattern => pattern.test(sql));
-	}
+	// Validation now delegated to the shared validator
 }

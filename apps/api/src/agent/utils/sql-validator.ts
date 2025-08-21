@@ -1,30 +1,29 @@
-const FORBIDDEN_SQL_KEYWORDS = [
-	'INSERT INTO',
-	'UPDATE SET',
-	'DELETE FROM',
-	'DROP TABLE',
-	'DROP DATABASE',
-	'CREATE TABLE',
-	'CREATE DATABASE',
-	'ALTER TABLE',
-	'EXEC ',
-	'EXECUTE ',
-	'TRUNCATE',
-	'MERGE',
-	'BULK',
-	'RESTORE',
-	'BACKUP',
-	'GRANT',
-	'REVOKE',
-	'SHOW GRANTS',
-	'SHOW USERS',
-	'SYSTEM',
-	'ATTACH',
-	'DETACH',
-	'OPTIMIZE',
-	'CHECK',
-	'REPAIR',
-	'ANALYZE',
+const FORBIDDEN_SQL_KEYWORDS: readonly RegExp[] = [
+	/\bINSERT\s+INTO\b/i,
+	/\bUPDATE\b/i,                // Covers UPDATE ... SET
+	/\bDELETE\s+FROM\b/i,
+	/\bDROP\s+TABLE\b/i,
+	/\bDROP\s+DATABASE\b/i,
+	/\bCREATE\s+TABLE\b/i,
+	/\bCREATE\s+DATABASE\b/i,
+	/\bALTER\s+TABLE\b/i,
+	/\bEXEC(UTE)?\b/i,            // Catches EXEC and EXECUTE, with or without space
+	/\bTRUNCATE\b/i,
+	/\bMERGE\b/i,
+	/\bBULK\b/i,
+	/\bRESTORE\b/i,
+	/\bBACKUP\b/i,
+	/\bGRANT\b/i,
+	/\bREVOKE\b/i,
+	/\bSHOW\s+GRANTS\b/i,
+	/\bSHOW\s+USERS\b/i,
+	/\bSYSTEM\b/i,
+	/\bATTACH\b/i,
+	/\bDETACH\b/i,
+	/\bOPTIMIZE\b/i,
+	/\bCHECK\b/i,
+	/\bREPAIR\b/i,
+	/\bANALYZE\b/i,
 ] as const;
 
 const DANGEROUS_PATTERNS = [
@@ -58,8 +57,8 @@ export function validateSQL(sql: string): boolean {
 	}
 
 	// Check for dangerous keyword patterns
-	for (const keyword of FORBIDDEN_SQL_KEYWORDS) {
-		if (upperSQL.includes(keyword)) {
+	for (const re of FORBIDDEN_SQL_KEYWORDS) {
+		if (re.test(sql)) {
 			return false;
 		}
 	}

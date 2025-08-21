@@ -14,11 +14,7 @@ const ALLOWED_FILTER_FIELDS = [
 ] as const;
 
 export const FilterSchema = t.Object({
-	field: t.String({ 
-		minLength: 1, 
-		maxLength: 50,
-		pattern: '^[a-zA-Z_][a-zA-Z0-9_]*$'
-	}),
+	field: t.Enum(Object.fromEntries(ALLOWED_FILTER_FIELDS.map((f) => [f, f]))),
 	op: t.Enum({
 		eq: 'eq',
 		ne: 'ne',
@@ -39,7 +35,7 @@ export const FilterSchema = t.Object({
 });
 
 export const ParameterWithDatesSchema = t.Object({
-	name: t.String(),
+	name: t.String({ maxLength: 100, pattern: '^[a-zA-Z_][a-zA-Z0-9_]*$' }),
 	start_date: t.Optional(t.String()),
 	end_date: t.Optional(t.String()),
 	granularity: t.Optional(
@@ -50,7 +46,7 @@ export const ParameterWithDatesSchema = t.Object({
 			t.Literal('day'),
 		])
 	),
-	id: t.Optional(t.String()),
+	id: t.Optional(t.String({ maxLength: 100, pattern: '^[a-zA-Z0-9_-]+$' })),
 });
 
 export const DynamicQueryRequestSchema = t.Object({
@@ -70,7 +66,7 @@ export const DynamicQueryRequestSchema = t.Object({
 			t.Literal('day'),
 		])
 	),
-	groupBy: t.Optional(t.String({ maxLength: 100, pattern: '^[a-zA-Z_][a-zA-Z0-9_]*$' })),
+	groupBy: t.Optional(t.Enum(Object.fromEntries(ALLOWED_FILTER_FIELDS.map((f) => [f, f])))),
 	startDate: t.Optional(t.String({ maxLength: 50 })),
 	endDate: t.Optional(t.String({ maxLength: 50 })),
 	timeZone: t.Optional(t.String({ maxLength: 100 })),
@@ -91,22 +87,36 @@ export const CompileRequestSchema = t.Object({
 		})
 	),
 	filters: t.Optional(t.Array(FilterSchema, { maxItems: 50 })),
-	groupBy: t.Optional(t.Array(t.String({ 
-		maxLength: 100, 
-		pattern: '^[a-zA-Z_][a-zA-Z0-9_]*$' 
-	}), { maxItems: 20 })),
-	orderBy: t.Optional(t.String({ 
-		maxLength: 200, 
-		pattern: '^[a-zA-Z_][a-zA-Z0-9_, ]*[a-zA-Z0-9_]$' 
-	})),
+	groupBy: t.Optional(
+		t.Array(
+			t.Enum(Object.fromEntries(ALLOWED_FILTER_FIELDS.map((f) => [f, f]))),
+			{ maxItems: 20 }
+		)
+	),
+	orderBy: t.Optional(
+		t.Array(
+			t.Object({
+				field: t.Enum(Object.fromEntries(ALLOWED_FILTER_FIELDS.map((f) => [f, f]))),
+				direction: t.Optional(t.Enum({ asc: 'asc', desc: 'desc' }))
+			}),
+			{ maxItems: 10 }
+		)
+	),
 	limit: t.Optional(t.Number({ minimum: 1, maximum: 1000 })),
 	offset: t.Optional(t.Number({ minimum: 0, maximum: 1000000 })),
 });
 
+export type FilterField = typeof ALLOWED_FILTER_FIELDS[number];
+
 export type FilterType = {
-	field: string;
+	field: FilterField;
 	op: 'eq' | 'ne' | 'like' | 'gt' | 'lt' | 'in' | 'notIn';
 	value: string | number | Array<string | number>;
+};
+
+export type OrderByItem = {
+	field: FilterField;
+	direction?: 'asc' | 'desc';
 };
 
 export type ParameterWithDatesType = {
@@ -124,7 +134,7 @@ export type DynamicQueryRequestType = {
 	page?: number;
 	filters?: FilterType[];
 	granularity?: 'hourly' | 'daily' | 'hour' | 'day';
-	groupBy?: string;
+	groupBy?: FilterField;
 	startDate?: string;
 	endDate?: string;
 	timeZone?: string;
@@ -137,8 +147,8 @@ export type CompileRequestType = {
 	to: string;
 	timeUnit?: 'minute' | 'hour' | 'day' | 'week' | 'month';
 	filters?: FilterType[];
-	groupBy?: string[];
-	orderBy?: string;
+	groupBy?: FilterField[];
+	orderBy?: OrderByItem[];
 	limit?: number;
 	offset?: number;
 };

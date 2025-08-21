@@ -36,6 +36,18 @@ export const SAFE_HEADERS = new Set([
 ]);
 
 /**
+ * Escapes HTML entities to prevent XSS attacks when rendering HTML content
+ */
+export function escapeHtml(str: string): string {
+	return str
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;')
+		.replace(/'/g, '&#039;');
+}
+
+/**
  * Sanitizes a string by removing potentially dangerous characters
  */
 export function sanitizeString(input: unknown, maxLength?: number): string {
@@ -45,15 +57,8 @@ export function sanitizeString(input: unknown, maxLength?: number): string {
 
 	const actualMaxLength = maxLength ?? VALIDATION_LIMITS.STRING_MAX_LENGTH;
 
-	// Encode HTML entities to prevent XSS attacks
-	let sanitized = input.trim();
-	sanitized = sanitized.replace(/&/g, '&amp;');
-	sanitized = sanitized.replace(/</g, '&lt;');
-	sanitized = sanitized.replace(/>/g, '&gt;');
-	sanitized = sanitized.replace(/"/g, '&quot;');
-	sanitized = sanitized.replace(/'/g, '&#039;');
-
-	return sanitized
+	// First, remove dangerous control characters
+	const sanitized = input.trim()
 		.slice(0, actualMaxLength)
 		.split('')
 		.filter((char) => {
@@ -68,6 +73,8 @@ export function sanitizeString(input: unknown, maxLength?: number): string {
 		})
 		.join('')
 		.replace(/\s+/g, ' ');
+
+	return sanitized;
 }
 
 const timezoneRegex = /^[A-Za-z_/+-]{1,64}$/;

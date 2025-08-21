@@ -22,14 +22,14 @@ const INJECTION_PATTERNS = [
 	/eval\s*\(/i,
 	/expression\s*\(/i,
 	
-	// Command injection patterns
-	/[;&|`$(){}[\]]/,
+	// Command injection patterns (operators and subshells, not generic parentheses)
+	/(?:\|\||&&|;)/,
+	/`[^`]*`/,                 // backtick subshell
+	/\$\([^)]+\)/,             // $() subshell
+	/\$\{[^}]+\}/,             // ${} expansions
 	/\.\./,  // Path traversal
 	/\/etc\/passwd/i,
 	/\/proc\//i,
-	
-	// LDAP injection patterns
-	/[()&|!]/,
 	
 	// NoSQL injection patterns
 	/\$\w+:/,
@@ -125,7 +125,16 @@ export function securityMiddleware() {
 			const userAgent = request.headers.get('user-agent') || '';
 			const referer = request.headers.get('referer') || '';
 			
-			if (isInjectionAttempt(userAgent) || isInjectionAttempt(referer)) {
+			// Only flag headers containing high-signal XSS markers or stacked SQL queries
+			const headerSuspicious = [
+			  /javascript:/i,
+			  /<script/i,
+			  /;\s*(DROP|DELETE|UPDATE|INSERT|ALTER|CREATE)\b/i
+			];
+			if (
+			  headerSuspicious.some((p) => p.test(userAgent)) ||
+			  headerSuspicious.some((p) => p.test(referer))
+			) {
 				set.status = 400;
 				return {
 					success: false,

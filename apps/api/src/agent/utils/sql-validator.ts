@@ -40,6 +40,8 @@ const DANGEROUS_PATTERNS = [
 	/\bMYSQL\b/i,               // MySQL database access
 	/\bPG_/i,                   // PostgreSQL functions
 	/\bUNION\s+(ALL\s+)?SELECT\b/i, // Union-based injection attempts
+	/\bOR\s+[\d'"]+=[\d'"]+/i,      // Classic SQL injection patterns like OR 1=1
+	/\bAND\s+[\d'"]+=[\d'"]+/i,     // Classic SQL injection patterns like AND 1=1
 ] as const;
 
 export function validateSQL(sql: string): boolean {

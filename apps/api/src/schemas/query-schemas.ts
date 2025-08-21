@@ -5,8 +5,20 @@ const QUERY_BUILDER_TYPES = Object.keys(QueryBuilders) as Array<
 	keyof typeof QueryBuilders
 >;
 
+// Security validation for field names
+const ALLOWED_FILTER_FIELDS = [
+	'path', 'referrer', 'device_type', 'country', 'region', 'city', 
+	'browser_name', 'browser_version', 'os_name', 'os_version',
+	'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
+	'event_name', 'title', 'language', 'screen_resolution'
+] as const;
+
 export const FilterSchema = t.Object({
-	field: t.String(),
+	field: t.String({ 
+		minLength: 1, 
+		maxLength: 50,
+		pattern: '^[a-zA-Z_][a-zA-Z0-9_]*$'
+	}),
 	op: t.Enum({
 		eq: 'eq',
 		ne: 'ne',
@@ -17,9 +29,12 @@ export const FilterSchema = t.Object({
 		notIn: 'notIn',
 	}),
 	value: t.Union([
-		t.String(),
-		t.Number(),
-		t.Array(t.Union([t.String(), t.Number()])),
+		t.String({ maxLength: 500 }),
+		t.Number({ minimum: -2147483648, maximum: 2147483647 }),
+		t.Array(t.Union([
+			t.String({ maxLength: 500 }),
+			t.Number({ minimum: -2147483648, maximum: 2147483647 })
+		]), { maxItems: 100 }),
 	]),
 });
 
@@ -39,11 +54,14 @@ export const ParameterWithDatesSchema = t.Object({
 });
 
 export const DynamicQueryRequestSchema = t.Object({
-	id: t.Optional(t.String()),
-	parameters: t.Array(t.Union([t.String(), ParameterWithDatesSchema])),
-	limit: t.Optional(t.Number()),
-	page: t.Optional(t.Number()),
-	filters: t.Optional(t.Array(FilterSchema)),
+	id: t.Optional(t.String({ maxLength: 100, pattern: '^[a-zA-Z0-9_-]+$' })),
+	parameters: t.Array(t.Union([
+		t.String({ maxLength: 100, pattern: '^[a-zA-Z_][a-zA-Z0-9_]*$' }),
+		ParameterWithDatesSchema
+	]), { maxItems: 50 }),
+	limit: t.Optional(t.Number({ minimum: 1, maximum: 10000 })),
+	page: t.Optional(t.Number({ minimum: 1, maximum: 10000 })),
+	filters: t.Optional(t.Array(FilterSchema, { maxItems: 50 })),
 	granularity: t.Optional(
 		t.Union([
 			t.Literal('hourly'),
@@ -52,17 +70,17 @@ export const DynamicQueryRequestSchema = t.Object({
 			t.Literal('day'),
 		])
 	),
-	groupBy: t.Optional(t.String()),
-	startDate: t.Optional(t.String()),
-	endDate: t.Optional(t.String()),
-	timeZone: t.Optional(t.String()),
+	groupBy: t.Optional(t.String({ maxLength: 100, pattern: '^[a-zA-Z_][a-zA-Z0-9_]*$' })),
+	startDate: t.Optional(t.String({ maxLength: 50 })),
+	endDate: t.Optional(t.String({ maxLength: 50 })),
+	timeZone: t.Optional(t.String({ maxLength: 100 })),
 });
 
 export const CompileRequestSchema = t.Object({
-	projectId: t.String(),
+	projectId: t.String({ maxLength: 100, pattern: '^[a-zA-Z0-9_-]+$' }),
 	type: t.Enum(Object.fromEntries(QUERY_BUILDER_TYPES.map((k) => [k, k]))),
-	from: t.String(),
-	to: t.String(),
+	from: t.String({ maxLength: 50 }),
+	to: t.String({ maxLength: 50 }),
 	timeUnit: t.Optional(
 		t.Enum({
 			minute: 'minute',
@@ -72,11 +90,17 @@ export const CompileRequestSchema = t.Object({
 			month: 'month',
 		})
 	),
-	filters: t.Optional(t.Array(FilterSchema)),
-	groupBy: t.Optional(t.Array(t.String())),
-	orderBy: t.Optional(t.String()),
+	filters: t.Optional(t.Array(FilterSchema, { maxItems: 50 })),
+	groupBy: t.Optional(t.Array(t.String({ 
+		maxLength: 100, 
+		pattern: '^[a-zA-Z_][a-zA-Z0-9_]*$' 
+	}), { maxItems: 20 })),
+	orderBy: t.Optional(t.String({ 
+		maxLength: 200, 
+		pattern: '^[a-zA-Z_][a-zA-Z0-9_, ]*[a-zA-Z0-9_]$' 
+	})),
 	limit: t.Optional(t.Number({ minimum: 1, maximum: 1000 })),
-	offset: t.Optional(t.Number({ minimum: 0 })),
+	offset: t.Optional(t.Number({ minimum: 0, maximum: 1000000 })),
 });
 
 export type FilterType = {

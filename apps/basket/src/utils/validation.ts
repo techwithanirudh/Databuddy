@@ -45,8 +45,31 @@ export function sanitizeString(input: unknown, maxLength?: number): string {
 
 	const actualMaxLength = maxLength ?? VALIDATION_LIMITS.STRING_MAX_LENGTH;
 
-	return input
-		.trim()
+	// First, check for potential injection patterns
+	const dangerousPatterns = [
+		/<script/i,
+		/javascript:/i,
+		/vbscript:/i,
+		/onload=/i,
+		/onerror=/i,
+		/onclick=/i,
+		/onmouse/i,
+		/eval\(/i,
+		/expression\(/i,
+		/data:text\/html/i,
+		/data:application/i,
+		/&#x/i,
+		/&#\d/i,
+	];
+
+	let sanitized = input.trim();
+	
+	// Remove dangerous patterns
+	for (const pattern of dangerousPatterns) {
+		sanitized = sanitized.replace(pattern, '');
+	}
+
+	return sanitized
 		.slice(0, actualMaxLength)
 		.split('')
 		.filter((char) => {

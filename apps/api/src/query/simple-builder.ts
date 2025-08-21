@@ -466,7 +466,27 @@ export class SimpleQueryBuilder {
 
 	async execute(): Promise<Record<string, unknown>[]> {
 		const { sql, params } = this.compile();
+		
+		// Additional validation of the final SQL
+		if (!this.isValidSQL(sql)) {
+			throw new Error('Generated SQL failed security validation');
+		}
+		
 		const rawData = await chQuery(sql, params);
 		return applyPlugins(rawData, this.config, this.websiteDomain);
+	}
+
+	private isValidSQL(sql: string): boolean {
+		// Basic SQL injection pattern detection
+		const dangerousPatterns = [
+			/;\s*(?:DROP|DELETE|UPDATE|INSERT|ALTER|CREATE|EXEC|EXECUTE)\b/i,
+			/UNION\s+SELECT/i,
+			/--[\s\S]*$/m,
+			/\/\*[\s\S]*?\*\//g,
+			/\bINTO\s+OUTFILE\b/i,
+			/\bLOAD_FILE\b/i,
+		];
+
+		return !dangerousPatterns.some(pattern => pattern.test(sql));
 	}
 }

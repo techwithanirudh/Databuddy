@@ -118,7 +118,6 @@ export class ConversationRepository {
 		messages: AssistantMessageInput[]
 	): Promise<void> {
 		await db.transaction(async (tx) => {
-			// Create conversation first
 			await tx.insert(assistantConversations).values({
 				id: conversationId,
 				userId,

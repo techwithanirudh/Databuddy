@@ -81,7 +81,7 @@ export function CategorySidebar({
 							<TooltipTrigger asChild>
 								<button
 									className={cn(
-										'flex items-center justify-center px-3 py-2.5 transition-colors hover:bg-sidebar-accent/50',
+										'flex cursor-pointer items-center justify-center px-3 py-2.5 hover:bg-sidebar-accent',
 										'focus:outline-none',
 										isActive &&
 											'bg-sidebar-accent text-sidebar-accent-foreground'

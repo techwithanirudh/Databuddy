@@ -134,27 +134,27 @@ function getPercentageGradient(percentage: number): {
 const EnhancedSkeleton = ({ minHeight }: { minHeight: string | number }) => (
 	<div className="animate-pulse space-y-3" style={{ minHeight }}>
 		<div className="flex items-center justify-between">
-			<Skeleton className="h-4 w-24 rounded-md" />
-			<Skeleton className="h-8 w-32 rounded-lg" />
+			<Skeleton className="h-4 w-24 rounded" />
+			<Skeleton className="h-8 w-32 rounded" />
 		</div>
 		<div className="space-y-2">
 			{Array.from({ length: 5 }, (_, index) => index).map((itemIndex) => (
 				<div
-					className="flex animate-pulse items-center space-x-4 rounded-lg bg-muted/20 p-3"
+					className="flex animate-pulse items-center space-x-4 rounded bg-sidebar-accent/20 p-3"
 					key={`skeleton-${itemIndex}`}
 				>
 					<Skeleton className="h-6 w-6 flex-shrink-0 rounded-full" />
 					<div className="flex-1 space-y-2">
-						<Skeleton className="h-4 w-full rounded-md" />
+						<Skeleton className="h-4 w-full rounded" />
 						<div className="flex items-center space-x-2">
-							<Skeleton className="h-3 w-16 rounded-sm" />
-							<Skeleton className="h-3 w-12 rounded-sm" />
-							<Skeleton className="h-3 w-8 rounded-sm" />
+							<Skeleton className="h-3 w-16 rounded" />
+							<Skeleton className="h-3 w-12 rounded" />
+							<Skeleton className="h-3 w-8 rounded" />
 						</div>
 					</div>
 					<div className="space-y-1 text-right">
-						<Skeleton className="h-4 w-12 rounded-md" />
-						<Skeleton className="h-3 w-8 rounded-sm" />
+						<Skeleton className="h-4 w-12 rounded" />
+						<Skeleton className="h-3 w-8 rounded" />
 					</div>
 				</div>
 			))}
@@ -267,24 +267,24 @@ function FullScreenTable<TData extends { name: string | number }>({
 	};
 
 	return (
-		<div className="relative flex h-full w-full flex-col bg-background">
+		<div className="relative flex h-full w-full flex-col bg-sidebar">
 			{/* CardHeader style header */}
-			<div className="flex items-start justify-between border-b bg-background px-3 pt-3 pb-2">
+			<div className="flex items-start justify-between border-sidebar-border border-b bg-sidebar px-3 pt-3 pb-2">
 				<div className="min-w-0 flex-1">
 					{title && (
-						<h3 className="truncate font-semibold text-foreground text-sm">
+						<h3 className="truncate font-semibold text-sidebar-foreground text-sm">
 							{title}
 						</h3>
 					)}
 					{description && (
-						<p className="mt-0.5 line-clamp-2 text-muted-foreground text-xs">
+						<p className="mt-0.5 line-clamp-2 text-sidebar-foreground/70 text-xs">
 							{description}
 						</p>
 					)}
 				</div>
 				<button
 					aria-label="Close full screen"
-					className="ml-2 flex items-center justify-center rounded border bg-muted/30 p-2 text-muted-foreground transition hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+					className="ml-2 flex items-center justify-center rounded bg-sidebar-accent/60 p-2 text-sidebar-foreground transition-colors hover:bg-sidebar-accent focus:outline-none focus:ring-2 focus:ring-sidebar-ring/50"
 					onClick={onClose}
 					style={{ minWidth: 40, minHeight: 40 }}
 					tabIndex={0}
@@ -299,7 +299,7 @@ function FullScreenTable<TData extends { name: string | number }>({
 				<div className="mt-2 px-3">
 					<nav
 						aria-label="Data view options"
-						className="inline-flex gap-0.5 rounded bg-muted/20 p-0.5"
+						className="inline-flex gap-0.5 rounded bg-sidebar-accent/30 p-0.5"
 						role="tablist"
 					>
 						{tabs.map((tab, idx) => {
@@ -311,12 +311,12 @@ function FullScreenTable<TData extends { name: string | number }>({
 									aria-current={isActive ? 'page' : undefined}
 									aria-selected={isActive}
 									className={cn(
-										'flex items-center gap-1 rounded-md px-2.5 py-1.5 font-medium text-xs transition-all duration-200',
-										'focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-1',
+										'flex items-center gap-1.5 rounded px-3 py-2 font-medium text-xs transition-colors',
+										'focus:outline-none focus:ring-2 focus:ring-sidebar-ring/50',
 										'disabled:opacity-60',
 										isActive
-											? 'bg-background text-foreground shadow-sm'
-											: 'text-muted-foreground hover:bg-background/60 hover:text-foreground'
+											? 'bg-sidebar text-sidebar-foreground shadow-sm'
+											: 'text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground'
 									)}
 									disabled={isTransitioning}
 									key={tab.id}
@@ -335,8 +335,8 @@ function FullScreenTable<TData extends { name: string | number }>({
 											className={cn(
 												'inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 font-semibold text-[10px]',
 												isActive
-													? 'bg-primary/15 text-primary'
-													: 'bg-muted-foreground/20 text-muted-foreground/70'
+													? 'bg-sidebar-ring/20 text-sidebar-ring'
+													: 'bg-sidebar-foreground/20 text-sidebar-foreground/70'
 											)}
 										>
 											{itemCount > 99 ? '99+' : itemCount}
@@ -354,20 +354,20 @@ function FullScreenTable<TData extends { name: string | number }>({
 					<div className="relative w-full max-w-xs">
 						<Input
 							aria-label="Search table"
-							className="h-8 w-full border border-border/50 bg-muted/30 pr-2 pl-7 text-xs focus:bg-background focus:ring-1 focus:ring-primary/20"
+							className="h-8 w-full border-sidebar-border bg-sidebar-accent/30 pr-2 pl-7 text-sidebar-foreground text-xs focus:bg-sidebar focus:ring-1 focus:ring-sidebar-ring/50"
 							onChange={(event) => setGlobalFilter(event.target.value)}
 							placeholder="Filter data..."
 							value={globalFilter ?? ''}
 						/>
-						<MagnifyingGlassIcon className="-translate-y-1/2 absolute top-1/2 left-2 h-3 w-3 transform text-muted-foreground/50" />
+						<MagnifyingGlassIcon className="-translate-y-1/2 absolute top-1/2 left-2 h-3 w-3 transform text-sidebar-foreground/50" />
 						{globalFilter && (
 							<button
 								aria-label="Clear search"
-								className="-translate-y-1/2 absolute top-1/2 right-2 rounded p-1 hover:bg-muted/30 focus:outline-none"
+								className="-translate-y-1/2 absolute top-1/2 right-2 rounded p-1 hover:bg-sidebar-accent/60 focus:outline-none"
 								onClick={() => setGlobalFilter('')}
 								type="button"
 							>
-								<XIcon className="h-3 w-3 text-muted-foreground/60" />
+								<XIcon className="h-3 w-3 text-sidebar-foreground/60" />
 							</button>
 						)}
 					</div>
@@ -379,7 +379,7 @@ function FullScreenTable<TData extends { name: string | number }>({
 					<TableHeader>
 						{table.getHeaderGroups().map((headerGroup) => (
 							<TableRow
-								className="sticky top-0 z-10 border-border/30 bg-muted/20"
+								className="sticky top-0 z-10 border-sidebar-border/30 bg-sidebar-accent/20"
 								key={headerGroup.id}
 							>
 								{headerGroup.headers.map((header) => (
@@ -394,11 +394,11 @@ function FullScreenTable<TData extends { name: string | number }>({
 														: undefined
 										}
 										className={cn(
-											'h-11 bg-muted/20 px-2 font-semibold text-muted-foreground text-xs uppercase tracking-wide backdrop-blur-sm sm:px-4',
+											'h-11 bg-sidebar-accent/20 px-2 font-semibold text-sidebar-foreground/70 text-xs uppercase tracking-wide backdrop-blur-sm sm:px-4',
 											(header.column.columnDef.meta as { className?: string })
 												?.className,
 											header.column.getCanSort()
-												? 'group cursor-pointer select-none transition-all duration-200 hover:bg-muted/30 hover:text-foreground'
+												? 'group cursor-pointer select-none transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground'
 												: 'select-none'
 										)}
 										key={header.id}
@@ -426,13 +426,13 @@ function FullScreenTable<TData extends { name: string | number }>({
 											{header.column.getCanSort() && (
 												<div className="flex h-3 w-3 flex-col items-center justify-center">
 													{!header.column.getIsSorted() && (
-														<ArrowsDownUpIcon className="h-3 w-3 text-muted-foreground/40 transition-colors group-hover:text-muted-foreground/70" />
+														<ArrowsDownUpIcon className="h-3 w-3 text-sidebar-foreground/40 transition-colors group-hover:text-sidebar-foreground/70" />
 													)}
 													{header.column.getIsSorted() === 'asc' && (
-														<ArrowUpIcon className="h-3 w-3 text-primary" />
+														<ArrowUpIcon className="h-3 w-3 text-sidebar-ring" />
 													)}
 													{header.column.getIsSorted() === 'desc' && (
-														<ArrowDownIcon className="h-3 w-3 text-primary" />
+														<ArrowDownIcon className="h-3 w-3 text-sidebar-ring" />
 													)}
 												</div>
 											)}
@@ -755,30 +755,28 @@ export function DataTable<TData extends { name: string | number }, TValue>({
 		return (
 			<div
 				className={cn(
-					'w-full overflow-hidden rounded border bg-card/50 shadow-sm backdrop-blur-sm',
+					'w-full overflow-hidden rounded border-sidebar-border bg-sidebar/50 shadow-sm backdrop-blur-sm',
 					className
 				)}
 			>
 				<div className="p-4 px-2 pb-2 sm:px-3">
 					<div className="flex flex-col items-start justify-between gap-3 sm:flex-row">
 						<div className="min-w-0 flex-1">
-							<Skeleton className="h-5 w-32 rounded-md" />
-							{description && (
-								<Skeleton className="mt-0.5 h-3 w-48 rounded-sm" />
-							)}
+							<Skeleton className="h-5 w-32 rounded" />
+							{description && <Skeleton className="mt-0.5 h-3 w-48 rounded" />}
 						</div>
 						{showSearch && (
 							<div className="flex-shrink-0">
-								<Skeleton className="h-7 w-36 rounded-md" />
+								<Skeleton className="h-7 w-36 rounded" />
 							</div>
 						)}
 					</div>
 
 					{tabs && tabs.length > 1 && (
 						<div className="mt-3">
-							<div className="flex gap-0.5 rounded-lg bg-muted/20 p-0.5">
+							<div className="flex gap-0.5 rounded bg-sidebar-accent/30 p-0.5">
 								{tabs.map((tab) => (
-									<Skeleton className="h-8 w-20 rounded-md" key={tab.id} />
+									<Skeleton className="h-8 w-20 rounded" key={tab.id} />
 								))}
 							</div>
 						</div>
@@ -794,14 +792,14 @@ export function DataTable<TData extends { name: string | number }, TValue>({
 	// Extracted table content for DRYness
 	const renderTableContent = () => (
 		<>
-			<div className="px-2 pt-2 pb-2 sm:px-3">
+			<div className="px-3 pt-3 pb-2">
 				<div className="flex flex-col items-start justify-between gap-3 sm:flex-row">
 					<div className="min-w-0 flex-1">
-						<h3 className="truncate font-semibold text-foreground text-sm">
+						<h3 className="truncate font-semibold text-sidebar-foreground text-sm">
 							{title}
 						</h3>
 						{description && (
-							<p className="mt-0.5 line-clamp-2 text-muted-foreground text-xs">
+							<p className="mt-0.5 line-clamp-2 text-sidebar-foreground/70 text-xs">
 								{description}
 							</p>
 						)}
@@ -809,10 +807,10 @@ export function DataTable<TData extends { name: string | number }, TValue>({
 					<div className="flex items-center gap-2">
 						{showSearch && (
 							<div className="relative w-full flex-shrink-0 sm:w-auto">
-								<MagnifyingGlassIcon className="-translate-y-1/2 absolute top-1/2 left-2 h-3 w-3 transform text-muted-foreground/50" />
+								<MagnifyingGlassIcon className="-translate-y-1/2 absolute top-1/2 left-2 h-3 w-3 transform text-sidebar-foreground/50" />
 								<Input
 									aria-label={`Search ${title}`}
-									className="h-8 w-full border border-border/50 bg-muted/30 pr-2 pl-7 text-xs focus:bg-background focus:ring-1 focus:ring-primary/20 sm:w-36"
+									className="h-8 w-full border-sidebar-border bg-sidebar-accent/30 pr-2 pl-7 text-sidebar-foreground text-xs focus:bg-sidebar focus:ring-1 focus:ring-sidebar-ring/50 sm:w-36"
 									onChange={(event) => setGlobalFilter(event.target.value)}
 									placeholder="Filter data..."
 									value={globalFilter ?? ''}
@@ -822,7 +820,7 @@ export function DataTable<TData extends { name: string | number }, TValue>({
 						{!fullScreen && (
 							<button
 								aria-label="Full screen"
-								className="flex h-8 w-8 items-center justify-center rounded border border-border/50 bg-muted/30 text-muted-foreground transition hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+								className="flex h-8 w-8 items-center justify-center rounded border-sidebar-border bg-sidebar-accent/30 text-sidebar-foreground transition-colors hover:bg-sidebar-accent/60 focus:outline-none focus:ring-2 focus:ring-sidebar-ring/50"
 								onClick={() => setFullScreen(true)}
 								title="Full screen"
 								type="button"
@@ -838,7 +836,7 @@ export function DataTable<TData extends { name: string | number }, TValue>({
 						<div className="-mb-1 overflow-x-auto pb-1">
 							<nav
 								aria-label="Data view options"
-								className="inline-flex gap-0.5 rounded bg-muted/40 p-0.5"
+								className="inline-flex gap-0.5 rounded bg-sidebar-accent/30 p-0.5"
 							>
 								{tabs.map((tab) => {
 									const isActive = activeTab === tab.id;
@@ -849,12 +847,12 @@ export function DataTable<TData extends { name: string | number }, TValue>({
 											aria-controls={`tabpanel-${tab.id}`}
 											aria-selected={isActive}
 											className={cn(
-												'flex items-center gap-1 rounded-md px-2.5 py-1.5 font-medium text-xs transition-all duration-200',
-												'focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-1',
+												'flex items-center gap-1.5 rounded px-3 py-2 font-medium text-xs transition-colors',
+												'focus:outline-none focus:ring-2 focus:ring-sidebar-ring/50',
 												'disabled:opacity-60',
 												isActive
-													? 'bg-background text-foreground shadow-sm'
-													: 'text-muted-foreground hover:bg-background/60 hover:text-foreground'
+													? 'bg-sidebar text-sidebar-foreground shadow-sm'
+													: 'text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground'
 											)}
 											disabled={isTransitioning}
 											key={tab.id}
@@ -869,8 +867,8 @@ export function DataTable<TData extends { name: string | number }, TValue>({
 													className={cn(
 														'inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 font-semibold text-[10px]',
 														isActive
-															? 'bg-primary/15 text-primary'
-															: 'bg-muted-foreground/20 text-muted-foreground/70'
+															? 'bg-sidebar-ring/20 text-sidebar-ring'
+															: 'bg-sidebar-foreground/20 text-sidebar-foreground/70'
 													)}
 												>
 													{itemCount > 99 ? '99+' : itemCount}
@@ -928,7 +926,7 @@ export function DataTable<TData extends { name: string | number }, TValue>({
 					{table.getRowModel().rows.length ? (
 						<div
 							aria-labelledby={`tab-${activeTab}`}
-							className="custom-scrollbar relative overflow-auto border border-border/50 bg-background"
+							className="custom-scrollbar relative overflow-auto border-sidebar-border bg-sidebar"
 							id={`tabpanel-${activeTab}`}
 							role="tabpanel"
 							style={{ height: minHeight }}
@@ -937,7 +935,7 @@ export function DataTable<TData extends { name: string | number }, TValue>({
 								<TableHeader>
 									{table.getHeaderGroups().map((headerGroup) => (
 										<TableRow
-											className="sticky top-0 z-10 border-border/30 bg-muted/20"
+											className="sticky top-0 z-10 border-sidebar-border/30 bg-sidebar-accent"
 											key={headerGroup.id}
 										>
 											{headerGroup.headers.map((header) => (
@@ -952,10 +950,10 @@ export function DataTable<TData extends { name: string | number }, TValue>({
 																	: undefined
 													}
 													className={cn(
-														'h-10 bg-muted px-2 font-semibold text-muted-foreground text-xs uppercase tracking-wide',
+														'h-10 bg-sidebar-accent px-2 font-semibold text-sidebar-foreground/70 text-xs uppercase tracking-wide',
 														(header.column.columnDef.meta as any)?.className,
 														header.column.getCanSort()
-															? 'group cursor-pointer select-none transition-all duration-200 hover:bg-muted/30 hover:text-foreground'
+															? 'group cursor-pointer select-none transition-colors hover:text-sidebar-foreground'
 															: 'select-none'
 													)}
 													key={header.id}
@@ -985,13 +983,13 @@ export function DataTable<TData extends { name: string | number }, TValue>({
 														{header.column.getCanSort() && (
 															<div className="flex h-3 w-3 flex-col items-center justify-center">
 																{!header.column.getIsSorted() && (
-																	<ArrowsDownUpIcon className="h-3 w-3 text-muted-foreground/40 transition-colors group-hover:text-muted-foreground/70" />
+																	<ArrowsDownUpIcon className="h-3 w-3 text-sidebar-foreground/40 transition-colors group-hover:text-sidebar-foreground/70" />
 																)}
 																{header.column.getIsSorted() === 'asc' && (
-																	<ArrowUpIcon className="h-3 w-3 text-primary" />
+																	<ArrowUpIcon className="h-3 w-3 text-sidebar-ring" />
 																)}
 																{header.column.getIsSorted() === 'desc' && (
-																	<ArrowDownIcon className="h-3 w-3 text-primary" />
+																	<ArrowDownIcon className="h-3 w-3 text-sidebar-ring" />
 																)}
 															</div>
 														)}
@@ -1066,9 +1064,10 @@ export function DataTable<TData extends { name: string | number }, TValue>({
 													{row.getVisibleCells().map((cell, cellIndex) => (
 														<TableCell
 															className={cn(
-																'px-2 py-2 font-medium text-sm transition-colors duration-150',
+																'px-2 py-2 font-medium text-sm transition-colors',
 																cellIndex === 0 &&
-																	'font-semibold text-foreground',
+																	'font-semibold text-sidebar-foreground',
+																'text-sidebar-foreground/80',
 																(cell.column.columnDef.meta as any)?.className
 															)}
 															key={cell.id}
@@ -1087,7 +1086,7 @@ export function DataTable<TData extends { name: string | number }, TValue>({
 																		aria-label={
 																			isExpanded ? 'Collapse row' : 'Expand row'
 																		}
-																		className="flex-shrink-0 rounded p-0.5 transition-colors hover:bg-muted"
+																		className="flex-shrink-0 rounded p-0.5 transition-colors hover:bg-sidebar-accent/60"
 																		onClick={(e) => {
 																			e.stopPropagation();
 																			toggleRowExpansion(row.id);
@@ -1095,9 +1094,9 @@ export function DataTable<TData extends { name: string | number }, TValue>({
 																		type="button"
 																	>
 																		{isExpanded ? (
-																			<ArrowDownIcon className="h-3.5 w-3.5 text-muted-foreground" />
+																			<ArrowDownIcon className="h-3.5 w-3.5 text-sidebar-foreground/70" />
 																		) : (
-																			<ArrowUpIcon className="h-3.5 w-3.5 text-muted-foreground" />
+																			<ArrowUpIcon className="h-3.5 w-3.5 text-sidebar-foreground/70" />
 																		)}
 																	</button>
 																)}
@@ -1118,7 +1117,7 @@ export function DataTable<TData extends { name: string | number }, TValue>({
 													isExpanded &&
 													subRows.map((subRow, subIndex) => (
 														<TableRow
-															className="border-border/10 bg-muted/5 transition-colors hover:bg-muted/10"
+															className="border-sidebar-border/10 bg-sidebar-accent/5 transition-colors hover:bg-sidebar-accent/10"
 															key={`${row.id}-sub-${subIndex}`}
 														>
 															{renderSubRow ? (
@@ -1132,7 +1131,7 @@ export function DataTable<TData extends { name: string | number }, TValue>({
 																row.getVisibleCells().map((cell, cellIndex) => (
 																	<TableCell
 																		className={cn(
-																			'py-1 text-muted-foreground text-sm',
+																			'py-2 text-sidebar-foreground/70 text-sm',
 																			cellIndex === 0 ? 'pl-8' : 'px-2'
 																		)}
 																		key={`sub-${cell.id}`}

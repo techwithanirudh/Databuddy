@@ -16,7 +16,7 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useAtom } from 'jotai';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
 	DataTable,
 	DeviceTypeCell,
@@ -127,6 +127,21 @@ interface OutboundDomainData {
 	percentage: number;
 }
 
+interface AnalyticsRowData {
+	name: string;
+	visitors?: number;
+	pageviews?: number;
+	percentage?: number;
+	referrer?: string;
+}
+
+interface PageRowData {
+	name: string;
+	visitors?: number;
+	pageviews?: number;
+	percentage?: number;
+}
+
 // Constants
 const MIN_PREVIOUS_SESSIONS_FOR_TREND = 5;
 const MIN_PREVIOUS_VISITORS_FOR_TREND = 5;
@@ -162,11 +177,9 @@ const QUERY_CONFIG = {
 export function WebsiteOverviewTab({
 	websiteId,
 	dateRange,
-	isRefreshing,
-	setIsRefreshing,
 	filters,
 	addFilter,
-}: FullTabProps) {
+}: Omit<FullTabProps, 'isRefreshing' | 'setIsRefreshing'>) {
 	const calculatePreviousPeriod = useCallback(
 		(currentRange: typeof dateRange) => {
 			const startDate = dayjs(currentRange.start_date);
@@ -244,12 +257,11 @@ export function WebsiteOverviewTab({
 		},
 	];
 
-	const {
-		isLoading: batchLoading,
-		error: batchError,
-		refetch: refetchBatch,
-		getDataForQuery,
-	} = useBatchDynamicQuery(websiteId, dateRange, queries);
+	const { isLoading, error, getDataForQuery } = useBatchDynamicQuery(
+		websiteId,
+		dateRange,
+		queries
+	);
 
 	const analytics = {
 		summary:
@@ -283,12 +295,6 @@ export function WebsiteOverviewTab({
 			getDataForQuery('overview-custom-events', 'outbound_domains') || [],
 	};
 
-	const loading = {
-		summary: batchLoading || isRefreshing,
-	};
-
-	const error = batchError;
-
 	const [visibleMetrics] = useAtom(metricVisibilityAtom);
 	const [, toggleMetricAction] = useAtom(toggleMetricAtom);
 
@@ -301,29 +307,10 @@ export function WebsiteOverviewTab({
 		[visibleMetrics, toggleMetricAction]
 	);
 
-	const metricsForToggles = {
-		pageviews: visibleMetrics.pageviews,
-		visitors: visibleMetrics.visitors,
-		sessions: visibleMetrics.sessions,
-		bounce_rate: visibleMetrics.bounce_rate,
-		avg_session_duration: visibleMetrics.avg_session_duration,
-	};
-
-	useEffect(() => {
-		if (isRefreshing) {
-			const doRefresh = async () => {
-				try {
-					await refetchBatch();
-				} catch {
-				} finally {
-					setIsRefreshing(false);
-				}
-			};
-			doRefresh();
-		}
-	}, [isRefreshing, refetchBatch, setIsRefreshing]);
-
-	const isLoading = loading.summary || isRefreshing;
+	const metricsForToggles = useMemo(
+		() => visibleMetrics as unknown as Record<string, boolean>,
+		[visibleMetrics]
+	);
 
 	const [expandedProperties, setExpandedProperties] = useState<Set<string>>(
 		new Set()
@@ -341,10 +328,10 @@ export function WebsiteOverviewTab({
 			primaryField: 'name',
 			primaryHeader: 'Source',
 			customCell: referrerCustomCell,
-			getFilter: (row: any) => {
+			getFilter: (row: AnalyticsRowData) => {
 				return {
 					field: 'referrer',
-					value: row.referrer,
+					value: row.referrer || '',
 				};
 			},
 		},
@@ -353,7 +340,7 @@ export function WebsiteOverviewTab({
 			label: 'UTM Sources',
 			primaryField: 'name',
 			primaryHeader: 'Source',
-			getFilter: (row: any) => ({
+			getFilter: (row: AnalyticsRowData) => ({
 				field: 'utm_source',
 				value: row.name,
 			}),
@@ -363,7 +350,7 @@ export function WebsiteOverviewTab({
 			label: 'UTM Mediums',
 			primaryField: 'name',
 			primaryHeader: 'Medium',
-			getFilter: (row: any) => ({
+			getFilter: (row: AnalyticsRowData) => ({
 				field: 'utm_medium',
 				value: row.name,
 			}),
@@ -373,7 +360,7 @@ export function WebsiteOverviewTab({
 			label: 'UTM Campaigns',
 			primaryField: 'name',
 			primaryHeader: 'Campaign',
-			getFilter: (row: any) => ({
+			getFilter: (row: AnalyticsRowData) => ({
 				field: 'utm_campaign',
 				value: row.name,
 			}),
@@ -386,7 +373,7 @@ export function WebsiteOverviewTab({
 			label: 'Top Pages',
 			primaryField: 'name',
 			primaryHeader: 'Page',
-			getFilter: (row: any) => ({
+			getFilter: (row: PageRowData) => ({
 				field: 'path',
 				value: row.name,
 			}),
@@ -396,7 +383,7 @@ export function WebsiteOverviewTab({
 			label: 'Entry Pages',
 			primaryField: 'name',
 			primaryHeader: 'Page',
-			getFilter: (row: any) => ({
+			getFilter: (row: PageRowData) => ({
 				field: 'path',
 				value: row.name,
 			}),
@@ -406,7 +393,7 @@ export function WebsiteOverviewTab({
 			label: 'Exit Pages',
 			primaryField: 'name',
 			primaryHeader: 'Page',
-			getFilter: (row: any) => ({
+			getFilter: (row: PageRowData) => ({
 				field: 'path',
 				value: row.name,
 			}),
@@ -424,23 +411,26 @@ export function WebsiteOverviewTab({
 	const dateTo = dayjs(dateRange.end_date);
 	const dateDiff = dateTo.diff(dateFrom, 'day');
 
-	const filterFutureEvents = (events: MetricPoint[]) => {
-		const userTimezone = getUserTimezone();
-		const now = dayjs().tz(userTimezone);
+	const filterFutureEvents = useCallback(
+		(events: MetricPoint[]) => {
+			const userTimezone = getUserTimezone();
+			const now = dayjs().tz(userTimezone);
 
-		return events.filter((event: MetricPoint) => {
-			const eventDate = dayjs.utc(event.date).tz(userTimezone);
+			return events.filter((event: MetricPoint) => {
+				const eventDate = dayjs.utc(event.date).tz(userTimezone);
 
-			if (dateRange.granularity === 'hourly') {
-				return eventDate.isBefore(now);
-			}
+				if (dateRange.granularity === 'hourly') {
+					return eventDate.isBefore(now);
+				}
 
-			const endOfToday = now.endOf('day');
-			return (
-				eventDate.isBefore(endOfToday) || eventDate.isSame(endOfToday, 'day')
-			);
-		});
-	};
+				const endOfToday = now.endOf('day');
+				return (
+					eventDate.isBefore(endOfToday) || eventDate.isSame(endOfToday, 'day')
+				);
+			});
+		},
+		[dateRange.granularity]
+	);
 
 	const chartData = useMemo(() => {
 		if (!analytics.events_by_date?.length) {
@@ -469,7 +459,12 @@ export function WebsiteOverviewTab({
 			}
 			return filtered;
 		});
-	}, [analytics.events_by_date, dateRange.granularity, visibleMetrics]);
+	}, [
+		analytics.events_by_date,
+		dateRange.granularity,
+		visibleMetrics,
+		filterFutureEvents,
+	]);
 
 	const miniChartData = useMemo(() => {
 		if (!analytics.events_by_date?.length) {
@@ -504,7 +499,7 @@ export function WebsiteOverviewTab({
 				return minutes * 60 + seconds;
 			}),
 		};
-	}, [analytics.events_by_date, dateRange.granularity]);
+	}, [analytics.events_by_date, dateRange.granularity, filterFutureEvents]);
 
 	const togglePropertyExpansion = useCallback((propertyId: string) => {
 		setExpandedProperties((prev) => {
@@ -701,7 +696,7 @@ export function WebsiteOverviewTab({
 			label: 'Time Analysis',
 			data: analytics.page_time_analysis || [],
 			columns: pageTimeColumns,
-			getFilter: (row: any) => ({
+			getFilter: (row: PageRowData) => ({
 				field: 'path',
 				value: row.name,
 			}),
@@ -1077,12 +1072,8 @@ export function WebsiteOverviewTab({
 		};
 	})();
 
-	if (error instanceof Error && error.message === 'UNAUTHORIZED_ACCESS') {
-		return <UnauthorizedAccessError />;
-	}
-
 	const onAddFilter = useCallback(
-		(field: string, value: string, tableTitle?: string) => {
+		(field: string, value: string) => {
 			// The field parameter now contains the correct filter field from the tab configuration
 			const filter = {
 				field,
@@ -1094,6 +1085,10 @@ export function WebsiteOverviewTab({
 		},
 		[addFilter]
 	);
+
+	if (error instanceof Error && error.message === 'UNAUTHORIZED_ACCESS') {
+		return <UnauthorizedAccessError />;
+	}
 
 	return (
 		<div className="space-y-6">
@@ -1234,13 +1229,13 @@ export function WebsiteOverviewTab({
 			</div>
 
 			{/* Chart */}
-			<div className="rounded border bg-card shadow-sm">
-				<div className="flex flex-col items-start justify-between gap-3 border-b p-4 sm:flex-row">
+			<div className="rounded border border-sidebar-border bg-sidebar shadow-sm">
+				<div className="flex flex-col items-start justify-between gap-3 border-sidebar-border border-b px-4 py-3 sm:flex-row">
 					<div>
-						<h2 className="font-semibold text-lg tracking-tight">
+						<h2 className="font-semibold text-lg text-sidebar-foreground tracking-tight">
 							Traffic Trends
 						</h2>
-						<p className="text-muted-foreground text-sm">
+						<p className="text-sidebar-foreground/70 text-sm">
 							{dateRange.granularity === 'hourly' ? 'Hourly' : 'Daily'} traffic
 							data
 						</p>
@@ -1315,33 +1310,33 @@ export function WebsiteOverviewTab({
 					return (
 						<div className="ml-4">
 							<button
-								className="flex w-full items-center justify-between rounded border border-border/30 bg-muted/20 px-3 py-2 hover:bg-muted/40"
+								className="flex w-full items-center justify-between rounded border border-sidebar-border/30 bg-sidebar-accent/20 px-3 py-2.5 transition-colors hover:bg-sidebar-accent/50"
 								onClick={() => togglePropertyExpansion(propertyId)}
 								type="button"
 							>
 								<div className="flex items-center gap-2">
 									{isPropertyExpanded ? (
 										<CaretDownIcon
-											className="h-3 w-3 text-muted-foreground"
+											className="h-3 w-3 text-sidebar-foreground/60"
 											size={16}
 											weight="fill"
 										/>
 									) : (
 										<CaretRightIcon
-											className="h-3 w-3 text-muted-foreground"
+											className="h-3 w-3 text-sidebar-foreground/60"
 											size={16}
 											weight="fill"
 										/>
 									)}
-									<span className="font-medium text-foreground text-sm">
+									<span className="font-medium text-sidebar-foreground text-sm">
 										{propertyKey}
 									</span>
 								</div>
 								<div className="flex items-center gap-2">
-									<div className="font-medium text-foreground text-sm">
+									<div className="font-medium text-sidebar-foreground text-sm">
 										{formatNumber(propertyTotal)}
 									</div>
-									<div className="rounded bg-primary/10 px-2 py-0.5 font-medium text-primary text-xs">
+									<div className="rounded bg-sidebar-ring/10 px-2 py-0.5 font-medium text-sidebar-ring text-xs">
 										{propertyValues.length}{' '}
 										{propertyValues.length === 1 ? 'value' : 'values'}
 									</div>
@@ -1349,24 +1344,24 @@ export function WebsiteOverviewTab({
 							</button>
 
 							{isPropertyExpanded && (
-								<div className="mt-1 max-h-48 overflow-y-auto rounded border border-border/20">
+								<div className="mt-1 max-h-48 overflow-y-auto rounded border border-sidebar-border/20">
 									{propertyValues.map(
 										(valueItem: PropertyValue, valueIndex: number) => (
 											<div
-												className="flex items-center justify-between border-border/10 border-b px-3 py-2 last:border-b-0 hover:bg-muted/20"
+												className="flex items-center justify-between border-sidebar-border/10 border-b px-3 py-2 transition-colors last:border-b-0 hover:bg-sidebar-accent/20"
 												key={`${propertyKey}-${valueItem.value}-${valueIndex}`}
 											>
 												<span
-													className="truncate font-mono text-foreground text-sm"
+													className="truncate font-mono text-sidebar-foreground text-sm"
 													title={valueItem.value}
 												>
 													{valueItem.value}
 												</span>
 												<div className="flex items-center gap-2">
-													<span className="font-medium text-foreground text-sm">
+													<span className="font-medium text-sidebar-foreground text-sm">
 														{formatNumber(valueItem.count)}
 													</span>
-													<div className="min-w-[2.5rem] rounded bg-muted px-2 py-0.5 text-center font-medium text-muted-foreground text-xs">
+													<div className="min-w-[2.5rem] rounded bg-sidebar-accent px-2 py-0.5 text-center font-medium text-sidebar-accent-foreground text-xs">
 														{valueItem.percentage}%
 													</div>
 												</div>
@@ -1390,9 +1385,9 @@ export function WebsiteOverviewTab({
 						label: 'Outbound Links',
 						data: customEventsData.outbound_links,
 						columns: outboundLinksColumns,
-						getFilter: (row: any) => ({
+						getFilter: (row: OutboundLinkData) => ({
 							field: 'href',
-							value: (row as OutboundLinkData).href,
+							value: row.href,
 						}),
 					},
 					{
@@ -1400,9 +1395,9 @@ export function WebsiteOverviewTab({
 						label: 'Outbound Domains',
 						data: customEventsData.outbound_domains,
 						columns: outboundDomainsColumns,
-						getFilter: (row: any) => ({
+						getFilter: (row: OutboundDomainData) => ({
 							field: 'href',
-							value: `*${(row as OutboundDomainData).domain}*`,
+							value: `*${row.domain}*`,
 						}),
 					},
 				]}

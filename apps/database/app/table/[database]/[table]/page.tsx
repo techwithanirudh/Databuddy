@@ -38,11 +38,6 @@ export default async function TableDetail({
 
 	const tableName = `${database}.${table}`;
 
-	useEffect(() => {
-		loadTableData();
-		loadTableStats();
-	}, [database, table]);
-
 	const loadTableData = async (limit = 1000) => {
 		setLoading(true);
 		setError(null);
@@ -95,6 +90,11 @@ export default async function TableDetail({
 			console.error('Failed to load table stats:', err);
 		}
 	};
+
+	useEffect(() => {
+		loadTableData();
+		loadTableStats();
+	}, []);
 
 	const exportTable = async () => {
 		setLoading(true);

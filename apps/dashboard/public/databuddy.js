@@ -1045,21 +1045,27 @@
 				path = null;
 			}
 
+			let timezone = null;
+			try {
+				const resolvedOptions = Intl.DateTimeFormat().resolvedOptions();
+				if (resolvedOptions && typeof resolvedOptions.timeZone === 'string') {
+					timezone = resolvedOptions.timeZone;
+				}
+			} catch (_e) {
+				timezone = null;
+			}
+
 			return {
-				// Page context
 				path,
 				title: document.title,
 				referrer,
-				// User context
 				screen_resolution,
 				viewport_size,
-				timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+				timezone,
 				language: navigator.language,
-				// Connection info
 				connection_type: connectionInfo.connection_type,
 				rtt: connectionInfo.rtt,
 				downlink: connectionInfo.downlink,
-				// UTM parameters
 				utm_source: utmParams.utm_source,
 				utm_medium: utmParams.utm_medium,
 				utm_campaign: utmParams.utm_campaign,

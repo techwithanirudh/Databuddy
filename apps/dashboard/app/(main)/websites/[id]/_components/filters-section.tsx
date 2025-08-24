@@ -236,6 +236,9 @@ export function FiltersSection({
 						<div className="flex shrink-0 gap-2">
 							<Button
 								className="h-7 font-medium text-xs"
+								data-filter-id={editingFilter.id}
+								data-total-filters={selectedFilters.length}
+								data-track="filter_edit_completed"
 								disabled={isSaving || selectedFilters.length === 0}
 								onClick={handleSaveEdit}
 								size="sm"

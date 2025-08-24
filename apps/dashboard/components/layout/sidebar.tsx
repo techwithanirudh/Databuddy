@@ -194,6 +194,7 @@ export function Sidebar() {
 					<div className="flex items-center gap-3">
 						<Button
 							aria-label="Toggle navigation menu"
+							data-track="sidebar-toggle"
 							onClick={toggleSidebar}
 							size="icon"
 							type="button"
@@ -204,6 +205,7 @@ export function Sidebar() {
 
 						<Link
 							className="flex items-center gap-2 transition-opacity hover:opacity-80"
+							data-track="logo-click"
 							href="/websites"
 						>
 							<div className="flex h-8 w-8 items-center justify-center">
@@ -259,6 +261,7 @@ export function Sidebar() {
 				<Button
 					aria-label="Close sidebar"
 					className="absolute top-3 right-3 z-50 h-8 w-8 p-0 md:hidden"
+					data-track="sidebar-close"
 					onClick={closeSidebar}
 					size="sm"
 					type="button"

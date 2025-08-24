@@ -133,6 +133,8 @@ export const NavigationSection = memo(function NavigationSectionComponent({
 		<div className="border-sidebar-border/30 border-b border-dotted last:border-b-0">
 			<button
 				className="flex w-full items-center gap-3 px-3 py-2.5 text-left font-medium text-sidebar-foreground text-sm transition-colors hover:bg-sidebar-accent/50 focus:outline-none"
+				data-section={title}
+				data-track="navigation-section-toggle"
 				onClick={() => toggleAccordion(title, true)}
 				type="button"
 			>
@@ -187,6 +189,7 @@ export const NavigationSection = memo(function NavigationSectionComponent({
 												isRootLevel={!!item.rootLevel}
 												name={item.name}
 												production={item.production}
+												sectionName={title}
 											/>
 										</div>
 									);

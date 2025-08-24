@@ -12,6 +12,7 @@ interface NavigationItemProps extends Omit<NavigationItemType, 'icon'> {
 	isRootLevel: boolean;
 	isExternal?: boolean;
 	currentWebsiteId?: string | null;
+	sectionName?: string;
 }
 
 export function NavigationItem({
@@ -26,6 +27,7 @@ export function NavigationItem({
 	currentWebsiteId,
 	domain,
 	disabled,
+	sectionName,
 }: NavigationItemProps) {
 	const pathname = usePathname();
 
@@ -115,11 +117,10 @@ export function NavigationItem({
 					? 'border-sidebar-ring border-r-2 bg-sidebar-accent font-medium text-sidebar-accent-foreground'
 					: 'text-sidebar-foreground/70'
 			)}
-			data-is-external={isExternal ? 'true' : 'false'}
-			data-nav-item={name.toLowerCase().replace(/\s+/g, '-')}
-			data-nav-section={isRootLevel ? 'main-nav' : 'website-nav'}
-			data-nav-type={isRootLevel ? 'main' : 'website'}
-			data-track="navigation-click"
+			data-nav-href={href}
+			data-nav-item={name}
+			data-nav-section={sectionName || 'main'}
+			data-track="navigation-item-click"
 			role="menuitem"
 		>
 			{content}

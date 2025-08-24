@@ -4,6 +4,7 @@ import { TRPCError } from '@trpc/server';
 import { nanoid } from 'nanoid';
 import { z } from 'zod';
 import {
+	checkExtensionSafety,
 	createReadonlyUser,
 	getAvailableExtensions,
 	getDatabaseStats,
@@ -332,19 +333,79 @@ export const dbConnectionsRouter = createTRPCRouter({
 			}
 		}),
 
-	installExtension: protectedProcedure
+	checkExtensionSafety: protectedProcedure
 		.input(
 			z.object({
 				id: z.string(),
 				extensionName: z.string(),
-				schema: z.string().optional(),
+			})
+		)
+		.query(async ({ ctx, input }) => {
+			const connection = await authorizeDbConnectionAccess(
+				ctx,
+				input.id,
+				'read'
+			);
+
+			try {
+				const decryptedUrl = decryptConnectionUrl(connection.url);
+				const safetyCheck = await checkExtensionSafety(
+					decryptedUrl,
+					input.extensionName
+				);
+				return safetyCheck;
+			} catch (error) {
+				throw new TRPCError({
+					code: 'INTERNAL_SERVER_ERROR',
+					message: `Failed to check extension safety: ${error.message}`,
+				});
+			}
+		}),
+
+	updateExtension: protectedProcedure
+		.input(
+			z.object({
+				id: z.string(),
+				extensionName: z.string(),
 			})
 		)
 		.mutation(() => {
 			throw new TRPCError({
 				code: 'FORBIDDEN',
 				message:
-					'Extension installation requires admin database access. This feature is not available with read-only connections.',
+					'Extension updates require admin database access. This feature is not available with read-only connections. Use ALTER EXTENSION UPDATE with admin credentials.',
+			});
+		}),
+
+	resetExtensionStats: protectedProcedure
+		.input(
+			z.object({
+				id: z.string(),
+				extensionName: z.string(),
+			})
+		)
+		.mutation(() => {
+			throw new TRPCError({
+				code: 'FORBIDDEN',
+				message:
+					'Resetting extension statistics requires admin database access. This feature is not available with read-only connections.',
+			});
+		}),
+
+	installExtension: protectedProcedure
+		.input(
+			z.object({
+				id: z.string(),
+				extensionName: z.string(),
+				schema: z.string().optional(),
+				force: z.boolean().optional(),
+			})
+		)
+		.mutation(() => {
+			throw new TRPCError({
+				code: 'FORBIDDEN',
+				message:
+					'Extension installation requires admin database access. This feature is not available with read-only connections. Connect with an admin user to install extensions.',
 			});
 		}),
 
@@ -353,13 +414,14 @@ export const dbConnectionsRouter = createTRPCRouter({
 			z.object({
 				id: z.string(),
 				extensionName: z.string(),
+				cascade: z.boolean().optional(),
 			})
 		)
 		.mutation(() => {
 			throw new TRPCError({
 				code: 'FORBIDDEN',
 				message:
-					'Extension removal requires admin database access. This feature is not available with read-only connections.',
+					'Extension removal requires admin database access. This feature is not available with read-only connections. Connect with an admin user to drop extensions.',
 			});
 		}),
 });

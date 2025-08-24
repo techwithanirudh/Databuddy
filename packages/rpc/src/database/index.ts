@@ -1,14 +1,19 @@
 export {
 	type AvailableExtension,
+	checkExtensionSafety,
 	type DatabaseStats,
-	dropExtension,
+	type ExtensionDependency,
 	type ExtensionInfo,
+	type ExtensionSafetyCheck,
 	getAvailableExtensions,
 	getDatabaseStats,
 	getExtensions,
 	getTableStats,
-	installExtension,
+	resetExtensionStats,
+	safeDropExtension,
+	safeInstallExtension,
 	type TableStats,
+	updateExtension,
 } from './monitoring';
 export {
 	buildPostgresUrl,

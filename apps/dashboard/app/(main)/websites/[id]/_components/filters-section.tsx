@@ -1,10 +1,21 @@
 'use client';
 
 import { type DynamicQueryFilter, filterOptions } from '@databuddy/shared';
-import { FunnelIcon, XIcon } from '@phosphor-icons/react';
-import { useCallback } from 'react';
+import {
+	FloppyDiskIcon,
+	FunnelIcon,
+	PencilIcon,
+	XIcon,
+} from '@phosphor-icons/react';
+import { useParams } from 'next/navigation';
+import { useCallback, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useFilters } from '@/hooks/use-filters';
+import { useSavedFilters } from '@/hooks/use-saved-filters';
+import { DeleteAllDialog } from './delete-all-dialog';
+import { DeleteFilterDialog } from './delete-filter-dialog';
+import { SaveFilterDialog } from './save-filter-dialog';
+import { SavedFiltersMenu } from './saved-filters-menu';
 import { AddFilterForm } from './utils/add-filters';
 
 interface FiltersSectionProps {
@@ -36,64 +47,361 @@ export function FiltersSection({
 		onFiltersChange,
 	});
 
+	const { id } = useParams();
+	const websiteId = id as string;
+
+	const {
+		savedFilters,
+		isLoading: isSavedFiltersLoading,
+		saveFilter,
+		updateFilter,
+		deleteFilter,
+		duplicateFilter,
+		deleteAllFilters,
+		validateFilterName,
+	} = useSavedFilters(websiteId);
+
+	const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
+	const [isSaving, setIsSaving] = useState(false);
+	const [isDeleting, setIsDeleting] = useState(false);
+	const [isDeletingAll, setIsDeletingAll] = useState(false);
+	const [editingFilter, setEditingFilter] = useState<{
+		id: string;
+		name: string;
+		originalFilters: DynamicQueryFilter[];
+	} | null>(null);
+	const [deleteDialogState, setDeleteDialogState] = useState<{
+		isOpen: boolean;
+		filterId: string;
+		filterName: string;
+	}>({
+		isOpen: false,
+		filterId: '',
+		filterName: '',
+	});
+	const [isDeleteAllDialogOpen, setIsDeleteAllDialogOpen] = useState(false);
+
 	const clearAllFilters = useCallback(() => {
 		onFiltersChange([]);
 	}, [onFiltersChange]);
 
+	const handleSaveFilter = useCallback(
+		(name: string) => {
+			if (selectedFilters.length === 0) {
+				return;
+			}
+
+			setIsSaving(true);
+
+			if (editingFilter) {
+				// Update existing filter
+				const result = updateFilter(editingFilter.id, name, selectedFilters);
+				if (result.success) {
+					setIsSaveDialogOpen(false);
+					setEditingFilter(null);
+				}
+			} else {
+				// Create new filter
+				const result = saveFilter(name, selectedFilters);
+				if (result.success) {
+					setIsSaveDialogOpen(false);
+					setEditingFilter(null);
+				}
+			}
+			// Error is handled by toast in the hook
+			setIsSaving(false);
+		},
+		[selectedFilters, saveFilter, updateFilter, editingFilter]
+	);
+
+	const handleApplyFilter = useCallback(
+		(filters: DynamicQueryFilter[]) => {
+			onFiltersChange(filters);
+		},
+		[onFiltersChange]
+	);
+
+	const handleDeleteSavedFilter = useCallback(
+		(savedFilterId: string) => {
+			const filterToDelete = savedFilters.find((f) => f.id === savedFilterId);
+			if (!filterToDelete) {
+				return;
+			}
+
+			setDeleteDialogState({
+				isOpen: true,
+				filterId: savedFilterId,
+				filterName: filterToDelete.name,
+			});
+		},
+		[savedFilters]
+	);
+
+	const handleConfirmDelete = useCallback(() => {
+		setIsDeleting(true);
+		const result = deleteFilter(deleteDialogState.filterId);
+
+		if (result.success) {
+			setDeleteDialogState((prev) => ({ ...prev, isOpen: false }));
+		}
+		// Error is handled by toast in the hook
+		setIsDeleting(false);
+	}, [deleteFilter, deleteDialogState.filterId]);
+
+	const handleDuplicateSavedFilter = useCallback(
+		(savedFilterId: string) => {
+			duplicateFilter(savedFilterId);
+			// Success/error feedback is handled by toast in the hook
+		},
+		[duplicateFilter]
+	);
+
+	const handleEditSavedFilter = useCallback(
+		(savedFilterId: string) => {
+			const filterToEdit = savedFilters.find((f) => f.id === savedFilterId);
+			if (!filterToEdit) {
+				return;
+			}
+
+			// Apply the filter's configuration to current filters
+			onFiltersChange(filterToEdit.filters);
+
+			// Set up editing mode with original filters stored
+			setEditingFilter({
+				id: filterToEdit.id,
+				name: filterToEdit.name,
+				originalFilters: [...filterToEdit.filters], // Store original state
+			});
+		},
+		[savedFilters, onFiltersChange]
+	);
+
+	const handleCancelEdit = useCallback(() => {
+		if (editingFilter) {
+			// Restore original filters
+			onFiltersChange(editingFilter.originalFilters);
+		}
+		setEditingFilter(null);
+	}, [editingFilter, onFiltersChange]);
+
+	const handleSaveEdit = useCallback(() => {
+		if (!editingFilter || selectedFilters.length === 0) {
+			return;
+		}
+
+		// Directly update the existing filter without dialog
+		setIsSaving(true);
+		const result = updateFilter(
+			editingFilter.id,
+			editingFilter.name,
+			selectedFilters
+		);
+
+		if (result.success) {
+			setEditingFilter(null);
+		}
+
+		setIsSaving(false);
+	}, [editingFilter, selectedFilters, updateFilter]);
+
+	const handleDeleteAll = useCallback(() => {
+		setIsDeleteAllDialogOpen(true);
+	}, []);
+
+	const handleConfirmDeleteAll = useCallback(() => {
+		setIsDeletingAll(true);
+		deleteAllFilters();
+		setIsDeleteAllDialogOpen(false);
+		setIsDeletingAll(false);
+	}, [deleteAllFilters]);
+
 	return (
-		<div className="rounded border bg-card shadow-sm">
-			<div className="flex min-h-[44px] flex-wrap items-center gap-2 p-2 px-4">
-				<div className="flex items-center gap-2">
-					<FunnelIcon
-						className="h-4 w-4 text-muted-foreground"
-						weight="duotone"
-					/>
-					<h3 className="font-medium text-foreground text-sm">Filters</h3>
+		<div className="overflow-hidden rounded-lg border bg-card shadow-sm">
+			{editingFilter && (
+				<div className="border-amber-200/50 border-b bg-gradient-to-r from-amber-50/80 to-amber-50/40 px-4 py-3 text-amber-900 text-sm">
+					<div className="flex items-center justify-between">
+						<div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
+							<div className="flex items-center gap-2">
+								<div className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-200">
+									<PencilIcon className="h-3 w-3 text-amber-700" />
+								</div>
+								<span className="font-semibold">
+									Editing: "{editingFilter.name}"
+								</span>
+							</div>
+							<span className="text-amber-700 text-xs">
+								Add, remove, or modify filters below, then save your changes.
+							</span>
+						</div>
+						<div className="flex shrink-0 gap-2">
+							<Button
+								className="h-7 font-medium text-xs"
+								disabled={isSaving || selectedFilters.length === 0}
+								onClick={handleSaveEdit}
+								size="sm"
+								variant="default"
+							>
+								{isSaving ? 'Saving...' : 'Save Changes'}
+							</Button>
+							<Button
+								className="h-7 text-xs"
+								disabled={isSaving}
+								onClick={handleCancelEdit}
+								size="sm"
+								variant="outline"
+							>
+								Cancel
+							</Button>
+							<Button
+								className="h-7 text-xs"
+								onClick={() => {
+									setIsSaveDialogOpen(true);
+								}}
+								size="sm"
+								variant="ghost"
+							>
+								Rename...
+							</Button>
+						</div>
+					</div>
+				</div>
+			)}
+			<div className="flex min-h-[52px] flex-wrap items-center gap-3 p-4">
+				<div className="flex items-center gap-3">
+					<div className="flex items-center gap-2">
+						<FunnelIcon className="h-4 w-4 text-primary" weight="duotone" />
+						<h3 className="font-semibold text-foreground text-sm">
+							{editingFilter ? 'Edit Filters' : 'Filters'}
+						</h3>
+					</div>
+					{selectedFilters.length > 0 && (
+						<span className="text-muted-foreground text-xs">
+							({selectedFilters.length})
+						</span>
+					)}
 				</div>
 
-				{selectedFilters.map((filter, index) => {
-					const fieldLabel = filterOptions.find(
-						(o) => o.value === filter.field
-					)?.label;
-					const operatorSymbol = getOperatorSymbol(filter.operator);
-					const valueLabel = Array.isArray(filter.value)
-						? filter.value.join(', ')
-						: filter.value;
+				<div className="flex flex-wrap items-center gap-2">
+					{selectedFilters.map((filter, index) => {
+						const fieldLabel = filterOptions.find(
+							(o) => o.value === filter.field
+						)?.label;
+						const operatorSymbol = getOperatorSymbol(filter.operator);
+						const valueLabel = Array.isArray(filter.value)
+							? filter.value.join(', ')
+							: filter.value;
 
-					const displayText = `${fieldLabel} ${operatorSymbol} ${valueLabel}`;
+						return (
+							<div
+								className="group inline-flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-1.5 text-sm transition-all hover:bg-muted/50 hover:shadow-sm"
+								key={`filter-${filter.field}-${filter.operator}-${Array.isArray(filter.value) ? filter.value.join('-') : filter.value}-${index}`}
+							>
+								<div className="flex items-center gap-2">
+									<span className="font-medium text-foreground">
+										{fieldLabel}
+									</span>
+									<span className="text-muted-foreground text-xs">
+										{operatorSymbol}
+									</span>
+									<span className="font-mono text-foreground text-xs">
+										{valueLabel}
+									</span>
+								</div>
+								<button
+									aria-label={`Remove filter ${fieldLabel} ${operatorSymbol} ${valueLabel}`}
+									className="rounded-full p-0.5 text-muted-foreground opacity-60 transition-all hover:bg-destructive/10 hover:text-destructive hover:opacity-100 group-hover:opacity-80"
+									onClick={() => removeFilter(index)}
+									type="button"
+								>
+									<XIcon className="h-3 w-3" weight="bold" />
+								</button>
+							</div>
+						);
+					})}
+				</div>
 
-					return (
-						<div
-							className="inline-flex items-center gap-1 rounded bg-muted/50 px-2 py-1 text-sm transition-colors hover:bg-muted/70"
-							key={`filter-${filter.field}-${filter.operator}-${Array.isArray(filter.value) ? filter.value.join('-') : filter.value}-${index}`}
-						>
-							<span
-								className="truncate font-medium text-foreground"
-								title={displayText}
+				<div className="ml-auto flex flex-wrap items-center gap-2">
+					<SavedFiltersMenu
+						currentFilters={selectedFilters}
+						isLoading={isSavedFiltersLoading}
+						onApplyFilter={handleApplyFilter}
+						onDeleteAll={handleDeleteAll}
+						onDeleteFilter={handleDeleteSavedFilter}
+						onDuplicateFilter={handleDuplicateSavedFilter}
+						onEditFilter={handleEditSavedFilter}
+						savedFilters={savedFilters}
+					/>
+
+					{selectedFilters.length > 0 && !editingFilter && (
+						<div className="flex items-center gap-2">
+							<Button
+								className="h-8 gap-2"
+								onClick={() => {
+									setEditingFilter(null);
+									setIsSaveDialogOpen(true);
+								}}
+								size="sm"
+								variant="outline"
 							>
-								{displayText}
-							</span>
-							<button
-								aria-label={`Remove filter ${displayText}`}
-								className="ml-1 rounded bg-transparent p-0.5 text-muted-foreground transition-colors hover:text-destructive"
-								onClick={() => removeFilter(index)}
-								type="button"
+								<FloppyDiskIcon className="h-4 w-4" weight="duotone" />
+								<span>Save as New</span>
+							</Button>
+							<Button
+								className="h-8"
+								onClick={clearAllFilters}
+								size="sm"
+								variant="ghost"
 							>
-								<XIcon className="h-3 w-3" weight="bold" />
-							</button>
+								Clear all
+							</Button>
 						</div>
-					);
-				})}
-
-				<div className="ml-auto flex items-center gap-2">
-					{selectedFilters.length > 0 && (
-						<Button onClick={clearAllFilters} size="sm" variant="outline">
-							Clear all
-						</Button>
 					)}
+
+					{selectedFilters.length > 0 && editingFilter && (
+						<div className="rounded-md bg-muted/30 px-3 py-1.5">
+							<span className="text-muted-foreground text-xs">
+								{selectedFilters.length} filter
+								{selectedFilters.length === 1 ? '' : 's'} configured
+							</span>
+						</div>
+					)}
+
 					<AddFilterForm addFilter={addFilter} buttonText="Add filter" />
 				</div>
 			</div>
+
+			<SaveFilterDialog
+				editingFilter={editingFilter}
+				filters={selectedFilters}
+				isLoading={isSaving}
+				isOpen={isSaveDialogOpen}
+				onClose={() => {
+					setIsSaveDialogOpen(false);
+					setEditingFilter(null);
+				}}
+				onSave={handleSaveFilter}
+				validateName={(name: string) =>
+					validateFilterName(name, editingFilter?.id)
+				}
+			/>
+
+			<DeleteFilterDialog
+				filterName={deleteDialogState.filterName}
+				isDeleting={isDeleting}
+				isOpen={deleteDialogState.isOpen}
+				onClose={() =>
+					setDeleteDialogState((prev) => ({ ...prev, isOpen: false }))
+				}
+				onConfirm={handleConfirmDelete}
+			/>
+
+			<DeleteAllDialog
+				filterCount={savedFilters.length}
+				isDeleting={isDeletingAll}
+				isOpen={isDeleteAllDialogOpen}
+				onClose={() => setIsDeleteAllDialogOpen(false)}
+				onConfirm={handleConfirmDeleteAll}
+			/>
 		</div>
 	);
 }

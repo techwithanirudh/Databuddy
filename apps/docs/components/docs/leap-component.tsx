@@ -1,171 +1,106 @@
-"use client";
+'use client';
 
-import React from "react";
+import { RocketLaunchIcon } from '@phosphor-icons/react';
+import { cn } from '@/lib/utils';
 
-type ExampleType = "saas" | "merch store";
+const examples = ['saas', 'merch store'] as const;
+const prompts = {
+	saas: 'Build me a trip planning tool',
+	'merch store': 'Build me a t-shirt store',
+} as const;
 
-interface PromptMap {
-  [key: string]: string;
-}
+export const LeapComponent = () => {
+	const handleGenerate = () => {
+		const input = document.querySelector(
+			'.leap-prompt-input'
+		) as HTMLInputElement;
+		const prompt = input?.value
+			? `${input.value} use Databuddy for analytics`
+			: '';
+		window.location.href = `https://leap.new/?build=${encodeURIComponent(prompt)}`;
+	};
 
-export const LeapComponent: React.FC = () => {
-  // Handle button click
-  const handleGenerateClick = (): void => {
-    if (typeof document !== "undefined" && typeof window !== "undefined") {
-      const input = document.querySelector(
-        ".leap-prompt-input",
-      ) as HTMLInputElement;
-      if (input && input.value) {
-        // Append "use Databuddy for analytics" to the user's prompt
-        const enhancedPrompt = `${input.value} use Databuddy for analytics`;
-        window.location.href = `https://leap.new/?build=${encodeURIComponent(enhancedPrompt)}`;
-      } else {
-        window.location.href = "https://leap.new/";
-      }
-    }
-  };
+	const handleExample = (example: (typeof examples)[number]) => {
+		const input = document.querySelector(
+			'.leap-prompt-input'
+		) as HTMLInputElement;
+		if (input) {
+			input.value = prompts[example];
+		}
+	};
 
-  // Handle example click
-  const handleExampleClick = (exampleType: ExampleType): void => {
-    if (typeof document !== "undefined" && typeof window !== "undefined") {
-      const input = document.querySelector(
-        ".leap-prompt-input",
-      ) as HTMLInputElement;
-      if (input) {
-        // Set specific prompts based on the example type
-        const prompts: PromptMap = {
-          saas: "Build me a trip planning tool",
-          "merch store": "Build me a t-shirt store",
-        };
-        input.value = prompts[exampleType] || exampleType;
-      }
-    }
-  };
+	return (
+		<div className="group relative my-2 w-full border border-border bg-card/50 backdrop-blur-sm transition-all duration-300 hover:bg-card/70">
+			<div className="p-3">
+				<div className="flex items-center gap-2">
+					<RocketLaunchIcon
+						className="size-4 text-purple-500"
+						weight="duotone"
+					/>
+					<h3 className="font-semibold text-foreground text-sm leading-none">
+						Try Databuddy with Leap
+					</h3>
+				</div>
 
-  const examples: ExampleType[] = ["saas", "merch store"];
+				<p className="items-center text-muted-foreground text-xs">
+					Let Leap generate a complete application that uses Databuddy for
+					analytics.
+				</p>
 
-  return (
-    <div style={{ position: "relative", width: "100%" }}>
-      <div
-        style={{
-          border: "1px solid #222",
-          borderRadius: "0px",
-          padding: "20px",
-          margin: "36px 0",
-          backgroundColor: "#ffffff",
-          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
-          width: "100%",
-          maxWidth: "680px",
-          boxSizing: "border-box",
-        }}
-      >
-        <h3
-          style={{
-            margin: "0 0 12px 0",
-            color: "#000",
-            fontSize: "18px",
-            fontWeight: "600",
-          }}
-        >
-          Try Databuddy with Leap
-        </h3>
-        <div>
-          <p
-            style={{
-              marginBottom: "16px",
-              color: "#666",
-              fontSize: "15px",
-              lineHeight: "1.5",
-            }}
-          >
-            Let Leap generate a complete application that uses Databuddy for
-            analytics.
-          </p>
-          <div
-            style={{
-              display: "flex",
-              gap: "12px",
-              flexWrap: "nowrap",
-              alignItems: "center",
-            }}
-          >
-            <div style={{ flexGrow: 1, minWidth: 0 }}>
-              <input
-                type="text"
-                className="leap-prompt-input"
-                style={{
-                  width: "100%",
-                  padding: "12px 16px",
-                  border: "1px solid #333",
-                  borderRadius: "0px",
-                  fontSize: "14px",
-                  backgroundColor: "#fff",
-                  color: "#666",
-                  boxSizing: "border-box",
-                }}
-                placeholder="What do you want to build with Databuddy analytics?"
-              />
-            </div>
-            <div style={{ flexShrink: 0 }}>
-              <button
-                type="button"
-                style={{
-                  backgroundColor: "#fff",
-                  color: "#000",
-                  border: "1px solid #000",
-                  borderRadius: "0px",
-                  padding: "12px 20px",
-                  cursor: "pointer",
-                  fontWeight: "600",
-                  fontSize: "14px",
-                  transition: "all 0.2s ease",
-                  whiteSpace: "nowrap",
-                }}
-                onClick={handleGenerateClick}
-              >
-                Generate
-              </button>
-            </div>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              gap: "12px",
-              flexWrap: "wrap",
-              marginTop: "8px",
-              fontSize: "12px",
-            }}
-          >
-            <span style={{ color: "#666", marginRight: "4px" }}>Examples:</span>
-            {examples.map((example: ExampleType, index: number) => (
-              <div
-                key={index}
-                onClick={() => handleExampleClick(example)}
-                style={{
-                  color: "#999",
-                  cursor: "pointer",
-                  borderBottom: "1px dotted #555",
-                  padding: "0 2px",
-                  transition: "color 0.2s ease",
-                }}
-                className="hover:text-[#d5db04]"
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e: React.KeyboardEvent) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    handleExampleClick(example);
-                  }
-                }}
-              >
-                {example}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+				<div className="flex w-full gap-2">
+					<input
+						className="leap-prompt-input flex-1 border border-input bg-background px-2 py-1.5 text-foreground text-sm transition-colors placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
+						placeholder="What do you want to build with Databuddy analytics?"
+						type="text"
+					/>
+					<button
+						className={cn(
+							'inline-flex items-center justify-center whitespace-nowrap px-3 py-1.5 font-medium text-sm transition-all duration-200',
+							'bg-foreground/5 text-foreground backdrop-blur-[50px]',
+							'border border-border hover:animate-[borderGlitch_0.6s_ease-in-out]',
+							'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring active:scale-[0.98]'
+						)}
+						onClick={handleGenerate}
+						type="button"
+					>
+						Generate
+					</button>
+				</div>
+
+				<div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
+					<span className="text-muted-foreground">Examples:</span>
+					{examples.map((example) => (
+						<button
+							className="border-muted-foreground/50 border-b border-dotted px-1 text-muted-foreground transition-colors hover:border-purple-400 hover:text-purple-400 focus:border-purple-400 focus:text-purple-400 focus:outline-none"
+							key={example}
+							onClick={() => handleExample(example)}
+							type="button"
+						>
+							{example}
+						</button>
+					))}
+				</div>
+			</div>
+
+			{/* Sci-fi corners */}
+			<div className="pointer-events-none absolute inset-0">
+				{[
+					'top-0 left-0',
+					'top-0 right-0 -scale-x-[1]',
+					'bottom-0 left-0 -scale-y-[1]',
+					'bottom-0 right-0 -scale-[1]',
+				].map((position) => (
+					<div
+						className={`absolute h-2 w-2 group-hover:animate-[cornerGlitch_0.6s_ease-in-out] ${position}`}
+						key={position}
+					>
+						<div className="absolute top-0 left-0.5 h-0.5 w-1.5 origin-left bg-foreground/20" />
+						<div className="absolute top-0 left-0 h-2 w-0.5 origin-top bg-foreground/20" />
+					</div>
+				))}
+			</div>
+		</div>
+	);
 };
 
 export default LeapComponent;

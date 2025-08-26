@@ -5,15 +5,10 @@ import { nanoid } from 'nanoid';
 import { z } from 'zod';
 import {
 	checkExtensionSafety,
-	createUser,
-	deleteUser,
 	getAvailableExtensions,
-	getConnectionUrl,
 	getDatabaseStats,
 	getExtensions,
 	getTableStats,
-	listDatabuddyUsers,
-	parsePostgresUrl,
 	resetExtensionStats,
 	safeDropExtension,
 	safeInstallExtension,
@@ -31,7 +26,6 @@ const createDbConnectionSchema = z.object({
 	name: z.string().min(1, 'Name is required'),
 	type: z.string().default('postgres'),
 	url: z.string().url('Must be a valid connection URL'),
-	permissionLevel: z.enum(['readonly', 'admin']).default('readonly'),
 	organizationId: z.string().optional(),
 });
 
@@ -76,7 +70,6 @@ export const dbConnectionsRouter = createTRPCRouter({
 					id: true,
 					name: true,
 					type: true,
-					permissionLevel: true,
 					userId: true,
 					organizationId: true,
 					createdAt: true,
@@ -97,7 +90,6 @@ export const dbConnectionsRouter = createTRPCRouter({
 					id: true,
 					name: true,
 					type: true,
-					permissionLevel: true,
 					userId: true,
 					organizationId: true,
 					createdAt: true,
@@ -150,21 +142,8 @@ export const dbConnectionsRouter = createTRPCRouter({
 				}
 			}
 
-			// Test connection and get connection URL (creates user for non-Neon databases)
-			console.log(
-				`[DEBUG] create db connection: name=${input.name}, type=${input.type}, permissionLevel=${input.permissionLevel}`
-			);
-			console.log('[DEBUG] create db connection: testing connection first');
+			// Test connection
 			await testConnection(input.url);
-
-			console.log('[DEBUG] create db connection: getting connection URL');
-			const { connectionUrl } = await getConnectionUrl(
-				input.url,
-				input.permissionLevel
-			);
-			console.log(
-				'[DEBUG] create db connection: got connection URL, storing in database'
-			);
 
 			const [connection] = await ctx.db
 				.insert(dbConnections)
@@ -173,8 +152,7 @@ export const dbConnectionsRouter = createTRPCRouter({
 					userId: ctx.user.id,
 					name: input.name,
 					type: input.type,
-					url: encryptConnectionUrl(connectionUrl),
-					permissionLevel: input.permissionLevel,
+					url: encryptConnectionUrl(input.url),
 					organizationId: input.organizationId,
 					createdAt: new Date().toISOString(),
 					updatedAt: new Date().toISOString(),
@@ -183,7 +161,6 @@ export const dbConnectionsRouter = createTRPCRouter({
 					id: dbConnections.id,
 					name: dbConnections.name,
 					type: dbConnections.type,
-					permissionLevel: dbConnections.permissionLevel,
 					userId: dbConnections.userId,
 					organizationId: dbConnections.organizationId,
 					createdAt: dbConnections.createdAt,
@@ -209,7 +186,6 @@ export const dbConnectionsRouter = createTRPCRouter({
 					id: dbConnections.id,
 					name: dbConnections.name,
 					type: dbConnections.type,
-					permissionLevel: dbConnections.permissionLevel,
 					userId: dbConnections.userId,
 					organizationId: dbConnections.organizationId,
 					createdAt: dbConnections.createdAt,
@@ -229,17 +205,9 @@ export const dbConnectionsRouter = createTRPCRouter({
 	delete: protectedProcedure
 		.input(z.object({ id: z.string() }))
 		.mutation(async ({ ctx, input }) => {
-			const existingConnection = await authorizeDbConnectionAccess(
-				ctx,
-				input.id,
-				'delete'
-			);
+			await authorizeDbConnectionAccess(ctx, input.id, 'delete');
 
-			// Get connection details for cleanup
-			const connectionUrl = decryptConnectionUrl(existingConnection.url);
-			const { username } = parsePostgresUrl(connectionUrl);
-
-			// Delete from our database first
+			// Delete from our database
 			const [connection] = await ctx.db
 				.delete(dbConnections)
 				.where(eq(dbConnections.id, input.id))
@@ -255,84 +223,7 @@ export const dbConnectionsRouter = createTRPCRouter({
 				});
 			}
 
-			// Attempt to clean up the database user
-			// Only try to delete if it's a databuddy-created user (has our prefix)
-			if (username.startsWith('databuddy_')) {
-				try {
-					await deleteUser(connectionUrl, username);
-					console.log(`Successfully deleted database user: ${username}`);
-				} catch (error) {
-					// Log the error but don't fail the API operation
-					console.error(
-						`Failed to delete database user ${username}:`,
-						error.message
-					);
-					// In production, you might want to queue this for retry or manual cleanup
-				}
-			}
-
 			return { success: true };
-		}),
-
-	updateUrl: protectedProcedure
-		.input(
-			z.object({
-				id: z.string(),
-				adminUrl: z.string().url('Must be a valid connection URL'),
-				permissionLevel: z.enum(['readonly', 'admin']).default('admin'),
-			})
-		)
-		.mutation(async ({ ctx, input }) => {
-			const existingConnection = await authorizeDbConnectionAccess(
-				ctx,
-				input.id,
-				'update'
-			);
-
-			const oldUrl = decryptConnectionUrl(existingConnection.url);
-			const oldUsername = parsePostgresUrl(oldUrl).username;
-
-			await testConnection(input.adminUrl);
-			const { connectionUrl } = await createUser(
-				input.adminUrl,
-				input.permissionLevel
-			);
-
-			// Update connection
-			const [connection] = await ctx.db
-				.update(dbConnections)
-				.set({
-					url: encryptConnectionUrl(connectionUrl),
-					permissionLevel: input.permissionLevel,
-					updatedAt: new Date().toISOString(),
-				})
-				.where(eq(dbConnections.id, input.id))
-				.returning({
-					id: dbConnections.id,
-					name: dbConnections.name,
-					type: dbConnections.type,
-					permissionLevel: dbConnections.permissionLevel,
-					userId: dbConnections.userId,
-					organizationId: dbConnections.organizationId,
-					createdAt: dbConnections.createdAt,
-					updatedAt: dbConnections.updatedAt,
-				});
-
-			if (!connection) {
-				throw new TRPCError({
-					code: 'NOT_FOUND',
-					message: 'Connection not found',
-				});
-			}
-
-			// Clean up old user (don't fail the operation if this fails)
-			try {
-				await deleteUser(input.adminUrl, oldUsername);
-			} catch {
-				// Log but don't fail - old user cleanup is not critical
-			}
-
-			return connection;
 		}),
 
 	getDatabaseStats: protectedProcedure
@@ -467,14 +358,6 @@ export const dbConnectionsRouter = createTRPCRouter({
 				'update'
 			);
 
-			if (connection.permissionLevel !== 'admin') {
-				throw new TRPCError({
-					code: 'FORBIDDEN',
-					message:
-						'Extension updates require admin database access. Please update your connection to use admin permissions.',
-				});
-			}
-
 			try {
 				const decryptedUrl = decryptConnectionUrl(connection.url);
 				await updateExtension(decryptedUrl, input.extensionName);
@@ -500,14 +383,6 @@ export const dbConnectionsRouter = createTRPCRouter({
 				input.id,
 				'update'
 			);
-
-			if (connection.permissionLevel !== 'admin') {
-				throw new TRPCError({
-					code: 'FORBIDDEN',
-					message:
-						'Resetting extension statistics requires admin database access. Please update your connection to use admin permissions.',
-				});
-			}
 
 			try {
 				const decryptedUrl = decryptConnectionUrl(connection.url);
@@ -536,14 +411,6 @@ export const dbConnectionsRouter = createTRPCRouter({
 				input.id,
 				'update'
 			);
-
-			if (connection.permissionLevel !== 'admin') {
-				throw new TRPCError({
-					code: 'FORBIDDEN',
-					message:
-						'Extension installation requires admin database access. Please update your connection to use admin permissions.',
-				});
-			}
 
 			try {
 				const decryptedUrl = decryptConnectionUrl(connection.url);
@@ -577,14 +444,6 @@ export const dbConnectionsRouter = createTRPCRouter({
 				'update'
 			);
 
-			if (connection.permissionLevel !== 'admin') {
-				throw new TRPCError({
-					code: 'FORBIDDEN',
-					message:
-						'Extension removal requires admin database access. Please update your connection to use admin permissions.',
-				});
-			}
-
 			try {
 				const decryptedUrl = decryptConnectionUrl(connection.url);
 				const result = await safeDropExtension(
@@ -597,36 +456,6 @@ export const dbConnectionsRouter = createTRPCRouter({
 				throw new TRPCError({
 					code: 'INTERNAL_SERVER_ERROR',
 					message: `Failed to drop extension: ${error.message}`,
-				});
-			}
-		}),
-
-	// Debug/maintenance endpoints
-	listDatabuddyUsers: protectedProcedure
-		.input(z.object({ id: z.string() }))
-		.query(async ({ ctx, input }) => {
-			const connection = await authorizeDbConnectionAccess(
-				ctx,
-				input.id,
-				'read'
-			);
-
-			// Only admin connections can list users
-			if (connection.permissionLevel !== 'admin') {
-				throw new TRPCError({
-					code: 'FORBIDDEN',
-					message: 'Listing database users requires admin access.',
-				});
-			}
-
-			try {
-				const decryptedUrl = decryptConnectionUrl(connection.url);
-				const users = await listDatabuddyUsers(decryptedUrl);
-				return { users };
-			} catch (error) {
-				throw new TRPCError({
-					code: 'INTERNAL_SERVER_ERROR',
-					message: `Failed to list users: ${error instanceof Error ? error.message : 'Unknown error'}`,
 				});
 			}
 		}),

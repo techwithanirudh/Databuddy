@@ -23,17 +23,7 @@ export {
 
 export {
 	buildPostgresUrl,
-	type CreateUserResult,
-	createAdminUser,
-	createReadonlyUser,
-	createUser,
-	deleteUser,
-	getConnectionUrl,
-	isNeonDatabase,
-	listDatabuddyUsers,
-	type PermissionLevel,
 	type PostgresConnectionInfo,
 	parsePostgresUrl,
 	testConnection,
-	validateReadonlyAccess,
 } from './postgres';

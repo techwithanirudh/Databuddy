@@ -5,18 +5,12 @@ import {
 	CheckIcon,
 	DatabaseIcon,
 	GearIcon,
-	MagnifyingGlassIcon,
 	PlusIcon,
-	ShieldCheckIcon,
-	ShieldWarningIcon,
-	TrashIcon,
 	WarningIcon,
 } from '@phosphor-icons/react';
 import { use, useState } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
 	Dialog,
@@ -36,8 +30,13 @@ import {
 	SelectValue,
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { trpc } from '@/lib/trpc';
+import {
+	ExtensionSearch,
+	ExtensionStats,
+	ExtensionTabs,
+	PluginsPageHeader,
+} from './_components';
 
 interface ExtensionsPageProps {
 	params: Promise<{ id: string }>;
@@ -46,73 +45,33 @@ interface ExtensionsPageProps {
 function LoadingState() {
 	return (
 		<div className="mx-auto max-w-[1600px] space-y-6 p-4 sm:p-6 lg:p-8">
-			<Skeleton className="h-8 w-64" />
-			<div className="grid gap-4 md:grid-cols-4">
-				{Array.from({ length: 4 }).map((_, i) => (
-					<Skeleton className="h-24 w-full" key={i.toString()} />
-				))}
-			</div>
-			<Skeleton className="h-40 w-full" />
-		</div>
-	);
-}
-
-function PermissionBanner({
-	permissionLevel,
-	onUpgrade,
-}: {
-	permissionLevel: string;
-	onUpgrade: () => void;
-}) {
-	if (permissionLevel === 'admin') {
-		return (
-			<Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/20">
-				<ShieldCheckIcon className="h-4 w-4 text-green-600" />
-				<AlertDescription className="text-green-800 dark:text-green-200">
-					<strong>Admin Access</strong> - You can install, update, and remove
-					extensions.
-				</AlertDescription>
-			</Alert>
-		);
-	}
-
-	return (
-		<Alert className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/20">
-			<ShieldWarningIcon className="h-4 w-4 text-amber-600" />
-			<AlertDescription className="flex items-center justify-between">
-				<div className="text-amber-800 dark:text-amber-200">
-					<strong>Read-Only Access</strong> - Extension management requires
-					admin permissions.
-				</div>
-				<Button onClick={onUpgrade} size="sm" variant="outline">
-					Upgrade Connection
-				</Button>
-			</AlertDescription>
-		</Alert>
-	);
-}
-
-function StatsCard({
-	title,
-	value,
-	icon,
-}: {
-	title: string;
-	value: number;
-	icon: React.ReactNode;
-}) {
-	return (
-		<Card>
-			<CardContent className="pt-6">
-				<div className="flex items-center space-x-2">
-					{icon}
-					<div>
-						<p className="font-medium text-2xl">{value}</p>
-						<p className="text-muted-foreground text-sm">{title}</p>
+			{/* Header skeleton */}
+			<div className="space-y-4">
+				<div className="flex items-center gap-3">
+					<Skeleton className="h-12 w-12 rounded-lg" />
+					<div className="space-y-2">
+						<Skeleton className="h-8 w-64" />
+						<Skeleton className="h-4 w-96" />
 					</div>
 				</div>
-			</CardContent>
-		</Card>
+			</div>
+
+			{/* Stats skeleton */}
+			<ExtensionStats
+				isLoading={true}
+				stats={{ installed: 0, available: 0, updates: 0 }}
+			/>
+
+			{/* Content skeleton */}
+			<div className="space-y-4">
+				<Skeleton className="h-10 w-full max-w-md" />
+				<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+					{Array.from({ length: 6 }).map((_, i) => (
+						<Skeleton className="h-48 w-full rounded" key={i.toString()} />
+					))}
+				</div>
+			</div>
+		</div>
 	);
 }
 
@@ -125,205 +84,6 @@ interface Extension {
 	hasStatefulData?: boolean;
 	requiresRestart?: boolean;
 	needsUpdate?: boolean;
-}
-
-function ExtensionBadges({
-	extension,
-	type,
-}: {
-	extension: Extension;
-	type: 'installed' | 'available';
-}) {
-	return (
-		<div className="flex gap-1">
-			{type === 'installed' ? (
-				<Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
-					<CheckIcon className="mr-1 h-3 w-3" />
-					Installed
-				</Badge>
-			) : (
-				<Badge variant="outline">
-					<PlusIcon className="mr-1 h-3 w-3" />
-					Available
-				</Badge>
-			)}
-			{extension.needsUpdate && (
-				<Badge variant="default">
-					<ArrowClockwiseIcon className="mr-1 h-3 w-3" />
-					Update
-				</Badge>
-			)}
-		</div>
-	);
-}
-
-function ExtensionMetadata({
-	extension,
-	type,
-}: {
-	extension: Extension;
-	type: 'installed' | 'available';
-}) {
-	return (
-		<div className="flex flex-wrap gap-1">
-			{type === 'installed' && (
-				<span className="text-muted-foreground text-xs">
-					v{extension.version}
-				</span>
-			)}
-			{type === 'available' && (
-				<span className="text-muted-foreground text-xs">
-					v{extension.defaultVersion}
-				</span>
-			)}
-			{extension.schema && (
-				<Badge className="text-xs" variant="outline">
-					{extension.schema}
-				</Badge>
-			)}
-			{extension.hasStatefulData && (
-				<Badge className="text-xs" variant="outline">
-					Stateful
-				</Badge>
-			)}
-			{extension.requiresRestart && (
-				<Badge className="text-amber-600 text-xs" variant="outline">
-					Restart Required
-				</Badge>
-			)}
-		</div>
-	);
-}
-
-function ExtensionActions({
-	extension,
-	type,
-	onInstall,
-	onUpdate,
-	onRemove,
-	onReset,
-	canManage,
-	isInstalling,
-	isUpdating,
-	isRemoving,
-	isResetting,
-}: {
-	extension: Extension;
-	type: 'installed' | 'available';
-	onInstall?: () => void;
-	onUpdate?: () => void;
-	onRemove?: () => void;
-	onReset?: () => void;
-	canManage: boolean;
-	isInstalling?: boolean;
-	isUpdating?: boolean;
-	isRemoving?: boolean;
-	isResetting?: boolean;
-}) {
-	return (
-		<div className="flex items-center justify-between">
-			<div className="flex gap-2">
-				{type === 'installed' && extension.needsUpdate && onUpdate && (
-					<Button
-						disabled={!canManage || isUpdating}
-						onClick={onUpdate}
-						size="sm"
-					>
-						<ArrowClockwiseIcon className="mr-1 h-3 w-3" />
-						{isUpdating ? 'Updating...' : 'Update'}
-					</Button>
-				)}
-				{type === 'installed' && extension.hasStatefulData && onReset && (
-					<Button
-						disabled={!canManage || isResetting}
-						onClick={onReset}
-						size="sm"
-						variant="outline"
-					>
-						{isResetting ? 'Resetting...' : 'Reset Stats'}
-					</Button>
-				)}
-			</div>
-			<div className="flex gap-2">
-				{type === 'available' && onInstall && (
-					<Button
-						disabled={!canManage || isInstalling}
-						onClick={onInstall}
-						size="sm"
-					>
-						<PlusIcon className="mr-1 h-3 w-3" />
-						{isInstalling ? 'Installing...' : 'Install'}
-					</Button>
-				)}
-				{type === 'installed' && onRemove && (
-					<Button
-						disabled={!canManage || isRemoving}
-						onClick={onRemove}
-						size="sm"
-						variant="destructive"
-					>
-						<TrashIcon className="mr-1 h-3 w-3" />
-						{isRemoving ? 'Removing...' : 'Remove'}
-					</Button>
-				)}
-			</div>
-		</div>
-	);
-}
-
-function ExtensionCard({
-	extension,
-	type,
-	onInstall,
-	onUpdate,
-	onRemove,
-	onReset,
-	canManage,
-	isInstalling,
-	isUpdating,
-	isRemoving,
-	isResetting,
-}: {
-	extension: Extension;
-	type: 'installed' | 'available';
-	onInstall?: () => void;
-	onUpdate?: () => void;
-	onRemove?: () => void;
-	onReset?: () => void;
-	canManage: boolean;
-	isInstalling?: boolean;
-	isUpdating?: boolean;
-	isRemoving?: boolean;
-	isResetting?: boolean;
-}) {
-	return (
-		<Card className="p-4">
-			<div className="space-y-3">
-				<div className="flex items-center justify-between">
-					<h3 className="font-semibold">{extension.name}</h3>
-					<ExtensionBadges extension={extension} type={type} />
-				</div>
-
-				<p className="text-muted-foreground text-sm">{extension.description}</p>
-
-				<ExtensionMetadata extension={extension} type={type} />
-
-				<ExtensionActions
-					canManage={canManage}
-					extension={extension}
-					isInstalling={isInstalling}
-					isRemoving={isRemoving}
-					isResetting={isResetting}
-					isUpdating={isUpdating}
-					onInstall={onInstall}
-					onRemove={onRemove}
-					onReset={onReset}
-					onUpdate={onUpdate}
-					type={type}
-				/>
-			</div>
-		</Card>
-	);
 }
 
 function InstallDialog({
@@ -342,6 +102,10 @@ function InstallDialog({
 	const [selectedExtension, setSelectedExtension] = useState('');
 	const [schema, setSchema] = useState('public');
 
+	const selectedExt = availableExtensions.find(
+		(ext) => ext.name === selectedExtension
+	);
+
 	const handleInstall = () => {
 		if (!selectedExtension) {
 			return;
@@ -350,128 +114,104 @@ function InstallDialog({
 		setSelectedExtension('');
 	};
 
+	const handleClose = () => {
+		onOpenChange(false);
+		setSelectedExtension('');
+		setSchema('public');
+	};
+
 	return (
-		<Dialog onOpenChange={onOpenChange} open={open}>
-			<DialogContent>
+		<Dialog onOpenChange={handleClose} open={open}>
+			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
-					<DialogTitle>Install Extension</DialogTitle>
+					<DialogTitle className="flex items-center gap-2">
+						<PlusIcon className="h-5 w-5 text-primary" />
+						Install Extension
+					</DialogTitle>
 					<DialogDescription>
-						Select an extension to install with safety checks.
+						Select an extension to install. All installations include safety
+						checks and can be safely rolled back.
 					</DialogDescription>
 				</DialogHeader>
-				<div className="space-y-4">
-					<div>
-						<Label>Extension</Label>
+
+				<div className="space-y-6">
+					<div className="space-y-2">
+						<Label htmlFor="extension-select">Extension</Label>
 						<Select
 							onValueChange={setSelectedExtension}
 							value={selectedExtension}
 						>
-							<SelectTrigger>
-								<SelectValue placeholder="Select extension" />
+							<SelectTrigger className="rounded-lg" id="extension-select">
+								<SelectValue placeholder="Choose an extension to install" />
 							</SelectTrigger>
 							<SelectContent>
 								{availableExtensions.map((ext) => (
 									<SelectItem key={ext.name} value={ext.name}>
-										{ext.name} - {ext.description}
+										<div className="flex flex-col items-start">
+											<span className="font-medium">{ext.name}</span>
+											<span className="text-muted-foreground text-xs">
+												{ext.description}
+											</span>
+										</div>
 									</SelectItem>
 								))}
 							</SelectContent>
 						</Select>
 					</div>
-					<div>
-						<Label>Schema</Label>
-						<Input onChange={(e) => setSchema(e.target.value)} value={schema} />
+
+					{selectedExt && (
+						<div className="rounded-lg border bg-muted/20 p-4">
+							<h4 className="mb-2 font-medium text-sm">Extension Details</h4>
+							<div className="space-y-1 text-sm">
+								<div>
+									<span className="text-muted-foreground">Version:</span>{' '}
+									{selectedExt.defaultVersion}
+								</div>
+								{selectedExt.requiresRestart && (
+									<div className="text-amber-600">
+										<span className="text-muted-foreground">Note:</span>{' '}
+										Requires server restart
+									</div>
+								)}
+							</div>
+						</div>
+					)}
+
+					<div className="space-y-2">
+						<Label htmlFor="schema-input">Schema</Label>
+						<Input
+							className="rounded-lg"
+							id="schema-input"
+							onChange={(e) => setSchema(e.target.value)}
+							placeholder="public"
+							value={schema}
+						/>
+						<p className="text-muted-foreground text-xs">
+							The database schema where the extension will be installed
+						</p>
 					</div>
 				</div>
-				<DialogFooter>
-					<Button onClick={() => onOpenChange(false)} variant="outline">
+
+				<DialogFooter className="gap-2">
+					<Button onClick={handleClose} variant="outline">
 						Cancel
 					</Button>
 					<Button
+						className="gap-2"
 						disabled={!selectedExtension || isLoading}
 						onClick={handleInstall}
 					>
-						{isLoading ? 'Installing...' : 'Install'}
-					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
-	);
-}
-
-function UpgradeConnectionDialog({
-	open,
-	onOpenChange,
-	connectionId,
-	onSuccess,
-}: {
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
-	connectionId: string;
-	onSuccess: () => void;
-}) {
-	const [adminUrl, setAdminUrl] = useState('');
-
-	const upgradeMutation = trpc.dbConnections.updateUrl.useMutation({
-		onSuccess: () => {
-			onSuccess();
-			onOpenChange(false);
-			setAdminUrl('');
-		},
-	});
-
-	const handleUpgrade = () => {
-		if (!adminUrl) {
-			return;
-		}
-		upgradeMutation.mutate({
-			id: connectionId,
-			adminUrl,
-			permissionLevel: 'admin',
-		});
-	};
-
-	return (
-		<Dialog onOpenChange={onOpenChange} open={open}>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>Upgrade to Admin Access</DialogTitle>
-					<DialogDescription>
-						Provide an admin connection URL to enable extension management.
-					</DialogDescription>
-				</DialogHeader>
-				<div className="space-y-4">
-					<div>
-						<Label>Admin Database URL</Label>
-						<Input
-							onChange={(e) => setAdminUrl(e.target.value)}
-							placeholder="postgresql://admin:password@host:5432/database"
-							type="password"
-							value={adminUrl}
-						/>
-						<p className="mt-1 text-muted-foreground text-xs">
-							This will create a new admin user and replace your readonly
-							connection.
-						</p>
-					</div>
-					{upgradeMutation.error && (
-						<Alert className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/20">
-							<WarningIcon className="h-4 w-4 text-red-600" />
-							<AlertDescription className="text-red-800 dark:text-red-200">
-								{upgradeMutation.error.message}
-							</AlertDescription>
-						</Alert>
-					)}
-				</div>
-				<DialogFooter>
-					<Button onClick={() => onOpenChange(false)} variant="outline">
-						Cancel
-					</Button>
-					<Button
-						disabled={!adminUrl || upgradeMutation.isPending}
-						onClick={handleUpgrade}
-					>
-						{upgradeMutation.isPending ? 'Upgrading...' : 'Upgrade'}
+						{isLoading ? (
+							<>
+								<ArrowClockwiseIcon className="h-4 w-4 animate-spin" />
+								Installing...
+							</>
+						) : (
+							<>
+								<PlusIcon className="h-4 w-4" />
+								Install Extension
+							</>
+						)}
 					</Button>
 				</DialogFooter>
 			</DialogContent>
@@ -702,7 +442,6 @@ function RemoveExtensionDialog({
 export default function ExtensionsPage({ params }: ExtensionsPageProps) {
 	const [search, setSearch] = useState('');
 	const [installDialog, setInstallDialog] = useState(false);
-	const [upgradeDialog, setUpgradeDialog] = useState(false);
 	const [removeDialog, setRemoveDialog] = useState<string | null>(null);
 	const [removeWarnings, setRemoveWarnings] = useState<string[]>([]);
 	const [forceCascade, setForceCascade] = useState(false);
@@ -830,7 +569,6 @@ export default function ExtensionsPage({ params }: ExtensionsPageProps) {
 		return <LoadingState />;
 	}
 
-	const canManage = connection.permissionLevel === 'admin';
 	const filteredInstalled = extensions.filter(
 		(ext) =>
 			ext.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -865,25 +603,14 @@ export default function ExtensionsPage({ params }: ExtensionsPageProps) {
 	};
 
 	return (
-		<div className="mx-auto max-w-[1600px] space-y-6 p-4 sm:p-6 lg:p-8">
+		<div className="mx-auto max-w-[1600px] space-y-8 p-4 sm:p-6 lg:p-8">
 			{/* Header */}
-			<div className="space-y-2">
-				<div className="flex items-center gap-2">
-					<DatabaseIcon
-						className="h-6 w-6 text-muted-foreground"
-						weight="duotone"
-					/>
-					<h1 className="font-bold text-2xl">PostgreSQL Extensions</h1>
-				</div>
-				<p className="text-muted-foreground text-sm">
-					Manage database extensions with production-safe operations
-				</p>
-			</div>
-
-			{/* Permission Banner */}
-			<PermissionBanner
-				onUpgrade={() => setUpgradeDialog(true)}
-				permissionLevel={connection.permissionLevel}
+			<PluginsPageHeader
+				description="Manage database extensions with production-safe operations"
+				icon={<DatabaseIcon className="h-6 w-6" weight="duotone" />}
+				onInstallExtension={() => setInstallDialog(true)}
+				stats={stats}
+				title="PostgreSQL Extensions"
 			/>
 
 			{/* Success Banner */}
@@ -915,127 +642,54 @@ export default function ExtensionsPage({ params }: ExtensionsPageProps) {
 			)}
 
 			{/* Stats */}
-			<div className="grid gap-4 md:grid-cols-4">
-				<StatsCard
-					icon={<CheckIcon className="h-5 w-5 text-green-600" />}
-					title="Installed"
-					value={stats.installed}
-				/>
-				<StatsCard
-					icon={<PlusIcon className="h-5 w-5 text-blue-600" />}
-					title="Available"
-					value={stats.available}
-				/>
-				<StatsCard
-					icon={<ArrowClockwiseIcon className="h-5 w-5 text-amber-600" />}
-					title="Updates"
-					value={stats.updates}
-				/>
-			</div>
+			<ExtensionStats stats={stats} />
 
-			{/* Search and Actions */}
+			{/* Search */}
 			<div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-				<div className="relative max-w-md flex-1">
-					<MagnifyingGlassIcon className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
-					<Input
-						className="pl-10"
-						onChange={(e) => setSearch(e.target.value)}
-						placeholder="Search extensions..."
-						value={search}
-					/>
-				</div>
-				<Button
-					disabled={!canManage || installMutation.isPending}
-					onClick={() => setInstallDialog(true)}
-				>
-					<PlusIcon className="mr-2 h-4 w-4" />
-					{installMutation.isPending ? 'Installing...' : 'Install Extension'}
-				</Button>
+				<ExtensionSearch
+					onSearchChange={setSearch}
+					placeholder="Search extensions by name or description..."
+					search={search}
+				/>
 			</div>
 
 			{/* Extensions Tabs */}
-			<Tabs className="w-full" defaultValue="installed">
-				<TabsList>
-					<TabsTrigger value="installed">
-						Installed ({stats.installed})
-					</TabsTrigger>
-					<TabsTrigger value="available">
-						Available ({stats.available})
-					</TabsTrigger>
-				</TabsList>
-
-				<TabsContent className="space-y-4" value="installed">
-					<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-						{filteredInstalled.map((ext) => (
-							<ExtensionCard
-								canManage={canManage}
-								extension={ext}
-								isRemoving={
-									removeMutation.isPending &&
-									removeMutation.variables?.extensionName === ext.name
-								}
-								isResetting={
-									resetMutation.isPending &&
-									resetMutation.variables?.extensionName === ext.name
-								}
-								isUpdating={
-									updateMutation.isPending &&
-									updateMutation.variables?.extensionName === ext.name
-								}
-								key={ext.name}
-								onRemove={() => setRemoveDialog(ext.name)}
-								onReset={() =>
-									resetMutation.mutate({
-										id: connectionId,
-										extensionName: ext.name,
-									})
-								}
-								onUpdate={() =>
-									updateMutation.mutate({
-										id: connectionId,
-										extensionName: ext.name,
-									})
-								}
-								type="installed"
-							/>
-						))}
-					</div>
-					{filteredInstalled.length === 0 && (
-						<div className="py-12 text-center">
-							<DatabaseIcon className="mx-auto mb-3 h-12 w-12 text-muted-foreground" />
-							<p className="text-muted-foreground">
-								No installed extensions found
-							</p>
-						</div>
-					)}
-				</TabsContent>
-
-				<TabsContent className="space-y-4" value="available">
-					<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-						{filteredAvailable.map((ext) => (
-							<ExtensionCard
-								canManage={canManage}
-								extension={ext}
-								isInstalling={
-									installMutation.isPending &&
-									installMutation.variables?.extensionName === ext.name
-								}
-								key={ext.name}
-								onInstall={() => handleInstall(ext.name)}
-								type="available"
-							/>
-						))}
-					</div>
-					{filteredAvailable.length === 0 && (
-						<div className="py-12 text-center">
-							<CheckIcon className="mx-auto mb-3 h-12 w-12 text-muted-foreground" />
-							<p className="text-muted-foreground">
-								No available extensions found
-							</p>
-						</div>
-					)}
-				</TabsContent>
-			</Tabs>
+			<ExtensionTabs
+				availableExtensions={filteredAvailable}
+				canManage={true}
+				installedExtensions={filteredInstalled}
+				loadingStates={{
+					installing: installMutation.isPending
+						? installMutation.variables?.extensionName
+						: undefined,
+					updating: updateMutation.isPending
+						? updateMutation.variables?.extensionName
+						: undefined,
+					removing: removeMutation.isPending
+						? removeMutation.variables?.extensionName
+						: undefined,
+					resetting: resetMutation.isPending
+						? resetMutation.variables?.extensionName
+						: undefined,
+				}}
+				onClearSearch={() => setSearch('')}
+				onInstall={(ext) => handleInstall(ext.name)}
+				onInstallExtension={() => setInstallDialog(true)}
+				onRemove={(ext) => setRemoveDialog(ext.name)}
+				onReset={(ext) =>
+					resetMutation.mutate({
+						id: connectionId,
+						extensionName: ext.name,
+					})
+				}
+				onUpdate={(ext) =>
+					updateMutation.mutate({
+						id: connectionId,
+						extensionName: ext.name,
+					})
+				}
+				searchTerm={search}
+			/>
 
 			{/* Dialogs */}
 			<InstallDialog
@@ -1044,19 +698,6 @@ export default function ExtensionsPage({ params }: ExtensionsPageProps) {
 				onInstall={handleInstall}
 				onOpenChange={setInstallDialog}
 				open={installDialog}
-			/>
-
-			<UpgradeConnectionDialog
-				connectionId={connectionId}
-				onOpenChange={setUpgradeDialog}
-				onSuccess={() => {
-					utils.dbConnections.getById.invalidate({ id: connectionId });
-					utils.dbConnections.getExtensions.invalidate({ id: connectionId });
-					utils.dbConnections.getAvailableExtensions.invalidate({
-						id: connectionId,
-					});
-				}}
-				open={upgradeDialog}
 			/>
 
 			{/* Configuration Required Dialog */}

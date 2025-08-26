@@ -1,8 +1,9 @@
 'use client';
 
-import { DatabaseIcon, TrendDownIcon } from '@phosphor-icons/react';
+import { DatabaseIcon, InfoIcon, TrendDownIcon } from '@phosphor-icons/react';
 import { Suspense, useCallback, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent } from '@/components/ui/card';
 import { useOrganizations } from '@/hooks/use-organizations';
 import { trpc } from '@/lib/trpc';
@@ -215,6 +216,17 @@ export default function DatabasePage() {
 				}
 				title="Database Monitoring"
 			/>
+
+			<Alert className="rounded border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950">
+				<InfoIcon className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+				<AlertDescription className="text-amber-800 dark:text-amber-200">
+					<strong>Alpha Release - Early Access</strong>
+					<br />
+					Database monitoring is currently in alpha and not intended for
+					production use. This is an early access feature for testing and
+					feedback purposes only.
+				</AlertDescription>
+			</Alert>
 
 			<Suspense fallback={<DatabaseConnectionsSkeleton />}>
 				<ConnectionsList

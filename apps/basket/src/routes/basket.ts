@@ -311,7 +311,7 @@ async function insertCustomEvent(
 		customData.eventId,
 		VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH
 	);
-	q
+	q;
 	if (!eventId) {
 		eventId = randomUUID();
 	}

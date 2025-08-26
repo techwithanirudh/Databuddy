@@ -27,6 +27,7 @@ import {
 	type ReferrerSourceCellData,
 } from '@/components/atomic/ReferrerSourceCell';
 import { MetricsChart } from '@/components/charts/metrics-chart';
+import { BrowserIcon, OSIcon } from '@/components/icon';
 import { useBatchDynamicQuery } from '@/hooks/use-dynamic-query';
 import { useTableTabs } from '@/lib/table-tabs';
 import { getUserTimezone } from '@/lib/timezone';
@@ -39,12 +40,7 @@ import {
 	formatDateByGranularity,
 	getColorVariant,
 } from '../utils/analytics-helpers';
-import {
-	getBrowserIcon,
-	getOSIcon,
-	PercentageBadge,
-	TechnologyIcon,
-} from '../utils/technology-helpers';
+import { PercentageBadge } from '../utils/technology-helpers';
 import type { FullTabProps, MetricPoint } from '../utils/types';
 import { MetricToggles } from '../utils/ui-components';
 
@@ -450,11 +446,10 @@ export function WebsiteOverviewTab({
 
 	const createTechnologyCell = (type: 'browser' | 'os') => (info: CellInfo) => {
 		const entry = info.row.original as TechnologyData;
-		const icon =
-			type === 'browser' ? getBrowserIcon(entry.name) : getOSIcon(entry.name);
+		const IconComponent = type === 'browser' ? BrowserIcon : OSIcon;
 		return (
 			<div className="flex items-center gap-3">
-				<TechnologyIcon entry={{ ...entry, icon, category: type }} size="md" />
+				<IconComponent name={entry.name} size="md" />
 				<span className="font-medium">{entry.name}</span>
 			</div>
 		);

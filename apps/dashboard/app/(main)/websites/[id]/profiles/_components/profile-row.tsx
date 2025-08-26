@@ -57,13 +57,8 @@ type ProfileData = {
 	}>;
 };
 
-import {
-	formatDuration,
-	getBrowserIconComponent,
-	getCountryFlag,
-	getDeviceIcon,
-	getOSIconComponent,
-} from './profile-utils';
+import { BrowserIcon, CountryFlag, OSIcon } from '@/components/icon';
+import { formatDuration, getDeviceIcon } from '@/lib/utils';
 
 interface ProfileRowProps {
 	profile: ProfileData;
@@ -152,10 +147,10 @@ export function ProfileRow({
 							</div>
 						</div>
 						<div className="flex flex-shrink-0 items-center gap-2">
-							{getCountryFlag(profile.country)}
+							<CountryFlag country={profile.country} size="md" />
 							{getDeviceIcon(profile.device)}
-							{getBrowserIconComponent(profile.browser)}
-							{getOSIconComponent(profile.os)}
+							<BrowserIcon name={profile.browser} size="md" />
+							<OSIcon name={profile.os} size="md" />
 						</div>
 
 						{/* Profile Info */}

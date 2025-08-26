@@ -3,7 +3,6 @@
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
-// Define available browser icons based on the public directory
 const BROWSER_ICONS = [
 	'Chrome',
 	'Firefox',
@@ -48,7 +47,6 @@ const BROWSER_ICONS = [
 	'Brave',
 ] as const;
 
-// Define available OS icons based on the public directory
 const OS_ICONS = [
 	'Windows',
 	'macOS',
@@ -195,7 +193,6 @@ export function PublicIcon({
 	);
 }
 
-// Convenience components for specific types
 export function BrowserIcon({
 	name,
 	size = 'md',
@@ -226,6 +223,48 @@ export function OSIcon({
 			name={name}
 			size={size}
 			type="os"
+		/>
+	);
+}
+
+interface CountryFlagProps {
+	country: string;
+	size?: 'sm' | 'md' | 'lg' | number;
+	className?: string;
+	fallback?: React.ReactNode;
+}
+
+export function CountryFlag({
+	country,
+	size = 'md',
+	className,
+	fallback,
+}: CountryFlagProps) {
+	const iconSize = getIconSize(size);
+
+	if (!country || country === 'Unknown' || country === '') {
+		return (
+			fallback || (
+				<div
+					className={cn('flex h-4 w-6 items-center justify-center', className)}
+				>
+					<div className="h-4 w-4 text-muted-foreground">🌐</div>
+				</div>
+			)
+		);
+	}
+
+	return (
+		<Image
+			alt={`${country} flag`}
+			className={cn('h-4 w-6 rounded-sm object-cover', className)}
+			height={iconSize}
+			onError={(e) => {
+				const img = e.target as HTMLImageElement;
+				img.style.display = 'none';
+			}}
+			src={`https://purecatamphetamine.github.io/country-flag-icons/3x2/${country.toUpperCase()}.svg`}
+			width={24}
 		/>
 	);
 }

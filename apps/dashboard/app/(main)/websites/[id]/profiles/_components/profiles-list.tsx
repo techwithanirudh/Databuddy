@@ -9,7 +9,6 @@ import { useDateFilters } from '@/hooks/use-date-filters';
 import { useProfilesData } from '@/hooks/use-dynamic-query';
 import { dynamicQueryFiltersAtom } from '@/stores/jotai/filterAtoms';
 
-// Type adapter for the new profile data structure
 type ProfileData = {
 	visitor_id: string;
 	first_visit: string;

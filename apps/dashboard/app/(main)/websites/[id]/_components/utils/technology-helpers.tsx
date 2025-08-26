@@ -7,7 +7,13 @@ import {
 	Tablet,
 	Tv,
 } from 'lucide-react';
+import Image from 'next/image';
 import type React from 'react';
+import { BrowserIcon, OSIcon } from '@/components/icon';
+
+// Regex patterns for browser name processing
+const MOBILE_PREFIX_REGEX = /^Mobile\s+/;
+const MOBILE_SUFFIX_REGEX = /\s+Mobile$/;
 
 // Types
 export interface DeviceTypeEntry {
@@ -76,62 +82,6 @@ export const getDeviceTypeIcon = (
 	return <HelpCircle className={`${className} text-muted-foreground`} />;
 };
 
-// Enhanced browser icon mapping
-export const getBrowserIcon = (browser: string): string => {
-	const browserLower = browser.toLowerCase();
-
-	const iconMap: Record<string, string> = {
-		chrome: '/browsers/Chrome.svg',
-		firefox: '/browsers/Firefox.svg',
-		safari: '/browsers/Safari.svg',
-		edge: '/browsers/Edge.svg',
-		opera: '/browsers/Opera.svg',
-		ie: '/browsers/IE.svg',
-		'internet explorer': '/browsers/IE.svg',
-		samsung: '/browsers/SamsungInternet.svg',
-		yandex: '/browsers/Yandex.svg',
-		ucbrowser: '/browsers/UCBrowser.svg',
-		qq: '/browsers/QQ.webp',
-		baidu: '/browsers/Baidu.svg',
-		duckduckgo: '/browsers/DuckDuckGo.svg',
-		brave: '/browsers/Brave.svg',
-		vivaldi: '/browsers/Vivaldi.svg',
-	};
-
-	for (const [key, path] of Object.entries(iconMap)) {
-		if (browserLower.includes(key)) {
-			return path;
-		}
-	}
-
-	return '/browsers/Chrome.svg';
-};
-
-// Enhanced OS icon mapping
-export const getOSIcon = (os: string): string => {
-	const osLower = os.toLowerCase();
-
-	const iconMap: Record<string, string> = {
-		windows: '/operating-systems/Windows.svg',
-		mac: '/operating-systems/macOS.svg',
-		darwin: '/operating-systems/macOS.svg',
-		android: '/operating-systems/Android.svg',
-		linux: '/operating-systems/Ubuntu.svg',
-		ubuntu: '/operating-systems/Ubuntu.svg',
-		chrome: '/operating-systems/Chrome.svg',
-		harmony: '/operating-systems/HarmonyOS.svg',
-		ios: '/operating-systems/Apple.svg',
-	};
-
-	for (const [key, path] of Object.entries(iconMap)) {
-		if (osLower.includes(key)) {
-			return path;
-		}
-	}
-
-	return '/operating-systems/Ubuntu.svg';
-};
-
 export const processDeviceData = (
 	deviceTypes: DeviceTypeEntry[]
 ): TechnologyTableEntry[] => {
@@ -163,7 +113,6 @@ export const processDeviceData = (
 		}));
 };
 
-// Process browser data with percentages and enhanced icons
 export const processBrowserData = (
 	browserVersions: BrowserVersionEntry[]
 ): TechnologyTableEntry[] => {
@@ -172,8 +121,8 @@ export const processBrowserData = (
 	for (const item of browserVersions) {
 		let browserName = item.browser || 'Unknown';
 		browserName = browserName
-			.replace(/^Mobile\s+/, '')
-			.replace(/\s+Mobile$/, '');
+			.replace(MOBILE_PREFIX_REGEX, '')
+			.replace(MOBILE_SUFFIX_REGEX, '');
 		browserGroups[browserName] =
 			(browserGroups[browserName] || 0) + (item.visitors || 0);
 	}
@@ -191,12 +140,11 @@ export const processBrowserData = (
 			visitors,
 			percentage:
 				totalVisitors > 0 ? Math.round((visitors / totalVisitors) * 100) : 0,
-			icon: getBrowserIcon(name),
+			iconComponent: <BrowserIcon name={name} size="md" />,
 			category: 'browser',
 		}));
 };
 
-// Enhanced icon component for tables
 export const TechnologyIcon = ({
 	entry,
 	size = 'md',
@@ -208,38 +156,36 @@ export const TechnologyIcon = ({
 		return <>{entry.iconComponent}</>;
 	}
 
-	if (entry.icon) {
-		const sizeClasses = {
-			sm: 'h-3 w-3',
-			md: 'h-4 w-4',
-			lg: 'h-5 w-5',
-		};
-
-		return (
-			<img
-				alt={entry.name}
-				className={`${sizeClasses[size]} object-contain`}
-				onError={(e) => {
-					(e.target as HTMLImageElement).style.display = 'none';
-				}}
-				src={`${entry.icon}`}
-			/>
-		);
+	// Use unified icon components for better consistency
+	if (entry.category === 'browser') {
+		return <BrowserIcon name={entry.name} size={size} />;
 	}
 
-	// For OS entries without icon, use getOSIcon
 	if (entry.category === 'os') {
-		const sizeClasses = {
-			sm: 'h-3 w-3',
-			md: 'h-4 w-4',
-			lg: 'h-5 w-5',
+		return <OSIcon name={entry.name} size={size} />;
+	}
+
+	// Fallback for other categories or when no category is specified
+	if (entry.icon) {
+		const sizeMap = {
+			sm: 12,
+			md: 16,
+			lg: 20,
 		};
+		const iconSize = sizeMap[size];
+
 		return (
-			<img
-				alt={entry.name}
-				className={`${sizeClasses[size]} object-contain`}
-				src={getOSIcon(entry.name)}
-			/>
+			<div
+				className="relative flex-shrink-0"
+				style={{ width: iconSize, height: iconSize }}
+			>
+				<Image
+					alt={entry.name}
+					className="object-contain"
+					fill
+					src={entry.icon}
+				/>
+			</div>
 		);
 	}
 

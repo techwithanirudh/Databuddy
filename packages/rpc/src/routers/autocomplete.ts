@@ -35,11 +35,12 @@ const getAutocompleteQuery = () => `
 	GROUP BY event_name
 	UNION ALL
 	SELECT 'pagePaths' as category, 
-		CASE 
+		decodeURLComponent(CASE 
 			WHEN path LIKE 'http%' THEN 
-				substring(path, position(path, '/', 9))
-			ELSE path
-		END as value
+				CASE WHEN trimRight(splitByChar('?', substring(path, position(path, '/', 9)))[1], '/') = '' THEN '/' ELSE trimRight(splitByChar('?', substring(path, position(path, '/', 9)))[1], '/') END
+			ELSE 
+				CASE WHEN trimRight(splitByChar('?', path)[1], '/') = '' THEN '/' ELSE trimRight(splitByChar('?', path)[1], '/') END
+		END) as value
 	FROM analytics.events
 	WHERE client_id = {websiteId:String}
 		AND time >= parseDateTimeBestEffort({startDate:String})

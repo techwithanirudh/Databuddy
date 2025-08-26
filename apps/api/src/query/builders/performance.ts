@@ -8,7 +8,7 @@ export const PerformanceBuilders: Record<string, SimpleQueryConfig> = {
 	slow_pages: {
 		table: Analytics.events,
 		fields: [
-			"trimRight(path, '/') as name",
+			"decodeURLComponent(CASE WHEN trimRight(path(path), '/') = '' THEN '/' ELSE trimRight(path(path), '/') END) as name",
 			'COUNT(DISTINCT anonymous_id) as visitors',
 			'AVG(CASE WHEN load_time > 0 THEN load_time ELSE NULL END) as avg_load_time',
 			'quantile(0.50)(CASE WHEN load_time > 0 THEN load_time ELSE NULL END) as p50_load_time',
@@ -24,7 +24,9 @@ export const PerformanceBuilders: Record<string, SimpleQueryConfig> = {
 			'COUNT(*) as pageviews',
 		],
 		where: ["event_name = 'screen_view'", "path != ''", 'load_time > 0'],
-		groupBy: ["trimRight(path, '/')"],
+		groupBy: [
+			"decodeURLComponent(CASE WHEN trimRight(path(path), '/') = '' THEN '/' ELSE trimRight(path(path), '/') END)",
+		],
 		orderBy: 'p95_load_time DESC',
 		limit: 100,
 		timeField: 'time',
@@ -166,7 +168,7 @@ export const PerformanceBuilders: Record<string, SimpleQueryConfig> = {
 	web_vitals_by_page: {
 		table: Analytics.web_vitals,
 		fields: [
-			"trimRight(path, '/') as name",
+			"decodeURLComponent(CASE WHEN trimRight(path(path), '/') = '' THEN '/' ELSE trimRight(path(path), '/') END) as name",
 			'COUNT(DISTINCT anonymous_id) as visitors',
 			'AVG(CASE WHEN fcp > 0 THEN fcp ELSE NULL END) as avg_fcp',
 			'quantile(0.50)(CASE WHEN fcp > 0 THEN fcp ELSE NULL END) as p50_fcp',
@@ -195,7 +197,9 @@ export const PerformanceBuilders: Record<string, SimpleQueryConfig> = {
 			'COUNT(*) as measurements',
 		],
 		where: ["path != ''"],
-		groupBy: ["trimRight(path, '/')"],
+		groupBy: [
+			"decodeURLComponent(CASE WHEN trimRight(path(path), '/') = '' THEN '/' ELSE trimRight(path(path), '/') END)",
+		],
 		orderBy: 'p95_lcp DESC',
 		limit: 100,
 		timeField: 'timestamp',

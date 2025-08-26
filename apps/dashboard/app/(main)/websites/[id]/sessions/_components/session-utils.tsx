@@ -1,79 +1,9 @@
 import {
 	CursorClickIcon,
 	FileTextIcon,
-	GlobeIcon,
 	LightningIcon,
 	SparkleIcon,
 } from '@phosphor-icons/react';
-import Image from 'next/image';
-import {
-	getBrowserIcon,
-	getDeviceTypeIcon,
-	getOSIcon,
-} from '../../_components/utils/technology-helpers';
-
-export const getDefaultDateRange = () => {
-	const today = new Date();
-	const thirtyDaysAgo = new Date(today);
-	thirtyDaysAgo.setDate(today.getDate() - 30);
-	return {
-		start_date: thirtyDaysAgo.toISOString().split('T')[0],
-		end_date: today.toISOString().split('T')[0],
-		granularity: 'daily' as 'hourly' | 'daily',
-	};
-};
-
-export const getDeviceIcon = (device: string) => {
-	return getDeviceTypeIcon(device, 'md');
-};
-
-export const getBrowserIconComponent = (browser: string) => {
-	const iconPath = getBrowserIcon(browser);
-	return (
-		<div className="flex h-4 w-4 items-center justify-center">
-			<Image
-				alt={browser}
-				className="h-4 w-4 object-contain"
-				height={16}
-				src={iconPath}
-				width={16}
-			/>
-		</div>
-	);
-};
-
-export const getOSIconComponent = (os: string) => {
-	const iconPath = getOSIcon(os);
-	return (
-		<Image
-			alt={os}
-			className="h-4 w-4 object-contain"
-			height={16}
-			src={iconPath}
-			width={16}
-		/>
-	);
-};
-
-export const getCountryFlag = (country: string) => {
-	if (!country || country === 'Unknown' || country === '') {
-		return (
-			<div className="flex h-4 w-6 items-center justify-center">
-				<GlobeIcon className="h-4 w-4 text-muted-foreground" />
-			</div>
-		);
-	}
-
-	return (
-		<Image
-			alt={`${country} flag`}
-			className="h-4 w-6"
-			height={16}
-			src={`https://flagcdn.com/w40/${country.toLowerCase()}.png`}
-			width={24}
-		/>
-	);
-};
 
 export const getEventIconAndColor = (
 	eventName: string,

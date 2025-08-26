@@ -26,7 +26,7 @@ import {
 	useQuery,
 } from '@tanstack/react-query';
 import { useCallback, useMemo } from 'react';
-import { formatDuration } from '@/app/(main)/websites/[id]/profiles/_components/profile-utils';
+import { formatDuration } from '@/lib/utils';
 import { usePreferences } from './use-preferences';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';

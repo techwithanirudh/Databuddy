@@ -38,14 +38,9 @@ import type {
 	SessionReferrer,
 	SessionRowProps,
 } from '@databuddy/shared';
-import {
-	getBrowserIconComponent,
-	getCountryFlag,
-	getDeviceIcon,
-	getOSIconComponent,
-} from './session-utils';
+import { BrowserIcon, CountryFlag, OSIcon } from '@/components/icon';
+import { getDeviceIcon } from '@/lib/utils';
 
-// Transform ClickHouse tuple events to objects
 function transformSessionEvents(
 	events: RawSessionEventTuple[]
 ): SessionEvent[] {
@@ -153,10 +148,10 @@ function SessionRowInternal({
 							</div>
 						</div>
 						<div className="flex flex-shrink-0 items-center gap-2">
-							{getCountryFlag(session.country_code)}
+							<CountryFlag country={session.country_code} size="md" />
 							{getDeviceIcon(session.device_type)}
-							{getBrowserIconComponent(session.browser_name)}
-							{getOSIconComponent(session.os_name)}
+							<BrowserIcon name={session.browser_name} size="md" />
+							<OSIcon name={session.os_name} size="md" />
 						</div>
 
 						<div className="min-w-0 flex-1">

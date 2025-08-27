@@ -1,9 +1,8 @@
 import './globals.css';
 
-import { Databuddy } from '@databuddy/sdk';
+import { Databuddy } from '@databuddy/sdk/react';
 import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
-import Script from 'next/script';
 import { Toaster } from 'sonner';
 import Providers from './providers';
 
@@ -135,12 +134,6 @@ export default function RootLayout({
 				trackScreenViews={true}
 				trackWebVitals={true}
 			/>
-			{process.env.NODE_ENV === 'development' && (
-				<Script
-					crossOrigin="anonymous"
-					src="//unpkg.com/react-scan/dist/auto.global.js"
-				/>
-			)}
 			<body className="flex h-full min-h-screen flex-col bg-background text-foreground antialiased">
 				<Providers>
 					<main className="flex-1">{children}</main>

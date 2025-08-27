@@ -323,6 +323,20 @@
 						errorType: event.error?.name || 'Error',
 					});
 				});
+				window.addEventListener('unhandledrejection', (event) => {
+					const reason = event.reason;
+					const isError = reason instanceof Error;
+
+					this.trackError({
+						timestamp: Date.now(),
+						message: isError ? reason.message : String(reason),
+						filename: isError ? reason.filename : undefined,
+						lineno: isError ? reason.lineno : undefined,
+						colno: isError ? reason.colno : undefined,
+						stack: isError ? reason.stack : undefined,
+						errorType: isError ? reason.name || 'Error' : 'UnhandledRejection',
+					});
+				});
 			}
 		}
 
@@ -1564,11 +1578,9 @@
 			window.databuddyOptedOut = true;
 			window.databuddyDisabled = true;
 
-			// Disable existing instance
 			if (window.databuddy && typeof window.databuddy === 'object') {
 				window.databuddy.options.disabled = true;
 
-				// Override methods to no-ops
 				const noop = () => {};
 				window.databuddy.track = noop;
 				window.databuddy.screenView = noop;

@@ -464,11 +464,18 @@ function customSQLAuth() {
 				};
 			}
 
-			if (!apiKey.scopes.includes('admin:apikeys')) {
+			// Check for the dedicated custom SQL scope instead of admin scope
+			const hasCustomSQLScope = apiKey.scopes.includes('write:custom-sql');
+			const hasGlobalScope =
+				apiKey.scopes.includes('read:data') ||
+				apiKey.scopes.includes('read:analytics');
+
+			if (!(hasCustomSQLScope || hasGlobalScope)) {
 				set.status = 403;
 				return {
 					success: false,
-					error: 'API key must have admin:apikeys scope for custom SQL access',
+					error:
+						'API key must have write:custom-sql or read:analytics scope for custom SQL access',
 					code: 'INSUFFICIENT_SCOPE',
 				};
 			}

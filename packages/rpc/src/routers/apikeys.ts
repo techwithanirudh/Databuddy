@@ -26,6 +26,19 @@ const API_SCOPE_VALUES = [
 	'read:experiments',
 	'track:events',
 	'admin:apikeys',
+	// New scopes for core use cases
+	'read:analytics',
+	'write:custom-sql',
+	'read:export',
+	'write:otel',
+	// Administrative scopes
+	'admin:users',
+	'admin:organizations',
+	'admin:websites',
+	// Rate limiting and usage scopes
+	'rate:standard',
+	'rate:premium',
+	'rate:enterprise',
 ] as const;
 
 const API_RESOURCE_TYPE_VALUES = [
@@ -33,6 +46,12 @@ const API_RESOURCE_TYPE_VALUES = [
 	'website',
 	'ab_experiment',
 	'feature_flag',
+	// New resource types for data categories
+	'analytics_data',
+	'error_data',
+	'web_vitals',
+	'custom_events',
+	'export_data',
 ] as const;
 
 const accessEntrySchema = z.object({
@@ -115,29 +134,68 @@ const hashSecretScrypt = (secret: string) => {
 	return `scrypt:${salt.toString('base64')}:${derived.toString('base64')}`;
 };
 
-async function assertOrgPermission(ctx: Context) {
+async function assertOrgPermission(
+	ctx: Context,
+	requiredScopes: string[] = []
+) {
 	if (ctx.user.role === 'ADMIN') {
+		logger.info('Organization permission granted via admin role', {
+			userId: ctx.user.id,
+			requiredScopes,
+		});
 		return;
 	}
+
+	// Check if user has organization-level permissions
 	const { success } = await websitesApi.hasPermission({
 		headers: ctx.headers,
 		body: { permissions: { website: ['configure'] } },
 	});
+
 	if (!success) {
+		logger.warn('Organization permission denied', {
+			userId: ctx.user.id,
+			requiredScopes,
+			reason: 'User lacks organization-level configure permission',
+		});
 		throw new TRPCError({
 			code: 'FORBIDDEN',
-			message: 'Missing organization permissions.',
+			message:
+				'Missing organization permissions. You need configure access to manage organization API keys.',
 		});
 	}
+
+	logger.info('Organization permission granted', {
+		userId: ctx.user.id,
+		requiredScopes,
+		source: 'website_configure_permission',
+	});
 }
 
 function assertUserOwnershipOrAdmin(ctx: Context, userId: string | null) {
 	if (ctx.user.role === 'ADMIN') {
+		logger.info('User ownership check bypassed via admin role', {
+			adminUserId: ctx.user.id,
+			targetUserId: userId,
+		});
 		return;
 	}
 	if (!userId || userId !== ctx.user.id) {
-		throw new TRPCError({ code: 'FORBIDDEN', message: 'Not authorized.' });
+		logger.warn('User ownership check failed', {
+			requestingUserId: ctx.user.id,
+			targetUserId: userId,
+			reason: userId ? 'Ownership mismatch' : 'No user ID provided',
+		});
+		throw new TRPCError({
+			code: 'FORBIDDEN',
+			message: 'Not authorized. You can only manage your own API keys.',
+		});
 	}
+
+	logger.debug('User ownership check passed', {
+		userId: ctx.user.id,
+		targetUserId: userId,
+	});
 }
 
 async function assertCanManageKey(
@@ -145,10 +203,25 @@ async function assertCanManageKey(
 	key: InferSelectModel<typeof apikey>
 ) {
 	if (key.organizationId) {
-		await assertOrgPermission(ctx);
+		// Organization API key - requires organization permissions
+		await assertOrgPermission(ctx, ['admin:apikeys']);
+		logger.info('Organization API key management authorized', {
+			apikeyId: key.id,
+			organizationId: key.organizationId,
+			userId: ctx.user.id,
+			scopes: key.scopes,
+		});
 		return;
 	}
+
+	// Personal API key - user must own it or be admin
 	assertUserOwnershipOrAdmin(ctx, key.userId ?? null);
+	logger.info('Personal API key management authorized', {
+		apikeyId: key.id,
+		ownerUserId: key.userId,
+		requestingUserId: ctx.user.id,
+		scopes: key.scopes,
+	});
 }
 
 async function fetchKeyOrThrow(ctx: Context, id: string) {

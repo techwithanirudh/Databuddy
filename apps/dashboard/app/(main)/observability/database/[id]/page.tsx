@@ -336,46 +336,43 @@ export default function DatabasePage({ params }: DatabasePageProps) {
 	// Show loading state while connection is loading
 	if (isLoadingConnection) {
 		return (
-				<Card className="rounded">
-					<CardContent className="flex items-center justify-center py-12">
-						<div className="flex items-center gap-2 text-muted-foreground">
-							<SpinnerIcon className="h-4 w-4 animate-spin" />
-							<span>Loading database connection...</span>
-						</div>
-					</CardContent>
-				</Card>
+			<Card className="rounded">
+				<CardContent className="flex items-center justify-center py-12">
+					<div className="flex items-center gap-2 text-muted-foreground">
+						<SpinnerIcon className="h-4 w-4 animate-spin" />
+						<span>Loading database connection...</span>
+					</div>
+				</CardContent>
+			</Card>
 		);
 	}
 
 	if (connectionError) {
 		return (
-				<Card className="rounded border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950">
-					<CardContent className="pt-6">
-						<div className="flex items-center gap-3 text-red-600">
-							<DatabaseIcon className="h-5 w-5" weight="duotone" />
-							<p className="font-medium">Failed to load database connection</p>
-						</div>
-						<p className="mt-2 text-red-600/80 text-sm">
-							{connectionError.message}
-						</p>
-					</CardContent>
-				</Card>
+			<Card className="rounded border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950">
+				<CardContent className="pt-6">
+					<div className="flex items-center gap-3 text-red-600">
+						<DatabaseIcon className="h-5 w-5" weight="duotone" />
+						<p className="font-medium">Failed to load database connection</p>
+					</div>
+					<p className="mt-2 text-red-600/80 text-sm">
+						{connectionError.message}
+					</p>
+				</CardContent>
+			</Card>
 		);
 	}
 
 	if (!connection) {
 		return (
-				<Card className="rounded">
-					<CardContent className="pt-6">
-						<div className="text-center text-muted-foreground">
-							<DatabaseIcon
-								className="mx-auto mb-4 h-12 w-12"
-								weight="duotone"
-							/>
-							<p className="font-medium">Database connection not found</p>
-						</div>
-					</CardContent>
-				</Card>
+			<Card className="rounded">
+				<CardContent className="pt-6">
+					<div className="text-center text-muted-foreground">
+						<DatabaseIcon className="mx-auto mb-4 h-12 w-12" weight="duotone" />
+						<p className="font-medium">Database connection not found</p>
+					</div>
+				</CardContent>
+			</Card>
 		);
 	}
 

@@ -908,7 +908,7 @@ export const dbConnections = pgTable(
 		url: text('url').notNull(),
 		permissionLevel: dbPermissionLevel('permission_level')
 			.notNull()
-			.default('readonly'),
+			.default('admin'),
 		organizationId: text('organization_id'),
 		createdAt: timestamp('created_at', { mode: 'string' })
 			.default(sql`CURRENT_TIMESTAMP`)

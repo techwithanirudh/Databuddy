@@ -4,10 +4,7 @@ import {
 	CheckIcon,
 	DatabaseIcon,
 	GearIcon,
-	KeyIcon,
 	PencilIcon,
-	ShieldCheckIcon,
-	ShieldWarningIcon,
 	TrashIcon,
 	WarningIcon,
 } from '@phosphor-icons/react';
@@ -62,7 +59,7 @@ function LoadingState() {
 					</Card>
 				))}
 			</div>
-		</div>
+		</>
 	);
 }
 
@@ -133,88 +130,6 @@ function EditConnectionDialog({
 						onClick={handleSave}
 					>
 						{updateMutation.isPending ? 'Saving...' : 'Save Changes'}
-					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
-	);
-}
-
-function UpgradeConnectionDialog({
-	open,
-	onOpenChange,
-	connectionId,
-	onSuccess,
-}: {
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
-	connectionId: string;
-	onSuccess: () => void;
-}) {
-	const [adminUrl, setAdminUrl] = useState('');
-
-	const upgradeMutation = trpc.dbConnections.updateUrl.useMutation({
-		onSuccess: () => {
-			onSuccess();
-			onOpenChange(false);
-			setAdminUrl('');
-		},
-	});
-
-	const handleUpgrade = () => {
-		if (!adminUrl) {
-			return;
-		}
-		upgradeMutation.mutate({
-			id: connectionId,
-			adminUrl,
-			permissionLevel: 'admin',
-		});
-	};
-
-	return (
-		<Dialog onOpenChange={onOpenChange} open={open}>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>Upgrade to Admin Access</DialogTitle>
-					<DialogDescription>
-						Provide an admin connection URL to enable full database management
-						capabilities.
-					</DialogDescription>
-				</DialogHeader>
-				<div className="space-y-4">
-					<div>
-						<Label htmlFor="admin-url">Admin Database URL</Label>
-						<Input
-							id="admin-url"
-							onChange={(e) => setAdminUrl(e.target.value)}
-							placeholder="postgresql://admin:password@host:5432/database"
-							type="password"
-							value={adminUrl}
-						/>
-						<p className="mt-1 text-muted-foreground text-xs">
-							This will create a new admin user and replace your current
-							connection.
-						</p>
-					</div>
-					{upgradeMutation.error && (
-						<Alert className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/20">
-							<WarningIcon className="h-4 w-4 text-red-600" />
-							<AlertDescription className="text-red-800 dark:text-red-200">
-								{upgradeMutation.error.message}
-							</AlertDescription>
-						</Alert>
-					)}
-				</div>
-				<DialogFooter>
-					<Button onClick={() => onOpenChange(false)} variant="outline">
-						Cancel
-					</Button>
-					<Button
-						disabled={!adminUrl || upgradeMutation.isPending}
-						onClick={handleUpgrade}
-					>
-						{upgradeMutation.isPending ? 'Upgrading...' : 'Upgrade'}
 					</Button>
 				</DialogFooter>
 			</DialogContent>
@@ -311,7 +226,7 @@ export default function ConnectionSettingsPage({
 	params,
 }: ConnectionSettingsPageProps) {
 	const [editDialog, setEditDialog] = useState(false);
-	const [upgradeDialog, setUpgradeDialog] = useState(false);
+
 	const [deleteDialog, setDeleteDialog] = useState(false);
 	const [success, setSuccess] = useState<string | null>(null);
 
@@ -348,8 +263,6 @@ export default function ConnectionSettingsPage({
 			</Alert>
 		);
 	}
-
-	const isAdmin = connection.permissionLevel === 'admin';
 
 	return (
 		<>
@@ -435,67 +348,6 @@ export default function ConnectionSettingsPage({
 				</CardContent>
 			</Card>
 
-			{/* Permission Management */}
-			<Card>
-				<CardHeader>
-					<CardTitle className="flex items-center gap-2">
-						<KeyIcon className="h-5 w-5" />
-						Permission Level
-					</CardTitle>
-					<CardDescription>
-						Manage database access permissions and capabilities
-					</CardDescription>
-				</CardHeader>
-				<CardContent className="space-y-4">
-					<div className="flex items-center justify-between">
-						<div className="space-y-1">
-							<div className="flex items-center gap-2">
-								{isAdmin ? (
-									<>
-										<ShieldCheckIcon className="h-4 w-4 text-green-600" />
-										<Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
-											Admin Access
-										</Badge>
-									</>
-								) : (
-									<>
-										<ShieldWarningIcon className="h-4 w-4 text-amber-600" />
-										<Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400">
-											Read-Only Access
-										</Badge>
-									</>
-								)}
-							</div>
-							<p className="text-muted-foreground text-sm">
-								{isAdmin
-									? 'Full database management capabilities including extension installation and configuration changes'
-									: 'Limited to monitoring and read-only operations. Upgrade to admin for full management capabilities'}
-							</p>
-						</div>
-						{!isAdmin && (
-							<Button onClick={() => setUpgradeDialog(true)} variant="outline">
-								Upgrade to Admin
-							</Button>
-						)}
-					</div>
-
-					{isAdmin && (
-						<Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/20">
-							<CheckIcon className="h-4 w-4 text-green-600" />
-							<AlertDescription className="text-green-800 dark:text-green-200">
-								<strong>Admin capabilities enabled:</strong>
-								<ul className="mt-2 list-inside list-disc space-y-1 text-sm">
-									<li>Install and manage PostgreSQL extensions</li>
-									<li>Modify database configuration</li>
-									<li>Create and manage database users</li>
-									<li>Full monitoring and performance analysis</li>
-								</ul>
-							</AlertDescription>
-						</Alert>
-					)}
-				</CardContent>
-			</Card>
-
 			{/* Connection Details */}
 			<Card>
 				<CardHeader>
@@ -545,11 +397,11 @@ export default function ConnectionSettingsPage({
 			<Card>
 				<CardHeader>
 					<CardTitle className="flex items-center gap-2">
-						<ShieldCheckIcon className="h-5 w-5" />
+						<DatabaseIcon className="h-5 w-5" />
 						Monitoring & Access
 					</CardTitle>
 					<CardDescription>
-						Current monitoring capabilities based on your permission level
+						Database monitoring and access capabilities
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="space-y-4">
@@ -584,15 +436,9 @@ export default function ConnectionSettingsPage({
 									Install and manage PostgreSQL extensions
 								</p>
 							</div>
-							{isAdmin ? (
-								<Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
-									Enabled
-								</Badge>
-							) : (
-								<Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400">
-									Requires Admin
-								</Badge>
-							)}
+							<Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
+								Enabled
+							</Badge>
 						</div>
 						<div className="flex items-center justify-between rounded border p-3">
 							<div className="space-y-1">
@@ -601,15 +447,9 @@ export default function ConnectionSettingsPage({
 									Modify database settings and parameters
 								</p>
 							</div>
-							{isAdmin ? (
-								<Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
-									Enabled
-								</Badge>
-							) : (
-								<Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400">
-									Requires Admin
-								</Badge>
-							)}
+							<Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
+								Enabled
+							</Badge>
 						</div>
 					</div>
 				</CardContent>
@@ -657,15 +497,6 @@ export default function ConnectionSettingsPage({
 				onOpenChange={setEditDialog}
 				onSuccess={() => handleSuccess('Connection updated successfully')}
 				open={editDialog}
-			/>
-
-			<UpgradeConnectionDialog
-				connectionId={connectionId}
-				onOpenChange={setUpgradeDialog}
-				onSuccess={() =>
-					handleSuccess('Connection upgraded to admin successfully')
-				}
-				open={upgradeDialog}
 			/>
 
 			<DeleteConnectionDialog

@@ -2,15 +2,15 @@
 
 import { authClient } from '@databuddy/auth/client';
 import {
-	WarningCircleIcon,
-	CheckCircleIcon,
 	CaretLeftIcon,
+	CheckCircleIcon,
 	EyeIcon,
 	EyeSlashIcon,
+	GithubLogoIcon,
+	GoogleLogoIcon,
 	InfoIcon,
 	SpinnerIcon,
-	GoogleLogoIcon,
-	GithubLogoIcon,
+	WarningCircleIcon,
 } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -222,7 +222,7 @@ function RegisterPageContent() {
 
 			<div className="flex flex-col space-y-3">
 				<Button
-					className="w-full bg-amber-500 text-white hover:bg-amber-600 text-sm sm:text-base"
+					className="w-full bg-amber-500 text-sm text-white hover:bg-amber-600 sm:text-base"
 					disabled={isLoading}
 					onClick={resendVerificationEmail}
 				>
@@ -233,14 +233,16 @@ function RegisterPageContent() {
 						</>
 					) : (
 						<>
-							<span className="hidden sm:inline">Resend verification email</span>
+							<span className="hidden sm:inline">
+								Resend verification email
+							</span>
 							<span className="sm:hidden">Resend email</span>
 						</>
 					)}
 				</Button>
 
 				<Button
-					className="w-full border-amber-200 text-amber-700 hover:bg-amber-50 text-sm sm:text-base"
+					className="w-full border-amber-200 text-amber-700 text-sm hover:bg-amber-50 sm:text-base"
 					onClick={() => setRegistrationStep('form')}
 					variant="outline"
 				>
@@ -262,7 +264,7 @@ function RegisterPageContent() {
 			</div>
 
 			<Button
-				className="w-full bg-green-500 text-white hover:bg-green-600 text-sm sm:text-base"
+				className="w-full bg-green-500 text-sm text-white hover:bg-green-600 sm:text-base"
 				onClick={() => router.push('/login')}
 			>
 				<span className="hidden sm:inline">Continue to login</span>
@@ -273,7 +275,7 @@ function RegisterPageContent() {
 
 	const renderFormContent = () => (
 		<div className="space-y-4">
-			<div className="grid grid-cols-1 gap-2 sm:grid-cols-2 -mt-4">
+			<div className="-mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
 				<Button
 					className="flex h-11 w-full cursor-pointer items-center justify-center transition-all duration-200 hover:bg-primary/5"
 					disabled={isLoading}
@@ -315,7 +317,7 @@ function RegisterPageContent() {
 					</Label>
 					<Input
 						autoComplete="name"
-						className="h-11 bg-input border-none transition-all duration-200 focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground/50"
+						className="h-11 border-none bg-input transition-all duration-200 placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-primary/20"
 						disabled={isLoading}
 						id="name"
 						name="name"
@@ -333,7 +335,7 @@ function RegisterPageContent() {
 					</Label>
 					<Input
 						autoComplete="email"
-						className="h-11 bg-input border-none transition-all duration-200 focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground/50"
+						className="h-11 border-none bg-input transition-all duration-200 placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-primary/20"
 						disabled={isLoading}
 						id="email"
 						name="email"
@@ -366,7 +368,7 @@ function RegisterPageContent() {
 						<div className="relative">
 							<Input
 								autoComplete="new-password"
-								className="h-11 pr-10 bg-input border-none transition-all duration-200 focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground/50"
+								className="h-11 border-none bg-input pr-10 transition-all duration-200 placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-primary/20"
 								disabled={isLoading}
 								id="password"
 								minLength={8}
@@ -404,7 +406,7 @@ function RegisterPageContent() {
 						<div className="relative">
 							<Input
 								autoComplete="new-password"
-								className="h-11 pr-10 bg-input border-none transition-all duration-200 focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground/50"
+								className="h-11 border-none bg-input pr-10 transition-all duration-200 placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-primary/20"
 								disabled={isLoading}
 								id="confirmPassword"
 								minLength={8}
@@ -416,7 +418,9 @@ function RegisterPageContent() {
 								value={formData.confirmPassword}
 							/>
 							<Button
-								aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+								aria-label={
+									showConfirmPassword ? 'Hide password' : 'Show password'
+								}
 								className="absolute top-0 right-0 h-full px-3 text-muted-foreground hover:text-foreground"
 								onClick={() => setShowConfirmPassword(!showConfirmPassword)}
 								size="sm"
@@ -444,21 +448,21 @@ function RegisterPageContent() {
 					</div>
 				</VisuallyHidden>
 
-				<div className="flex sm:flex-row items-center gap-2 sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
+				<div className="flex items-center gap-2 space-y-2 sm:flex-row sm:items-center sm:space-x-2 sm:space-y-0">
 					<Checkbox
 						checked={acceptTerms}
-						className="mt-1 sm:mt-0 cursor-pointer data-[state=unchecked]:bg-input data-[state=checked]:border-primary data-[state=checked]:bg-primary"
+						className="mt-1 cursor-pointer data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=unchecked]:bg-input sm:mt-0"
 						disabled={isLoading}
 						id="terms"
 						onCheckedChange={(checked) => setAcceptTerms(checked as boolean)}
 					/>
 					<Label
-						className="text-muted-foreground text-xs leading-tight sm:text-sm tracking-tighter"
+						className="text-muted-foreground text-xs leading-tight tracking-tighter sm:text-sm"
 						htmlFor="terms"
 					>
 						I agree to the{''}
 						<Link
-							className="font-medium text-primary hover:text-primary/80 text-xs sm:text-sm tracking-tighter"
+							className="font-medium text-primary text-xs tracking-tighter hover:text-primary/80 sm:text-sm"
 							href="https://www.databuddy.cc/terms"
 							target="_blank"
 						>
@@ -466,7 +470,7 @@ function RegisterPageContent() {
 						</Link>
 						{''}and{''}
 						<Link
-							className="font-medium text-primary hover:text-primary/80 text-xs sm:text-sm tracking-tighter"
+							className="font-medium text-primary text-xs tracking-tighter hover:text-primary/80 sm:text-sm"
 							href="https://www.databuddy.cc/privacy"
 							target="_blank"
 						>
@@ -476,7 +480,7 @@ function RegisterPageContent() {
 				</div>
 
 				<Button
-					className="hover:-translate-y-0.5 relative h-11 w-full overflow-hidden shadow transition-all duration-300 hover:shadow-lg hover:shadow-primary/20 text-sm sm:text-base"
+					className="hover:-translate-y-0.5 relative h-11 w-full overflow-hidden text-sm shadow transition-all duration-300 hover:shadow-lg hover:shadow-primary/20 sm:text-base"
 					disabled={isLoading}
 					type="submit"
 				>

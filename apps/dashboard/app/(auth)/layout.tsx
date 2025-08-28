@@ -1,5 +1,5 @@
 import { auth } from '@databuddy/auth';
-import { CaretLeftIcon, SpinnerIcon } from '@phosphor-icons/react';
+import { CaretLeftIcon, SpinnerIcon } from '@phosphor-icons/react/ssr';
 import { headers } from 'next/headers';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';

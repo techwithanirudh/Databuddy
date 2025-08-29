@@ -7,17 +7,20 @@ import { Elysia, t } from 'elysia';
 import { type ExportRequest, processExport } from '../lib/export';
 import { logger } from '../lib/logger';
 
-// import { createRateLimitMiddleware } from '../middleware/rate-limit';
+import { createRateLimitMiddleware } from '../middleware/rate-limit';
 
 dayjs.extend(utc);
 
-// Rate limiting for exports - use expensive rate limit (stricter limits)
-// const exportRateLimit = createRateLimitMiddleware({
-// 	type: 'expensive',
-// 	skipAuth: false,
-// });
+const exportRateLimit = createRateLimitMiddleware({
+	type: 'expensive',
+	identifier: 'export',
+	customConfig: {
+		requests: 10,
+		window: '1m',
+	},
+	skipAuth: false,
+});
 
-// Cached website lookup (same as in RPC utils)
 const getWebsiteById = cacheable(
 	async (id: string) => {
 		try {
@@ -59,7 +62,6 @@ async function authorizeWebsiteAccess(
 		return website;
 	}
 
-	// Get user session
 	const session = await auth.api.getSession({ headers });
 	const user = session?.user;
 
@@ -67,12 +69,10 @@ async function authorizeWebsiteAccess(
 		throw new Error('Authentication is required for this action');
 	}
 
-	// Admin users have full access
 	if (user.role === 'ADMIN') {
 		return website;
 	}
 
-	// Check organization permissions
 	if (website.organizationId) {
 		const { success } = await websitesApi.hasPermission({
 			headers,
@@ -90,7 +90,7 @@ async function authorizeWebsiteAccess(
 }
 
 export const exportRoute = new Elysia({ prefix: '/v1/export' })
-	// .use(exportRateLimit)
+	.use(exportRateLimit)
 	.post(
 		'/data',
 		async ({ body, request }) => {
@@ -114,14 +114,22 @@ export const exportRoute = new Elysia({ prefix: '/v1/export' })
 					'read'
 				);
 
-				// Validate and sanitize date inputs
+				if (!_website) {
+					return createErrorResponse(
+						403,
+						'ACCESS_DENIED',
+						'Access denied. You may not have permission to export data for this website.'
+					);
+				}
+
 				const { validatedDates, error: dateError } = validateDateRange(
 					body.start_date,
 					body.end_date
 				);
 
 				if (dateError) {
-					await logger.warn('Export request with invalid dates', {
+					logger.warn({
+						message: 'Export request with invalid dates',
 						requestId,
 						websiteId,
 						startDate: body.start_date,
@@ -131,10 +139,10 @@ export const exportRoute = new Elysia({ prefix: '/v1/export' })
 					return createErrorResponse(400, 'INVALID_DATE_RANGE', dateError);
 				}
 
-				// Validate export format
 				const format = body.format || 'json';
 				if (!['csv', 'json', 'txt', 'proto'].includes(format)) {
-					await logger.warn('Export request with invalid format', {
+					logger.warn({
+						message: 'Export request with invalid format',
 						requestId,
 						websiteId,
 						format,
@@ -146,8 +154,8 @@ export const exportRoute = new Elysia({ prefix: '/v1/export' })
 					);
 				}
 
-				// Log export initiation for audit trail
-				await logger.info('Data export initiated', {
+				logger.info({
+					message: 'Data export initiated',
 					requestId,
 					websiteId,
 					startDate: validatedDates.startDate,
@@ -160,7 +168,6 @@ export const exportRoute = new Elysia({ prefix: '/v1/export' })
 					timestamp: new Date().toISOString(),
 				});
 
-				// Process the export with validated data
 				const exportRequest: ExportRequest = {
 					website_id: websiteId,
 					start_date: validatedDates.startDate,
@@ -170,8 +177,8 @@ export const exportRoute = new Elysia({ prefix: '/v1/export' })
 
 				const result = await processExport(exportRequest);
 
-				// Log successful export for audit trail
-				logger.info('Data export completed successfully', {
+				logger.info({
+					message: 'Data export completed successfully',
 					requestId,
 					websiteId,
 					filename: result.filename,
@@ -189,8 +196,8 @@ export const exportRoute = new Elysia({ prefix: '/v1/export' })
 					},
 				});
 			} catch (error) {
-				// Log export failure for audit trail
-				logger.error('Data export failed', {
+				logger.error({
+					message: 'Data export failed',
 					requestId,
 					websiteId: body.website_id,
 					error: error instanceof Error ? error.message : String(error),
@@ -203,7 +210,6 @@ export const exportRoute = new Elysia({ prefix: '/v1/export' })
 					timestamp: new Date().toISOString(),
 				});
 
-				// Handle authorization errors specifically
 				if (error instanceof Error) {
 					if (error.message.includes('not found')) {
 						return createErrorResponse(
@@ -317,7 +323,6 @@ function validateDateRange(
 	const maxHistoryDays = 365 * 2; // 2 years max
 	const maxRangeDays = 365; // 1 year max range
 
-	// If no dates provided, allow (will default to reasonable limits in query)
 	if (!(startDate || endDate)) {
 		return { validatedDates: {} };
 	}
@@ -325,7 +330,6 @@ function validateDateRange(
 	let validatedStartDate: string | undefined;
 	let validatedEndDate: string | undefined;
 
-	// Validate start date
 	if (startDate) {
 		const start = dayjs.utc(startDate, 'YYYY-MM-DD', true);
 		if (!start.isValid()) {

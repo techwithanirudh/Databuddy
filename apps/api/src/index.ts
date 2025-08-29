@@ -56,7 +56,7 @@ const app = new Elysia()
 	})
 	.onError(({ error, code }) => {
 		const errorMessage = error instanceof Error ? error.message : String(error);
-		logger.error(errorMessage, { error });
+		logger.error({ message: errorMessage, code, error });
 
 		return new Response(
 			JSON.stringify({

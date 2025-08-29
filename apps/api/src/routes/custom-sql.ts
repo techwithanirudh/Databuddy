@@ -538,13 +538,13 @@ async function executeClickHouseQuery(
 }
 
 export const customSQL = new Elysia({ prefix: '/v1/custom-sql' })
-	.use(
-		createCustomRateLimitMiddleware(30, '1 m', 'expensive', {
-			skipAuth: true,
-			errorMessage:
-				'Custom SQL rate limit exceeded. Maximum 30 queries per minute allowed.',
-		})
-	)
+	// .use(
+	// 	createCustomRateLimitMiddleware(30, '1 m', 'expensive', {
+	// 		skipAuth: true,
+	// 		errorMessage:
+	// 			'Custom SQL rate limit exceeded. Maximum 30 queries per minute allowed.',
+	// 	})
+	// )
 	.derive(({ request }) => {
 		const startTime = Date.now();
 		return {

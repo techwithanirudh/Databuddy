@@ -90,7 +90,7 @@ async function authorizeWebsiteAccess(
 }
 
 export const exportRoute = new Elysia({ prefix: '/v1/export' })
-	.use(exportRateLimit)
+	// .use(exportRateLimit)
 	.post(
 		'/data',
 		async ({ body, request }) => {
@@ -353,7 +353,6 @@ function validateDateRange(
 		validatedStartDate = start.format('YYYY-MM-DD');
 	}
 
-	// Validate end date
 	if (endDate) {
 		const end = dayjs.utc(endDate, 'YYYY-MM-DD', true);
 		if (!end.isValid()) {
@@ -374,7 +373,6 @@ function validateDateRange(
 		validatedEndDate = end.format('YYYY-MM-DD');
 	}
 
-	// Validate date range
 	if (validatedStartDate && validatedEndDate) {
 		const start = dayjs.utc(validatedStartDate);
 		const end = dayjs.utc(validatedEndDate);

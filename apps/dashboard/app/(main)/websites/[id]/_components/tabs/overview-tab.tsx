@@ -13,7 +13,8 @@ import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useAtom } from 'jotai';
-import { lazy, useCallback, useMemo } from 'react';
+import dynamic from 'next/dynamic';
+import { useCallback, useMemo } from 'react';
 import {
 	DataTable,
 	DeviceTypeCell,
@@ -44,7 +45,7 @@ import { PercentageBadge } from '../utils/technology-helpers';
 import type { FullTabProps, MetricPoint } from '../utils/types';
 import { MetricToggles } from '../utils/ui-components';
 
-const CustomEventsSection = lazy(() =>
+const CustomEventsSection = dynamic(() =>
 	import('./overview/_components/custom-events-section').then((mod) => ({
 		default: mod.CustomEventsSection,
 	}))

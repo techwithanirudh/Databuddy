@@ -1,31 +1,20 @@
 'use client';
 
-import type { websites } from '@databuddy/db';
+import type { Website } from '@databuddy/shared';
 import {
-	ActivityIcon,
 	ArrowRightIcon,
-	BookOpenIcon,
 	CheckIcon,
 	ClipboardIcon,
 	CodeIcon,
 	DownloadIcon,
-	FileCodeIcon,
-	GlobeIcon,
 	InfoIcon,
-	PencilIcon,
-	ShareIcon,
-	SlidersIcon,
-	TableIcon,
-	TrashIcon,
 	WarningCircleIcon,
 } from '@phosphor-icons/react';
 import dayjs from 'dayjs';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { DateRange as DayPickerRange } from 'react-day-picker';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import oneDark from 'react-syntax-highlighter/dist/esm/styles/prism/one-dark';
+import { codeToHtml } from 'shiki';
 import { toast } from 'sonner';
 import { DateRangePicker } from '@/components/date-range-picker';
 import {
@@ -38,27 +27,19 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from '@/components/ui/tooltip';
 import { WebsiteDialog } from '@/components/website-dialog';
-import { type ExportFormat, useDataExport } from '@/hooks/use-data-export';
+import { useDataExport } from '@/hooks/use-data-export';
 import { useDeleteWebsite, useUpdateWebsite } from '@/hooks/use-websites';
 import {
 	COPY_SUCCESS_TIMEOUT,
 	INSTALL_COMMANDS,
 	SETTINGS_TABS,
-	type SettingsTab,
 	TOAST_MESSAGES,
 } from '../constants/settings-constants';
 import { generateNpmCode, generateScriptTag } from '../utils/code-generators';
@@ -70,9 +51,21 @@ import {
 	resetToDefaults,
 	toggleTrackingOption,
 } from '../utils/tracking-helpers';
-import type { TrackingOptions, WebsiteDataTabProps } from '../utils/types';
-
-type DatabaseWebsite = typeof websites.$inferSelect;
+import type {
+	CodeBlockProps,
+	DeleteWebsiteDialogProps,
+	ExportFormat,
+	ExportTabProps,
+	OptimizationTabProps,
+	PrivacyTabProps,
+	SettingsTab,
+	TrackingCodeTabProps,
+	TrackingOptions,
+	TrackingTabProps,
+	WebsiteDataTabProps,
+} from '../utils/types';
+import { SettingsNavigation } from './settings/settings-navigation';
+import { WebsiteHeader } from './settings/website-header';
 
 export function WebsiteSettingsTab({
 	websiteId,
@@ -91,15 +84,13 @@ export function WebsiteSettingsTab({
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 	const [showEditDialog, setShowEditDialog] = useState(false);
 	// Data export hook
-	const { exportData, isExporting } = useDataExport({
+	const { mutate: exportData, isPending: isExporting } = useDataExport({
 		websiteId,
 		websiteName: websiteData?.name || undefined,
 	});
 
 	// Settings State
-	const [isPublic, setIsPublic] = useState(
-		(websiteData as any)?.isPublic ?? false
-	);
+	const [isPublic, setIsPublic] = useState(websiteData?.isPublic ?? false);
 	const [trackingOptions, setTrackingOptions] =
 		useState<TrackingOptions>(RECOMMENDED_DEFAULTS);
 
@@ -196,16 +187,18 @@ export function WebsiteSettingsTab({
 	}
 
 	return (
-		<div className="space-y-6">
+		<div className="space-y-3">
 			{/* Header */}
-			<WebsiteHeader
-				onEditClick={() => setShowEditDialog(true)}
-				websiteData={websiteData as any}
-				websiteId={websiteId}
-			/>
+			{websiteData && (
+				<WebsiteHeader
+					onEditClick={() => setShowEditDialog(true)}
+					websiteData={websiteData}
+					websiteId={websiteId}
+				/>
+			)}
 
 			{/* Main Content */}
-			<div className="grid grid-cols-12 gap-6">
+			<div className="grid grid-cols-12 gap-3">
 				<SettingsNavigation
 					activeTab={activeTab}
 					onDeleteClick={() => setShowDeleteDialog(true)}
@@ -215,7 +208,7 @@ export function WebsiteSettingsTab({
 
 				<div className="col-span-12 lg:col-span-7 xl:col-span-9">
 					<Card className="rounded border bg-background py-0 shadow-sm">
-						<CardContent className="p-6">
+						<CardContent className="p-3">
 							{activeTab === 'tracking' && (
 								<TrackingCodeTab
 									copiedBlockId={copiedBlockId}
@@ -256,11 +249,11 @@ export function WebsiteSettingsTab({
 								/>
 							)}
 
-							{activeTab === 'export' && (
+							{activeTab === 'export' && websiteData && (
 								<ExportTab
 									isExporting={isExporting}
 									onExportData={handleExportData}
-									websiteData={websiteData as any}
+									websiteData={websiteData}
 									websiteId={websiteId}
 								/>
 							)}
@@ -308,312 +301,30 @@ export function WebsiteSettingsTab({
 			</div>
 
 			{/* Edit Dialog */}
-			<WebsiteDialog
-				onOpenChange={setShowEditDialog}
-				onSave={handleWebsiteUpdated}
-				open={showEditDialog}
-				website={websiteData as any}
-			/>
+			{websiteData && (
+				<WebsiteDialog
+					onOpenChange={setShowEditDialog}
+					onSave={handleWebsiteUpdated}
+					open={showEditDialog}
+					website={websiteData}
+				/>
+			)}
 
 			{/* Delete Dialog */}
-			<DeleteWebsiteDialog
-				isDeleting={deleteWebsiteMutation.isPending}
-				onConfirmDelete={handleDeleteWebsite}
-				onOpenChange={setShowDeleteDialog}
-				open={showDeleteDialog}
-				websiteData={websiteData as any}
-			/>
+			{websiteData && (
+				<DeleteWebsiteDialog
+					isDeleting={deleteWebsiteMutation.isPending}
+					onConfirmDelete={handleDeleteWebsite}
+					onOpenChange={setShowDeleteDialog}
+					open={showDeleteDialog}
+					websiteData={websiteData}
+				/>
+			)}
 		</div>
 	);
 }
 
 // Extracted Components
-function WebsiteHeader({
-	websiteData,
-	websiteId,
-	onEditClick,
-}: {
-	websiteData: any;
-	websiteId: string;
-	onEditClick: () => void;
-}) {
-	return (
-		<Card className="rounded border bg-background py-0 shadow-sm">
-			<CardContent className="p-6">
-				<div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
-					<div className="flex flex-col gap-3">
-						<div className="flex items-center gap-3">
-							<div className="rounded bg-primary/10 p-2">
-								<GlobeIcon className="h-5 w-5 text-primary" />
-							</div>
-							<div>
-								<div className="flex items-center gap-2">
-									<h1 className="font-bold text-2xl tracking-tight">
-										{websiteData.name || 'Unnamed Website'}
-									</h1>
-									<TooltipProvider>
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<Button
-													className="h-8 gap-1 px-2 text-muted-foreground transition-colors hover:text-foreground"
-													onClick={onEditClick}
-													size="sm"
-													variant="ghost"
-												>
-													<PencilIcon className="h-3.5 w-3.5" />
-													<span className="text-xs">Edit</span>
-												</Button>
-											</TooltipTrigger>
-											<TooltipContent>
-												<p className="text-xs">Edit website details</p>
-											</TooltipContent>
-										</Tooltip>
-									</TooltipProvider>
-								</div>
-								<div className="mt-1 flex items-center gap-2 text-muted-foreground text-sm">
-									<a
-										className="flex items-center gap-1 transition-colors hover:text-foreground hover:underline"
-										href={websiteData.domain}
-										rel="noopener noreferrer"
-										target="_blank"
-									>
-										{websiteData.domain}
-										<ArrowRightIcon className="h-3 w-3" />
-									</a>
-								</div>
-							</div>
-						</div>
-
-						<div className="flex items-center gap-4 text-muted-foreground text-xs">
-							<div className="flex items-center gap-1">
-								<span>Created:</span>
-								<span>
-									{new Date(websiteData.createdAt).toLocaleDateString()}
-								</span>
-							</div>
-							<div className="flex items-center gap-1">
-								<span>ID:</span>
-								<code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">
-									{websiteId.substring(0, 8)}...
-								</code>
-							</div>
-						</div>
-					</div>
-
-					<div className="flex flex-col gap-3 lg:items-end">
-						<div className="flex items-center gap-2">
-							<Badge
-								className="gap-2 border-green-200 bg-green-50 px-3 py-1 text-green-700 dark:border-green-800 dark:bg-green-900/20 dark:text-green-400"
-								variant="outline"
-							>
-								<span className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
-								<span className="font-medium">Active</span>
-							</Badge>
-						</div>
-
-						<div className="text-right text-muted-foreground text-xs">
-							<p>Analytics tracking is enabled</p>
-							<p>Data collection in progress</p>
-						</div>
-					</div>
-				</div>
-			</CardContent>
-		</Card>
-	);
-}
-
-function SettingsNavigation({
-	activeTab,
-	setActiveTab,
-	onDeleteClick,
-	trackingOptions,
-}: {
-	activeTab: string;
-	setActiveTab: (
-		tab:
-			| 'tracking'
-			| 'basic'
-			| 'advanced'
-			| 'optimization'
-			| 'privacy'
-			| 'export'
-	) => void;
-	onDeleteClick: () => void;
-	trackingOptions: TrackingOptions;
-}) {
-	// Count enabled features for status indicators
-	const basicEnabled = [
-		!trackingOptions.disabled, // Inverted logic
-		trackingOptions.trackScreenViews,
-		trackingOptions.trackHashChanges,
-		trackingOptions.trackSessions,
-		trackingOptions.trackInteractions,
-		trackingOptions.trackAttributes,
-		trackingOptions.trackOutgoingLinks,
-	].filter(Boolean).length;
-
-	const advancedEnabled = [
-		trackingOptions.trackEngagement,
-		trackingOptions.trackScrollDepth,
-		trackingOptions.trackErrors,
-		trackingOptions.trackPerformance,
-		trackingOptions.trackWebVitals,
-	].filter(Boolean).length;
-
-	const optimizationConfigured =
-		trackingOptions.samplingRate < 1.0 ||
-		trackingOptions.maxRetries !== 3 ||
-		trackingOptions.initialRetryDelay !== 500 ||
-		trackingOptions.enableBatching ||
-		!trackingOptions.enableRetries;
-
-	return (
-		<div className="col-span-12 lg:col-span-5 xl:col-span-3">
-			<Card className="rounded border bg-background py-0 shadow-sm">
-				<CardContent className="p-4">
-					<div className="sticky top-4 space-y-2">
-						<Button
-							className="h-10 w-full justify-between gap-2 transition-all duration-200"
-							onClick={() => setActiveTab('tracking')}
-							variant={activeTab === 'tracking' ? 'default' : 'ghost'}
-						>
-							<div className="flex items-center gap-2">
-								<CodeIcon className="h-4 w-4" />
-								<span>Tracking Code</span>
-							</div>
-							<Badge className="h-5 px-2 text-xs" variant="secondary">
-								Ready
-							</Badge>
-						</Button>
-
-						<div className="px-3 py-2">
-							<h3 className="font-semibold text-muted-foreground text-xs uppercase tracking-wide">
-								Configuration
-							</h3>
-						</div>
-
-						<Button
-							className="h-10 w-full justify-between gap-2 transition-all duration-200"
-							onClick={() => setActiveTab('basic')}
-							variant={activeTab === 'basic' ? 'default' : 'ghost'}
-						>
-							<div className="flex items-center gap-2">
-								<ActivityIcon className="h-4 w-4" />
-								<span>Basic Tracking</span>
-							</div>
-							<Badge
-								className="h-5 px-2 text-xs"
-								variant={basicEnabled > 4 ? 'default' : 'secondary'}
-							>
-								{basicEnabled}/7
-							</Badge>
-						</Button>
-
-						<Button
-							className="h-10 w-full justify-between gap-2 transition-all duration-200"
-							onClick={() => setActiveTab('advanced')}
-							variant={activeTab === 'advanced' ? 'default' : 'ghost'}
-						>
-							<div className="flex items-center gap-2">
-								<TableIcon className="h-4 w-4" />
-								<span>Advanced Features</span>
-							</div>
-							<Badge
-								className="h-5 px-2 text-xs"
-								variant={advancedEnabled > 2 ? 'default' : 'secondary'}
-							>
-								{advancedEnabled}/5
-							</Badge>
-						</Button>
-
-						<Button
-							className="h-10 w-full justify-between gap-2 transition-all duration-200"
-							onClick={() => setActiveTab('optimization')}
-							variant={activeTab === 'optimization' ? 'default' : 'ghost'}
-						>
-							<div className="flex items-center gap-2">
-								<SlidersIcon className="h-4 w-4" />
-								<span>Optimization</span>
-							</div>
-							<Badge
-								className="h-5 px-2 text-xs"
-								variant={optimizationConfigured ? 'default' : 'outline'}
-							>
-								{optimizationConfigured ? 'Custom' : 'Default'}
-							</Badge>
-						</Button>
-
-						<Button
-							className="h-10 w-full justify-between gap-2 transition-all duration-200"
-							onClick={() => setActiveTab('privacy')}
-							variant={activeTab === 'privacy' ? 'default' : 'ghost'}
-						>
-							<div className="flex items-center gap-2">
-								<ShareIcon className="h-4 w-4" />
-								<span>Sharing</span>
-							</div>
-						</Button>
-
-						<Button
-							className="h-10 w-full justify-between gap-2 transition-all duration-200"
-							onClick={() => setActiveTab('export')}
-							variant={activeTab === 'export' ? 'default' : 'ghost'}
-						>
-							<div className="flex items-center gap-2">
-								<DownloadIcon className="h-4 w-4" />
-								<span>Data Export</span>
-							</div>
-							<Badge className="h-5 px-2 text-xs" variant="secondary">
-								ZIP
-							</Badge>
-						</Button>
-
-						<div className="border-t pt-4">
-							<div className="px-3 py-2">
-								<h3 className="font-semibold text-muted-foreground text-xs uppercase tracking-wide">
-									Resources
-								</h3>
-							</div>
-
-							<Link href="https://www.databuddy.cc/docs" target="_blank">
-								<Button
-									className="h-9 w-full justify-start gap-2 transition-all duration-200 hover:bg-muted/50"
-									variant="ghost"
-								>
-									<BookOpenIcon className="h-4 w-4" />
-									<span>Documentation</span>
-									<ArrowRightIcon className="ml-auto h-3 w-3" />
-								</Button>
-							</Link>
-
-							<Link href="https://www.databuddy.cc/docs/api" target="_blank">
-								<Button
-									className="h-9 w-full justify-start gap-2 transition-all duration-200 hover:bg-muted/50"
-									variant="ghost"
-								>
-									<FileCodeIcon className="h-4 w-4" />
-									<span>API Reference</span>
-									<ArrowRightIcon className="ml-auto h-3 w-3" />
-								</Button>
-							</Link>
-						</div>
-
-						<div className="border-t pt-4">
-							<Button
-								className="h-9 w-full justify-start gap-2 text-red-500 transition-all duration-200 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/20"
-								onClick={onDeleteClick}
-								variant="ghost"
-							>
-								<TrashIcon className="h-4 w-4" />
-								<span>Delete Website</span>
-							</Button>
-						</div>
-					</div>
-				</CardContent>
-			</Card>
-		</div>
-	);
-}
 
 function TrackingCodeTab({
 	trackingCode,
@@ -622,30 +333,23 @@ function TrackingCodeTab({
 	websiteId,
 	copiedBlockId,
 	onCopyCode,
-}: {
-	trackingCode: string;
-	npmCode: string;
-	websiteData: any;
-	websiteId: string;
-	copiedBlockId: string | null;
-	onCopyCode: (code: string, blockId: string, message: string) => void;
-}) {
+}: TrackingCodeTabProps) {
 	return (
-		<div className="space-y-4">
-			<div className="flex flex-col space-y-1.5">
-				<h3 className="font-semibold text-lg">Tracking Installation</h3>
-				<p className="text-muted-foreground text-sm">
+		<div className="space-y-2">
+			<div>
+				<h3 className="mb-0.5 font-medium text-sm">Tracking Installation</h3>
+				<p className="text-muted-foreground text-xs">
 					Add this tracking code to your website to start collecting analytics
 					data
 				</p>
 			</div>
 
 			<Tabs className="w-full" defaultValue="script">
-				<TabsList className="mb-3 grid h-8 grid-cols-2">
-					<TabsTrigger className="text-xs" value="script">
+				<TabsList className="mb-1 grid h-6 grid-cols-2">
+					<TabsTrigger className="h-5 text-xs" value="script">
 						Script Tag
 					</TabsTrigger>
-					<TabsTrigger className="text-xs" value="npm">
+					<TabsTrigger className="h-5 text-xs" value="npm">
 						NPM Package
 					</TabsTrigger>
 				</TabsList>
@@ -666,24 +370,24 @@ function TrackingCodeTab({
 				</TabsContent>
 
 				<TabsContent className="mt-0" value="npm">
-					<div className="space-y-2">
-						<p className="mb-3 text-muted-foreground text-xs">
+					<div className="space-y-1">
+						<p className="mb-1 text-muted-foreground text-xs">
 							Install the DataBuddy package using your preferred package
 							manager:
 						</p>
 
 						<Tabs className="w-full" defaultValue="npm">
-							<TabsList className="mb-2 grid h-8 grid-cols-4">
-								<TabsTrigger className="text-xs" value="npm">
+							<TabsList className="mb-1 grid h-5 grid-cols-4">
+								<TabsTrigger className="h-4 text-xs" value="npm">
 									npm
 								</TabsTrigger>
-								<TabsTrigger className="text-xs" value="yarn">
+								<TabsTrigger className="h-4 text-xs" value="yarn">
 									yarn
 								</TabsTrigger>
-								<TabsTrigger className="text-xs" value="pnpm">
+								<TabsTrigger className="h-4 text-xs" value="pnpm">
 									pnpm
 								</TabsTrigger>
-								<TabsTrigger className="text-xs" value="bun">
+								<TabsTrigger className="h-4 text-xs" value="bun">
 									bun
 								</TabsTrigger>
 							</TabsList>
@@ -770,19 +474,11 @@ function TrackingCodeTab({
 	);
 }
 
-function CodeBlock({
-	code,
-	description,
-	copied,
-	onCopy,
-}: {
-	code: string;
-	description: string;
-	copied: boolean;
-	onCopy: () => void;
-}) {
+function CodeBlock({ code, description, copied, onCopy }: CodeBlockProps) {
+	const [highlightedCode, setHighlightedCode] = useState<string>('');
+
 	// Determine language based on code content
-	const getLanguage = (codeContent: string) => {
+	const getLanguage = useCallback((codeContent: string) => {
 		if (
 			codeContent.includes('npm install') ||
 			codeContent.includes('bun add')
@@ -796,42 +492,52 @@ function CodeBlock({
 			return 'jsx';
 		}
 		return 'javascript';
-	};
+	}, []);
+
+	useEffect(() => {
+		const highlightCode = async () => {
+			try {
+				const html = await codeToHtml(code, {
+					lang: getLanguage(code),
+					theme: 'github-dark',
+				});
+				setHighlightedCode(html);
+			} catch (error) {
+				console.error('Error highlighting code:', error);
+				setHighlightedCode(`<pre><code>${code}</code></pre>`);
+			}
+		};
+
+		highlightCode();
+	}, [code, getLanguage]);
 
 	return (
 		<div className="space-y-2">
-			<p className="text-muted-foreground text-xs">
-				{description ===
-				'Add this script to the <head> section of your website:' ? (
-					<>
-						Add this script to the{' '}
-						<code className="rounded bg-muted px-1 py-0.5 text-xs">
-							&lt;head&gt;
-						</code>{' '}
-						section of your website:
-					</>
-				) : (
-					description
-				)}
-			</p>
+			{description && (
+				<p className="text-muted-foreground text-sm">
+					{description ===
+					'Add this script to the <head> section of your website:' ? (
+						<>
+							Add this script to the{' '}
+							<code className="rounded bg-muted px-1 py-0.5 text-xs">
+								&lt;head&gt;
+							</code>{' '}
+							section of your website:
+						</>
+					) : (
+						description
+					)}
+				</p>
+			)}
 			<div className="relative">
-				<div className="overflow-hidden rounded-md border">
-					<SyntaxHighlighter
-						customStyle={{
-							margin: 0,
-							fontSize: '12px',
-							lineHeight: '1.5',
-							padding: '12px',
-						}}
-						language={getLanguage(code)}
-						showLineNumbers={false}
-						style={oneDark}
-					>
-						{code}
-					</SyntaxHighlighter>
-				</div>
+				<div
+					className="overflow-hidden rounded-lg border bg-[#0d1117] p-4 font-mono text-sm leading-relaxed"
+					// biome-ignore lint/security/noDangerouslySetInnerHtml: Shiki generates safe HTML
+					dangerouslySetInnerHTML={{ __html: highlightedCode }}
+					style={{ fontSize: '13px', lineHeight: '1.5' }}
+				/>
 				<Button
-					className="absolute top-2 right-2 h-7 w-7 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background"
+					className="absolute top-2 right-2 h-7 w-7 rounded bg-background/80 backdrop-blur-sm hover:bg-background/95"
 					onClick={onCopy}
 					size="icon"
 					variant="ghost"
@@ -851,29 +557,29 @@ function WebsiteInfoSection({
 	websiteData,
 	websiteId,
 }: {
-	websiteData: any;
+	websiteData: Website;
 	websiteId: string;
 }) {
 	return (
-		<div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-			<div className="space-y-3 rounded-md bg-muted/50 p-4">
-				<h4 className="flex items-center gap-2 font-medium text-sm">
-					<InfoIcon className="h-4 w-4 text-muted-foreground" />
+		<div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+			<div className="space-y-2 rounded bg-muted/50 p-2">
+				<h4 className="flex items-center gap-1.5 font-medium text-xs">
+					<InfoIcon className="h-3 w-3 text-muted-foreground" />
 					Website Details
 				</h4>
-				<div className="space-y-2 text-sm">
+				<div className="space-y-1 text-xs">
 					<div className="flex flex-col sm:flex-row sm:justify-between">
 						<span className="text-muted-foreground">Created</span>
-						<span className="mt-1 sm:mt-0">
+						<span className="sm:mt-0">
 							{new Date(websiteData.createdAt).toLocaleDateString()}
 						</span>
 					</div>
 					<div className="flex flex-col sm:flex-row sm:justify-between">
 						<span className="text-muted-foreground">Website ID</span>
-						<div className="mt-1 flex items-center gap-1 font-mono text-xs sm:mt-0">
+						<div className="flex items-center gap-1 font-mono text-xs sm:mt-0">
 							{websiteId}
 							<Button
-								className="h-5 w-5"
+								className="h-4 w-4"
 								onClick={() => {
 									navigator.clipboard.writeText(websiteId);
 									toast.success(TOAST_MESSAGES.WEBSITE_ID_COPIED);
@@ -881,33 +587,33 @@ function WebsiteInfoSection({
 								size="icon"
 								variant="ghost"
 							>
-								<ClipboardIcon className="h-3 w-3" />
+								<ClipboardIcon className="h-2.5 w-2.5" />
 							</Button>
 						</div>
 					</div>
 				</div>
 			</div>
 
-			<div className="rounded-md border border-primary/10 bg-primary/5 p-4">
-				<div className="flex flex-col items-start gap-x-3 gap-y-2">
-					<div className="flex items-center gap-x-2">
-						<div className="mt-0.5 rounded-full bg-primary/10 p-1.5">
-							<CheckIcon className="h-4 w-4 text-primary" />
+			<div className="rounded border border-primary/10 bg-primary/5 p-2">
+				<div className="flex flex-col items-start gap-1">
+					<div className="flex items-center gap-1.5">
+						<div className="rounded-full bg-primary/10 p-1">
+							<CheckIcon className="h-3 w-3 text-primary" />
 						</div>
-						<p className="font-medium text-sm">Ready to Track</p>
+						<p className="font-medium text-xs">Ready to Track</p>
 					</div>
 
 					<div>
-						<p className="mt-1 text-muted-foreground text-xs">
+						<p className="text-muted-foreground text-xs">
 							Add the tracking code to your website to start collecting data.
 						</p>
 						<Button
-							className="-ml-2 h-6 px-0 text-primary text-xs"
+							className="-ml-1 h-5 px-0 text-primary text-xs"
 							size="sm"
 							variant="link"
 						>
 							View Documentation
-							<ArrowRightIcon className="ml-1 h-3 w-3" />
+							<ArrowRightIcon className="ml-0.5 h-2.5 w-2.5" />
 						</Button>
 					</div>
 				</div>
@@ -919,10 +625,7 @@ function WebsiteInfoSection({
 function BasicTrackingTab({
 	trackingOptions,
 	onToggleOption,
-}: {
-	trackingOptions: TrackingOptions;
-	onToggleOption: (option: keyof TrackingOptions) => void;
-}) {
+}: TrackingTabProps) {
 	const trackingOptionsConfig: Array<{
 		key: keyof TrackingOptions;
 		title: string;
@@ -1013,10 +716,7 @@ function BasicTrackingTab({
 function AdvancedTrackingTab({
 	trackingOptions,
 	onToggleOption,
-}: {
-	trackingOptions: TrackingOptions;
-	onToggleOption: (option: keyof TrackingOptions) => void;
-}) {
+}: TrackingTabProps) {
 	const advancedOptionsConfig: Array<{
 		key: keyof TrackingOptions;
 		title: string;
@@ -1113,13 +813,13 @@ function TrackingOptionsGrid({
 	onToggleOption: (option: keyof TrackingOptions) => void;
 }) {
 	return (
-		<div className="space-y-4">
-			<div className="flex flex-col space-y-1.5">
-				<h3 className="font-semibold text-lg">{title}</h3>
-				<p className="text-muted-foreground text-sm">{description}</p>
+		<div className="space-y-2">
+			<div className="space-y-0.5">
+				<h3 className="font-medium text-sm">{title}</h3>
+				<p className="text-muted-foreground text-xs">{description}</p>
 			</div>
 
-			<div className="grid grid-cols-2 gap-4">
+			<div className="grid grid-cols-2 gap-2">
 				{options.map((option) => {
 					const { key, ...optionProps } = option;
 					return (
@@ -1158,18 +858,18 @@ function TrackingOptionCard({
 	const isEnabled = inverted ? !enabled : enabled;
 
 	return (
-		<div className="space-y-4 rounded border p-4">
-			<div className="flex items-start justify-between border-b pb-2">
-				<div className="space-y-0.5">
-					<div className="font-medium">{title}</div>
+		<div className="space-y-2 rounded border p-2">
+			<div className="flex items-start justify-between border-b pb-1">
+				<div className="space-y-0">
+					<div className="font-medium text-xs">{title}</div>
 					<div className="text-muted-foreground text-xs">{description}</div>
 				</div>
 				<Switch checked={isEnabled} onCheckedChange={onToggle} />
 			</div>
 			{required && !isEnabled && (
-				<div className="rounded border border-red-200 bg-red-50 p-2 text-red-700 text-xs dark:border-red-800/20 dark:bg-red-950/20 dark:text-red-400">
-					<span className="flex items-center gap-1 font-medium">
-						<WarningCircleIcon className="h-3 w-3" />
+				<div className="rounded border border-red-200 bg-red-50 p-1 text-red-700 text-xs dark:border-red-800/20 dark:bg-red-950/20 dark:text-red-400">
+					<span className="flex items-center gap-0.5 font-medium">
+						<WarningCircleIcon className="h-2.5 w-2.5" />
 						Warning:
 					</span>
 					Disabling page views will prevent analytics from working. This option
@@ -1178,9 +878,11 @@ function TrackingOptionCard({
 			)}
 			<div className="text-muted-foreground text-xs">
 				Data collected:
-				<ul className="mt-1 list-disc space-y-0.5 pl-4">
+				<ul className="mt-0.5 list-disc space-y-0 pl-3">
 					{data.map((item: string) => (
-						<li key={item}>{item}</li>
+						<li className="text-xs" key={item}>
+							{item}
+						</li>
 					))}
 				</ul>
 			</div>
@@ -1191,22 +893,17 @@ function TrackingOptionCard({
 function OptimizationTab({
 	trackingOptions,
 	setTrackingOptions,
-}: {
-	trackingOptions: TrackingOptions;
-	setTrackingOptions: (
-		options: TrackingOptions | ((prev: TrackingOptions) => TrackingOptions)
-	) => void;
-}) {
+}: OptimizationTabProps) {
 	return (
-		<div className="space-y-4">
-			<div className="flex flex-col space-y-1.5">
-				<h3 className="font-semibold text-lg">Performance Optimization</h3>
-				<p className="text-muted-foreground text-sm">
+		<div className="space-y-2">
+			<div className="space-y-0.5">
+				<h3 className="font-medium text-sm">Performance Optimization</h3>
+				<p className="text-muted-foreground text-xs">
 					Configure tracking performance and data collection settings
 				</p>
 			</div>
 
-			<div className="space-y-4">
+			<div className="space-y-2">
 				<SamplingRateSection
 					onSamplingRateChange={(rate: number) =>
 						setTrackingOptions((prev) => ({ ...prev, samplingRate: rate }))
@@ -1236,21 +933,21 @@ function SamplingRateSection({
 	onSamplingRateChange: (rate: number) => void;
 }) {
 	return (
-		<div className="rounded border p-4">
-			<h4 className="mb-3 font-medium">Sampling Rate</h4>
-			<div className="space-y-4">
-				<div className="grid grid-cols-2 gap-8">
-					<div className="space-y-2">
+		<div className="rounded border p-2">
+			<h4 className="mb-1 font-medium text-xs">Sampling Rate</h4>
+			<div className="space-y-2">
+				<div className="grid grid-cols-2 gap-4">
+					<div className="space-y-1">
 						<div className="flex justify-between">
-							<Label className="text-sm" htmlFor="sampling-rate">
+							<Label className="text-xs" htmlFor="sampling-rate">
 								Data Collection Rate
 							</Label>
-							<span className="font-medium text-sm">
+							<span className="font-medium text-xs">
 								{Math.round(samplingRate * 100)}%
 							</span>
 						</div>
 						<Slider
-							className="py-4"
+							className="py-2"
 							id="sampling-rate"
 							max={100}
 							min={1}
@@ -1265,16 +962,14 @@ function SamplingRateSection({
 						</div>
 					</div>
 
-					<div className="space-y-2 text-sm">
-						<p className="text-muted-foreground text-xs leading-relaxed">
+					<div className="space-y-1">
+						<p className="text-muted-foreground text-xs">
 							Sampling rate determines what percentage of your visitors will be
-							tracked. Lower sampling rates reduce data collection costs and
-							server load.
+							tracked. Lower rates reduce costs.
 						</p>
-						<p className="flex items-center gap-1 text-muted-foreground text-xs">
-							<InfoIcon className="h-3 w-3" />
-							Recommended: 100% for low traffic sites, 10-50% for high traffic
-							sites
+						<p className="flex items-center gap-0.5 text-muted-foreground text-xs">
+							<InfoIcon className="h-2.5 w-2.5" />
+							Recommended: 100% for low traffic, 10-50% for high traffic
 						</p>
 					</div>
 				</div>
@@ -1293,10 +988,10 @@ function BatchingSection({
 	) => void;
 }) {
 	return (
-		<div className="rounded border p-4">
-			<h4 className="mb-3 font-medium">Batching</h4>
-			<div className="space-y-4">
-				<div className="flex items-center space-x-2">
+		<div className="rounded border p-2">
+			<h4 className="mb-1 font-medium text-xs">Batching</h4>
+			<div className="space-y-2">
+				<div className="flex items-center space-x-1">
 					<Switch
 						checked={trackingOptions.enableBatching}
 						id="enable-batching"
@@ -1307,18 +1002,20 @@ function BatchingSection({
 							}))
 						}
 					/>
-					<Label htmlFor="enable-batching">Enable batching</Label>
+					<Label className="text-xs" htmlFor="enable-batching">
+						Enable batching
+					</Label>
 				</div>
 
 				{trackingOptions.enableBatching && (
-					<div className="mt-2 grid grid-cols-2 gap-4 pl-6">
-						<div className="space-y-2">
-							<Label className="text-sm" htmlFor="batch-size">
+					<div className="grid grid-cols-2 gap-2 pl-3">
+						<div className="space-y-1">
+							<Label className="text-xs" htmlFor="batch-size">
 								Batch Size
 							</Label>
-							<div className="flex items-center space-x-2">
+							<div className="flex items-center space-x-1">
 								<Button
-									className="h-7 w-7"
+									className="h-5 w-5"
 									disabled={trackingOptions.batchSize <= 1}
 									onClick={() =>
 										setTrackingOptions((prev) => ({
@@ -1331,11 +1028,11 @@ function BatchingSection({
 								>
 									-
 								</Button>
-								<span className="w-8 text-center">
+								<span className="w-6 text-center text-xs">
 									{trackingOptions.batchSize}
 								</span>
 								<Button
-									className="h-7 w-7"
+									className="h-5 w-5"
 									disabled={trackingOptions.batchSize >= 10}
 									onClick={() =>
 										setTrackingOptions((prev) => ({
@@ -1351,12 +1048,12 @@ function BatchingSection({
 							</div>
 						</div>
 
-						<div className="space-y-2">
-							<Label className="text-sm" htmlFor="batch-timeout">
+						<div className="space-y-1">
+							<Label className="text-xs" htmlFor="batch-timeout">
 								Batch Timeout (ms)
 							</Label>
 							<input
-								className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background"
+								className="h-6 w-full rounded border border-input bg-background px-2 py-0.5 text-xs"
 								id="batch-timeout"
 								max="5000"
 								min="100"
@@ -1373,8 +1070,7 @@ function BatchingSection({
 						</div>
 
 						<div className="col-span-2 text-muted-foreground text-xs">
-							Batching helps reduce the number of requests sent to the server,
-							improving performance.
+							Batching reduces requests to the server, improving performance.
 						</div>
 					</div>
 				)}
@@ -1393,10 +1089,10 @@ function NetworkResilienceSection({
 	) => void;
 }) {
 	return (
-		<div className="rounded border p-4">
-			<h4 className="mb-3 font-medium">Network Resilience</h4>
-			<div className="space-y-4">
-				<div className="flex items-center space-x-2">
+		<div className="rounded border p-2">
+			<h4 className="mb-1 font-medium text-xs">Network Resilience</h4>
+			<div className="space-y-2">
+				<div className="flex items-center space-x-1">
 					<Switch
 						checked={trackingOptions.enableRetries}
 						id="enable-retries"
@@ -1407,18 +1103,20 @@ function NetworkResilienceSection({
 							}))
 						}
 					/>
-					<Label htmlFor="enable-retries">Enable request retries</Label>
+					<Label className="text-xs" htmlFor="enable-retries">
+						Enable request retries
+					</Label>
 				</div>
 
 				{trackingOptions.enableRetries && (
-					<div className="mt-2 grid grid-cols-2 gap-4 pl-6">
-						<div className="space-y-2">
-							<Label className="text-sm" htmlFor="max-retries">
+					<div className="grid grid-cols-2 gap-2 pl-3">
+						<div className="space-y-1">
+							<Label className="text-xs" htmlFor="max-retries">
 								Maximum Retry Attempts
 							</Label>
-							<div className="flex items-center space-x-2">
+							<div className="flex items-center space-x-1">
 								<Button
-									className="h-7 w-7"
+									className="h-5 w-5"
 									disabled={trackingOptions.maxRetries <= 1}
 									onClick={() =>
 										setTrackingOptions((prev) => ({
@@ -1431,11 +1129,11 @@ function NetworkResilienceSection({
 								>
 									-
 								</Button>
-								<span className="w-8 text-center">
+								<span className="w-6 text-center text-xs">
 									{trackingOptions.maxRetries}
 								</span>
 								<Button
-									className="h-7 w-7"
+									className="h-5 w-5"
 									disabled={trackingOptions.maxRetries >= 10}
 									onClick={() =>
 										setTrackingOptions((prev) => ({
@@ -1451,12 +1149,12 @@ function NetworkResilienceSection({
 							</div>
 						</div>
 
-						<div className="space-y-2">
-							<Label className="text-sm" htmlFor="retry-delay">
+						<div className="space-y-1">
+							<Label className="text-xs" htmlFor="retry-delay">
 								Initial Retry Delay (ms)
 							</Label>
 							<input
-								className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background"
+								className="h-6 w-full rounded border border-input bg-background px-2 py-0.5 text-xs"
 								id="retry-delay"
 								max="5000"
 								min="100"
@@ -1493,9 +1191,9 @@ function TabActions({
 	onCopyCode: () => void;
 }) {
 	return (
-		<div className="mt-8 flex justify-between border-t pt-4">
+		<div className="mt-4 flex justify-between border-t pt-2">
 			<Button
-				className="h-8 text-xs"
+				className="h-6 text-xs"
 				onClick={onResetDefaults}
 				size="sm"
 				variant="outline"
@@ -1503,19 +1201,19 @@ function TabActions({
 				Reset to defaults
 			</Button>
 
-			<div className="flex gap-2">
+			<div className="flex gap-1">
 				<Button
-					className="h-8 text-xs"
+					className="h-6 text-xs"
 					onClick={onEnableAll}
 					size="sm"
 					variant="outline"
 				>
-					<CheckIcon className="mr-1.5 h-3.5 w-3.5" />
+					<CheckIcon className="mr-1 h-3 w-3" />
 					Enable all
 				</Button>
 
-				<Button className="h-8 text-xs" onClick={onCopyCode} size="sm">
-					<CodeIcon className="mr-1.5 h-3.5 w-3.5" />
+				<Button className="h-6 text-xs" onClick={onCopyCode} size="sm">
+					<CodeIcon className="mr-1 h-3 w-3" />
 					Copy script
 				</Button>
 			</div>
@@ -1529,13 +1227,7 @@ function DeleteWebsiteDialog({
 	websiteData,
 	isDeleting,
 	onConfirmDelete,
-}: {
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
-	websiteData: any;
-	isDeleting: boolean;
-	onConfirmDelete: () => void;
-}) {
+}: DeleteWebsiteDialogProps) {
 	return (
 		<AlertDialog onOpenChange={onOpenChange} open={open}>
 			<AlertDialogContent>
@@ -1582,15 +1274,7 @@ function DeleteWebsiteDialog({
 	);
 }
 
-function PrivacyTab({
-	isPublic,
-	onTogglePublic,
-	websiteId,
-}: {
-	isPublic: boolean;
-	onTogglePublic: () => void;
-	websiteId: string;
-}) {
+function PrivacyTab({ isPublic, onTogglePublic, websiteId }: PrivacyTabProps) {
 	const shareableLink = `${window.location.origin}/demo/${websiteId}`;
 
 	const handleCopyLink = () => {
@@ -1599,17 +1283,17 @@ function PrivacyTab({
 	};
 
 	return (
-		<div className="space-y-4">
-			<div className="flex flex-col space-y-1.5">
-				<h3 className="font-semibold text-lg">Sharing & Privacy</h3>
-				<p className="text-muted-foreground text-sm">
+		<div className="space-y-2">
+			<div className="space-y-0.5">
+				<h3 className="font-medium text-sm">Sharing & Privacy</h3>
+				<p className="text-muted-foreground text-xs">
 					Manage your website's public visibility and shareable link.
 				</p>
 			</div>
-			<div className="rounded border p-4">
+			<div className="rounded border p-2">
 				<div className="flex items-start justify-between">
-					<div className="space-y-1">
-						<Label className="font-medium" htmlFor="public-access">
+					<div className="space-y-0.5">
+						<Label className="font-medium text-xs" htmlFor="public-access">
 							Public Access
 						</Label>
 						<p className="text-muted-foreground text-xs">
@@ -1624,23 +1308,25 @@ function PrivacyTab({
 				</div>
 
 				{isPublic && (
-					<div className="mt-4 space-y-2 border-t pt-4">
-						<Label htmlFor="shareable-link">Shareable Link</Label>
-						<div className="flex items-center gap-2">
+					<div className="mt-2 space-y-1 border-t pt-2">
+						<Label className="text-xs" htmlFor="shareable-link">
+							Shareable Link
+						</Label>
+						<div className="flex items-center gap-1">
 							<input
-								className="flex-grow rounded border bg-background px-3 py-1.5 text-sm"
+								className="flex-grow rounded border bg-background px-2 py-1 text-xs"
 								id="shareable-link"
 								readOnly
 								type="text"
 								value={shareableLink}
 							/>
 							<Button
-								className="h-8 gap-1.5 px-3 text-xs"
+								className="h-6 gap-1 px-2 text-xs"
 								onClick={handleCopyLink}
 								size="sm"
 								variant="outline"
 							>
-								<ClipboardIcon className="h-3.5 w-3.5" />
+								<ClipboardIcon className="h-3 w-3" />
 								Copy
 							</Button>
 						</div>
@@ -1658,17 +1344,8 @@ function ExportTab({
 	isExporting,
 	onExportData,
 	websiteData,
-	websiteId,
-}: {
-	isExporting: boolean;
-	onExportData: (
-		format: ExportFormat,
-		startDate?: string,
-		endDate?: string
-	) => void;
-	websiteData: any;
-	websiteId: string;
-}) {
+	websiteId: _websiteId,
+}: ExportTabProps) {
 	const [selectedFormat, setSelectedFormat] = useState<ExportFormat>('csv');
 	const [dateRange, setDateRange] = useState<DayPickerRange | undefined>(
 		undefined
@@ -1704,60 +1381,61 @@ function ExportTab({
 	};
 
 	return (
-		<div className="space-y-6">
-			<div className="flex flex-col space-y-1.5">
-				<h3 className="font-semibold text-lg">Data Export</h3>
-				<p className="text-muted-foreground text-sm">
+		<div className="space-y-3">
+			<div className="space-y-0.5">
+				<h3 className="font-medium text-sm">Data Export</h3>
+				<p className="text-muted-foreground text-xs">
 					Export your website's analytics data for backup, analysis, or
 					migration purposes.
 				</p>
 			</div>
 
 			{/* Export Format Selection */}
-			<div className="space-y-4">
-				<div className="space-y-3">
-					<Label className="font-medium text-sm">Export Format</Label>
-					<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+			<div className="space-y-2">
+				<div className="space-y-1">
+					<Label className="font-medium text-xs">Export Format</Label>
+					<div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
 						{formatOptions.map((format) => (
-							<div
-								className={`cursor-pointer rounded border p-4 transition-all hover:border-primary/50 ${
+							<button
+								className={`cursor-pointer rounded border p-2 transition-all hover:border-primary/50 ${
 									selectedFormat === format.value
 										? 'border-primary bg-primary/5'
 										: 'border-border'
 								}`}
 								key={format.value}
 								onClick={() => setSelectedFormat(format.value)}
+								type="button"
 							>
-								<div className="flex items-center gap-3">
-									<div className="flex h-8 w-8 items-center justify-center rounded bg-muted">
+								<div className="flex items-center gap-2">
+									<div className="flex h-6 w-6 items-center justify-center rounded bg-muted">
 										<span className="font-mono font-semibold text-xs">
 											{format.value.toUpperCase()}
 										</span>
 									</div>
 									<div className="flex-1">
-										<div className="font-medium text-sm">{format.label}</div>
+										<div className="font-medium text-xs">{format.label}</div>
 										<div className="text-muted-foreground text-xs">
 											{format.description}
 										</div>
 									</div>
 									{selectedFormat === format.value && (
-										<CheckIcon className="h-4 w-4 text-primary" />
+										<CheckIcon className="h-3 w-3 text-primary" />
 									)}
 								</div>
-							</div>
+							</button>
 						))}
 					</div>
 				</div>
 
 				{/* Date Range Selection */}
-				<div className="space-y-3">
-					<div className="flex items-center space-x-2">
+				<div className="space-y-1">
+					<div className="flex items-center space-x-1">
 						<Switch
 							checked={useCustomRange}
 							id="custom-range"
 							onCheckedChange={setUseCustomRange}
 						/>
-						<Label className="font-medium text-sm" htmlFor="custom-range">
+						<Label className="font-medium text-xs" htmlFor="custom-range">
 							Custom Date Range
 						</Label>
 					</div>
@@ -1768,8 +1446,8 @@ function ExportTab({
 					</p>
 
 					{useCustomRange && (
-						<div className="flex items-center gap-2">
-							<Label className="text-sm">Date Range:</Label>
+						<div className="flex items-center gap-1">
+							<Label className="text-xs">Date Range:</Label>
 							<DateRangePicker
 								className="w-auto"
 								maxDate={new Date()}
@@ -1783,14 +1461,14 @@ function ExportTab({
 			</div>
 
 			{/* Export Info */}
-			<div className="rounded border border-blue-200 bg-blue-50 p-4 dark:border-blue-800/20 dark:bg-blue-950/20">
-				<div className="flex items-start gap-3">
-					<InfoIcon className="h-5 w-5 flex-shrink-0 text-blue-500" />
-					<div className="space-y-2">
-						<h4 className="font-medium text-blue-900 text-sm dark:text-blue-100">
+			<div className="rounded border border-blue-200 bg-blue-50 p-2 dark:border-blue-800/20 dark:bg-blue-950/20">
+				<div className="flex items-start gap-2">
+					<InfoIcon className="h-4 w-4 flex-shrink-0 text-blue-500" />
+					<div className="space-y-1">
+						<h4 className="font-medium text-blue-900 text-xs dark:text-blue-100">
 							What's included in your export?
 						</h4>
-						<ul className="list-disc space-y-1 pl-4 text-blue-800 text-xs dark:text-blue-200">
+						<ul className="list-disc space-y-0 pl-3 text-blue-800 text-xs dark:text-blue-200">
 							<li>Page views and user sessions</li>
 							<li>User interactions and events</li>
 							<li>Performance metrics and Web Vitals</li>
@@ -1806,9 +1484,9 @@ function ExportTab({
 			</div>
 
 			{/* Export Actions */}
-			<div className="flex items-center justify-between border-t pt-6">
-				<div className="space-y-1">
-					<p className="font-medium text-sm">
+			<div className="flex items-center justify-between border-t pt-2">
+				<div className="space-y-0.5">
+					<p className="font-medium text-xs">
 						Ready to export {websiteData.name || 'your website'} data?
 					</p>
 					<p className="text-muted-foreground text-xs">
@@ -1824,22 +1502,22 @@ function ExportTab({
 				</div>
 
 				<Button
-					className="gap-2"
+					className="h-6 gap-1 text-xs"
 					disabled={
 						isExporting ||
 						(useCustomRange && !(dateRange?.from && dateRange?.to))
 					}
 					onClick={handleExport}
-					size="lg"
+					size="sm"
 				>
 					{isExporting ? (
 						<>
-							<div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+							<div className="h-3 w-3 animate-spin rounded-full border border-current border-t-transparent" />
 							Exporting...
 						</>
 					) : (
 						<>
-							<DownloadIcon className="h-4 w-4" />
+							<DownloadIcon className="h-3 w-3" />
 							Export Data
 						</>
 					)}

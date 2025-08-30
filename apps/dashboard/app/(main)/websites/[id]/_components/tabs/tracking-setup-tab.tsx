@@ -11,9 +11,8 @@ import {
 	FileCodeIcon,
 	WarningCircleIcon,
 } from '@phosphor-icons/react';
-import { useState } from 'react';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { useCallback, useEffect, useState } from 'react';
+import { codeToHtml } from 'shiki';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -48,7 +47,9 @@ const CodeBlock = ({
 	onCopy: () => void;
 	copied: boolean;
 }) => {
-	const getLanguage = (codeContent: string) => {
+	const [highlightedCode, setHighlightedCode] = useState<string>('');
+
+	const getLanguage = useCallback((codeContent: string) => {
 		if (
 			codeContent.includes('npm install') ||
 			codeContent.includes('yarn add') ||
@@ -64,7 +65,24 @@ const CodeBlock = ({
 			return 'jsx';
 		}
 		return 'javascript';
-	};
+	}, []);
+
+	useEffect(() => {
+		const highlightCode = async () => {
+			try {
+				const html = await codeToHtml(code, {
+					lang: getLanguage(code),
+					theme: 'github-dark',
+				});
+				setHighlightedCode(html);
+			} catch (error) {
+				console.error('Error highlighting code:', error);
+				setHighlightedCode(`<pre><code>${code}</code></pre>`);
+			}
+		};
+
+		highlightCode();
+	}, [code, getLanguage]);
 
 	return (
 		<div className="space-y-2">
@@ -72,34 +90,22 @@ const CodeBlock = ({
 				<p className="text-muted-foreground text-sm">{description}</p>
 			)}
 			<div className="relative">
-				<div className="overflow-hidden rounded-md border">
-					<SyntaxHighlighter
-						customStyle={{
-							margin: 0,
-							fontSize: '12px',
-							lineHeight: '1.5',
-							padding: '12px',
-						}}
-						language={getLanguage(code)}
-						showLineNumbers={false}
-						style={oneDark}
-					>
-						{code}
-					</SyntaxHighlighter>
-				</div>
+				<div
+					className='overflow-hidden rounded-lg border bg-[#0d1117] p-6 font-mono text-sm leading-relaxed'
+					// biome-ignore lint/security/noDangerouslySetInnerHtml: Shiki generates safe HTML
+					dangerouslySetInnerHTML={{ __html: highlightedCode }}
+					style={{ fontSize: '14px', lineHeight: '1.6' }}
+				/>
 				<Button
-					className="absolute top-2 right-2 h-7 w-7 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background"
+					className='absolute top-3 right-3 h-8 w-8 rounded-md bg-background/80 backdrop-blur-sm hover:bg-background/95'
 					onClick={onCopy}
 					size="icon"
 					variant="ghost"
 				>
 					{copied ? (
-						<CheckIcon
-							className="h-3.5 w-3.5 text-green-500"
-							weight="duotone"
-						/>
+						<CheckIcon className="h-4 w-4 text-green-500" weight="duotone" />
 					) : (
-						<ClipboardIcon className="h-3.5 w-3.5" weight="duotone" />
+						<ClipboardIcon className="h-4 w-4" weight="duotone" />
 					)}
 				</Button>
 			</div>
@@ -157,26 +163,26 @@ export function WebsiteTrackingSetupTab({ websiteId }: WebsiteDataTabProps) {
 	};
 
 	return (
-		<div className="space-y-6">
+		<div className="space-y-4">
 			{/* Quick Setup Alert */}
 			<Card className="border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950/20">
-				<CardHeader>
+				<CardHeader className="pb-3">
 					<div className="flex items-center justify-between">
-						<CardTitle className="flex items-center gap-2 text-lg">
-							<WarningCircleIcon className="h-5 w-5" weight="duotone" />
+						<CardTitle className="flex items-center gap-2 text-base">
+							<WarningCircleIcon className="h-4 w-4" weight="duotone" />
 							Tracking Not Setup
 						</CardTitle>
 						<Button
 							aria-label="Refresh tracking status"
-							className="h-8 w-8"
+							className="h-7 w-7"
 							onClick={handleRefresh}
 							size="icon"
 							variant="outline"
 						>
-							<ArrowClockwiseIcon className="h-4 w-4" weight="fill" />
+							<ArrowClockwiseIcon className="h-3.5 w-3.5" weight="fill" />
 						</Button>
 					</div>
-					<CardDescription>
+					<CardDescription className="text-xs">
 						Install the tracking script to start collecting analytics data for
 						your website.
 					</CardDescription>
@@ -185,16 +191,16 @@ export function WebsiteTrackingSetupTab({ websiteId }: WebsiteDataTabProps) {
 
 			{/* Installation Instructions */}
 			<Card>
-				<CardHeader className="pb-4">
-					<CardTitle className="flex items-center gap-2 text-lg">
-						<CodeIcon className="h-5 w-5" weight="duotone" />
+				<CardHeader className="pb-2">
+					<CardTitle className="flex items-center gap-2 text-base">
+						<CodeIcon className="h-4 w-4" weight="duotone" />
 						Installation
 					</CardTitle>
-					<CardDescription>
+					<CardDescription className="text-xs">
 						Choose your preferred installation method
 					</CardDescription>
 				</CardHeader>
-				<CardContent>
+				<CardContent className="pt-2">
 					<Tabs
 						onValueChange={(value) =>
 							setInstallMethod(value as 'script' | 'npm')

@@ -77,7 +77,10 @@ export const TrafficBuilders: Record<string, SimpleQueryConfig> = {
 			'utm_campaign',
 		],
 		customizable: true,
-		plugins: { parseReferrers: true },
+		plugins: {
+			parseReferrers: true,
+			sessionAttribution: true,
+		},
 	},
 
 	utm_sources: {
@@ -142,6 +145,9 @@ export const TrafficBuilders: Record<string, SimpleQueryConfig> = {
 			'utm_campaign',
 		],
 		customizable: true,
+		plugins: {
+			sessionAttribution: true,
+		},
 	},
 
 	utm_mediums: {
@@ -169,6 +175,9 @@ export const TrafficBuilders: Record<string, SimpleQueryConfig> = {
 			'utm_campaign',
 		],
 		customizable: true,
+		plugins: {
+			sessionAttribution: true,
+		},
 	},
 
 	utm_campaigns: {
@@ -233,6 +242,9 @@ export const TrafficBuilders: Record<string, SimpleQueryConfig> = {
 			'utm_campaign',
 		],
 		customizable: true,
+		plugins: {
+			sessionAttribution: true,
+		},
 	},
 
 	utm_terms: {

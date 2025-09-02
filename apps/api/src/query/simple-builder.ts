@@ -155,106 +155,101 @@ export class SimpleQueryBuilder {
 		const key = `f${index}`;
 		const operator = FilterOperators[filter.op];
 
-		// Special handling for path filters - apply same normalization as used in queries
+		// Special handling for different field types
 		if (filter.field === SPECIAL_FILTER_FIELDS.PATH) {
-			const normalizedPathExpression =
-				"CASE WHEN trimRight(path(path), '/') = '' THEN '/' ELSE trimRight(path(path), '/') END";
-
-			if (filter.op === 'like') {
-				return {
-					clause: `${normalizedPathExpression} ${operator} {${key}:String}`,
-					params: { [key]: `%${filter.value}%` },
-				};
-			}
-
-			if (filter.op === 'in' || filter.op === 'notIn') {
-				const values = Array.isArray(filter.value)
-					? filter.value
-					: [filter.value];
-				return {
-					clause: `${normalizedPathExpression} ${operator} {${key}:Array(String)}`,
-					params: { [key]: values },
-				};
-			}
-
-			return {
-				clause: `${normalizedPathExpression} ${operator} {${key}:String}`,
-				params: { [key]: filter.value },
-			};
+			return this.buildPathFilter(filter, key, operator);
 		}
 
-		// Special handling for referrer filters - apply same normalization as used in queries
 		if (filter.field === SPECIAL_FILTER_FIELDS.REFERRER) {
-			const normalizedReferrerExpression =
-				'CASE ' +
-				"WHEN referrer = '' OR referrer IS NULL THEN 'direct' " +
-				"WHEN domain(referrer) LIKE '%.google.com%' OR domain(referrer) LIKE 'google.com%' THEN 'https://google.com' " +
-				"WHEN domain(referrer) LIKE '%.facebook.com%' OR domain(referrer) LIKE 'facebook.com%' THEN 'https://facebook.com' " +
-				"WHEN domain(referrer) LIKE '%.twitter.com%' OR domain(referrer) LIKE 'twitter.com%' OR domain(referrer) LIKE 't.co%' THEN 'https://twitter.com' " +
-				"WHEN domain(referrer) LIKE '%.instagram.com%' OR domain(referrer) LIKE 'instagram.com%' OR domain(referrer) LIKE 'l.instagram.com%' THEN 'https://instagram.com' " +
-				"ELSE concat('https://', domain(referrer)) " +
-				'END';
-
-			if (filter.op === 'like') {
-				// For 'like' operations, we need to handle user-friendly input
-				// If user types "Google", they want to match referrers like 'https://google.com'
-				const lowerValue = String(filter.value).toLowerCase();
-				let searchValue = filter.value;
-
-				// Map common search terms to more specific patterns
-				if (lowerValue === 'direct') {
-					searchValue = 'direct';
-				} else if (lowerValue === 'google') {
-					searchValue = 'google.com';
-				} else if (lowerValue === 'facebook') {
-					searchValue = 'facebook.com';
-				} else if (lowerValue === 'twitter') {
-					searchValue = 'twitter.com';
-				} else if (lowerValue === 'instagram') {
-					searchValue = 'instagram.com';
-				}
-
-				return {
-					clause: `${normalizedReferrerExpression} ${operator} {${key}:String}`,
-					params: { [key]: `%${searchValue}%` },
-				};
-			}
-
-			if (filter.op === 'in' || filter.op === 'notIn') {
-				const values = Array.isArray(filter.value)
-					? filter.value.map((v) => normalizeReferrerFilterValue(String(v)))
-					: [normalizeReferrerFilterValue(String(filter.value))];
-				return {
-					clause: `${normalizedReferrerExpression} ${operator} {${key}:Array(String)}`,
-					params: { [key]: values },
-				};
-			}
-
-			// For exact matches (eq, ne), normalize the user input to match the normalized referrer expression
-			const normalizedValue = normalizeReferrerFilterValue(
-				String(filter.value)
-			);
-			return {
-				clause: `${normalizedReferrerExpression} ${operator} {${key}:String}`,
-				params: { [key]: normalizedValue },
-			};
+			return this.buildReferrerFilter(filter, key, operator);
 		}
 
-		// Special handling for device_type filters - convert to screen_resolution filters
 		if (
 			filter.field === SPECIAL_FILTER_FIELDS.DEVICE_TYPE &&
 			typeof filter.value === 'string'
 		) {
-			const deviceType = filter.value as DeviceType;
-			const condition = this.getDeviceTypeFilterCondition(deviceType);
+			return this.buildDeviceTypeFilter(filter);
+		}
 
-			// Return the condition directly without parameters since it's self-contained
+		// Standard filter handling
+		return this.buildStandardFilter(filter, key, operator);
+	}
+
+	private buildPathFilter(filter: Filter, key: string, operator: string) {
+		const normalizedPathExpression =
+			"CASE WHEN trimRight(path(path), '/') = '' THEN '/' ELSE trimRight(path(path), '/') END";
+
+		if (filter.op === 'like') {
 			return {
-				clause: condition,
-				params: {},
+				clause: `${normalizedPathExpression} ${operator} {${key}:String}`,
+				params: { [key]: `%${filter.value}%` },
 			};
 		}
 
+		if (filter.op === 'in' || filter.op === 'notIn') {
+			const values = Array.isArray(filter.value)
+				? filter.value
+				: [filter.value];
+			return {
+				clause: `${normalizedPathExpression} ${operator} {${key}:Array(String)}`,
+				params: { [key]: values },
+			};
+		}
+
+		return {
+			clause: `${normalizedPathExpression} ${operator} {${key}:String}`,
+			params: { [key]: filter.value },
+		};
+	}
+
+	private buildReferrerFilter(filter: Filter, key: string, operator: string) {
+		const normalizedReferrerExpression =
+			'CASE ' +
+			"WHEN referrer = '' OR referrer IS NULL THEN 'direct' " +
+			"WHEN domain(referrer) LIKE '%.google.com%' OR domain(referrer) LIKE 'google.com%' THEN 'https://google.com' " +
+			"WHEN domain(referrer) LIKE '%.facebook.com%' OR domain(referrer) LIKE 'facebook.com%' THEN 'https://facebook.com' " +
+			"WHEN domain(referrer) LIKE '%.twitter.com%' OR domain(referrer) LIKE 'twitter.com%' OR domain(referrer) LIKE 't.co%' THEN 'https://twitter.com' " +
+			"WHEN domain(referrer) LIKE '%.instagram.com%' OR domain(referrer) LIKE 'instagram.com%' OR domain(referrer) LIKE 'l.instagram.com%' THEN 'https://instagram.com' " +
+			"ELSE concat('https://', domain(referrer)) " +
+			'END';
+
+		if (filter.op === 'like') {
+			const searchValue = this.normalizeReferrerSearchValue(
+				String(filter.value)
+			);
+			return {
+				clause: `${normalizedReferrerExpression} ${operator} {${key}:String}`,
+				params: { [key]: `%${searchValue}%` },
+			};
+		}
+
+		if (filter.op === 'in' || filter.op === 'notIn') {
+			const values = Array.isArray(filter.value)
+				? filter.value.map((v) => normalizeReferrerFilterValue(String(v)))
+				: [normalizeReferrerFilterValue(String(filter.value))];
+			return {
+				clause: `${normalizedReferrerExpression} ${operator} {${key}:Array(String)}`,
+				params: { [key]: values },
+			};
+		}
+
+		const normalizedValue = normalizeReferrerFilterValue(String(filter.value));
+		return {
+			clause: `${normalizedReferrerExpression} ${operator} {${key}:String}`,
+			params: { [key]: normalizedValue },
+		};
+	}
+
+	private buildDeviceTypeFilter(filter: Filter) {
+		const deviceType = filter.value as DeviceType;
+		const condition = this.getDeviceTypeFilterCondition(deviceType);
+		return {
+			clause: condition,
+			params: {},
+		};
+	}
+
+	private buildStandardFilter(filter: Filter, key: string, operator: string) {
 		if (filter.op === 'like') {
 			return {
 				clause: `${filter.field} ${operator} {${key}:String}`,
@@ -276,6 +271,54 @@ export class SimpleQueryBuilder {
 			clause: `${filter.field} ${operator} {${key}:String}`,
 			params: { [key]: filter.value },
 		};
+	}
+
+	private normalizeReferrerSearchValue(value: string): string {
+		const lowerValue = value.toLowerCase();
+
+		// Map common search terms to more specific patterns
+		const mappings: Record<string, string> = {
+			direct: 'direct',
+			google: 'google.com',
+			facebook: 'facebook.com',
+			twitter: 'twitter.com',
+			instagram: 'instagram.com',
+		};
+
+		return mappings[lowerValue] || value;
+	}
+
+	private generateSessionAttributionCTE(timeField: string): string {
+		const sessionFields = [
+			'referrer',
+			'utm_source',
+			'utm_medium',
+			'utm_campaign',
+			'country',
+			'device_type',
+			'browser_name',
+			'os_name',
+		];
+
+		const sessionFieldsSelect = sessionFields
+			.map((field) => `argMin(${field}, ${timeField}) as session_${field}`)
+			.join(',\n\t\t\t');
+
+		return `session_attribution AS (
+			SELECT 
+				session_id,
+				${sessionFieldsSelect}
+			FROM analytics.events
+			WHERE client_id = {websiteId:String}
+				AND ${timeField} >= parseDateTimeBestEffort({startDate:String})
+				AND ${timeField} <= parseDateTimeBestEffort(concat({endDate:String}, ' 23:59:59'))
+				AND session_id != ''
+			GROUP BY session_id
+		)`;
+	}
+
+	private generateSessionAttributionJoin(alias: string): string {
+		return `INNER JOIN session_attribution sa ON ${alias}.session_id = sa.session_id`;
 	}
 
 	private replaceDomainPlaceholders(sql: string): string {
@@ -303,6 +346,17 @@ export class SimpleQueryBuilder {
 		if (this.config.customSql) {
 			const whereClauseParams: Record<string, Filter['value']> = {};
 			const whereClause = this.buildWhereClauseFromFilters(whereClauseParams);
+
+			// Create helper functions for session attribution if plugins are enabled
+			const helpers = this.config.plugins?.sessionAttribution
+				? {
+						sessionAttributionCTE: (timeField = 'time') =>
+							this.generateSessionAttributionCTE(timeField),
+						sessionAttributionJoin: (alias = 'e') =>
+							this.generateSessionAttributionJoin(alias),
+					}
+				: undefined;
+
 			const result = this.config.customSql(
 				this.request.projectId,
 				this.formatDateTime(this.request.from),
@@ -313,7 +367,8 @@ export class SimpleQueryBuilder {
 				this.request.offset,
 				this.request.timezone,
 				whereClause,
-				whereClauseParams
+				whereClauseParams,
+				helpers
 			);
 
 			if (typeof result === 'string') {
@@ -332,10 +387,94 @@ export class SimpleQueryBuilder {
 			to: this.formatDateTime(this.request.to),
 		};
 
+		if (this.config.plugins?.sessionAttribution) {
+			return this.buildSessionAttributionQuery(params);
+		}
+
 		let sql = `SELECT ${this.config.fields?.join(', ') || '*'} FROM ${this.config.table}`;
 		const whereClause = this.buildWhereClause(params);
 
 		sql += ` WHERE ${whereClause.join(' AND ')}`;
+		sql = this.replaceDomainPlaceholders(sql);
+		sql += this.buildGroupByClause();
+		sql += this.buildOrderByClause();
+		sql += this.buildLimitClause();
+		sql += this.buildOffsetClause();
+
+		return { sql, params };
+	}
+
+	private buildSessionAttributionQuery(
+		params: Record<string, Filter['value']>
+	): CompiledQuery {
+		// Build the session attribution query with CTEs
+		const timeField = this.config.timeField || 'time';
+		const whereClauseParams: Record<string, Filter['value']> = {};
+		const filterClauses = this.buildWhereClauseFromFilters(whereClauseParams);
+
+		// Merge filter params into main params
+		Object.assign(params, whereClauseParams);
+
+		// Build the session attribution fields mapping
+		const sessionFields = [
+			'referrer',
+			'utm_source',
+			'utm_medium',
+			'utm_campaign',
+			'country',
+			'device_type',
+			'browser_name',
+			'os_name',
+		];
+
+		const sessionFieldsSelect = sessionFields
+			.map((field) => `argMin(${field}, ${timeField}) as session_${field}`)
+			.join(',\n\t\t\t\t');
+
+		const mainFields = this.config.fields?.join(',\n\t\t\t') || '*';
+
+		const finalFilterClauses = filterClauses;
+
+		const additionalWhere = this.config.where
+			? `${this.config.where.join(' AND ')} AND `
+			: '';
+		const finalWhereClause =
+			finalFilterClauses.length > 0 ? finalFilterClauses.join(' AND ') : '1=1';
+
+		let sql = `
+		WITH session_attribution AS (
+			SELECT 
+				session_id,
+				${sessionFieldsSelect}
+			FROM ${this.config.table}
+			WHERE client_id = {websiteId:String}
+				AND ${timeField} >= parseDateTimeBestEffort({from:String})
+				AND ${timeField} <= parseDateTimeBestEffort(concat({to:String}, ' 23:59:59'))
+				AND session_id != ''
+			GROUP BY session_id
+		),
+		attributed_events AS (
+			SELECT 
+				e.*,
+				sa.session_referrer as referrer,
+				sa.session_utm_source as utm_source,
+				sa.session_utm_medium as utm_medium,
+				sa.session_utm_campaign as utm_campaign,
+				sa.session_country as country,
+				sa.session_device_type as device_type,
+				sa.session_browser_name as browser_name,
+				sa.session_os_name as os_name
+			FROM ${this.config.table} e
+			INNER JOIN session_attribution sa ON e.session_id = sa.session_id
+			WHERE e.client_id = {websiteId:String}
+				AND e.${timeField} >= parseDateTimeBestEffort({from:String})
+				AND e.${timeField} <= parseDateTimeBestEffort(concat({to:String}, ' 23:59:59'))
+				AND e.session_id != ''
+				AND ${additionalWhere}${finalWhereClause}
+		)
+		SELECT ${mainFields}
+		FROM attributed_events`;
+
 		sql = this.replaceDomainPlaceholders(sql);
 		sql += this.buildGroupByClause();
 		sql += this.buildOrderByClause();

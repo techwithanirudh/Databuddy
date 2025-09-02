@@ -64,27 +64,65 @@ export const SummaryBuilders: Record<string, SimpleQueryConfig> = {
 			_offset?: number,
 			timezone?: string,
 			filterConditions?: string[],
-			filterParams?: Record<string, Filter['value']>
+			filterParams?: Record<string, Filter['value']>,
+			helpers?: {
+				sessionAttributionCTE: (timeField?: string) => string;
+				sessionAttributionJoin: (alias?: string) => string;
+			}
 		) => {
 			const tz = timezone || 'UTC';
 			const combinedWhereClause = buildWhereClause(filterConditions);
 
-			return {
-				sql: `
-		WITH base_events AS (
+			// Use session attribution if helpers are provided
+			const sessionAttributionCTE = helpers?.sessionAttributionCTE
+				? `${helpers.sessionAttributionCTE('time')},`
+				: '';
+
+			const baseEventsQuery = helpers?.sessionAttributionCTE
+				? `
+		base_events AS (
 			SELECT
-			session_id,
-			anonymous_id,
-			event_name,
-			toTimeZone(time, {timezone:String}) as normalized_time
+				e.session_id,
+				e.anonymous_id,
+				e.event_name,
+				toTimeZone(e.time, {timezone:String}) as normalized_time,
+				sa.session_referrer as referrer,
+				sa.session_utm_source as utm_source,
+				sa.session_utm_medium as utm_medium,
+				sa.session_utm_campaign as utm_campaign,
+				sa.session_country as country,
+				sa.session_device_type as device_type,
+				sa.session_browser_name as browser_name,
+				sa.session_os_name as os_name
+			FROM analytics.events e
+			${helpers.sessionAttributionJoin('e')}
+			WHERE 
+				e.client_id = {websiteId:String}
+				AND e.time >= parseDateTimeBestEffort({startDate:String})
+				AND e.time <= parseDateTimeBestEffort(concat({endDate:String}, ' 23:59:59'))
+				AND e.session_id != ''
+				${combinedWhereClause}
+		),`
+				: `
+		base_events AS (
+			SELECT
+				session_id,
+				anonymous_id,
+				event_name,
+				toTimeZone(time, {timezone:String}) as normalized_time
 			FROM analytics.events
 			WHERE 
-			client_id = {websiteId:String}
-			AND time >= parseDateTimeBestEffort({startDate:String})
-			AND time <= parseDateTimeBestEffort(concat({endDate:String}, ' 23:59:59'))
-			AND session_id != ''
-			${combinedWhereClause}
-		),
+				client_id = {websiteId:String}
+				AND time >= parseDateTimeBestEffort({startDate:String})
+				AND time <= parseDateTimeBestEffort(concat({endDate:String}, ' 23:59:59'))
+				AND session_id != ''
+				${combinedWhereClause}
+		),`;
+
+			return {
+				sql: `
+		WITH ${sessionAttributionCTE}
+		${baseEventsQuery}
 		session_metrics AS (
 			SELECT
 			session_id,
@@ -143,6 +181,9 @@ export const SummaryBuilders: Record<string, SimpleQueryConfig> = {
 		},
 		timeField: 'time',
 		customizable: true,
+		plugins: {
+			sessionAttribution: true,
+		},
 	},
 
 	today_metrics: {
@@ -254,16 +295,49 @@ export const SummaryBuilders: Record<string, SimpleQueryConfig> = {
 			_offset?: number,
 			timezone?: string,
 			filterConditions?: string[],
-			filterParams?: Record<string, Filter['value']>
+			filterParams?: Record<string, Filter['value']>,
+			helpers?: {
+				sessionAttributionCTE: (timeField?: string) => string;
+				sessionAttributionJoin: (alias?: string) => string;
+			}
 		) => {
 			const tz = timezone || 'UTC';
 			const isHourly = _granularity === 'hour' || _granularity === 'hourly';
 			const combinedWhereClause = buildWhereClause(filterConditions);
 
 			if (isHourly) {
-				return {
-					sql: `
-                WITH base_events AS (
+				// Use session attribution if helpers are provided
+				const sessionAttributionCTE = helpers?.sessionAttributionCTE
+					? `${helpers.sessionAttributionCTE('time')},`
+					: '';
+
+				const baseEventsQuery = helpers?.sessionAttributionCTE
+					? `
+                base_events AS (
+                  SELECT
+                    e.session_id,
+                    e.anonymous_id,
+                    e.event_name,
+                    toTimeZone(e.time, {timezone:String}) as normalized_time,
+                    sa.session_referrer as referrer,
+                    sa.session_utm_source as utm_source,
+                    sa.session_utm_medium as utm_medium,
+                    sa.session_utm_campaign as utm_campaign,
+                    sa.session_country as country,
+                    sa.session_device_type as device_type,
+                    sa.session_browser_name as browser_name,
+                    sa.session_os_name as os_name
+                  FROM analytics.events e
+                  ${helpers.sessionAttributionJoin('e')}
+                  WHERE 
+                    e.client_id = {websiteId:String}
+                    AND e.time >= parseDateTimeBestEffort({startDate:String})
+                    AND e.time <= parseDateTimeBestEffort(concat({endDate:String}, ' 23:59:59'))
+                    AND e.session_id != ''
+                    ${combinedWhereClause}
+                ),`
+					: `
+                base_events AS (
                   SELECT
                     session_id,
                     anonymous_id,
@@ -276,7 +350,12 @@ export const SummaryBuilders: Record<string, SimpleQueryConfig> = {
                     AND time <= parseDateTimeBestEffort(concat({endDate:String}, ' 23:59:59'))
                     AND session_id != ''
                     ${combinedWhereClause}
-                ),
+                ),`;
+
+				return {
+					sql: `
+                WITH ${sessionAttributionCTE}
+                ${baseEventsQuery}
                 hour_range AS (
                   SELECT arrayJoin(arrayMap(
                     h -> toStartOfHour(toTimeZone(toDateTime(concat({startDate:String}, ' 00:00:00')) + (h * 3600), {timezone:String})),
@@ -340,9 +419,38 @@ export const SummaryBuilders: Record<string, SimpleQueryConfig> = {
 				};
 			}
 
-			return {
-				sql: `
-                WITH base_events AS (
+			// Use session attribution if helpers are provided (daily query)
+			const sessionAttributionCTE = helpers?.sessionAttributionCTE
+				? `${helpers.sessionAttributionCTE('time')},`
+				: '';
+
+			const baseEventsQuery = helpers?.sessionAttributionCTE
+				? `
+                base_events AS (
+                  SELECT
+                    e.session_id,
+                    e.anonymous_id,
+                    e.event_name,
+                    toTimeZone(e.time, {timezone:String}) as normalized_time,
+                    sa.session_referrer as referrer,
+                    sa.session_utm_source as utm_source,
+                    sa.session_utm_medium as utm_medium,
+                    sa.session_utm_campaign as utm_campaign,
+                    sa.session_country as country,
+                    sa.session_device_type as device_type,
+                    sa.session_browser_name as browser_name,
+                    sa.session_os_name as os_name
+                  FROM analytics.events e
+                  ${helpers.sessionAttributionJoin('e')}
+                  WHERE
+                    e.client_id = {websiteId:String}
+                    AND e.time >= parseDateTimeBestEffort({startDate:String})
+                    AND e.time <= parseDateTimeBestEffort(concat({endDate:String}, ' 23:59:59'))
+                    AND e.session_id != ''
+                    ${combinedWhereClause}
+                ),`
+				: `
+                base_events AS (
                   SELECT
                     session_id,
                     anonymous_id,
@@ -355,7 +463,12 @@ export const SummaryBuilders: Record<string, SimpleQueryConfig> = {
                     AND time <= parseDateTimeBestEffort(concat({endDate:String}, ' 23:59:59'))
                     AND session_id != ''
                     ${combinedWhereClause}
-                ),
+                ),`;
+
+			return {
+				sql: `
+                WITH ${sessionAttributionCTE}
+                ${baseEventsQuery}
                 date_range AS (
                   SELECT arrayJoin(arrayMap(
                     d -> toDate({startDate:String}) + d,
@@ -420,6 +533,9 @@ export const SummaryBuilders: Record<string, SimpleQueryConfig> = {
 		},
 		timeField: 'time',
 		customizable: true,
+		plugins: {
+			sessionAttribution: true,
+		},
 	},
 
 	active_stats: {

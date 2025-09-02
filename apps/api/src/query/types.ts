@@ -43,6 +43,7 @@ export interface SimpleQueryConfig {
 		normalizeGeo?: boolean;
 		deduplicateGeo?: boolean;
 		mapDeviceTypes?: boolean;
+		sessionAttribution?: boolean;
 	};
 	customSql?: (
 		websiteId: string,
@@ -54,7 +55,11 @@ export interface SimpleQueryConfig {
 		offset?: number,
 		timezone?: string,
 		filterConditions?: string[],
-		filterParams?: Record<string, Filter['value']>
+		filterParams?: Record<string, Filter['value']>,
+		helpers?: {
+			sessionAttributionCTE: (timeField?: string) => string;
+			sessionAttributionJoin: (alias?: string) => string;
+		}
 	) => string | { sql: string; params: Record<string, unknown> };
 	appendEndOfDayToTo?: boolean; // If true (default), append ' 23:59:59' to 'to' value. If false, use 'to' as-is.
 	meta?: QueryBuilderMeta;

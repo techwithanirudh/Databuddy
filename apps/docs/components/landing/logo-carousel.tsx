@@ -85,8 +85,8 @@ function LogoColumn({
 							aria-label={`Visit ${currentLogo.name}`}
 							className="inline-flex max-w-full items-center justify-center px-1 text-foreground/80 transition-colors hover:text-foreground"
 							href={currentLogo.src}
-							target="_blank"
 							rel="noopener"
+							target="_blank"
 						>
 							<span className="truncate font-bold text-xs tracking-wide sm:text-sm md:text-base lg:text-lg">
 								{currentLogo.name}

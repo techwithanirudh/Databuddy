@@ -323,7 +323,7 @@ function AIMessage({
 	return (
 		<div className="max-w-3/4 space-y-2">
 			<div className="rounded-lg border bg-muted px-4 py-3 shadow-sm">
-				<div 
+				<div
 					className="wrap-break-word text-sm leading-relaxed"
 					dangerouslySetInnerHTML={{ __html: message.content }}
 				/>
@@ -419,7 +419,7 @@ function UserMessage({ message }: UserMessageProps) {
 	return (
 		<div className="flex w-full justify-end">
 			<div className="max-w-3/4 rounded-lg bg-primary px-4 py-3 text-primary-foreground">
-				<div 
+				<div
 					className="wrap-break-word text-sm leading-relaxed"
 					dangerouslySetInnerHTML={{ __html: message.content }}
 				/>

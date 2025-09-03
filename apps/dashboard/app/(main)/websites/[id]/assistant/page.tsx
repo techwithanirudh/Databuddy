@@ -24,7 +24,7 @@ function AIAssistantLoadingSkeleton() {
 	return (
 		<div className="flex h-full min-h-0 flex-col overflow-hidden lg:flex-row">
 			<div className="flex flex-[2_2_0%] flex-col overflow-hidden bg-background">
-				<div className="flex-shrink-0 border-b border-sidebar-border p-4">
+				<div className="flex-shrink-0 border-sidebar-border border-b p-4">
 					<Skeleton className="mb-2 h-4 w-32" />
 					<Skeleton className="h-3 w-48" />
 				</div>
@@ -38,12 +38,12 @@ function AIAssistantLoadingSkeleton() {
 						<Skeleton className="h-8 w-1/2 rounded-lg" />
 					</div>
 				</div>
-				<div className="flex-shrink-0 border-t border-sidebar-border p-4">
+				<div className="flex-shrink-0 border-sidebar-border border-t p-4">
 					<Skeleton className="h-10 w-full rounded-lg" />
 				</div>
 			</div>
-			<div className="flex flex-[3_3_0%] flex-col overflow-hidden bg-background border-l border-sidebar-border">
-				<div className="flex-shrink-0 border-b border-sidebar-border p-4">
+			<div className="flex flex-[3_3_0%] flex-col overflow-hidden border-sidebar-border border-l bg-background">
+				<div className="flex-shrink-0 border-sidebar-border border-b p-4">
 					<Skeleton className="mb-2 h-4 w-32" />
 				</div>
 				<div className="flex-1 p-4">

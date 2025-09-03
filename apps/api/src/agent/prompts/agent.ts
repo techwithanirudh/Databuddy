@@ -1,49 +1,58 @@
 import { z } from 'zod';
 import type { AssistantRequestType } from '../../schemas/assistant-schemas';
 
-export const AIResponseJsonSchema = z.object({
-	sql: z.string().optional(),
-	chart_type: z
-		.enum([
-			'bar',
-			'horizontal_bar',
-			'line',
-			'sparkline',
-			'pie',
-			'donut',
-			'area',
-			'unstacked_area',
-			'stacked_bar',
-			'multi_line',
-			'scatter',
-			'bubble',
-			'radar',
-			'funnel',
-			'grouped_bar',
-			'histogram',
-			'treemap',
-			'gauge',
-		])
-		.optional(),
-	response_type: z.enum(['chart', 'text', 'metric']),
-	text_response: z.string().min(1, "text_response cannot be empty").optional(),
-	metric_value: z.string().optional(),
-	metric_label: z.string().optional(),
-	thinking_steps: z.array(z.string()).optional(),
-}).refine((data) => {
-	if (data.response_type === 'text') {
-		return data.text_response && data.text_response.trim().length > 0;
-	}
-	if (data.response_type === 'metric') {
-		return data.metric_value && data.metric_label;
-	}
-	if (data.response_type === 'chart') {
-		return data.sql && data.chart_type;
-	}
-	return true;
-}, {
-	message: "Response must have required fields populated based on response_type",
-});
+export const AIResponseJsonSchema = z
+	.object({
+		sql: z.string().optional(),
+		chart_type: z
+			.enum([
+				'bar',
+				'horizontal_bar',
+				'line',
+				'sparkline',
+				'pie',
+				'donut',
+				'area',
+				'unstacked_area',
+				'stacked_bar',
+				'multi_line',
+				'scatter',
+				'bubble',
+				'radar',
+				'funnel',
+				'grouped_bar',
+				'histogram',
+				'treemap',
+				'gauge',
+			])
+			.optional(),
+		response_type: z.enum(['chart', 'text', 'metric']),
+		text_response: z
+			.string()
+			.min(1, 'text_response cannot be empty')
+			.optional(),
+		metric_value: z.string().optional(),
+		metric_label: z.string().optional(),
+		thinking_steps: z.array(z.string()).optional(),
+	})
+	.refine(
+		(data) => {
+			if (data.response_type === 'text') {
+				return data.text_response && data.text_response.trim().length > 0;
+			}
+			if (data.response_type === 'metric') {
+				return data.metric_value && data.metric_label;
+			}
+			if (data.response_type === 'chart') {
+				return data.sql && data.chart_type;
+			}
+			return true;
+		},
+		{
+			message:
+				'Response must have required fields populated based on response_type',
+		}
+	);
 
 export type AIResponse = z.infer<typeof AIResponseJsonSchema>;
 

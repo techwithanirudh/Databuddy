@@ -101,14 +101,14 @@ function WebsiteMapPage() {
 	}
 
 	return (
-		<div 
-			className="h-screen overflow-hidden" 
-			style={{ 
+		<div
+			className="h-screen overflow-hidden"
+			style={{
 				width: 'calc(100% + 3rem)',
 				marginTop: '-1.5rem',
 				marginLeft: '-1.5rem',
 				marginRight: '-1.5rem',
-				marginBottom: '-1.5rem'
+				marginBottom: '-1.5rem',
 			}}
 		>
 			<div className="relative h-full w-full">
@@ -124,9 +124,9 @@ function WebsiteMapPage() {
 
 				{/* Top 5 Countries Overlay */}
 				<div className="absolute top-2 right-2 z-20">
-					<Card className="border-sidebar-border bg-background/90 backdrop-blur-md shadow-xl w-60">
-						<CardHeader className="pb-2 pt-3 px-3">
-							<CardTitle className="flex items-center gap-1.5 text-xs font-medium">
+					<Card className="w-60 border-sidebar-border bg-background/90 shadow-xl backdrop-blur-md">
+						<CardHeader className="px-3 pt-3 pb-2">
+							<CardTitle className="flex items-center gap-1.5 font-medium text-xs">
 								<GlobeIcon className="h-3 w-3 text-primary" weight="duotone" />
 								Top 5 Countries
 							</CardTitle>
@@ -156,7 +156,7 @@ function WebsiteMapPage() {
 												: 0;
 										return (
 											<button
-												className="flex w-full cursor-pointer items-center justify-between py-1.5 text-left transition-colors hover:bg-primary/5 rounded-sm"
+												className="flex w-full cursor-pointer items-center justify-between rounded-sm py-1.5 text-left transition-colors hover:bg-primary/5"
 												key={country.country}
 												onClick={() =>
 													handleCountrySelect(
@@ -166,7 +166,7 @@ function WebsiteMapPage() {
 												}
 												type="button"
 											>
-												<div className="flex items-center gap-1.5 min-w-0 flex-1">
+												<div className="flex min-w-0 flex-1 items-center gap-1.5">
 													<div className="relative h-2.5 w-4 flex-shrink-0 overflow-hidden rounded shadow-sm">
 														<Image
 															alt={`${country.country} flag`}
@@ -186,8 +186,10 @@ function WebsiteMapPage() {
 													<div className="text-muted-foreground text-xs">
 														{percentage.toFixed(0)}%
 													</div>
-													<div className="font-semibold text-xs min-w-0 text-primary">
-														{country.visitors > 999 ? `${(country.visitors / 1000).toFixed(0)}k` : country.visitors.toString()}
+													<div className="min-w-0 font-semibold text-primary text-xs">
+														{country.visitors > 999
+															? `${(country.visitors / 1000).toFixed(0)}k`
+															: country.visitors.toString()}
 													</div>
 												</div>
 											</button>
@@ -195,16 +197,14 @@ function WebsiteMapPage() {
 									})}
 								</div>
 							) : (
-								<div className="flex flex-col items-center justify-center py-6 text-center px-3">
-									<div className="flex h-6 w-6 items-center justify-center rounded bg-muted/20 mb-1">
+								<div className="flex flex-col items-center justify-center px-3 py-6 text-center">
+									<div className="mb-1 flex h-6 w-6 items-center justify-center rounded bg-muted/20">
 										<GlobeIcon
 											className="h-3 w-3 text-muted-foreground/50"
 											weight="duotone"
 										/>
 									</div>
-									<p className="text-muted-foreground text-xs">
-										No data
-									</p>
+									<p className="text-muted-foreground text-xs">No data</p>
 								</div>
 							)}
 						</CardContent>

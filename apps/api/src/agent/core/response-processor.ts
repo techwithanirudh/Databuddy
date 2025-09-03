@@ -1,8 +1,8 @@
+import type { StreamingUpdate } from '@databuddy/shared';
 import type { z } from 'zod';
 import { handleChartResponse } from '../handlers/chart-handler';
 import { handleMetricResponse } from '../handlers/metric-handler';
 import type { AIResponseJsonSchema } from '../prompts/agent';
-import type { StreamingUpdate } from '@databuddy/shared';
 import { generateThinkingSteps } from '../utils/stream-utils';
 import type { AssistantSession } from './assistant-session';
 
@@ -45,11 +45,17 @@ export class ResponseProcessor {
 
 			switch (response.response_type) {
 				case 'text': {
-					if (!response.text_response || response.text_response.trim().length === 0) {
-						session.log('Warning: AI returned text response with empty text_response field');
+					if (
+						!response.text_response ||
+						response.text_response.trim().length === 0
+					) {
+						session.log(
+							'Warning: AI returned text response with empty text_response field'
+						);
 						result = {
 							type: 'error',
-							content: 'I had trouble generating a response. Could you try rephrasing your question?',
+							content:
+								'I had trouble generating a response. Could you try rephrasing your question?',
 						};
 					} else {
 						result = {

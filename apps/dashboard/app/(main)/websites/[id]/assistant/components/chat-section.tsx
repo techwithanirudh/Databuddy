@@ -131,7 +131,7 @@ export default function ChatSection() {
 	return (
 		<div className="flex h-full flex-col overflow-hidden bg-background">
 			{/* Enhanced Header */}
-			<div className="flex flex-shrink-0 items-center justify-between border-b border-sidebar-border bg-sidebar-accent/60 px-3 py-5">
+			<div className="flex flex-shrink-0 items-center justify-between border-sidebar-border border-b bg-sidebar-accent/60 px-3 py-5">
 				<div className="flex flex-1 items-center gap-3">
 					<Avatar>
 						<AvatarImage src="/databunny.webp" />
@@ -185,7 +185,7 @@ export default function ChatSection() {
 							<div className="flex h-full flex-col justify-between">
 								<div className="space-y-2 py-4 text-center">
 									<SparkleIcon
-										className="h-12 w-12 text-foreground mx-auto mb-6"
+										className="mx-auto mb-6 h-12 w-12 text-foreground"
 										weight="duotone"
 									/>
 									<h3 className="font-semibold text-lg">
@@ -315,7 +315,10 @@ export default function ChatSection() {
 				{/* Helper text */}
 				<div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs">
 					<div className="flex items-center gap-2 text-muted-foreground">
-						<SparkleIcon className="h-3 w-3 flex-shrink-0 text-muted-foreground" weight="duotone" />
+						<SparkleIcon
+							className="h-3 w-3 flex-shrink-0 text-muted-foreground"
+							weight="duotone"
+						/>
 						<span>Ask about trends, comparisons, or specific metrics</span>
 					</div>
 					{hasMessages && (

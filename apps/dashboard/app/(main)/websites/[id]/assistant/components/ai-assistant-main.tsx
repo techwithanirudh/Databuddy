@@ -54,8 +54,10 @@ export default function AIAssistantMain() {
 		latestVisualizationMessage?.responseType === 'chart' &&
 		Array.isArray(latestVisualizationMessage.data) &&
 		latestVisualizationMessage.data.length > 0 &&
-		!latestVisualizationMessage.content?.includes('couldn\'t find any data') &&
-		!latestVisualizationMessage.content?.includes('Something unexpected happened')
+		!latestVisualizationMessage.content?.includes("couldn't find any data") &&
+		!latestVisualizationMessage.content?.includes(
+			'Something unexpected happened'
+		)
 	);
 
 	return (
@@ -72,7 +74,7 @@ export default function AIAssistantMain() {
 					</Suspense>
 				</div>
 				{shouldShowVisualization && (
-					<div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background lg:flex-[2] border-l border-sidebar-border">
+					<div className="flex min-h-0 flex-1 flex-col overflow-hidden border-sidebar-border border-l bg-background lg:flex-[2]">
 						<Suspense fallback={<VisualizationSkeleton />}>
 							<VisualizationSection />
 						</Suspense>

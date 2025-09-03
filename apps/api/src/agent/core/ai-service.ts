@@ -1,5 +1,5 @@
-import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { generateObject } from 'ai';
+import 'dotenv/config';
 import type { z } from 'zod';
 import {
 	AIResponseJsonSchema,
@@ -7,11 +7,7 @@ import {
 } from '../prompts/agent';
 import type { AssistantSession } from './assistant-session';
 
-const openrouter = createOpenRouter({
-	apiKey: process.env.AI_API_KEY,
-});
-
-const AI_MODEL = 'google/gemini-2.5-flash-lite-preview-06-17';
+const AI_MODEL = 'google/gemini-2.5-flash';
 
 export interface AIResponse {
 	content: z.infer<typeof AIResponseJsonSchema>;
@@ -43,7 +39,7 @@ export class AIService {
 
 		try {
 			const chat = await generateObject({
-				model: openrouter.chat(AI_MODEL),
+				model: AI_MODEL,
 				messages: [{ role: 'system', content: systemPrompt }, ...messages],
 				temperature: 0.1,
 				schema: AIResponseJsonSchema,

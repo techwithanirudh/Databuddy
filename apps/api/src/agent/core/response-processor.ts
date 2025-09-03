@@ -45,12 +45,19 @@ export class ResponseProcessor {
 
 			switch (response.response_type) {
 				case 'text': {
-					result = {
-						type: 'complete',
-						content:
-							response.text_response || "Here's the answer to your question.",
-						data: { hasVisualization: false, responseType: 'text' },
-					};
+					if (!response.text_response || response.text_response.trim().length === 0) {
+						session.log('Warning: AI returned text response with empty text_response field');
+						result = {
+							type: 'error',
+							content: 'I had trouble generating a response. Could you try rephrasing your question?',
+						};
+					} else {
+						result = {
+							type: 'complete',
+							content: response.text_response,
+							data: { hasVisualization: false, responseType: 'text' },
+						};
+					}
 					break;
 				}
 

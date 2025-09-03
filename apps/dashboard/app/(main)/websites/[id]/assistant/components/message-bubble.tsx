@@ -323,9 +323,10 @@ function AIMessage({
 	return (
 		<div className="max-w-3/4 space-y-2">
 			<div className="rounded-lg border bg-muted px-4 py-3 shadow-sm">
-				<div className="wrap-break-word whitespace-pre-wrap text-sm leading-relaxed">
-					{message.content}
-				</div>
+				<div 
+					className="wrap-break-word text-sm leading-relaxed"
+					dangerouslySetInnerHTML={{ __html: message.content }}
+				/>
 
 				{hasThinkingSteps && message.content && (
 					<ThinkingStepsAccordion steps={message.thinkingSteps || []} />
@@ -418,9 +419,10 @@ function UserMessage({ message }: UserMessageProps) {
 	return (
 		<div className="flex w-full justify-end">
 			<div className="max-w-3/4 rounded-lg bg-primary px-4 py-3 text-primary-foreground">
-				<div className="wrap-break-word whitespace-pre-wrap text-sm leading-relaxed">
-					{message.content}
-				</div>
+				<div 
+					className="wrap-break-word text-sm leading-relaxed"
+					dangerouslySetInnerHTML={{ __html: message.content }}
+				/>
 			</div>
 		</div>
 	);

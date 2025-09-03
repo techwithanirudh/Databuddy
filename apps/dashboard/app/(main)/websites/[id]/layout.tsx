@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useAtom } from 'jotai';
 import { useParams, usePathname } from 'next/navigation';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 import { useTrackingSetup } from '@/hooks/use-tracking-setup';
 import { isAnalyticsRefreshingAtom } from '@/stores/jotai/filterAtoms';
@@ -46,7 +47,12 @@ export default function WebsiteLayout({ children }: WebsiteLayoutProps) {
 	};
 
 	return (
-		<div className="mx-auto flex h-full max-w-[1600px] flex-col p-3 sm:p-4 lg:p-6">
+		<div className={cn(
+			"flex h-full flex-col",
+			isAssistantPage 
+				? "h-full w-full" 
+				: "mx-auto max-w-[1600px] p-3 sm:p-4 lg:p-6"
+		)}>
 			{isTrackingSetup && !isAssistantPage && (
 				<div className="flex-shrink-0 space-y-4">
 					<AnalyticsToolbar

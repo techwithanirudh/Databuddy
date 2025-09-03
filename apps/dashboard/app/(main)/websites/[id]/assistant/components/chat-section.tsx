@@ -34,7 +34,7 @@ import { ModelSelector } from './model-selector';
 
 export function ChatSkeleton() {
 	return (
-		<div className="flex h-full flex-col overflow-hidden rounded border bg-background">
+		<div className="flex h-full flex-col overflow-hidden bg-background">
 			{/* Header Skeleton */}
 			<div className="flex flex-shrink-0 items-center justify-between border-b p-4">
 				<div className="flex items-center gap-3">
@@ -129,9 +129,9 @@ export default function ChatSection() {
 	};
 
 	return (
-		<div className="flex h-full flex-col overflow-hidden rounded border bg-gradient-to-br from-background to-muted/10 shadow-lg backdrop-blur-sm">
+		<div className="flex h-full flex-col overflow-hidden bg-background">
 			{/* Enhanced Header */}
-			<div className="flex flex-shrink-0 items-center justify-between border-b bg-gradient-to-r from-primary/5 to-accent/5 p-4">
+			<div className="flex flex-shrink-0 items-center justify-between border-b border-sidebar-border bg-sidebar-accent/60 px-3 py-5">
 				<div className="flex flex-1 items-center gap-3">
 					<Avatar>
 						<AvatarImage src="/databunny.webp" />
@@ -184,12 +184,10 @@ export default function ChatSection() {
 						<div className="fade-in-0 slide-in-from-bottom-4 h-full animate-in space-y-6 duration-500">
 							<div className="flex h-full flex-col justify-between">
 								<div className="space-y-2 py-4 text-center">
-									<div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-primary/10 to-accent/10">
-										<SparkleIcon
-											className="h-8 w-8 text-primary"
-											weight="duotone"
-										/>
-									</div>
+									<SparkleIcon
+										className="h-12 w-12 text-foreground mx-auto mb-6"
+										weight="duotone"
+									/>
 									<h3 className="font-semibold text-lg">
 										Welcome to Databunny
 									</h3>
@@ -248,7 +246,7 @@ export default function ChatSection() {
 									handleFeedbackComment={handleFeedbackComment}
 									handleVote={handleVote}
 									isLastMessage={index === messages.length - 1}
-									key={message.id}
+									key={message.id || `message-${index}`}
 									message={message}
 								/>
 							))}
@@ -317,7 +315,7 @@ export default function ChatSection() {
 				{/* Helper text */}
 				<div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs">
 					<div className="flex items-center gap-2 text-muted-foreground">
-						<SparkleIcon className="h-3 w-3 flex-shrink-0" weight="duotone" />
+						<SparkleIcon className="h-3 w-3 flex-shrink-0 text-muted-foreground" weight="duotone" />
 						<span>Ask about trends, comparisons, or specific metrics</span>
 					</div>
 					{hasMessages && (

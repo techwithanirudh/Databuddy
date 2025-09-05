@@ -20,12 +20,10 @@ export const invalidateBasicWebsiteCaches = async (
  * Invalidates all caches related to a specific website
  * @param websiteId - The ID of the website
  * @param userId - The ID of the user performing the action
- * @param reason - Optional reason for logging purposes
  */
 export const invalidateWebsiteCaches = async (
 	websiteId: string,
-	userId: string,
-	reason?: string
+	userId: string
 ): Promise<void> => {
 	try {
 		await Promise.all([

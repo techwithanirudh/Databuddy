@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
 
 		const userResponse_json = await userResponse.json();
 		const userInfo = userResponse_json.user;
-		
+
 		if (!userInfo.email || !userInfo.id) {
 			return NextResponse.redirect(
 				`${process.env.BETTER_AUTH_URL}/auth/error?error=invalid_user_info`
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
 		} else {
 			const newUserId = randomUUID();
 			const now = new Date().toISOString();
-			
+
 			await db.execute(sql`
 				INSERT INTO "user" (
 					id, name, email, email_verified, image, created_at, updated_at
@@ -88,16 +88,12 @@ export async function GET(request: NextRequest) {
 					${now}
 				)
 			`);
-			
+
 			userId = newUserId;
 		}
 
-
 		const existingAccount = await db.query.account.findFirst({
-			where: and(
-				eq(account.userId, userId),
-				eq(account.providerId, 'vercel')
-			),
+			where: and(eq(account.userId, userId), eq(account.providerId, 'vercel')),
 		});
 
 		const now = new Date();
@@ -116,7 +112,6 @@ export async function GET(request: NextRequest) {
 			createdAt: existingAccount?.createdAt || now.toISOString(),
 			updatedAt: now.toISOString(),
 		};
-
 
 		if (existingAccount) {
 			await db.execute(sql`
@@ -143,8 +138,9 @@ export async function GET(request: NextRequest) {
 			`);
 		}
 
-		const redirectUrl = next || `${process.env.BETTER_AUTH_URL}/dashboard?vercel_integrated=true`;
-		
+		const redirectUrl =
+			next || `${process.env.BETTER_AUTH_URL}/dashboard?vercel_integrated=true`;
+
 		return NextResponse.redirect(redirectUrl);
 	} catch (error) {
 		return NextResponse.redirect(

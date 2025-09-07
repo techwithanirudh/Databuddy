@@ -22,6 +22,7 @@ import {
 } from '../utils/event-schema';
 import { extractIpFromRequest, getGeo } from '../utils/ip-geo';
 import { detectBot, parseUserAgent } from '../utils/user-agent';
+import { usageTracker } from '../lib/usage-tracker';
 import {
 	sanitizeString,
 	VALIDATION_LIMITS,
@@ -733,7 +734,11 @@ const app = new Elysia()
 						errors: parseResult.error.issues,
 					};
 				}
-				insertTrackEvent(body, clientId, userAgent, ip);
+				await insertTrackEvent(body, clientId, userAgent, ip);
+				
+				// Track usage for billing/limits
+				await usageTracker.trackEventUsage('track', body, clientId, validation.ownerId);
+				
 				return { status: 'success', type: 'track' };
 			}
 
@@ -773,7 +778,11 @@ const app = new Elysia()
 						errors: parseResult.error.issues,
 					};
 				}
-				insertError(body, clientId, userAgent, ip);
+				await insertError(body, clientId, userAgent, ip);
+				
+				// Track usage for billing/limits
+				await usageTracker.trackEventUsage('error', body, clientId, validation.ownerId);
+				
 				return { status: 'success', type: 'error' };
 			}
 
@@ -813,7 +822,11 @@ const app = new Elysia()
 						errors: parseResult.error.issues,
 					};
 				}
-				insertWebVitals(body, clientId, userAgent, ip);
+				await insertWebVitals(body, clientId, userAgent, ip);
+				
+				// Track usage for billing/limits
+				await usageTracker.trackEventUsage('web_vitals', body, clientId, validation.ownerId);
+				
 				return { status: 'success', type: 'web_vitals' };
 			}
 
@@ -846,6 +859,10 @@ const app = new Elysia()
 				const customEventWithId = { ...body, eventId };
 
 				await insertCustomEvent(customEventWithId, clientId, userAgent, ip);
+				
+				// Track usage for billing/limits
+				await usageTracker.trackEventUsage('custom', customEventWithId, clientId, validation.ownerId);
+				
 				return { status: 'success', type: 'custom', eventId };
 			}
 
@@ -885,7 +902,11 @@ const app = new Elysia()
 						errors: parseResult.error.issues,
 					};
 				}
-				insertOutgoingLink(body, clientId, userAgent, ip);
+				await insertOutgoingLink(body, clientId, userAgent, ip);
+				
+				// Track usage for billing/limits
+				await usageTracker.trackEventUsage('outgoing_link', body, clientId, validation.ownerId);
+				
 				return { status: 'success', type: 'outgoing_link' };
 			}
 
@@ -1222,6 +1243,29 @@ const app = new Elysia()
 			});
 
 			results.push(...(await Promise.all(processingPromises)));
+
+			// Track usage for all successful events in batch
+			const successfulEvents = [];
+			for (let i = 0; i < body.length; i++) {
+				const result = results[i];
+				if (result && typeof result === 'object' && 'status' in result && result.status === 'success') {
+					const event = body[i];
+					const eventType = event.type || 'track';
+					successfulEvents.push({
+						eventType,
+						eventData: event,
+						clientId,
+						ownerId: validation.ownerId,
+					});
+				}
+			}
+			
+			if (successfulEvents.length > 0) {
+				// Track batch usage asynchronously to not block response
+				usageTracker.trackBatchUsage(successfulEvents).catch(error => {
+					logger.error('Failed to track batch usage', { error, batchSize: successfulEvents.length });
+				});
+			}
 
 			return {
 				status: 'success',

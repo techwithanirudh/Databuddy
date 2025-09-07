@@ -2,10 +2,12 @@
 
 import { Elysia } from 'elysia';
 import { logger } from './lib/logger';
+import { usageSyncEngine } from './lib/usage-sync-engine';
 import basketRouter from './routes/basket';
 import emailRouter from './routes/email';
 import observabilityRouter from './routes/observability';
 import stripeRouter from './routes/stripe';
+import usageSyncRouter from './routes/usage-sync';
 import './polyfills/compression';
 // import { checkBotId } from "botid/server";
 
@@ -38,7 +40,52 @@ const app = new Elysia()
 	.use(stripeRouter)
 	.use(emailRouter)
 	.use(observabilityRouter)
+	.use(usageSyncRouter)
 	.get('/health', () => ({ status: 'ok', version: '1.0.0' }));
+
+// Initialize usage sync engine on startup
+const startServer = async () => {
+	try {
+		// Start the usage sync engine
+		if (process.env.USAGE_SYNC_ENABLED !== 'false') {
+			await usageSyncEngine.start();
+			logger.info('Usage sync engine started successfully');
+		} else {
+			logger.info('Usage sync engine disabled via environment variable');
+		}
+	} catch (error) {
+		logger.error('Failed to start usage sync engine', { error });
+		// Continue with server startup even if sync engine fails
+	}
+};
+
+// Start the sync engine
+startServer().catch(error => {
+	logger.error('Error during server startup', { error });
+});
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+	logger.info('SIGTERM received, shutting down gracefully');
+	try {
+		await usageSyncEngine.stop();
+		logger.info('Usage sync engine stopped');
+	} catch (error) {
+		logger.error('Error stopping usage sync engine', { error });
+	}
+	process.exit(0);
+});
+
+process.on('SIGINT', async () => {
+	logger.info('SIGINT received, shutting down gracefully');
+	try {
+		await usageSyncEngine.stop();
+		logger.info('Usage sync engine stopped');
+	} catch (error) {
+		logger.error('Error stopping usage sync engine', { error });
+	}
+	process.exit(0);
+});
 
 export default {
 	port: process.env.PORT || 4000,

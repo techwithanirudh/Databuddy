@@ -20,11 +20,7 @@ import {
 	SheetTitle,
 } from '@/components/ui/sheet';
 import type { Domain, Project } from './types';
-import {
-	generateWebsiteName,
-	generateWebsitePlaceholder,
-	inferTargetFromDomain,
-} from './utils';
+import { generateWebsiteName, generateWebsitePlaceholder } from './utils';
 
 interface WebsiteConfig {
 	domain: Domain;
@@ -54,13 +50,25 @@ export function CreateWebsiteDialog({
 
 	useEffect(() => {
 		if (selectedDomains.length > 0) {
-			const configs = selectedDomains.map((domain) => ({
-				domain,
-				name: '', // Start with empty name, will use placeholder
-				target: isMultipleMode
-					? inferTargetFromDomain(domain)
-					: (['production', 'preview'] as string[]),
-			}));
+			const configs = selectedDomains.map((domain, index) => {
+				let target: string[];
+
+				if (isMultipleMode) {
+					if (index === 0) {
+						target = ['production'];
+					} else {
+						target = ['preview'];
+					}
+				} else {
+					target = ['production'];
+				}
+
+				return {
+					domain,
+					name: '',
+					target,
+				};
+			});
 			setWebsiteConfigs(configs);
 		}
 	}, [selectedDomains, isMultipleMode]);
@@ -96,10 +104,22 @@ export function CreateWebsiteDialog({
 	}, [onClose]);
 
 	const isFormValid = useMemo(() => {
-		return (
-			websiteConfigs.length > 0 &&
-			websiteConfigs.every((config) => config.target.length > 0)
+		if (websiteConfigs.length === 0) {
+			return false;
+		}
+
+		// Each domain must have exactly one target environment
+		const hasValidTargets = websiteConfigs.every(
+			(config) => config.target.length === 1
 		);
+
+		// Only production environment can be used once, preview can be used multiple times
+		const productionCount = websiteConfigs.filter((config) =>
+			config.target.includes('production')
+		).length;
+		const hasValidProductionUsage = productionCount <= 1;
+
+		return hasValidTargets && hasValidProductionUsage;
 	}, [websiteConfigs]);
 
 	if (selectedDomains.length === 0) {
@@ -195,32 +215,52 @@ export function CreateWebsiteDialog({
 
 							<div className="space-y-3">
 								<Label className="font-medium text-sm">
-									Target Environments
+									Target Environment
 								</Label>
 								<div className="flex flex-wrap gap-2">
-									{['production', 'preview'].map((env) => (
-										<Button
-											className="h-8 rounded text-xs transition-colors"
-											key={env}
-											onClick={() => {
-												const newTarget = config.target.includes(env)
-													? config.target.filter((t) => t !== env)
-													: [...config.target, env];
-												updateWebsiteConfig(index, { target: newTarget });
-											}}
-											size="sm"
-											variant={
-												config.target.includes(env) ? 'default' : 'outline'
-											}
-										>
-											{env.charAt(0).toUpperCase() + env.slice(1)}
-										</Button>
-									))}
+									{['production', 'preview'].map((env) => {
+										const isUsedByOther =
+											env === 'production' &&
+											websiteConfigs.some(
+												(otherConfig, otherIndex) =>
+													otherIndex !== index &&
+													otherConfig.target.includes(env)
+											);
+										const isSelected = config.target.includes(env);
+
+										return (
+											<Button
+												className="h-8 rounded text-xs transition-colors"
+												disabled={isUsedByOther && !isSelected}
+												key={env}
+												onClick={() => {
+													if (isSelected) {
+														// Remove this environment
+														updateWebsiteConfig(index, {
+															target: config.target.filter((t) => t !== env),
+														});
+													} else {
+														updateWebsiteConfig(index, { target: [env] });
+													}
+												}}
+												size="sm"
+												variant={isSelected ? 'default' : 'outline'}
+											>
+												{env.charAt(0).toUpperCase() + env.slice(1)}
+												{isUsedByOther && !isSelected && ' (Used)'}
+											</Button>
+										);
+									})}
 								</div>
 								<p className="text-muted-foreground text-xs">
-									Select which Vercel environments should receive the
-									DATABUDDY_CLIENT_ID variable
+									Production can only be assigned to one domain. Preview can be
+									used by multiple domains.
 								</p>
+								{config.target.length === 0 && (
+									<p className="text-destructive text-xs">
+										Please select an environment for this domain.
+									</p>
+								)}
 							</div>
 
 							<div className="rounded border bg-muted/30 p-3">

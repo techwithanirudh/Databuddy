@@ -2,6 +2,7 @@
 
 import {
 	CheckCircleIcon,
+	DotsThreeIcon,
 	LinkIcon,
 	PlusIcon,
 	WarningIcon,
@@ -13,6 +14,12 @@ import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
 	type Integration,
@@ -190,67 +197,95 @@ export default function IntegrationsPage() {
 						<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 							{categoryIntegrations.map((integration) => (
 								<Card
-									className="group relative border-0 shadow-sm transition-all duration-200 hover:shadow-black/5 hover:shadow-md"
+									className="group relative border-0 shadow-sm"
 									key={integration.id}
 								>
-									<CardContent className="p-6">
-										<div className="space-y-4">
-											<div className="flex items-start justify-between">
-												<div className="flex h-12 w-12 items-center justify-center rounded-lg border bg-white shadow-sm dark:bg-gray-800">
-													<Image
-														alt={`${integration.name} logo`}
-														className="h-7 w-7 brightness-0 dark:brightness-100"
-														height={28}
-														src={integration.logo}
-														width={28}
-													/>
-												</div>
-												{integration.connected && (
-													<Badge
-														className="bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900 dark:text-green-100"
-														variant="default"
-													>
-														Connected
-													</Badge>
-												)}
-											</div>
-
-											<div className="space-y-2">
-												<h3 className="font-semibold text-lg leading-none tracking-tight">
-													{integration.name}
-												</h3>
-												<p className="text-muted-foreground text-sm leading-relaxed">
-													{integration.description}
-												</p>
-											</div>
-
-											<div className="pt-2">
-												{integration.connected ? (
-													<div className="flex gap-2">
-														<Link
-															href={`/settings/integrations/${integration.id}`}
-														>
-															<Button
-																className="flex-1"
-																size="sm"
-																variant="outline"
+									{integration.connected ? (
+										<Link href={`/settings/integrations/${integration.id}`}>
+											<CardContent className="cursor-pointer p-6">
+												<div className="space-y-4">
+													<div className="flex items-start justify-between">
+														<div className="flex h-12 w-12 items-center justify-center rounded-lg border bg-white shadow-sm dark:bg-gray-800">
+															<Image
+																alt={`${integration.name} logo`}
+																className="h-7 w-7 brightness-0 dark:brightness-100"
+																height={28}
+																src={integration.logo}
+																width={28}
+															/>
+														</div>
+														<div className="flex items-center gap-2">
+															<Badge
+																className="bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900 dark:text-green-100"
+																variant="default"
 															>
-																Configure
-															</Button>
-														</Link>
-														<Button
-															className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-															disabled={disconnectMutation.isPending}
-															onClick={() => handleDisconnect(integration)}
-															size="sm"
-															variant="ghost"
-														>
-															{disconnectMutation.isPending
-																? 'Disconnecting...'
-																: 'Disconnect'}
-														</Button>
+																Connected
+															</Badge>
+															<DropdownMenu>
+																<DropdownMenuTrigger asChild>
+																	<Button
+																		className="h-8 w-8 p-0"
+																		onClick={(e) => e.preventDefault()}
+																		size="sm"
+																		variant="ghost"
+																	>
+																		<DotsThreeIcon className="h-4 w-4" />
+																	</Button>
+																</DropdownMenuTrigger>
+																<DropdownMenuContent align="end">
+																	<DropdownMenuItem
+																		className="text-destructive focus:text-destructive"
+																		disabled={disconnectMutation.isPending}
+																		onClick={(e) => {
+																			e.preventDefault();
+																			handleDisconnect(integration);
+																		}}
+																	>
+																		{disconnectMutation.isPending
+																			? 'Disconnecting...'
+																			: 'Disconnect'}
+																	</DropdownMenuItem>
+																</DropdownMenuContent>
+															</DropdownMenu>
+														</div>
 													</div>
-												) : (
+
+													<div className="space-y-2">
+														<h3 className="font-semibold text-lg leading-none tracking-tight">
+															{integration.name}
+														</h3>
+														<p className="text-muted-foreground text-sm leading-relaxed">
+															{integration.description}
+														</p>
+													</div>
+												</div>
+											</CardContent>
+										</Link>
+									) : (
+										<CardContent className="p-6">
+											<div className="space-y-4">
+												<div className="flex items-start justify-between">
+													<div className="flex h-12 w-12 items-center justify-center rounded-lg border bg-white shadow-sm dark:bg-gray-800">
+														<Image
+															alt={`${integration.name} logo`}
+															className="h-7 w-7 brightness-0 dark:brightness-100"
+															height={28}
+															src={integration.logo}
+															width={28}
+														/>
+													</div>
+												</div>
+
+												<div className="space-y-2">
+													<h3 className="font-semibold text-lg leading-none tracking-tight">
+														{integration.name}
+													</h3>
+													<p className="text-muted-foreground text-sm leading-relaxed">
+														{integration.description}
+													</p>
+												</div>
+
+												<div className="pt-2">
 													<Button
 														className="w-full font-medium"
 														disabled={connectingProvider === integration.id}
@@ -265,10 +300,10 @@ export default function IntegrationsPage() {
 															</>
 														)}
 													</Button>
-												)}
+												</div>
 											</div>
-										</div>
-									</CardContent>
+										</CardContent>
+									)}
 								</Card>
 							))}
 						</div>

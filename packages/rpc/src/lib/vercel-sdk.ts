@@ -84,6 +84,24 @@ export interface CreateEnvVarResponse {
 	}>;
 }
 
+export interface EditEnvVarRequest {
+	key?: string;
+	value?: string;
+	type?: 'system' | 'secret' | 'encrypted' | 'plain' | 'sensitive';
+	target?: ('production' | 'preview' | 'development')[];
+	gitBranch?: string | null;
+	comment?: string;
+	customEnvironmentIds?: string[];
+}
+
+export interface SetEnvVarRequest {
+	value: string;
+	type?: 'system' | 'secret' | 'encrypted' | 'plain' | 'sensitive';
+	target?: ('production' | 'preview' | 'development')[];
+	gitBranch?: string | null;
+	comment?: string;
+}
+
 export interface VercelDomain {
 	name: string;
 	apexName: string;
@@ -383,6 +401,155 @@ export class VercelSDK {
 		const endpoint = `/v9/projects/${projectId}/domains${query ? `?${query}` : ''}`;
 
 		return this.request<VercelDomainsResponse>(endpoint);
+	}
+
+	async editProjectEnv(
+		projectId: string,
+		envVarId: string,
+		envVar: EditEnvVarRequest,
+		options: {
+			teamId?: string;
+			slug?: string;
+		} = {}
+	): Promise<VercelEnvVar> {
+		const searchParams = new URLSearchParams();
+		if (options.teamId) {
+			searchParams.set('teamId', options.teamId);
+		}
+		if (options.slug) {
+			searchParams.set('slug', options.slug);
+		}
+
+		const query = searchParams.toString();
+		const endpoint = `/v9/projects/${projectId}/env/${envVarId}${query ? `?${query}` : ''}`;
+
+		return this.request<VercelEnvVar>(endpoint, {
+			method: 'PATCH',
+			body: JSON.stringify(envVar),
+		});
+	}
+
+	async removeProjectEnv(
+		projectId: string,
+		envVarId: string,
+		options: {
+			customEnvironmentId?: string;
+			teamId?: string;
+			slug?: string;
+		} = {}
+	): Promise<VercelEnvVar[]> {
+		const searchParams = new URLSearchParams();
+		if (options.customEnvironmentId) {
+			searchParams.set('customEnvironmentId', options.customEnvironmentId);
+		}
+		if (options.teamId) {
+			searchParams.set('teamId', options.teamId);
+		}
+		if (options.slug) {
+			searchParams.set('slug', options.slug);
+		}
+
+		const query = searchParams.toString();
+		const endpoint = `/v9/projects/${projectId}/env/${envVarId}${query ? `?${query}` : ''}`;
+
+		return this.request<VercelEnvVar[]>(endpoint, {
+			method: 'DELETE',
+		});
+	}
+
+	async getProjectEnvByKey(
+		projectId: string,
+		key: string,
+		options: {
+			teamId?: string;
+			slug?: string;
+		} = {}
+	): Promise<VercelEnvVar | null> {
+		const envs = await this.getProjectEnvs(projectId);
+		return envs.envs.find((env) => env.key === key) || null;
+	}
+
+	async getProjectEnvsByKey(
+		projectId: string,
+		key: string,
+		options: {
+			teamId?: string;
+			slug?: string;
+		} = {}
+	): Promise<VercelEnvVar[]> {
+		const envs = await this.getProjectEnvs(projectId);
+
+		return envs.envs.filter((env) => env.key === key);
+	}
+
+	async setProjectEnv(
+		projectId: string,
+		key: string,
+		envVar: SetEnvVarRequest,
+		options: {
+			upsert?: boolean;
+			teamId?: string;
+			slug?: string;
+		} = {}
+	): Promise<VercelEnvVar> {
+		// Check if env var exists
+		const existing = await this.getProjectEnvByKey(projectId, key, options);
+
+		if (existing) {
+			// Update existing
+			return this.editProjectEnv(
+				projectId,
+				existing.id,
+				{
+					value: envVar.value,
+					type: envVar.type,
+					target: envVar.target,
+					gitBranch: envVar.gitBranch,
+					comment: envVar.comment,
+				},
+				options
+			);
+		}
+
+		// Create new
+		const createRequest: CreateEnvVarRequest = {
+			key,
+			value: envVar.value,
+			type: envVar.type || 'plain',
+			target: envVar.target || ['production'],
+			gitBranch: envVar.gitBranch,
+			comment: envVar.comment,
+		};
+
+		const result = await this.createProjectEnv(projectId, createRequest, {
+			upsert: options.upsert,
+			teamId: options.teamId,
+			slug: options.slug,
+		});
+
+		// Return the created env var (handle both single and array responses)
+		if (Array.isArray(result.created)) {
+			return result.created[0];
+		}
+		return result.created;
+	}
+
+	async deleteProjectEnvByKey(
+		projectId: string,
+		key: string,
+		options: {
+			teamId?: string;
+			slug?: string;
+		} = {}
+	): Promise<boolean> {
+		const existing = await this.getProjectEnvByKey(projectId, key, options);
+
+		if (!existing) {
+			return false; // Env var doesn't exist
+		}
+
+		await this.removeProjectEnv(projectId, existing.id, options);
+		return true;
 	}
 
 	async getUser(): Promise<{

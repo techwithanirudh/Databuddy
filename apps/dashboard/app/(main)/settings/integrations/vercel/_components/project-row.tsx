@@ -1,16 +1,28 @@
 import {
 	ArrowRightIcon,
 	CaretRightIcon,
+	CheckCircleIcon,
 	GitBranchIcon,
 	GlobeIcon,
 	PlusIcon,
+	TrashIcon,
+	WarningIcon,
+	WrenchIcon,
+	XCircleIcon,
 } from '@phosphor-icons/react';
 import { AnimatePresence, motion } from 'framer-motion';
+import Link from 'next/link';
 import { useState } from 'react';
 import { FaviconImage } from '@/components/analytics/favicon-image';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import { trpc } from '@/lib/trpc';
 import type { Domain, Project } from './types';
@@ -21,6 +33,7 @@ interface ProjectRowProps {
 	onToggle: () => void;
 	onCreateWebsite: (domain: Domain) => void;
 	onCreateMultipleWebsites: (project: Project, domains: Domain[]) => void;
+	integrationStatus?: any;
 }
 
 const formatTimeAgo = (timestamp: number): string => {
@@ -50,12 +63,315 @@ const GitHubIcon = () => (
 	</svg>
 );
 
+const StatusBadge = ({ status }: { status: string }) => {
+	const badges = {
+		integrated: (
+			<Badge
+				className="flex items-center gap-1 border-green-200 bg-green-50 text-green-700 text-xs"
+				variant="outline"
+			>
+				<CheckCircleIcon className="h-3 w-3" />
+				Integrated
+			</Badge>
+		),
+		orphaned: (
+			<Badge
+				className="flex items-center gap-1 border-yellow-200 bg-yellow-50 text-xs text-yellow-700"
+				variant="outline"
+			>
+				<WarningIcon className="h-3 w-3" />
+				Orphaned
+			</Badge>
+		),
+		invalid: (
+			<Badge
+				className="flex items-center gap-1 border-red-200 bg-red-50 text-red-700 text-xs"
+				variant="outline"
+			>
+				<XCircleIcon className="h-3 w-3" />
+				Invalid
+			</Badge>
+		),
+	};
+	return badges[status as keyof typeof badges] || null;
+};
+
+const TriageMenu = ({
+	domainStatus,
+	domain,
+	triageIssueMutation,
+	onTriageAction,
+}: {
+	domainStatus: any;
+	domain: any;
+	triageIssueMutation: any;
+	onTriageAction: (
+		action:
+			| 'remove_orphaned'
+			| 'fix_domain_mismatch'
+			| 'remove_duplicates'
+			| 'create_missing_website',
+		domainName: string,
+		envVarId?: string,
+		websiteId?: string
+	) => Promise<void>;
+}) => {
+	const getTriageActions = (domainStatus: any) => {
+		const actions = [];
+
+		if (domainStatus.status === 'orphaned') {
+			actions.push({
+				label: 'Remove',
+				icon: TrashIcon,
+				action: 'remove_orphaned' as const,
+			});
+		}
+
+		if (
+			domainStatus.status === 'invalid' &&
+			domainStatus.issues[0]?.includes('Domain mismatch')
+		) {
+			actions.push({
+				label: 'Fix',
+				icon: WrenchIcon,
+				action: 'fix_domain_mismatch' as const,
+			});
+		}
+
+		if (
+			domainStatus.status === 'invalid' &&
+			domainStatus.issues[0]?.includes('Multiple')
+		) {
+			actions.push({
+				label: 'Remove Duplicates',
+				icon: TrashIcon,
+				action: 'remove_duplicates' as const,
+			});
+		}
+
+		if (
+			domainStatus.status === 'not_integrated' &&
+			domainStatus.issues[0]?.includes('Website exists')
+		) {
+			actions.push({
+				label: 'Create Website',
+				icon: PlusIcon,
+				action: 'create_missing_website' as const,
+			});
+		}
+
+		return actions;
+	};
+
+	const actions = getTriageActions(domainStatus);
+	if (actions.length === 0) {
+		return null;
+	}
+
+	if (actions.length === 1) {
+		const action = actions[0];
+		const Icon = action.icon;
+		return (
+			<Button
+				className="h-5 px-2 text-xs"
+				disabled={triageIssueMutation.isPending}
+				onClick={(e) => {
+					e.stopPropagation();
+					onTriageAction(
+						action.action,
+						domain.name,
+						domainStatus.envVarId,
+						domainStatus.websiteId
+					);
+				}}
+				size="sm"
+				variant="outline"
+			>
+				<Icon className="mr-1 h-3 w-3" />
+				{action.label}
+			</Button>
+		);
+	}
+
+	return (
+		<DropdownMenu>
+			<DropdownMenuTrigger asChild>
+				<Button
+					className="h-5 px-2 text-xs"
+					disabled={triageIssueMutation.isPending}
+					size="sm"
+					variant="outline"
+				>
+					Fix Issues
+				</Button>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="end">
+				{actions.map((action) => {
+					const Icon = action.icon;
+					return (
+						<DropdownMenuItem
+							className="cursor-pointer"
+							key={action.action}
+							onClick={() => {
+								onTriageAction(
+									action.action as
+										| 'remove_orphaned'
+										| 'fix_domain_mismatch'
+										| 'remove_duplicates'
+										| 'create_missing_website',
+									domain.name,
+									domainStatus.envVarId,
+									domainStatus.websiteId
+								);
+							}}
+						>
+							<Icon className="mr-2 h-3 w-3" />
+							{action.label}
+						</DropdownMenuItem>
+					);
+				})}
+			</DropdownMenuContent>
+		</DropdownMenu>
+	);
+};
+
+const DomainRow = ({
+	domain,
+	domainStatus,
+	isSelected,
+	isIntegrated,
+	onSelectionChange,
+	onTriageAction,
+	onCreateWebsite,
+	triageIssueMutation,
+}: {
+	domain: any;
+	domainStatus: any;
+	isSelected: boolean;
+	isIntegrated: boolean;
+	onSelectionChange: (domainName: string, checked: boolean) => void;
+	onTriageAction: (
+		action:
+			| 'remove_orphaned'
+			| 'fix_domain_mismatch'
+			| 'remove_duplicates'
+			| 'create_missing_website',
+		domainName: string,
+		envVarId?: string,
+		websiteId?: string
+	) => Promise<void>;
+	onCreateWebsite: (domain: any) => void;
+	triageIssueMutation: any;
+}) => {
+	const hasIssues = domainStatus?.issues?.length;
+
+	return (
+		<div
+			className="border-border/20 border-b bg-muted/10 px-4 py-2 transition-colors hover:bg-muted/20"
+			key={domain.name}
+		>
+			<div className="flex items-center justify-between">
+				<div className="flex items-center gap-3">
+					<Checkbox
+						checked={isSelected}
+						className="cursor-pointer"
+						disabled={isIntegrated}
+						onCheckedChange={(checked) =>
+							onSelectionChange(domain.name, checked as boolean)
+						}
+					/>
+					<GlobeIcon className="h-3 w-3 text-muted-foreground" />
+					<div className="flex flex-col">
+						<div className="flex items-center gap-2">
+							<span className="font-medium text-sm">{domain.name}</span>
+							{!domain.verified && (
+								<Badge
+									className="border-yellow-200 bg-yellow-50 text-xs text-yellow-600"
+									variant="outline"
+								>
+									Pending
+								</Badge>
+							)}
+							{domainStatus && <StatusBadge status={domainStatus.status} />}
+						</div>
+						<div className="mt-0.5 flex flex-wrap items-center gap-3 text-muted-foreground/70 text-xs">
+							{isIntegrated &&
+								domainStatus?.websiteName &&
+								domainStatus?.websiteId && (
+									<span className="text-green-700">
+										→{' '}
+										<Link
+											className="hover:underline"
+											href={`/websites/${domainStatus.websiteId}`}
+										>
+											{domainStatus.websiteName}
+										</Link>
+									</span>
+								)}
+							{hasIssues && (
+								<div className="flex items-center gap-2">
+									<span className="text-red-600">{domainStatus.issues[0]}</span>
+									<TriageMenu
+										domain={domain}
+										domainStatus={domainStatus}
+										onTriageAction={onTriageAction}
+										triageIssueMutation={triageIssueMutation}
+									/>
+								</div>
+							)}
+							{domain.redirect && (
+								<span className="flex items-center">
+									<ArrowRightIcon className="mr-1 h-2 w-2" />
+									Redirects to: {domain.redirect}
+									{domain.redirectStatusCode &&
+										` (${domain.redirectStatusCode})`}
+								</span>
+							)}
+							{domain.gitBranch && (
+								<span className="flex items-center">
+									<GitBranchIcon className="mr-1 h-2 w-2" />
+									{domain.gitBranch}
+								</span>
+							)}
+							{domain.customEnvironmentId && (
+								<Badge
+									className="border-muted bg-muted/50 text-muted-foreground text-xs"
+									variant="outline"
+								>
+									{domain.customEnvironmentId}
+								</Badge>
+							)}
+							<span>
+								Created {new Date(domain.createdAt).toLocaleDateString()}
+							</span>
+						</div>
+					</div>
+				</div>
+				<Button
+					className="h-6 text-xs"
+					disabled={isIntegrated}
+					onClick={(e) => {
+						e.stopPropagation();
+						onCreateWebsite(domain);
+					}}
+					size="sm"
+					variant={isIntegrated ? 'secondary' : 'outline'}
+				>
+					<PlusIcon className="mr-1 h-2 w-2" />
+					{isIntegrated ? 'Integrated' : 'Integrate'}
+				</Button>
+			</div>
+		</div>
+	);
+};
+
 export function ProjectRow({
 	project,
 	isExpanded,
 	onToggle,
 	onCreateWebsite,
 	onCreateMultipleWebsites,
+	integrationStatus,
 }: ProjectRowProps) {
 	const [selectedDomains, setSelectedDomains] = useState<Set<string>>(
 		new Set()
@@ -67,7 +383,9 @@ export function ProjectRow({
 			{ enabled: isExpanded }
 		);
 
-	// Filter out domains that redirect to other domains that already exist
+	const triageIssueMutation = trpc.vercel.triageIssue.useMutation();
+	const utils = trpc.useUtils();
+
 	const filteredDomains =
 		domainsData?.domains?.filter((domain) => {
 			if (!domain.redirect) {
@@ -95,20 +413,92 @@ export function ProjectRow({
 	};
 
 	const handleSelectAll = () => {
-		if (selectedDomains.size === filteredDomains.length) {
-			setSelectedDomains(new Set());
-		} else {
-			setSelectedDomains(new Set(filteredDomains.map((d) => d.name)));
-		}
+		const allSelected = selectedDomains.size === filteredDomains.length;
+		setSelectedDomains(
+			allSelected ? new Set() : new Set(filteredDomains.map((d) => d.name))
+		);
 	};
 
 	const handleCreateSelected = () => {
 		const selectedDomainObjects = filteredDomains.filter((domain) =>
 			selectedDomains.has(domain.name)
 		);
-		if (selectedDomainObjects.length > 0) {
+		if (selectedDomainObjects.length) {
 			onCreateMultipleWebsites(project, selectedDomainObjects);
 		}
+	};
+
+	const handleTriageAction = async (
+		action:
+			| 'remove_orphaned'
+			| 'fix_domain_mismatch'
+			| 'remove_duplicates'
+			| 'create_missing_website',
+		domainName: string,
+		envVarId?: string,
+		websiteId?: string
+	) => {
+		try {
+			await triageIssueMutation.mutateAsync({
+				projectId: project.id,
+				action,
+				domainName,
+				envVarId,
+				websiteId,
+			});
+
+			// Refresh the projects data to show updated status
+			await utils.vercel.getProjects.invalidate();
+		} catch (error) {
+			// Error handling is done by the mutation
+		}
+	};
+
+	const getTriageActions = (domainStatus: any) => {
+		const actions = [];
+
+		if (domainStatus.status === 'orphaned') {
+			actions.push({
+				label: 'Remove',
+				icon: TrashIcon,
+				action: 'remove_orphaned' as const,
+			});
+		}
+
+		if (
+			domainStatus.status === 'invalid' &&
+			domainStatus.issues[0]?.includes('Domain mismatch')
+		) {
+			actions.push({
+				label: 'Fix',
+				icon: WrenchIcon,
+				action: 'fix_domain_mismatch' as const,
+			});
+		}
+
+		if (
+			domainStatus.status === 'invalid' &&
+			domainStatus.issues[0]?.includes('Multiple')
+		) {
+			actions.push({
+				label: 'Remove Duplicates',
+				icon: TrashIcon,
+				action: 'remove_duplicates' as const,
+			});
+		}
+
+		if (
+			domainStatus.status === 'not_integrated' &&
+			domainStatus.issues[0]?.includes('Website exists')
+		) {
+			actions.push({
+				label: 'Create Website',
+				icon: PlusIcon,
+				action: 'create_missing_website' as const,
+			});
+		}
+
+		return actions;
 	};
 
 	return (
@@ -234,7 +624,7 @@ export function ProjectRow({
 						className="overflow-hidden"
 						exit={{ height: 0, opacity: 0 }}
 						initial={{ height: 0, opacity: 0 }}
-						transition={{ duration: 0.3, ease: 'easeInOut' }}
+						transition={{ duration: 0.25, ease: [0.4, 0.0, 0.2, 1] }}
 					>
 						<div className="bg-muted/30">
 							{isLoadingDomains ? (
@@ -277,6 +667,38 @@ export function ProjectRow({
 														<GlobeIcon className="mr-2 h-3 w-3" />
 														<span>
 															{filteredDomains.length} domains found
+															{integrationStatus?.summary && (
+																<>
+																	{' • '}
+																	<span className="text-green-700">
+																		{integrationStatus.summary.integratedCount}{' '}
+																		integrated
+																	</span>
+																	{integrationStatus.summary.orphanedCount >
+																		0 && (
+																		<>
+																			{' • '}
+																			<span className="text-yellow-700">
+																				{
+																					integrationStatus.summary
+																						.orphanedCount
+																				}{' '}
+																				orphaned
+																			</span>
+																		</>
+																	)}
+																	{integrationStatus.summary.invalidCount >
+																		0 && (
+																		<>
+																			{' • '}
+																			<span className="text-red-700">
+																				{integrationStatus.summary.invalidCount}{' '}
+																				invalid
+																			</span>
+																		</>
+																	)}
+																</>
+															)}
 															{selectedDomains.size > 0 &&
 																` (${selectedDomains.size} selected)`}
 														</span>
@@ -317,85 +739,27 @@ export function ProjectRow({
 										</div>
 									)}
 
-									{filteredDomains.map((domain) => (
-										<div
-											className="border-border/20 border-b bg-muted/10 px-4 py-2 transition-colors hover:bg-muted/20"
-											key={domain.name}
-										>
-											<div className="flex items-center justify-between">
-												<div className="flex items-center gap-3">
-													<Checkbox
-														checked={selectedDomains.has(domain.name)}
-														className="cursor-pointer"
-														onCheckedChange={(checked) =>
-															handleDomainSelection(
-																domain.name,
-																checked as boolean
-															)
-														}
-													/>
-													<GlobeIcon className="h-3 w-3 text-muted-foreground" />
-													<div className="flex flex-col">
-														<div className="flex items-center">
-															<span className="font-medium text-sm">
-																{domain.name}
-															</span>
-															{!domain.verified && (
-																<Badge
-																	className="ml-2 border-yellow-200 bg-yellow-50 text-xs text-yellow-600"
-																	variant="outline"
-																>
-																	Pending
-																</Badge>
-															)}
-														</div>
-														<div className="mt-0.5 flex flex-wrap items-center gap-3 text-muted-foreground/70 text-xs">
-															{domain.redirect && (
-																<span className="flex items-center">
-																	<ArrowRightIcon className="mr-1 h-2 w-2" />
-																	Redirects to: {domain.redirect}
-																	{domain.redirectStatusCode &&
-																		` (${domain.redirectStatusCode})`}
-																</span>
-															)}
-															{domain.gitBranch && (
-																<span className="flex items-center">
-																	<GitBranchIcon className="mr-1 h-2 w-2" />
-																	{domain.gitBranch}
-																</span>
-															)}
-															{domain.customEnvironmentId && (
-																<Badge
-																	className="border-muted bg-muted/50 text-muted-foreground text-xs"
-																	variant="outline"
-																>
-																	{domain.customEnvironmentId}
-																</Badge>
-															)}
-															<span>
-																Created{' '}
-																{new Date(
-																	domain.createdAt
-																).toLocaleDateString()}
-															</span>
-														</div>
-													</div>
-												</div>
-												<Button
-													className="h-6 text-xs"
-													onClick={(e) => {
-														e.stopPropagation();
-														onCreateWebsite(domain);
-													}}
-													size="sm"
-													variant="outline"
-												>
-													<PlusIcon className="mr-1 h-2 w-2" />
-													Integrate
-												</Button>
-											</div>
-										</div>
-									))}
+									{filteredDomains.map((domain) => {
+										const domainStatus =
+											integrationStatus?.integrationStatus?.find(
+												(status: any) => status.domain === domain.name
+											);
+										const isIntegrated = domainStatus?.status === 'integrated';
+
+										return (
+											<DomainRow
+												domain={domain}
+												domainStatus={domainStatus}
+												isIntegrated={isIntegrated}
+												isSelected={selectedDomains.has(domain.name)}
+												key={domain.name}
+												onCreateWebsite={onCreateWebsite}
+												onSelectionChange={handleDomainSelection}
+												onTriageAction={handleTriageAction}
+												triageIssueMutation={triageIssueMutation}
+											/>
+										);
+									})}
 								</div>
 							) : (
 								<div className="bg-muted/10 py-4 text-center text-muted-foreground/70 text-xs">

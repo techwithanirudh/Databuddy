@@ -1,50 +1,21 @@
 import { websitesApi } from '@databuddy/auth';
-import { and, chQuery, eq, isNull, websites } from '@databuddy/db';
+import { chQuery } from '@databuddy/db';
 import { createDrizzleCache, redis } from '@databuddy/redis';
 import { logger, type ProcessedMiniChartData } from '@databuddy/shared';
 import { transferWebsiteSchema } from '@databuddy/validation';
 import { TRPCError } from '@trpc/server';
-import { nanoid } from 'nanoid';
 import { z } from 'zod';
+import {
+	buildWebsiteFilter,
+	domainSchema,
+	subdomainSchema,
+	WebsiteService,
+	websiteNameSchema,
+} from '../services/website-service';
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '../trpc';
 import { authorizeWebsiteAccess } from '../utils/auth';
 
 import { invalidateWebsiteCaches } from '../utils/cache-invalidation';
-
-const WEBSITE_NAME_REGEX = /^[a-zA-Z0-9\s\-_.]+$/;
-const DOMAIN_REGEX =
-	/^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,63}$/;
-const SUBDOMAIN_REGEX = /^[a-zA-Z0-9-]*$/;
-
-const websiteNameSchema = z
-	.string()
-	.min(1)
-	.max(100)
-	.regex(WEBSITE_NAME_REGEX, 'Invalid website name format');
-
-const domainSchema = z.preprocess(
-	(val) => {
-		if (typeof val !== 'string') {
-			return val;
-		}
-		let domain = val.trim();
-		if (domain.startsWith('http://') || domain.startsWith('https://')) {
-			try {
-				domain = new URL(domain).hostname;
-			} catch {
-				// Do nothing
-			}
-		}
-		return domain;
-	},
-	z.string().min(1).max(253).regex(DOMAIN_REGEX, 'Invalid domain format')
-);
-
-const subdomainSchema = z
-	.string()
-	.max(63)
-	.regex(SUBDOMAIN_REGEX, 'Invalid subdomain format')
-	.optional();
 
 const createWebsiteSchema = z.object({
 	name: websiteNameSchema,
@@ -73,17 +44,6 @@ interface ChartDataPoint {
 	date: string;
 	value: number;
 }
-
-const buildFullDomain = (rawDomain: string, rawSubdomain?: string) => {
-	const domain = rawDomain.trim().toLowerCase();
-	const subdomain = rawSubdomain?.trim().toLowerCase();
-	return subdomain ? `${subdomain}.${domain}` : domain;
-};
-
-const buildWebsiteFilter = (userId: string, organizationId?: string) =>
-	organizationId
-		? eq(websites.organizationId, organizationId)
-		: and(eq(websites.userId, userId), isNull(websites.organizationId));
 
 const calculateAverage = (values: { value: number }[]) =>
 	values.length > 0
@@ -299,57 +259,14 @@ export const websitesRouter = createTRPCRouter({
 				}
 			}
 
-			const domainToCreate = buildFullDomain(input.domain, input.subdomain);
-			const websiteFilter = and(
-				eq(websites.domain, domainToCreate),
-				buildWebsiteFilter(ctx.user.id, input.organizationId)
-			);
-
-			const createdWebsite = await ctx.db.transaction(async (tx) => {
-				const duplicateWebsite = await tx.query.websites.findFirst({
-					where: websiteFilter,
-				});
-
-				if (duplicateWebsite) {
-					const scopeDescription = input.organizationId
-						? 'in this organization'
-						: 'for your account';
-					throw new TRPCError({
-						code: 'CONFLICT',
-						message: `A website with the domain "${domainToCreate}" already exists ${scopeDescription}.`,
-					});
-				}
-
-				// Create website
-				const [website] = await tx
-					.insert(websites)
-					.values({
-						id: nanoid(),
-						name: input.name,
-						domain: domainToCreate,
-						userId: ctx.user.id,
-						organizationId: input.organizationId,
-						status: 'ACTIVE',
-					})
-					.returning();
-
-				return website;
+			const websiteService = new WebsiteService(ctx.db);
+			return await websiteService.createWebsite({
+				name: input.name,
+				domain: input.domain,
+				subdomain: input.subdomain,
+				userId: ctx.user.id,
+				organizationId: input.organizationId,
 			});
-
-			logger.success(
-				'Website Created',
-				`New website "${createdWebsite.name}" was created with domain "${createdWebsite.domain}"`,
-				{
-					websiteId: createdWebsite.id,
-					domain: createdWebsite.domain,
-					userId: ctx.user.id,
-					organizationId: createdWebsite.organizationId,
-				}
-			);
-
-			await invalidateWebsiteCaches(createdWebsite.id, ctx.user.id);
-
-			return createdWebsite;
 		}),
 
 	update: protectedProcedure
@@ -361,49 +278,13 @@ export const websitesRouter = createTRPCRouter({
 				'update'
 			);
 
-			// Check for domain conflicts if domain is being changed
-			if (input.domain && input.domain !== websiteToUpdate.domain) {
-				const domainToUpdate = buildFullDomain(input.domain);
-				const websiteFilter = and(
-					eq(websites.domain, domainToUpdate),
-					buildWebsiteFilter(ctx.user.id, websiteToUpdate.organizationId)
-				);
-
-				const duplicateWebsite = await ctx.db.query.websites.findFirst({
-					where: websiteFilter,
-				});
-
-				if (duplicateWebsite && duplicateWebsite.id !== input.id) {
-					const scopeDescription = websiteToUpdate.organizationId
-						? 'in this organization'
-						: 'for your account';
-					throw new TRPCError({
-						code: 'CONFLICT',
-						message: `A website with the domain "${domainToUpdate}" already exists ${scopeDescription}.`,
-					});
-				}
-			}
-
-			const updateData: { name: string; domain?: string } = {
-				name: input.name,
-			};
-
-			if (input.domain) {
-				updateData.domain = buildFullDomain(input.domain);
-			}
-
-			const [updatedWebsite] = await ctx.db
-				.update(websites)
-				.set(updateData)
-				.where(eq(websites.id, input.id))
-				.returning();
-
-			if (!updatedWebsite) {
-				throw new TRPCError({
-					code: 'NOT_FOUND',
-					message: 'Website not found',
-				});
-			}
+			const websiteService = new WebsiteService(ctx.db);
+			const updatedWebsite = await websiteService.updateWebsite(
+				input.id,
+				{ name: input.name, domain: input.domain },
+				ctx.user.id,
+				websiteToUpdate.organizationId
+			);
 
 			// Clean logging
 			const changes: string[] = [];
@@ -423,8 +304,6 @@ export const websitesRouter = createTRPCRouter({
 				});
 			}
 
-			await invalidateWebsiteCaches(input.id, ctx.user.id);
-
 			return updatedWebsite;
 		}),
 
@@ -433,18 +312,12 @@ export const websitesRouter = createTRPCRouter({
 		.mutation(async ({ ctx, input }) => {
 			const website = await authorizeWebsiteAccess(ctx, input.id, 'update');
 
-			const [updatedWebsite] = await ctx.db
-				.update(websites)
-				.set({ isPublic: input.isPublic })
-				.where(eq(websites.id, input.id))
-				.returning();
-
-			if (!updatedWebsite) {
-				throw new TRPCError({
-					code: 'NOT_FOUND',
-					message: 'Website not found',
-				});
-			}
+			const websiteService = new WebsiteService(ctx.db);
+			const updatedWebsite = await websiteService.toggleWebsitePublic(
+				input.id,
+				input.isPublic,
+				ctx.user.id
+			);
 
 			logger.info(
 				'Website Privacy Updated',
@@ -455,8 +328,6 @@ export const websitesRouter = createTRPCRouter({
 					userId: ctx.user.id,
 				}
 			);
-
-			await invalidateWebsiteCaches(input.id, ctx.user.id);
 
 			return updatedWebsite;
 		}),
@@ -469,9 +340,9 @@ export const websitesRouter = createTRPCRouter({
 				input.id,
 				'delete'
 			);
-			await ctx.db.transaction(async (tx) => {
-				await tx.delete(websites).where(eq(websites.id, input.id));
-			});
+
+			const websiteService = new WebsiteService(ctx.db);
+			const result = await websiteService.deleteWebsite(input.id, ctx.user.id);
 
 			logger.warning(
 				'Website Deleted',
@@ -484,9 +355,7 @@ export const websitesRouter = createTRPCRouter({
 				}
 			);
 
-			await invalidateWebsiteCaches(input.id, ctx.user.id);
-
-			return { success: true };
+			return result;
 		}),
 
 	transfer: protectedProcedure
@@ -507,32 +376,12 @@ export const websitesRouter = createTRPCRouter({
 				}
 			}
 
-			const transferredWebsite = await ctx.db.transaction(async (tx) => {
-				const [website] = await tx
-					.update(websites)
-					.set({
-						organizationId: input.organizationId ?? null,
-						updatedAt: new Date(),
-					})
-					.where(eq(websites.id, input.websiteId))
-					.returning();
-
-				return website;
-			});
-
-			logger.info(
-				'Website Transferred',
-				`Website "${transferredWebsite.name}" was transferred to organization "${input.organizationId}"`,
-				{
-					websiteId: transferredWebsite.id,
-					organizationId: input.organizationId,
-					userId: ctx.user.id,
-				}
+			const websiteService = new WebsiteService(ctx.db);
+			return await websiteService.transferWebsite(
+				input.websiteId,
+				input.organizationId ?? null,
+				ctx.user.id
 			);
-
-			await invalidateWebsiteCaches(input.websiteId, ctx.user.id);
-
-			return transferredWebsite;
 		}),
 
 	invalidateCaches: protectedProcedure

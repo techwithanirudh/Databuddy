@@ -237,6 +237,10 @@ export const twoFactor = pgTable(
 			'btree',
 			table.secret.asc().nullsLast().op('text_ops')
 		),
+		index('twoFactor_userId_idx').using(
+			'btree',
+			table.userId.asc().nullsLast().op('text_ops')
+		),
 		foreignKey({
 			columns: [table.userId],
 			foreignColumns: [user.id],

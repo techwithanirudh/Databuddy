@@ -328,7 +328,13 @@ export const user = pgTable(
 		role: role().default('USER').notNull(),
 		twoFactorEnabled: boolean('two_factor_enabled'),
 	},
-	(table) => [unique('users_email_unique').on(table.email)]
+	(table) => [
+		unique('users_email_unique').on(table.email),
+		index('users_email_idx').using(
+			'btree',
+			table.email.asc().nullsLast().op('text_ops')
+		),
+	]
 );
 
 export const userStripeConfig = pgTable(

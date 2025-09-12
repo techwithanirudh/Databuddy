@@ -495,9 +495,12 @@ function CodeBlock({ code, description, copied, onCopy }: CodeBlockProps) {
 	useEffect(() => {
 		const highlightCode = async () => {
 			try {
+				const isDarkMode = document.documentElement.classList.contains('dark');
+				const theme = isDarkMode ? 'github-dark' : 'github-light';
+
 				const html = await codeToHtml(code, {
 					lang: getLanguage(code),
-					theme: 'github-light',
+					theme,
 				});
 				setHighlightedCode(html);
 			} catch (error) {
@@ -507,6 +510,18 @@ function CodeBlock({ code, description, copied, onCopy }: CodeBlockProps) {
 		};
 
 		highlightCode();
+
+		// Listen for theme changes
+		const observer = new MutationObserver(() => {
+			highlightCode();
+		});
+
+		observer.observe(document.documentElement, {
+			attributes: true,
+			attributeFilter: ['class'],
+		});
+
+		return () => observer.disconnect();
 	}, [code, getLanguage]);
 
 	return (
@@ -529,7 +544,7 @@ function CodeBlock({ code, description, copied, onCopy }: CodeBlockProps) {
 			)}
 			<div className="relative">
 				<div
-					className="[&_pre]:!bg-transparent [&_code]:!bg-transparent [&_*]:!font-mono overflow-hidden rounded-lg border border-sidebar-border bg-sidebar/40 p-6 text-sm leading-relaxed"
+					className="[&_pre]:!bg-transparent [&_code]:!bg-transparent [&_*]:!font-mono overflow-hidden rounded border bg-slate-50 p-6 text-sm leading-relaxed dark:bg-slate-900"
 					dangerouslySetInnerHTML={{ __html: highlightedCode }}
 					style={{
 						fontSize: '14px',
@@ -539,7 +554,7 @@ function CodeBlock({ code, description, copied, onCopy }: CodeBlockProps) {
 					}}
 				/>
 				<Button
-					className="absolute top-2 right-2 h-6 w-6 rounded border-0 shadow-none transition-colors duration-200 hover:bg-background/50"
+					className="absolute top-2 right-2 h-6 w-6 rounded border-0 shadow-none transition-colors duration-200 hover:bg-white/80 dark:hover:bg-slate-800/80"
 					onClick={onCopy}
 					size="icon"
 					variant="ghost"
@@ -567,10 +582,13 @@ function WebsiteInfoSection({
 }) {
 	return (
 		<div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-			<div className="space-y-3 rounded-lg border border-sidebar-border bg-sidebar/30 p-4">
+			<div className="space-y-3 rounded border bg-card p-4">
 				<h4 className="flex items-center gap-2 font-medium text-sm">
-					<div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10">
-						<InfoIcon className="h-3.5 w-3.5 text-primary" weight="duotone" />
+					<div className="flex h-6 w-6 items-center justify-center rounded bg-muted">
+						<InfoIcon
+							className="h-3.5 w-3.5 text-muted-foreground"
+							weight="duotone"
+						/>
 					</div>
 					Website Details
 				</h4>
@@ -584,11 +602,11 @@ function WebsiteInfoSection({
 					<div className="flex items-center justify-between">
 						<span className="text-muted-foreground">Website ID</span>
 						<div className="flex items-center gap-2">
-							<code className="rounded bg-muted/50 px-2 py-1 font-mono text-xs">
+							<code className="rounded bg-muted px-2 py-1 font-mono text-xs">
 								{websiteId}
 							</code>
 							<Button
-								className="h-6 w-6 rounded hover:bg-background/50"
+								className="h-6 w-6 rounded hover:bg-muted/50"
 								onClick={() => {
 									navigator.clipboard.writeText(websiteId);
 									toast.success(TOAST_MESSAGES.WEBSITE_ID_COPIED);
@@ -603,24 +621,26 @@ function WebsiteInfoSection({
 				</div>
 			</div>
 
-			<div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+			<div className="rounded border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950">
 				<div className="flex flex-col gap-2">
 					<div className="flex items-center gap-2">
-						<div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/15">
+						<div className="flex h-6 w-6 items-center justify-center rounded bg-blue-100 dark:bg-blue-900">
 							<CheckIcon
-								className="h-3.5 w-3.5 text-primary"
+								className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400"
 								weight="duotone"
 							/>
 						</div>
-						<h4 className="font-medium text-sm">Ready to Track</h4>
+						<h4 className="font-medium text-blue-900 text-sm dark:text-blue-100">
+							Ready to Track
+						</h4>
 					</div>
 
 					<div className="space-y-2">
-						<p className="text-muted-foreground text-sm">
+						<p className="text-blue-700 text-sm dark:text-blue-300">
 							Add the tracking code to your website to start collecting data.
 						</p>
 						<Button
-							className="h-6 px-0 text-primary text-xs hover:text-primary/80"
+							className="h-6 px-0 text-blue-600 text-xs hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
 							size="sm"
 							variant="link"
 						>
@@ -870,7 +890,7 @@ function TrackingOptionCard({
 	const isEnabled = inverted ? !enabled : enabled;
 
 	return (
-		<div className="rounded-lg border border-sidebar-border bg-sidebar/20 p-4 transition-all duration-200 hover:bg-sidebar/30">
+		<div className="rounded border bg-card p-4 transition-all duration-200 hover:bg-muted/20">
 			<div className="flex items-start justify-between pb-3">
 				<div className="min-w-0 flex-1 space-y-1 pr-3">
 					<div className="font-medium text-sm">{title}</div>
@@ -881,17 +901,17 @@ function TrackingOptionCard({
 				<Switch checked={isEnabled} onCheckedChange={onToggle} />
 			</div>
 			{required && !isEnabled && (
-				<div className="mb-3 rounded-md border border-destructive/20 bg-destructive/5 p-3">
+				<div className="mb-3 rounded border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-950">
 					<div className="flex items-start gap-2">
 						<WarningCircleIcon
-							className="mt-0.5 h-4 w-4 flex-shrink-0 text-destructive"
+							className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-600 dark:text-red-400"
 							weight="duotone"
 						/>
 						<div>
-							<span className="font-medium text-destructive text-sm">
+							<span className="font-medium text-red-800 text-sm dark:text-red-200">
 								Warning:
 							</span>
-							<p className="mt-1 text-destructive text-xs">
+							<p className="mt-1 text-red-700 text-xs dark:text-red-300">
 								Disabling page views will prevent analytics from working. This
 								option is required.
 							</p>
@@ -899,13 +919,15 @@ function TrackingOptionCard({
 					</div>
 				</div>
 			)}
-			<div className="border-sidebar-border border-t pt-3">
+			<div className="border-t pt-3">
 				<div className="text-muted-foreground text-xs">
 					<span className="font-medium">Data collected:</span>
 					<ul className="mt-2 space-y-1">
 						{data.map((item: string) => (
 							<li className="flex items-start gap-2 text-xs" key={item}>
-								<span className="mt-1 text-[8px] text-primary">●</span>
+								<span className="mt-1 text-[8px] text-blue-600 dark:text-blue-400">
+									●
+								</span>
 								<span className="leading-relaxed">{item}</span>
 							</li>
 						))}
@@ -959,10 +981,13 @@ function SamplingRateSection({
 	onSamplingRateChange: (rate: number) => void;
 }) {
 	return (
-		<div className="rounded-lg border border-sidebar-border bg-sidebar/20 p-4">
+		<div className="rounded border bg-card p-4">
 			<div className="mb-3 flex items-center gap-2">
-				<div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10">
-					<InfoIcon className="h-3.5 w-3.5 text-primary" weight="duotone" />
+				<div className="flex h-6 w-6 items-center justify-center rounded bg-blue-100 dark:bg-blue-900">
+					<InfoIcon
+						className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400"
+						weight="duotone"
+					/>
 				</div>
 				<h4 className="font-medium text-sm">Sampling Rate</h4>
 			</div>
@@ -973,7 +998,7 @@ function SamplingRateSection({
 							<Label className="font-medium text-sm" htmlFor="sampling-rate">
 								Data Collection Rate
 							</Label>
-							<span className="font-semibold text-primary text-sm">
+							<span className="font-semibold text-blue-600 text-sm dark:text-blue-400">
 								{Math.round(samplingRate * 100)}%
 							</span>
 						</div>
@@ -998,10 +1023,10 @@ function SamplingRateSection({
 							Sampling rate determines what percentage of your visitors will be
 							tracked. Lower rates reduce costs.
 						</p>
-						<div className="rounded-md border border-primary/10 bg-primary/5 p-3">
-							<p className="flex items-start gap-2 text-muted-foreground text-xs">
+						<div className="rounded border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-950">
+							<p className="flex items-start gap-2 text-blue-700 text-xs dark:text-blue-300">
 								<InfoIcon
-									className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-primary"
+									className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-blue-600 dark:text-blue-400"
 									weight="duotone"
 								/>
 								<span>
@@ -1027,10 +1052,13 @@ function BatchingSection({
 	) => void;
 }) {
 	return (
-		<div className="rounded-lg border border-sidebar-border bg-sidebar/20 p-4">
+		<div className="rounded border bg-card p-4">
 			<div className="mb-3 flex items-center gap-2">
-				<div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10">
-					<CodeIcon className="h-3.5 w-3.5 text-primary" weight="duotone" />
+				<div className="flex h-6 w-6 items-center justify-center rounded bg-green-100 dark:bg-green-900">
+					<CodeIcon
+						className="h-3.5 w-3.5 text-green-600 dark:text-green-400"
+						weight="duotone"
+					/>
 				</div>
 				<h4 className="font-medium text-sm">Request Batching</h4>
 			</div>
@@ -1052,7 +1080,7 @@ function BatchingSection({
 				</div>
 
 				{trackingOptions.enableBatching && (
-					<div className="space-y-4 border-primary/20 border-l-2 pl-6">
+					<div className="space-y-4 border-green-200 border-l-2 pl-6 dark:border-green-800">
 						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 							<div className="space-y-2">
 								<Label className="font-medium text-sm" htmlFor="batch-size">
@@ -1060,7 +1088,7 @@ function BatchingSection({
 								</Label>
 								<div className="flex items-center space-x-2">
 									<Button
-										className="h-8 w-8 rounded-md"
+										className="h-8 w-8 rounded"
 										disabled={trackingOptions.batchSize <= 1}
 										onClick={() =>
 											setTrackingOptions((prev) => ({
@@ -1077,7 +1105,7 @@ function BatchingSection({
 										{trackingOptions.batchSize}
 									</span>
 									<Button
-										className="h-8 w-8 rounded-md"
+										className="h-8 w-8 rounded"
 										disabled={trackingOptions.batchSize >= 10}
 										onClick={() =>
 											setTrackingOptions((prev) => ({
@@ -1098,7 +1126,7 @@ function BatchingSection({
 									Batch Timeout (ms)
 								</Label>
 								<input
-									className="h-9 w-full rounded-md border border-sidebar-border bg-background px-3 py-2 text-sm"
+									className="h-9 w-full rounded border bg-background px-3 py-2 text-sm"
 									id="batch-timeout"
 									max="5000"
 									min="100"
@@ -1115,8 +1143,8 @@ function BatchingSection({
 							</div>
 						</div>
 
-						<div className="rounded-md border border-primary/10 bg-primary/5 p-3">
-							<p className="text-muted-foreground text-xs leading-relaxed">
+						<div className="rounded border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-950">
+							<p className="text-green-700 text-xs leading-relaxed dark:text-green-300">
 								<strong>Batching</strong> groups multiple events into single
 								requests, reducing server load and improving performance.
 							</p>
@@ -1138,10 +1166,18 @@ function NetworkResilienceSection({
 	) => void;
 }) {
 	return (
-		<div className="rounded border p-2">
-			<h4 className="mb-1 font-medium text-xs">Network Resilience</h4>
-			<div className="space-y-2">
-				<div className="flex items-center space-x-1">
+		<div className="rounded border bg-card p-4">
+			<div className="mb-3 flex items-center gap-2">
+				<div className="flex h-6 w-6 items-center justify-center rounded bg-orange-100 dark:bg-orange-900">
+					<WarningCircleIcon
+						className="h-3.5 w-3.5 text-orange-600 dark:text-orange-400"
+						weight="duotone"
+					/>
+				</div>
+				<h4 className="font-medium text-sm">Network Resilience</h4>
+			</div>
+			<div className="space-y-4">
+				<div className="flex items-center space-x-3">
 					<Switch
 						checked={trackingOptions.enableRetries}
 						id="enable-retries"
@@ -1152,76 +1188,80 @@ function NetworkResilienceSection({
 							}))
 						}
 					/>
-					<Label className="text-xs" htmlFor="enable-retries">
+					<Label className="font-medium text-sm" htmlFor="enable-retries">
 						Enable request retries
 					</Label>
 				</div>
 
 				{trackingOptions.enableRetries && (
-					<div className="grid grid-cols-2 gap-2 pl-3">
-						<div className="space-y-1">
-							<Label className="text-xs" htmlFor="max-retries">
-								Maximum Retry Attempts
-							</Label>
-							<div className="flex items-center space-x-1">
-								<Button
-									className="h-5 w-5"
-									disabled={trackingOptions.maxRetries <= 1}
-									onClick={() =>
+					<div className="space-y-4 border-orange-200 border-l-2 pl-6 dark:border-orange-800">
+						<div className="grid grid-cols-2 gap-4">
+							<div className="space-y-2">
+								<Label className="font-medium text-sm" htmlFor="max-retries">
+									Maximum Retry Attempts
+								</Label>
+								<div className="flex items-center space-x-2">
+									<Button
+										className="h-8 w-8 rounded"
+										disabled={trackingOptions.maxRetries <= 1}
+										onClick={() =>
+											setTrackingOptions((prev) => ({
+												...prev,
+												maxRetries: Math.max(1, prev.maxRetries - 1),
+											}))
+										}
+										size="icon"
+										variant="outline"
+									>
+										-
+									</Button>
+									<span className="w-8 rounded bg-muted px-2 py-1 text-center font-medium text-sm">
+										{trackingOptions.maxRetries}
+									</span>
+									<Button
+										className="h-8 w-8 rounded"
+										disabled={trackingOptions.maxRetries >= 10}
+										onClick={() =>
+											setTrackingOptions((prev) => ({
+												...prev,
+												maxRetries: Math.min(10, prev.maxRetries + 1),
+											}))
+										}
+										size="icon"
+										variant="outline"
+									>
+										+
+									</Button>
+								</div>
+							</div>
+
+							<div className="space-y-2">
+								<Label className="font-medium text-sm" htmlFor="retry-delay">
+									Initial Retry Delay (ms)
+								</Label>
+								<input
+									className="h-9 w-full rounded border bg-background px-3 py-2 text-sm"
+									id="retry-delay"
+									max="5000"
+									min="100"
+									onChange={(e) =>
 										setTrackingOptions((prev) => ({
 											...prev,
-											maxRetries: Math.max(1, prev.maxRetries - 1),
+											initialRetryDelay: Number.parseInt(e.target.value, 10),
 										}))
 									}
-									size="icon"
-									variant="outline"
-								>
-									-
-								</Button>
-								<span className="w-6 text-center text-xs">
-									{trackingOptions.maxRetries}
-								</span>
-								<Button
-									className="h-5 w-5"
-									disabled={trackingOptions.maxRetries >= 10}
-									onClick={() =>
-										setTrackingOptions((prev) => ({
-											...prev,
-											maxRetries: Math.min(10, prev.maxRetries + 1),
-										}))
-									}
-									size="icon"
-									variant="outline"
-								>
-									+
-								</Button>
+									step="100"
+									type="number"
+									value={trackingOptions.initialRetryDelay}
+								/>
 							</div>
 						</div>
 
-						<div className="space-y-1">
-							<Label className="text-xs" htmlFor="retry-delay">
-								Initial Retry Delay (ms)
-							</Label>
-							<input
-								className="h-6 w-full rounded border border-input bg-background px-2 py-0.5 text-xs"
-								id="retry-delay"
-								max="5000"
-								min="100"
-								onChange={(e) =>
-									setTrackingOptions((prev) => ({
-										...prev,
-										initialRetryDelay: Number.parseInt(e.target.value, 10),
-									}))
-								}
-								step="100"
-								type="number"
-								value={trackingOptions.initialRetryDelay}
-							/>
-						</div>
-
-						<div className="col-span-2 text-muted-foreground text-xs">
-							Retries use exponential backoff with jitter to avoid overwhelming
-							servers.
+						<div className="rounded border border-orange-200 bg-orange-50 p-3 dark:border-orange-800 dark:bg-orange-950">
+							<p className="text-orange-700 text-xs leading-relaxed dark:text-orange-300">
+								Retries use exponential backoff with jitter to avoid
+								overwhelming servers.
+							</p>
 						</div>
 					</div>
 				)}
@@ -1510,38 +1550,51 @@ function ExportTab({
 			</div>
 
 			{/* Export Info */}
-			<div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+			<div className="rounded border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950">
 				<div className="flex items-start gap-3">
-					<div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-primary/15">
-						<InfoIcon className="h-4 w-4 text-primary" weight="duotone" />
+					<div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded bg-blue-100 dark:bg-blue-900">
+						<InfoIcon
+							className="h-4 w-4 text-blue-600 dark:text-blue-400"
+							weight="duotone"
+						/>
 					</div>
 					<div className="space-y-3">
-						<h4 className="font-medium text-sm">
+						<h4 className="font-medium text-blue-900 text-sm dark:text-blue-100">
 							What's included in your export?
 						</h4>
 						<ul className="space-y-2">
-							<li className="flex items-start gap-2 text-sm">
-								<span className="mt-1 text-[8px] text-primary">●</span>
+							<li className="flex items-start gap-2 text-blue-800 text-sm dark:text-blue-200">
+								<span className="mt-1 text-[8px] text-blue-600 dark:text-blue-400">
+									●
+								</span>
 								<span>Page views and user sessions</span>
 							</li>
-							<li className="flex items-start gap-2 text-sm">
-								<span className="mt-1 text-[8px] text-primary">●</span>
+							<li className="flex items-start gap-2 text-blue-800 text-sm dark:text-blue-200">
+								<span className="mt-1 text-[8px] text-blue-600 dark:text-blue-400">
+									●
+								</span>
 								<span>User interactions and events</span>
 							</li>
-							<li className="flex items-start gap-2 text-sm">
-								<span className="mt-1 text-[8px] text-primary">●</span>
+							<li className="flex items-start gap-2 text-blue-800 text-sm dark:text-blue-200">
+								<span className="mt-1 text-[8px] text-blue-600 dark:text-blue-400">
+									●
+								</span>
 								<span>Performance metrics and Web Vitals</span>
 							</li>
-							<li className="flex items-start gap-2 text-sm">
-								<span className="mt-1 text-[8px] text-primary">●</span>
+							<li className="flex items-start gap-2 text-blue-800 text-sm dark:text-blue-200">
+								<span className="mt-1 text-[8px] text-blue-600 dark:text-blue-400">
+									●
+								</span>
 								<span>Error logs and debugging data</span>
 							</li>
-							<li className="flex items-start gap-2 text-sm">
-								<span className="mt-1 text-[8px] text-primary">●</span>
+							<li className="flex items-start gap-2 text-blue-800 text-sm dark:text-blue-200">
+								<span className="mt-1 text-[8px] text-blue-600 dark:text-blue-400">
+									●
+								</span>
 								<span>Device, browser, and location data</span>
 							</li>
 						</ul>
-						<p className="text-muted-foreground text-sm leading-relaxed">
+						<p className="text-blue-700 text-sm leading-relaxed dark:text-blue-300">
 							Data is exported as a ZIP file containing multiple files organized
 							by data type.
 						</p>

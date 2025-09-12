@@ -412,11 +412,35 @@ export const websitesRouter = createTRPCRouter({
 	isTrackingSetup: publicProcedure
 		.input(z.object({ websiteId: z.string() }))
 		.query(async ({ ctx, input }) => {
-			await authorizeWebsiteAccess(ctx, input.websiteId, 'read');
+			const website = await authorizeWebsiteAccess(
+				ctx,
+				input.websiteId,
+				'read'
+			);
+
+			// Check if website has Vercel integration (has NEXT_PUBLIC_DATABUDDY_CLIENT_ID env var)
+			const hasVercelIntegration = !!(website.integrations as any)?.vercel
+				?.environments;
+
+			// Always check for actual tracking events
 			const trackingCheckResult = await chQuery<{ count: number }>(
 				`SELECT COUNT(*) as count FROM analytics.events WHERE client_id = {websiteId:String} AND event_name = 'screen_view' LIMIT 1`,
 				{ websiteId: input.websiteId }
 			);
-			return { tracking_setup: (trackingCheckResult[0]?.count ?? 0) > 0 };
+
+			const hasTrackingEvents = (trackingCheckResult[0]?.count ?? 0) > 0;
+
+			// Determine integration type
+			let integrationType: 'vercel' | 'manual' | null = null;
+			if (hasVercelIntegration) {
+				integrationType = 'vercel';
+			} else if (hasTrackingEvents) {
+				integrationType = 'manual';
+			}
+
+			return {
+				tracking_setup: hasTrackingEvents,
+				integration_type: integrationType,
+			};
 		}),
 });

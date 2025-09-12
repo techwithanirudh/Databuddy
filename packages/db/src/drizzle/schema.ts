@@ -787,6 +787,10 @@ export const assistantConversations = pgTable(
 		updatedAt: timestamp('updated_at').defaultNow().notNull(),
 	},
 	(table) => [
+		index('assistant_conversations_user_id_idx').using(
+			'btree',
+			table.userId.asc().nullsLast().op('text_ops')
+		),
 		index('assistant_conversations_website_id_idx').using(
 			'btree',
 			table.websiteId.asc().nullsLast().op('text_ops')

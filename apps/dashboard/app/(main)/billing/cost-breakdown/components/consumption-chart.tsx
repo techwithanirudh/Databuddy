@@ -17,6 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import type { UsageResponse } from '@databuddy/shared';
 import { calculateOverageCost, type OverageInfo } from '../utils/billing-utils';
 
+
 type ViewMode = 'daily' | 'cumulative';
 
 import { METRIC_COLORS } from '@/components/charts/metrics-constants';
@@ -144,7 +145,7 @@ export function ConsumptionChart({ usageData, isLoading, onDateRangeChange, over
 
 	return (
 		<div className="h-full flex flex-col border-b">
-			<div className="px-6 py-4 border-b bg-muted/20">
+				<div className="px-6 py-4 border-b bg-muted/20">
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-2">
 						<ChartBarIcon className="h-5 w-5" weight="duotone" />
@@ -206,7 +207,13 @@ export function ConsumptionChart({ usageData, isLoading, onDateRangeChange, over
 			<div className="flex-1 px-6 py-6">
 				<div className="h-full">
 					<ResponsiveContainer width="100%" height="100%">
-						<BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+						<BarChart
+							data={chartData}
+							margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+							style={{
+								cursor: 'default'
+							}}
+						>
 							<defs>
 								{Object.entries(EVENT_TYPE_COLORS).map(([key, color]) => (
 									<linearGradient
@@ -298,12 +305,7 @@ export function ConsumptionChart({ usageData, isLoading, onDateRangeChange, over
 									}
 									return null;
 								}}
-								cursor={{
-									stroke: 'var(--primary)',
-									strokeWidth: 1,
-									strokeOpacity: 0.5,
-									strokeDasharray: '4 4',
-								}}
+								cursor={false}
 								wrapperStyle={{ outline: 'none' }}
 							/>
 							<Legend
@@ -353,6 +355,10 @@ export function ConsumptionChart({ usageData, isLoading, onDateRangeChange, over
 									stroke={EVENT_TYPE_COLORS[eventType as keyof typeof EVENT_TYPE_COLORS]}
 									strokeWidth={0.5}
 									hide={!!hiddenTypes[eventType]}
+									style={{
+										filter: 'none',
+										transition: 'none'
+									}}
 								/>
 							))}
 						</BarChart>

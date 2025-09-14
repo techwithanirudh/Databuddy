@@ -33,18 +33,18 @@ export default function Hero() {
 			<div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
 				<div className="grid grid-cols-1 items-center gap-8 pt-12 pb-6 sm:pt-16 sm:pb-8 lg:grid-cols-2 lg:gap-12 lg:pt-20 lg:pb-12 xl:gap-16">
 					{/* Text Content */}
-					<div className="order-2 flex flex-col text-center items-center gap-6 lg:order-1 lg:items-start lg:gap-8 lg:text-left">
+					<div className="order-2 flex flex-col items-center gap-6 text-center lg:order-1 lg:items-start lg:gap-8 lg:text-left">
 						<div className="self-center lg:self-start">
-							<div className="inline-flex items-center rounded-full border border-border bg-background/80 px-3 py-1 text-xs font-medium text-muted-foreground shadow backdrop-blur">
+							<div className="inline-flex items-center rounded-full border border-border bg-background/80 px-3 py-1 font-medium text-muted-foreground text-xs shadow backdrop-blur">
 								<span>Rejected by</span>
 								<svg
-									xmlns="http://www.w3.org/2000/svg"
+									aria-hidden="true"
+									className="mx-1 inline-block align-[-2px]"
+									focusable="false"
+									height="14"
 									viewBox="0 0 32 32"
 									width="14"
-									height="14"
-									className="mx-1 inline-block align-[-2px]"
-									aria-hidden="true"
-									focusable="false"
+									xmlns="http://www.w3.org/2000/svg"
 								>
 									<title>Y Combinator logo</title>
 									<path d="M0 0h32v32H0z" fill="#f26625" />

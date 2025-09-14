@@ -1,12 +1,13 @@
 'use client';
 
+import type { UsageResponse } from '@databuddy/shared';
 import {
 	BugIcon,
 	ChartBarIcon,
 	LinkIcon,
 	SparkleIcon,
-	ThermometerIcon,
 	TableIcon,
+	ThermometerIcon,
 } from '@phosphor-icons/react';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -17,7 +18,6 @@ import {
 	TableHeader,
 	TableRow,
 } from '@/components/ui/table';
-import type { UsageResponse } from '@databuddy/shared';
 import { calculateOverageCost, type OverageInfo } from '../utils/billing-utils';
 
 const EVENT_TYPE_CONFIG = {
@@ -69,7 +69,7 @@ export function UsageBreakdownTable({
 			<div className="h-full p-6">
 				<div className="space-y-4">
 					{Array.from({ length: 5 }).map((_, i) => (
-						<div key={i} className="flex items-center justify-between">
+						<div className="flex items-center justify-between" key={i}>
 							<div className="flex items-center gap-3">
 								<Skeleton className="h-10 w-10 rounded" />
 								<div className="space-y-1">
@@ -77,7 +77,7 @@ export function UsageBreakdownTable({
 									<Skeleton className="h-3 w-48" />
 								</div>
 							</div>
-							<div className="text-right space-y-1">
+							<div className="space-y-1 text-right">
 								<Skeleton className="h-4 w-20" />
 								<Skeleton className="h-3 w-16" />
 							</div>
@@ -90,10 +90,10 @@ export function UsageBreakdownTable({
 
 	if (!usageData || usageData.eventTypeBreakdown.length === 0) {
 		return (
-			<div className="h-full flex items-center justify-center">
+			<div className="flex h-full items-center justify-center">
 				<div className="text-center">
 					<TableIcon
-						className="mx-auto h-8 w-8 text-muted-foreground mb-2"
+						className="mx-auto mb-2 h-8 w-8 text-muted-foreground"
 						weight="duotone"
 					/>
 					<p className="text-muted-foreground">No usage data available</p>
@@ -124,7 +124,10 @@ export function UsageBreakdownTable({
 							EVENT_TYPE_CONFIG[
 								item.event_category as keyof typeof EVENT_TYPE_CONFIG
 							];
-						if (!config) return null;
+
+						if (!config) {
+							return null;
+						}
 
 						const overageCost = usageData
 							? calculateOverageCost(
@@ -148,7 +151,7 @@ export function UsageBreakdownTable({
 										</div>
 										<div className="min-w-0 flex-1">
 											<div className="font-medium">{config.name}</div>
-											<div className="text-sm text-muted-foreground">
+											<div className="text-muted-foreground text-sm">
 												{config.description}
 											</div>
 										</div>
@@ -158,7 +161,7 @@ export function UsageBreakdownTable({
 									<div className="font-medium">
 										{item.event_count.toLocaleString()}
 									</div>
-									<div className="text-sm text-muted-foreground">events</div>
+									<div className="text-muted-foreground text-sm">events</div>
 								</TableCell>
 								<TableCell>
 									<div className="font-medium">
@@ -172,12 +175,12 @@ export function UsageBreakdownTable({
 			</Table>
 
 			{sortedBreakdown.length === 0 && (
-				<div className="text-center py-8">
+				<div className="py-8 text-center">
 					<TableIcon
-						className="mx-auto h-12 w-12 text-muted-foreground mb-4"
+						className="mx-auto mb-4 h-12 w-12 text-muted-foreground"
 						weight="duotone"
 					/>
-					<h3 className="text-lg font-semibold">No Event Data</h3>
+					<h3 className="font-semibold text-lg">No Event Data</h3>
 					<p className="text-muted-foreground">
 						No events found for the selected period
 					</p>

@@ -134,7 +134,7 @@ export function NavigationItem({
 				{badge && (
 					<span
 						className={cn(
-							'rounded px-1.5 py-0.5 text-xs font-medium',
+							'rounded px-1.5 py-0.5 font-medium text-xs',
 							badge.variant === 'purple' &&
 								'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
 							badge.variant === 'blue' &&

@@ -1,5 +1,6 @@
 'use client';
 
+import type { UsageResponse } from '@databuddy/shared';
 import { CalendarIcon, ChartBarIcon } from '@phosphor-icons/react';
 import { useMemo, useState } from 'react';
 import {
@@ -14,7 +15,6 @@ import {
 import { DateRangePicker } from '@/components/date-range-picker';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { UsageResponse } from '@databuddy/shared';
 import { calculateOverageCost, type OverageInfo } from '../utils/billing-utils';
 
 type ViewMode = 'daily' | 'cumulative';
@@ -46,7 +46,9 @@ export function ConsumptionChart({
 	const [hiddenTypes, setHiddenTypes] = useState<Record<string, boolean>>({});
 
 	const chartData = useMemo(() => {
-		if (!usageData?.dailyUsageByType) return [];
+		if (!usageData?.dailyUsageByType) {
+			return [];
+		}
 
 		// Group the real daily usage by type data by date
 		const dailyDataMap = new Map<string, Record<string, number>>();
@@ -74,7 +76,7 @@ export function ConsumptionChart({
 		}
 
 		// Convert to chart format with cumulative calculation if needed
-		let runningTotals = Object.keys(EVENT_TYPE_COLORS).reduce(
+		const runningTotals = Object.keys(EVENT_TYPE_COLORS).reduce(
 			(acc, key) => {
 				acc[key] = 0;
 				return acc;
@@ -113,8 +115,8 @@ export function ConsumptionChart({
 
 	if (isLoading) {
 		return (
-			<div className="h-full flex flex-col border-b">
-				<div className="px-6 py-4 border-b bg-muted/20">
+			<div className="flex h-full flex-col border-b">
+				<div className="border-b bg-muted/20 px-6 py-4">
 					<div className="flex items-center justify-between">
 						<Skeleton className="h-6 w-48" />
 						<Skeleton className="h-8 w-32" />
@@ -129,20 +131,20 @@ export function ConsumptionChart({
 
 	if (!usageData || chartData.length === 0) {
 		return (
-			<div className="h-full flex flex-col border-b">
-				<div className="px-6 py-4 border-b bg-muted/20">
+			<div className="flex h-full flex-col border-b">
+				<div className="border-b bg-muted/20 px-6 py-4">
 					<div className="flex items-center gap-2">
 						<ChartBarIcon className="h-5 w-5" weight="duotone" />
-						<h2 className="text-lg font-semibold">Consumption Breakdown</h2>
+						<h2 className="font-semibold text-lg">Consumption Breakdown</h2>
 					</div>
 				</div>
-				<div className="flex-1 px-6 py-6 flex items-center justify-center">
+				<div className="flex flex-1 items-center justify-center px-6 py-6">
 					<div className="text-center">
 						<CalendarIcon
-							className="mx-auto h-12 w-12 text-muted-foreground mb-4"
+							className="mx-auto mb-4 h-12 w-12 text-muted-foreground"
 							weight="duotone"
 						/>
-						<h3 className="text-lg font-semibold">No Data Available</h3>
+						<h3 className="font-semibold text-lg">No Data Available</h3>
 						<p className="text-muted-foreground">
 							No usage data found for the selected period
 						</p>
@@ -163,12 +165,12 @@ export function ConsumptionChart({
 	const yAxisMax = Math.ceil(maxValue * 1.1);
 
 	return (
-		<div className="h-full flex flex-col border-b">
-			<div className="px-6 py-4 border-b bg-muted/20">
+		<div className="flex h-full flex-col border-b">
+			<div className="border-b bg-muted/20 px-6 py-4">
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-2">
 						<ChartBarIcon className="h-5 w-5" weight="duotone" />
-						<h2 className="text-lg font-semibold">Consumption Breakdown</h2>
+						<h2 className="font-semibold text-lg">Consumption Breakdown</h2>
 					</div>
 					<div className="flex items-center gap-2">
 						<DateRangePicker
@@ -190,25 +192,24 @@ export function ConsumptionChart({
 						/>
 						<div className="flex rounded border">
 							<Button
-								variant={viewMode === 'cumulative' ? 'default' : 'ghost'}
-								size="sm"
-								onClick={() => setViewMode('cumulative')}
 								className="rounded-r-none border-r"
+								onClick={() => setViewMode('cumulative')}
+								size="sm"
+								variant={viewMode === 'cumulative' ? 'default' : 'ghost'}
 							>
 								Cumulative
 							</Button>
 							<Button
-								variant={viewMode === 'daily' ? 'default' : 'ghost'}
-								size="sm"
-								onClick={() => setViewMode('daily')}
 								className="rounded-l-none"
+								onClick={() => setViewMode('daily')}
+								size="sm"
+								variant={viewMode === 'daily' ? 'default' : 'ghost'}
 							>
 								Daily
 							</Button>
 						</div>
 						<Button
-							variant="outline"
-							size="sm"
+							className="text-xs"
 							onClick={() => {
 								const allHidden = Object.keys(EVENT_TYPE_COLORS).reduce(
 									(acc, key) => {
@@ -219,7 +220,8 @@ export function ConsumptionChart({
 								);
 								setHiddenTypes(allHidden);
 							}}
-							className="text-xs"
+							size="sm"
+							variant="outline"
 						>
 							Select None
 						</Button>
@@ -228,7 +230,7 @@ export function ConsumptionChart({
 			</div>
 			<div className="flex-1 px-6 py-6">
 				<div className="h-full">
-					<ResponsiveContainer width="100%" height="100%">
+					<ResponsiveContainer height="100%" width="100%">
 						<BarChart
 							data={chartData}
 							margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
@@ -252,31 +254,34 @@ export function ConsumptionChart({
 								))}
 							</defs>
 							<XAxis
-								dataKey="date"
 								axisLine={{ stroke: 'var(--border)', strokeOpacity: 0.5 }}
-								tickLine={false}
+								dataKey="date"
 								tick={{
 									fontSize: 11,
 									fill: 'var(--muted-foreground)',
 									fontWeight: 500,
 								}}
+								tickLine={false}
 							/>
 							<YAxis
 								axisLine={false}
-								tickLine={false}
+								domain={[0, yAxisMax]}
 								tick={{
 									fontSize: 11,
 									fill: 'var(--muted-foreground)',
 									fontWeight: 500,
 								}}
-								width={45}
-								domain={[0, yAxisMax]}
 								tickFormatter={(value) => {
-									if (value >= 1_000_000)
+									if (value >= 1_000_000) {
 										return `${(value / 1_000_000).toFixed(1)}M`;
-									if (value >= 1000) return `${(value / 1000).toFixed(1)}k`;
+									}
+									if (value >= 1000) {
+										return `${(value / 1000).toFixed(1)}k`;
+									}
 									return value.toString();
 								}}
+								tickLine={false}
+								width={45}
 							/>
 							<Tooltip
 								content={({ active, payload, label }) => {
@@ -310,8 +315,8 @@ export function ConsumptionChart({
 
 															return (
 																<div
-																	key={index}
 																	className="group flex items-center justify-between gap-3"
+																	key={index}
 																>
 																	<div className="flex items-center gap-2.5">
 																		<div
@@ -328,7 +333,7 @@ export function ConsumptionChart({
 																		<div className="font-bold text-foreground text-sm group-hover:text-primary">
 																			{eventCount.toLocaleString()}
 																		</div>
-																		<div className="text-xs text-muted-foreground">
+																		<div className="text-muted-foreground text-xs">
 																			${overageCost.toFixed(6)}
 																		</div>
 																	</div>
@@ -345,15 +350,16 @@ export function ConsumptionChart({
 								wrapperStyle={{ outline: 'none' }}
 							/>
 							<Legend
+								align="center"
 								formatter={(value) => {
 									const key = String(value);
 									const isHidden = hiddenTypes[key];
 									return (
 										<span
-											className={`inline-flex items-center text-xs font-medium capitalize transition-all duration-200 select-none leading-none ${
+											className={`inline-flex select-none items-center font-medium text-xs capitalize leading-none transition-all duration-200 ${
 												isHidden
-													? 'opacity-40 text-slate-600 line-through decoration-1'
-													: 'opacity-100 text-muted-foreground'
+													? 'text-slate-600 line-through decoration-1 opacity-40'
+													: 'text-muted-foreground opacity-100'
 											}`}
 										>
 											{key.replace('_', ' ')}
@@ -362,19 +368,20 @@ export function ConsumptionChart({
 								}}
 								iconSize={10}
 								iconType="circle"
+								layout="horizontal"
 								onClick={(payload) => {
 									const anyPayload = payload as unknown as {
 										dataKey?: string | number;
 										value?: string | number;
 									};
 									const raw = anyPayload?.dataKey ?? anyPayload?.value;
-									if (raw == null) return;
+									if (raw == null) {
+										return;
+									}
 									const key = String(raw);
 									setHiddenTypes((prev) => ({ ...prev, [key]: !prev[key] }));
 								}}
-								align="center"
 								verticalAlign="bottom"
-								layout="horizontal"
 								wrapperStyle={{
 									display: 'flex',
 									justifyContent: 'center',
@@ -387,17 +394,17 @@ export function ConsumptionChart({
 							/>
 							{Object.keys(EVENT_TYPE_COLORS).map((eventType) => (
 								<Bar
-									key={eventType}
 									dataKey={eventType}
-									stackId="events"
 									fill={`url(#gradient-${eventType})`}
+									hide={!!hiddenTypes[eventType]}
+									key={eventType}
+									stackId="events"
 									stroke={
 										EVENT_TYPE_COLORS[
 											eventType as keyof typeof EVENT_TYPE_COLORS
 										]
 									}
 									strokeWidth={0.5}
-									hide={!!hiddenTypes[eventType]}
 									style={{
 										filter: 'none',
 										transition: 'none',

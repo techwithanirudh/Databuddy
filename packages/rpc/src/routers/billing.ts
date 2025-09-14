@@ -1,10 +1,9 @@
 import { websitesApi } from '@databuddy/auth';
-import { chQuery, db, eq, session, websites } from '@databuddy/db';
+import { chQuery } from '@databuddy/db';
 import type {
-	DailyUsageRow,
 	DailyUsageByTypeRow,
+	DailyUsageRow,
 	EventTypeBreakdown,
-	UsageResponse,
 } from '@databuddy/shared';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';

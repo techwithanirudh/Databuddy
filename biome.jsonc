@@ -8,7 +8,8 @@
       "!**/*.css",
       "!**/countries.json",
       "!**/subdivisions.json",
-      "!**/databuddy.js"
+      "!**/databuddy.js",
+      "!apps/better-admin/**"
     ]
   },
   "javascript": {

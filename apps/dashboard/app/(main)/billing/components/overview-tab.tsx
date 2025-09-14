@@ -247,7 +247,7 @@ const PlanStatusCard = memo(function PlanStatusCardComponent({
 	};
 
 	return (
-		<Card className="h-full flex flex-col">
+		<Card className="flex h-full flex-col">
 			<CardHeader>
 				<div className="flex items-start justify-between gap-4">
 					<div className="min-w-0 flex-1 space-y-3">
@@ -292,7 +292,7 @@ const PlanStatusCard = memo(function PlanStatusCardComponent({
 				</div>
 			</CardHeader>
 
-			<CardContent className="flex-1 flex flex-col space-y-6">
+			<CardContent className="flex flex-1 flex-col space-y-6">
 				<div className="space-y-3">
 					{plan?.items.map((item) => (
 						<div className="flex items-start gap-3" key={item.feature_id}>
@@ -318,7 +318,7 @@ const PlanStatusCard = memo(function PlanStatusCardComponent({
 
 				<Separator />
 
-				<div className="space-y-3 mt-auto">
+				<div className="mt-auto space-y-3">
 					{isCanceled ? (
 						<Button
 							aria-label="Reactivate subscription"
@@ -347,7 +347,7 @@ const PlanStatusCard = memo(function PlanStatusCardComponent({
 							{!(isFree || isCanceled) && (
 								<Button
 									aria-label="Cancel subscription"
-									className="w-full border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground hover:cursor-pointer"
+									className="w-full border-destructive text-destructive hover:cursor-pointer hover:bg-destructive hover:text-destructive-foreground"
 									onClick={() =>
 										plan &&
 										onCancelClick(

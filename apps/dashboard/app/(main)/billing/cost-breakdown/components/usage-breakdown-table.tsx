@@ -4,10 +4,10 @@ import type { UsageResponse } from '@databuddy/shared';
 import {
 	BugIcon,
 	ChartBarIcon,
+	LightningIcon,
 	LinkIcon,
 	SparkleIcon,
 	TableIcon,
-	ThermometerIcon,
 } from '@phosphor-icons/react';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -36,7 +36,7 @@ const EVENT_TYPE_CONFIG = {
 	web_vitals: {
 		name: 'Web Vitals',
 		description: 'Core Web Vitals performance metrics',
-		icon: ThermometerIcon,
+		icon: LightningIcon,
 		color: 'green',
 	},
 	custom_event: {

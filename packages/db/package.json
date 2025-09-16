@@ -25,6 +25,7 @@
   "scripts": {
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
+    "db:generate": "drizzle-kit generate",
     "db:migrate": "bun run src/migrate.ts",
     "db:deploy": "bun run src/migrate.ts",
     "db:seed": "bun run src/seed.ts",

@@ -1,16 +1,15 @@
 import { auth, type User, websitesApi } from '@databuddy/auth';
 import type { StreamingUpdate } from '@databuddy/shared';
 import { Elysia } from 'elysia';
-import { handleMessage } from '../agent';
+import { handleMessage } from '../assistant';
 import { validateWebsite } from '../lib/website-utils';
 import { AssistantRequestSchema, type AssistantRequestType } from '../schemas';
-import { normalizeMode } from '@databuddy/ai/lib/utils';
 
 function createErrorResponse(message: string): StreamingUpdate[] {
 	return [{ type: 'error', content: message }];
 }
 
-export const assistant = new Elysia({ prefix: '/v1/agent' })
+export const assistant = new Elysia({ prefix: '/v1/assistant' })
 	// .use(createRateLimitMiddleware({ type: 'expensive' }))
 	.derive(async ({ request }) => {
 		const session = await auth.api.getSession({ headers: request.headers });
@@ -35,7 +34,7 @@ export const assistant = new Elysia({ prefix: '/v1/agent' })
 		}
 	})
 	.post(
-		'/stream',
+		'/',
 		async ({
 			body,
 			user,
@@ -80,7 +79,7 @@ export const assistant = new Elysia({ prefix: '/v1/agent' })
 
 				const updates = await handleMessage({
 					messages: body.messages,
-					mode: normalizeMode(body.mode),
+					mode: body.mode,
 					websiteId: website.id,
 					websiteHostname: website.domain
 				});

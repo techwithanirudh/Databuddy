@@ -2,7 +2,7 @@ import { t } from 'elysia';
 
 export const AssistantRequestSchema = t.Object(
 	{
-		conversationId: t.Optional(t.String()),
+		conversationId: t.Required(t.String()),
 		messages: t.Array(
 			t.Object(
 				{
@@ -13,8 +13,8 @@ export const AssistantRequestSchema = t.Object(
 			),
 			{ minItems: 1 }
 		),
-		websiteId: t.String(),
-		model: t.Optional(
+		websiteId: t.Required(t.String()),
+		mode: t.Required(
 			t.Union([t.Literal('chat'), t.Literal('agent'), t.Literal('agent-max')])
 		),
 	},

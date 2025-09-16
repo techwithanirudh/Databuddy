@@ -1,9 +1,13 @@
 import { customProvider } from 'ai';
 
-import { createOpenRouter } from '@openrouter/ai-sdk-provider';
+// import { createOpenRouter } from '@openrouter/ai-sdk-provider';
+import { createOpenAI } from '@ai-sdk/openai';
 
-const openrouter = createOpenRouter({
-  apiKey: process.env.OPENROUTER_API_KEY!,
+// const openrouter = createOpenRouter({
+//   apiKey: process.env.AI_API_KEY!,
+// });
+const openai = createOpenAI({
+  apiKey: process.env.AI_API_KEY!,
 });
 
 export const config = {
@@ -24,12 +28,12 @@ export const config = {
 
 export const provider = customProvider({
   languageModels: {
-    // "chat-model": hackclub("llama-3.3-70b-versatile"),
-    // 'chat-model': openai.responses('gpt-4.1-mini'),
-    'chat-model': openrouter.chat('google/gemini-2.5-flash-lite-preview-06-17'),
-    'agent-model': openrouter.chat('openai/gpt-5'),
-    // 'relevance-model': openai.responses('gpt-4.1-nano'),
-    'agent-max-model': openrouter.chat('anthropic/claude-3-5-sonnet-20241022'),
+    'chat-model': openai.responses('gpt-4o-mini'),
+    // 'chat-model': openrouter.chat('google/gemini-2.5-flash-lite-preview-06-17'),
+    'agent-model': openai.responses('gpt-4o'),
+    // 'agent-model': openrouter.chat('openai/gpt-5'),
+    'agent-max-model': openai.responses('gpt-5'),
+    // 'agent-max-model': openrouter.chat('anthropic/claude-3-5-sonnet-20241022'),
   },
   imageModels: {
     // 'small-model': openai.imageModel('dall-e-2'),

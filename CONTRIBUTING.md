@@ -59,7 +59,7 @@ bun db:seed d7zlgMtBaSzIL1EGR2ieR notmybuddy.cc 5000
 **Note:** You can find your website ID in your website overview settings.
 
 > **Tip:**
-> If you want to just develop on the dashboard run:
+> If you want to just develop the dashboard run:
 > `bun run dev --filter=@databuddy/api --filter=@databuddy/dashboard`
 
 ## Essential Commands

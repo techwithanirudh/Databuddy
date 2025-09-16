@@ -13,6 +13,7 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^2.0.30",
     "@databuddy/rpc": "workspace:*",
     "@elysiajs/cors": "^1.3.3",
     "@elysiajs/trpc": "^1.1.0",

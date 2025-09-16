@@ -38,7 +38,7 @@ export const auth = betterAuth({
 						`User ${user.id}, ${user.name}, ${user.email} created`
 					);
 					// await resend.emails.send({
-					//     from: "Databuddy <hello@techwithanirudh.com>",
+					//     from: process.env.RESEND_FROM ?? 'no-reply@databuddy.cc',
 					//     to: user.email,
 					//     subject: "Welcome to Databuddy",
 					//     react: WelcomeEmail({ username: user.name, url: process.env.BETTER_AUTH_URL as string }),
@@ -135,7 +135,7 @@ export const auth = betterAuth({
 			url: string;
 		}) => {
 			await resend.emails.send({
-				from: process.env.RESEND_FROM!,
+				from: process.env.RESEND_FROM ?? 'no-reply@databuddy.cc',
 				to: user.email,
 				subject: 'Reset your password',
 				react: ResetPasswordEmail({ url }),
@@ -160,7 +160,7 @@ export const auth = betterAuth({
 				`Sending verification email to ${user.email}`
 			);
 			await resend.emails.send({
-				from: process.env.RESEND_FROM!,
+				from: process.env.RESEND_FROM ?? 'no-reply@databuddy.cc',
 				to: user.email,
 				subject: 'Verify your email',
 				react: VerificationEmail({ url }),
@@ -194,7 +194,7 @@ export const auth = betterAuth({
 			async sendVerificationOTP({ email, otp, type }) {
 				logger.info('Email OTP', `Sending OTP to ${email} of type ${type}`);
 				await resend.emails.send({
-					from: process.env.RESEND_FROM!,
+					from: process.env.RESEND_FROM ?? 'no-reply@databuddy.cc',
 					to: email,
 					subject: 'Your verification code',
 					react: OtpEmail({ otp }),
@@ -205,7 +205,7 @@ export const auth = betterAuth({
 			sendMagicLink: async ({ email, url }) => {
 				logger.info('Magic Link', `Sending magic link to ${email}`);
 				await resend.emails.send({
-					from: process.env.RESEND_FROM!,
+					from: process.env.RESEND_FROM ?? 'no-reply@databuddy.cc',
 					to: email,
 					subject: 'Login to Databuddy',
 					react: MagicLinkEmail({ url }),
@@ -253,7 +253,7 @@ export const auth = betterAuth({
 				);
 				const invitationLink = `https://app.databuddy.cc/invitations/${invitation.id}`;
 				await resend.emails.send({
-					from: process.env.RESEND_FROM!,
+					from: process.env.RESEND_FROM ?? 'no-reply@databuddy.cc',
 					to: email,
 					subject: `You're invited to join ${organization.name}`,
 					react: InvitationEmail({

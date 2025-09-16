@@ -25,9 +25,9 @@
   "scripts": {
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:migrate": "bun src/migrate.ts",
-    "db:deploy": "bun src/migrate.ts",
-    "db:seed": "bun src/seed.ts",
-    "clickhouse:init": "bun src/clickhouse/setup.ts"
+    "db:migrate": "bun run src/migrate.ts",
+    "db:deploy": "bun run src/migrate.ts",
+    "db:seed": "bun run src/seed.ts",
+    "clickhouse:init": "bun run src/clickhouse/setup.ts"
   }
 }

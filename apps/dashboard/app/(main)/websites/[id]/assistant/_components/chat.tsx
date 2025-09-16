@@ -50,12 +50,16 @@ import { Loader } from '@/components/ai-elements/loader';
 
 const models = [
   {
-    name: 'GPT 4o',
-    value: 'openai/gpt-4o',
+    name: 'Chat',
+    value: 'chat-model',
   },
   {
-    name: 'Deepseek R1',
-    value: 'deepseek/deepseek-r1',
+    name: 'Agent',
+    value: 'agent-model',
+  },
+  {
+    name: 'Agent Max',
+    value: 'agent-max-model',
   },
 ];
 

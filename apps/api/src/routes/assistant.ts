@@ -1,9 +1,10 @@
 import { auth, type User, websitesApi } from '@databuddy/auth';
 import type { StreamingUpdate } from '@databuddy/shared';
 import { Elysia } from 'elysia';
-import { handleMessage, type Mode } from '../agent';
+import { handleMessage } from '../agent';
 import { validateWebsite } from '../lib/website-utils';
 import { AssistantRequestSchema, type AssistantRequestType } from '../schemas';
+import { normalizeMode } from '@databuddy/ai/lib/utils';
 
 function createErrorResponse(message: string): StreamingUpdate[] {
 	return [{ type: 'error', content: message }];
@@ -77,25 +78,12 @@ export const assistant = new Elysia({ prefix: '/v1/agent' })
 					);
 				}
 
-				const mode: Mode = (() => {
-					switch (body.model) {
-						case 'agent-max':
-							return 'agent_max';
-						case 'chat':
-							return 'chat';
-						case 'agent':
-							return 'agent';
-						default:
-							return 'chat';
-					}
-				})();
-
-				const updates = await handleMessage(
-					body.messages,
-					mode,
-					website.id,
-					website.domain
-				);
+				const updates = await handleMessage({
+					messages: body.messages,
+					mode: normalizeMode(body.mode),
+					websiteId: website.id,
+					websiteHostname: website.domain
+				});
 				return updates;
 			} catch (error) {
 				const errorMessage =

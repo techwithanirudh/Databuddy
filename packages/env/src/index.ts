@@ -4,6 +4,7 @@
  * Import specific app environments:
  * - import { env } from '@databuddy/env/dashboard'
  * - import { env } from '@databuddy/env/api'
+ * - import { env } from '@databuddy/env/ai'
  * - import { env } from '@databuddy/env/basket'
  * - import { env } from '@databuddy/env/better-admin'
  * - import { env } from '@databuddy/env/database'
@@ -11,6 +12,7 @@
  */
 
 export type { ApiEnv } from './api';
+export type { AiEnv } from './ai';
 export * from './base';
 export type { BasketEnv } from './basket';
 export type { BetterAdminEnv } from './better-admin';

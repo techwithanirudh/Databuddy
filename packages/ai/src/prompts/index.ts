@@ -1,4 +1,4 @@
-import type { RequestHints } from '../../types/agent';
+import type { RequestHints } from '../../../../apps/api/src/types/agent';
 import { corePrompt } from './core';
 import { chatPrompt } from './chat-prompt';
 

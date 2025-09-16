@@ -37,10 +37,30 @@ Thank you for your interest in contributing!
    bun run sdk:build
    ```
 
-6. **Start development:**
-   ```bash
-   bun run dev
-   ```
+6. **Start development servers:**
+
+```bash
+bun run dev
+```
+
+8. **Seed the database with sample data (optional):**
+
+```bash
+bun db:seed <WEBSITE_ID> [DOMAIN] [EVENT_COUNT]
+```
+
+**Examples:**
+
+```bash
+bun db:seed g0zlgMtBaXzIP1EGY2ieG onlybuddies.com 10000
+bun db:seed d7zlgMtBaSzIL1EGR2ieR notmybuddy.cc 5000
+```
+
+**Note:** You can find your website ID in your website overview settings.
+
+> **Tip:**
+> If you want to just develop on the dashboard run:
+> `bun run dev --filter=@databuddy/api --filter=@databuddy/dashboard`
 
 ## Essential Commands
 

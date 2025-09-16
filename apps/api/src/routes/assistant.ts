@@ -1,9 +1,9 @@
 import { auth, type User, websitesApi } from '@databuddy/auth';
 import type { StreamingUpdate } from '@databuddy/shared';
 import { Elysia } from 'elysia';
+import { handleMessage, type Mode } from '../agent';
 import { validateWebsite } from '../lib/website-utils';
 import { AssistantRequestSchema, type AssistantRequestType } from '../schemas';
-import { handleMessage, type Mode } from '../agent';
 
 function createErrorResponse(message: string): StreamingUpdate[] {
 	return [{ type: 'error', content: message }];
@@ -47,14 +47,14 @@ export const assistant = new Elysia({ prefix: '/v1/agent' })
 			try {
 				const websiteValidation = await validateWebsite(body.websiteId);
 				if (!websiteValidation.success) {
-					return createErrorResponse(websiteValidation.error || 'Website not found')
-					
+					return createErrorResponse(
+						websiteValidation.error || 'Website not found'
+					);
 				}
 
 				const { website } = websiteValidation;
 				if (!website) {
-					return createErrorResponse('Website not found')
-					
+					return createErrorResponse('Website not found');
 				}
 
 				// Authorization: allow public websites, org members with permission, or the owner
@@ -73,16 +73,21 @@ export const assistant = new Elysia({ prefix: '/v1/agent' })
 
 				if (!authorized) {
 					return createErrorResponse(
-							'You do not have permission to access this website'
-						)
-					
+						'You do not have permission to access this website'
+					);
 				}
 
-
-				// Normalize external model names to internal Mode
 				const mode: Mode = (() => {
-					const m = body.model ?? 'agent';
-					return m === 'agent-max' ? 'agent_max' : m;
+					switch (body.model) {
+						case 'agent-max':
+							return 'agent_max';
+						case 'chat':
+							return 'chat';
+						case 'agent':
+							return 'agent';
+						default:
+							return 'chat';
+					}
 				})();
 
 				const updates = await handleMessage(

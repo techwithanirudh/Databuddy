@@ -18,8 +18,8 @@ import {
 	organization,
 	twoFactor,
 } from 'better-auth/plugins';
-import { Resend } from 'resend';
 import { ac, admin, member, owner, viewer } from './permissions';
+import { resend } from './lib/resend';
 
 function isProduction() {
 	return process.env.NODE_ENV === 'production';
@@ -37,7 +37,6 @@ export const auth = betterAuth({
 						'User Created',
 						`User ${user.id}, ${user.name}, ${user.email} created`
 					);
-					// const resend = new Resend(process.env.RESEND_API_KEY as string);
 					// await resend.emails.send({
 					//     from: "Databuddy <hello@techwithanirudh.com>",
 					//     to: user.email,
@@ -135,9 +134,8 @@ export const auth = betterAuth({
 			user: any;
 			url: string;
 		}) => {
-			const resend = new Resend(process.env.RESEND_API_KEY as string);
 			await resend.emails.send({
-				from: 'hello@techwithanirudh.com',
+				from: process.env.RESEND_FROM!,
 				to: user.email,
 				subject: 'Reset your password',
 				react: ResetPasswordEmail({ url }),
@@ -161,9 +159,8 @@ export const auth = betterAuth({
 				'Email Verification',
 				`Sending verification email to ${user.email}`
 			);
-			const resend = new Resend(process.env.RESEND_API_KEY as string);
 			await resend.emails.send({
-				from: 'hello@techwithanirudh.com',
+				from: process.env.RESEND_FROM!,
 				to: user.email,
 				subject: 'Verify your email',
 				react: VerificationEmail({ url }),
@@ -196,9 +193,8 @@ export const auth = betterAuth({
 		emailOTP({
 			async sendVerificationOTP({ email, otp, type }) {
 				logger.info('Email OTP', `Sending OTP to ${email} of type ${type}`);
-				const resend = new Resend(process.env.RESEND_API_KEY as string);
 				await resend.emails.send({
-					from: 'hello@techwithanirudh.com',
+					from: process.env.RESEND_FROM!,
 					to: email,
 					subject: 'Your verification code',
 					react: OtpEmail({ otp }),
@@ -208,9 +204,8 @@ export const auth = betterAuth({
 		magicLink({
 			sendMagicLink: async ({ email, url }) => {
 				logger.info('Magic Link', `Sending magic link to ${email}`);
-				const resend = new Resend(process.env.RESEND_API_KEY as string);
 				await resend.emails.send({
-					from: 'hello@techwithanirudh.com',
+					from: process.env.RESEND_FROM!,
 					to: email,
 					subject: 'Login to Databuddy',
 					react: MagicLinkEmail({ url }),
@@ -257,9 +252,8 @@ export const auth = betterAuth({
 					{ inviter: inviter.user.name, organizationId: organization.id }
 				);
 				const invitationLink = `https://app.databuddy.cc/invitations/${invitation.id}`;
-				const resend = new Resend(process.env.RESEND_API_KEY as string);
 				await resend.emails.send({
-					from: 'hello@techwithanirudh.com',
+					from: process.env.RESEND_FROM!,
 					to: email,
 					subject: `You're invited to join ${organization.name}`,
 					react: InvitationEmail({

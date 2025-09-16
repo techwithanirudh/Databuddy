@@ -66,63 +66,7 @@ A comprehensive analytics and data management platform built with Next.js, TypeS
 
 ### Installation
 
-1. Clone the repository:
-
-```bash
-git clone https://github.com/databuddy-analytics/Databuddy.git
-cd databuddy
-```
-
-2. Install dependencies:
-
-```bash
-bun install
-```
-
-3. Set up environment variables:
-
-```bash
-cp .env.example .env
-```
-
-4. Start Docker services (PostgreSQL, Redis, ClickHouse):
-
-```bash
-docker-compose up -d
-```
-
-5. Set up the database:
-
-```bash
-bun db:push
-```
-
-6. Build the SDK:
-
-```bash
-bun sdk:build
-```
-
-7. Start development servers:
-
-```bash
-bun run dev
-```
-
-8. Seed the database with sample data (optional):
-
-```bash
-bun db:seed <WEBSITE_ID> [DOMAIN] [EVENT_COUNT]
-```
-
-**Examples:**
-
-```bash
-bun db:seed g0zlgMtBaXzIP1EGY2ieG onlybuddies.com 10000
-bun db:seed d7zlgMtBaSzIL1EGR2ieR notmybuddy.cc 5000
-```
-
-**Note:** You can find your website ID in your website overview settings.
+Read [Contributing](CONTRIBUTING.md).
 
 ## 💻 Development
 

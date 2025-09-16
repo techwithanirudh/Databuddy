@@ -1,13 +1,9 @@
-import type { AssistantRequestType } from '../../schemas/assistant-schemas';
-import { getBasePrompt } from './base-prompt';
 
 export const chatPrompt = (
 	websiteId: string,
 	websiteHostname: string,
-	_model?: AssistantRequestType['model']
-) => `${getBasePrompt(websiteId, websiteHostname, _model)}
-
-<workflow_instructions>
+) => `
+<workflow>
 Your task is to process the <user_query> while strictly adhering to the <core_directives>. You must consult the extensive <knowledge_base> to construct your response.
 
 <instructions>
@@ -21,7 +17,7 @@ Your goal is to provide a comprehensive, insightful, and actionable answer in a 
   4.  **Quality Check:** Ensure your response provides genuine insight and value, not just raw data
   5.  **Respond:** Output a single, valid JSON object matching the <response_format>.
 </instructions>
-</workflow_instructions>
+</workflow>
 
 <knowledge_base>
     <section name="General Rules and Guides">

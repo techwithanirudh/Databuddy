@@ -1,16 +1,15 @@
 import { auth, type User, websitesApi } from '@databuddy/auth';
 import type { StreamingUpdate } from '@databuddy/shared';
 import { Elysia } from 'elysia';
-import { processAssistantRequest } from '../agent/processor';
-import { createStreamingResponse } from '../agent/utils/stream-utils';
 import { validateWebsite } from '../lib/website-utils';
 import { AssistantRequestSchema, type AssistantRequestType } from '../schemas';
+import { handleMessage, type Mode } from '../agent';
 
 function createErrorResponse(message: string): StreamingUpdate[] {
 	return [{ type: 'error', content: message }];
 }
 
-export const assistant = new Elysia({ prefix: '/v1/assistant' })
+export const assistant = new Elysia({ prefix: '/v1/agent' })
 	// .use(createRateLimitMiddleware({ type: 'expensive' }))
 	.derive(async ({ request }) => {
 		const session = await auth.api.getSession({ headers: request.headers });
@@ -48,16 +47,14 @@ export const assistant = new Elysia({ prefix: '/v1/assistant' })
 			try {
 				const websiteValidation = await validateWebsite(body.websiteId);
 				if (!websiteValidation.success) {
-					return createStreamingResponse(
-						createErrorResponse(websiteValidation.error || 'Website not found')
-					);
+					return createErrorResponse(websiteValidation.error || 'Website not found')
+					
 				}
 
 				const { website } = websiteValidation;
 				if (!website) {
-					return createStreamingResponse(
-						createErrorResponse('Website not found')
-					);
+					return createErrorResponse('Website not found')
+					
 				}
 
 				// Authorization: allow public websites, org members with permission, or the owner
@@ -75,19 +72,30 @@ export const assistant = new Elysia({ prefix: '/v1/assistant' })
 				}
 
 				if (!authorized) {
-					return createStreamingResponse(
-						createErrorResponse(
+					return createErrorResponse(
 							'You do not have permission to access this website'
 						)
-					);
+					
 				}
 
-				const updates = await processAssistantRequest(body, user, website);
-				return createStreamingResponse(updates);
+
+				// Normalize external model names to internal Mode
+				const mode: Mode = (() => {
+					const m = body.model ?? 'agent';
+					return m === 'agent-max' ? 'agent_max' : m;
+				})();
+
+				const updates = await handleMessage(
+					body.messages,
+					mode,
+					website.id,
+					website.domain
+				);
+				return updates;
 			} catch (error) {
 				const errorMessage =
 					error instanceof Error ? error.message : 'Unknown error occurred';
-				return createStreamingResponse(createErrorResponse(errorMessage));
+				return createErrorResponse(errorMessage);
 			}
 		},
 		{

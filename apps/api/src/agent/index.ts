@@ -1,19 +1,37 @@
-export type { ChartHandlerContext } from './handlers/chart-handler';
-export { handleChartResponse } from './handlers/chart-handler';
-export type { MetricHandlerContext } from './handlers/metric-handler';
-export { handleMetricResponse } from './handlers/metric-handler';
-export type { AssistantContext, AssistantRequest } from './processor';
-export { processAssistantRequest } from './processor';
-export {
-	AIPlanSchema,
-	AIResponseJsonSchema,
-	comprehensiveSystemPrompt,
-} from './prompts/agent';
-export { getAICompletion } from './utils/ai-client';
-export { executeQuery } from './utils/query-executor';
-export { validateSQL } from './utils/sql-validator';
-export type { StreamingUpdate } from './utils/stream-utils';
-export {
-	createStreamingResponse,
-	generateThinkingSteps,
-} from './utils/stream-utils';
+import { type ModelMessage, smoothStream, stepCountIs, streamText } from 'ai';
+import { systemPrompt } from './prompts';
+import { tools } from './tools';
+
+import { config, provider } from './providers';
+
+export const modes = ['chat', 'agent', 'agent_max'] as const;
+export type Mode = (typeof modes)[number];
+
+export async function handleMessage(
+	messages: ModelMessage[],
+	mode: Mode,
+	websiteId: string,
+	websiteHostname: string
+) {
+    const system = systemPrompt({
+      selectedChatModel: 'chat-model',
+      requestHints: {
+        websiteId,
+        websiteHostname,
+        timestamp: new Date().toISOString(),
+      },
+    });
+	const modeConfig = config[mode];
+
+	const response = streamText({
+		model: provider.languageModel(`${mode}-model`),
+		system,
+		tools,
+		stopWhen: stepCountIs(modeConfig.stepCount),
+		messages,
+		temperature: modeConfig.temperature,
+		experimental_transform: smoothStream({ chunking: 'word' }),
+	});
+
+	return response.toUIMessageStreamResponse();
+}

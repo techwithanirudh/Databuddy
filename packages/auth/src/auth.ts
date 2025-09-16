@@ -39,7 +39,7 @@ export const auth = betterAuth({
 					);
 					// const resend = new Resend(process.env.RESEND_API_KEY as string);
 					// await resend.emails.send({
-					//     from: "Databuddy <noreply@databuddy.cc>",
+					//     from: "Databuddy <hello@techwithanirudh.com>",
 					//     to: user.email,
 					//     subject: "Welcome to Databuddy",
 					//     react: WelcomeEmail({ username: user.name, url: process.env.BETTER_AUTH_URL as string }),
@@ -137,7 +137,7 @@ export const auth = betterAuth({
 		}) => {
 			const resend = new Resend(process.env.RESEND_API_KEY as string);
 			await resend.emails.send({
-				from: 'noreply@databuddy.cc',
+				from: 'hello@techwithanirudh.com',
 				to: user.email,
 				subject: 'Reset your password',
 				react: ResetPasswordEmail({ url }),
@@ -163,7 +163,7 @@ export const auth = betterAuth({
 			);
 			const resend = new Resend(process.env.RESEND_API_KEY as string);
 			await resend.emails.send({
-				from: 'noreply@databuddy.cc',
+				from: 'hello@techwithanirudh.com',
 				to: user.email,
 				subject: 'Verify your email',
 				react: VerificationEmail({ url }),
@@ -198,7 +198,7 @@ export const auth = betterAuth({
 				logger.info('Email OTP', `Sending OTP to ${email} of type ${type}`);
 				const resend = new Resend(process.env.RESEND_API_KEY as string);
 				await resend.emails.send({
-					from: 'noreply@databuddy.cc',
+					from: 'hello@techwithanirudh.com',
 					to: email,
 					subject: 'Your verification code',
 					react: OtpEmail({ otp }),
@@ -210,7 +210,7 @@ export const auth = betterAuth({
 				logger.info('Magic Link', `Sending magic link to ${email}`);
 				const resend = new Resend(process.env.RESEND_API_KEY as string);
 				await resend.emails.send({
-					from: 'noreply@databuddy.cc',
+					from: 'hello@techwithanirudh.com',
 					to: email,
 					subject: 'Login to Databuddy',
 					react: MagicLinkEmail({ url }),
@@ -259,7 +259,7 @@ export const auth = betterAuth({
 				const invitationLink = `https://app.databuddy.cc/invitations/${invitation.id}`;
 				const resend = new Resend(process.env.RESEND_API_KEY as string);
 				await resend.emails.send({
-					from: 'noreply@databuddy.cc',
+					from: 'hello@techwithanirudh.com',
 					to: email,
 					subject: `You're invited to join ${organization.name}`,
 					react: InvitationEmail({

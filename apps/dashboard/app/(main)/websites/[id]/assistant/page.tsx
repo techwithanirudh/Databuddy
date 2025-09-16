@@ -12,15 +12,12 @@ import {
 	websiteIdAtom,
 } from '@/stores/jotai/assistantAtoms';
 
-const AIAssistantMain = dynamic(
-	() => import('./components/ai-assistant-main'),
-	{
-		loading: () => <AIAssistantLoadingSkeleton />,
-		ssr: false,
-	}
-);
+const AIChat = dynamic(() => import('./_components/chat'), {
+	loading: () => <ChatSkeleton />,
+	ssr: false,
+});
 
-function AIAssistantLoadingSkeleton() {
+function ChatSkeleton() {
 	return (
 		<div className="flex h-full min-h-0 flex-col gap-2">
 			<div className="flex min-h-0 flex-1 gap-2 overflow-hidden">
@@ -56,7 +53,7 @@ function AIAssistantLoadingSkeleton() {
 	);
 }
 
-export default function AssistantPage() {
+export default function ChatPage() {
 	const { id } = useParams();
 	const { data: websiteData, isLoading } = useWebsite(id as string);
 	const [, setWebsiteId] = useAtom(websiteIdAtom);
@@ -67,9 +64,11 @@ export default function AssistantPage() {
 		if (id) {
 			setWebsiteId(id as string);
 		}
+
 		if (websiteData) {
 			setWebsiteData(websiteData);
 		}
+
 		setDateRange({
 			start_date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
 			end_date: new Date().toISOString(),
@@ -78,12 +77,12 @@ export default function AssistantPage() {
 	}, [id, setWebsiteId, websiteData, setWebsiteData, setDateRange]);
 
 	if (isLoading || !websiteData) {
-		return <AIAssistantLoadingSkeleton />;
+		return <ChatSkeleton />;
 	}
 
 	return (
 		<div className="h-full min-h-0">
-			<AIAssistantMain />
+			<AIChat />
 		</div>
 	);
 }

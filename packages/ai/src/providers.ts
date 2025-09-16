@@ -19,7 +19,7 @@ export const config = {
 		stepCount: 10,
 		temperature: 0.2,
 	},
-	agent_max: {
+	'agent-max': {
 		stepCount: 20,
 		temperature: 0.1,
 	},

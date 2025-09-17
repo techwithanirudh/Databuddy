@@ -14,8 +14,8 @@ export const AssistantRequestSchema = t.Object(
 			),
 		}),
 		websiteId: t.Required(t.String()),
-		mode: t.Required(
-			t.Union([t.Literal('chat'), t.Literal('agent'), t.Literal('agent-max')])
+		selectedChatModel: t.Required(
+			t.Union([t.Literal('chat-model'), t.Literal('agent-model'), t.Literal('agent-max-model')])
 		),
 	},
 	{ additionalProperties: false }

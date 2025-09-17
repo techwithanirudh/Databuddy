@@ -3,18 +3,19 @@ import { systemPrompt } from '@databuddy/ai/prompts';
 import { executeSqlQuery } from '@databuddy/ai/tools/execute-sql-query';
 
 import { config, provider } from '@databuddy/ai/providers';
-import type { Mode } from '@databuddy/ai/lib/utils';
-import { convertToUIMessages } from '@databuddy/shared';
 import { getChatById, saveChat, getMessagesByChatId, saveMessages } from './db';
 import type { ChatMessage } from '@databuddy/ai/lib/types';
 import { generateTitleFromUserMessage } from './utils';
 import type { RequestHints } from '../types/agent';
 import type { User } from '@databuddy/auth';
+import type { AssistantRequestType } from '../schemas/assistant-schemas';
+import { convertToUIMessages } from '@databuddy/ai/lib/utils';
+import { generateUUID } from '@databuddy/ai/lib/utils';
 
 interface HandleMessageProps {
   id: string;
   message: ChatMessage;
-  mode: Mode;
+  selectedChatModel: AssistantRequestType['selectedChatModel'];
   requestHints: RequestHints
   user: User;
 }
@@ -22,12 +23,10 @@ interface HandleMessageProps {
 export async function handleMessage({
   id,
   message,
-  mode,
+  selectedChatModel,
   requestHints,
   user
 }: HandleMessageProps) {
-  const selectedChatModel = `${mode}-model`;
-
   const chat = await getChatById({ id });
 
   if (!chat) {
@@ -67,18 +66,18 @@ export async function handleMessage({
     requestHints
   });
 
-  const modeConfig = config[mode];
+  const modeConfig = config[selectedChatModel];
   const response = streamText({
     model: provider.languageModel(selectedChatModel),
     system,
-    activeTools: selectedChatModel === 'chat' ? ['executeSqlQuery'] : [],
+    activeTools: selectedChatModel === 'chat-model' ? ['executeSqlQuery'] : [],
     tools: { 
       executeSqlQuery: executeSqlQuery,
     },
     stopWhen: stepCountIs(modeConfig.stepCount),
     messages: convertToModelMessages(uiMessages),
     temperature: modeConfig.temperature,
-    experimental_transform: smoothStream({ chunking: 'word' }),
+    experimental_transform: smoothStream({ chunking: 'word' })
   });
 
   // https://github.com/vercel/ai-chatbot/blob/main/app/(chat)/api/chat/route.ts
@@ -98,5 +97,6 @@ export async function handleMessage({
     onError: () => {
       return 'Oops, an error occurred!';
     },
+    generateMessageId: generateUUID
   });
 }

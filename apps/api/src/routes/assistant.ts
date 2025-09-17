@@ -81,7 +81,7 @@ export const assistant = new Elysia({ prefix: '/v1/assistant' })
 				const updates = await handleMessage({
 					id: body.id,
 					message: body.message,
-					mode: body.mode,
+					selectedChatModel: body.selectedChatModel,
 					requestHints: {
 						websiteId: website.id,
 						websiteHostname: website.domain,

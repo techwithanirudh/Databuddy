@@ -36,18 +36,16 @@ import { useChat } from '@ai-sdk/react';
 import { Response } from '@/components/ai-elements/response';
 import { GlobeIcon, RefreshCcwIcon, CopyIcon } from 'lucide-react';
 import {
-  Source,
-  Sources,
-  SourcesContent,
-  SourcesTrigger,
-} from '@/components/ai-elements/sources';
-import {
   Reasoning,
   ReasoningContent,
   ReasoningTrigger,
 } from '@/components/ai-elements/reasoning';
 import { Loader } from '@/components/ai-elements/loader';
 import { DefaultChatTransport } from 'ai';
+import { websiteDataAtom } from '@/stores/jotai/assistantAtoms';
+import { useAtom } from 'jotai';
+import { websiteIdAtom } from '@/stores/jotai/assistantAtoms';
+import { generateUUID } from '@databuddy/ai/lib/utils';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -66,13 +64,34 @@ const models = [
   },
 ];
 
-const Chat = () => {
+const Chat = ({
+  id,
+}: {
+  id: string;
+}) => {
   const [input, setInput] = useState('');
   const [model, setModel] = useState<string>(models[0].value);
-  const [webSearch, setWebSearch] = useState(false);
+  const [websiteId] = useAtom(websiteIdAtom);
+  // const [websiteData] = useAtom(websiteDataAtom);
+
   const { messages, sendMessage, status } = useChat({
+    id,
+    generateId: generateUUID,
+    experimental_throttle: 100,
     transport: new DefaultChatTransport({
       api: `${API_BASE_URL}/v1/assistant`,
+      prepareSendMessagesRequest({ messages, id, body }) {
+        return {
+          credentials: 'include',
+          body: {
+            id,
+            message: messages.at(-1),
+            selectedChatModel: model,
+            websiteId,
+            ...body,
+          },
+        };
+      },
     }),
   });
 
@@ -88,13 +107,7 @@ const Chat = () => {
       { 
         text: message.text || 'Sent with attachments',
         files: message.files 
-      },
-      {
-        body: {
-          model: model,
-          webSearch: webSearch,
-        },
-      },
+      }
     );
     setInput('');
   };
@@ -106,26 +119,6 @@ const Chat = () => {
           <ConversationContent>
             {messages.map((message) => (
               <div key={message.id}>
-                {message.role === 'assistant' && message.parts.filter((part) => part.type === 'source-url').length > 0 && (
-                  <Sources>
-                    <SourcesTrigger
-                      count={
-                        message.parts.filter(
-                          (part) => part.type === 'source-url',
-                        ).length
-                      }
-                    />
-                    {message.parts.filter((part) => part.type === 'source-url').map((part, i) => (
-                      <SourcesContent key={`${message.id}-${i}`}>
-                        <Source
-                          key={`${message.id}-${i}`}
-                          href={part.url}
-                          title={part.url}
-                        />
-                      </SourcesContent>
-                    ))}
-                  </Sources>
-                )}
                 {message.parts.map((part, i) => {
                   switch (part.type) {
                     case 'text':
@@ -198,13 +191,6 @@ const Chat = () => {
                   <PromptInputActionAddAttachments />
                 </PromptInputActionMenuContent>
               </PromptInputActionMenu>
-              <PromptInputButton
-                variant={webSearch ? 'default' : 'ghost'}
-                onClick={() => setWebSearch(!webSearch)}
-              >
-                <GlobeIcon size={16} />
-                <span>Search</span>
-              </PromptInputButton>
               <PromptInputModelSelect
                 onValueChange={(value) => {
                   setModel(value);

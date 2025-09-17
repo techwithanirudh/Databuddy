@@ -11,6 +11,7 @@ import {
 	websiteDataAtom,
 	websiteIdAtom,
 } from '@/stores/jotai/assistantAtoms';
+import { generateUUID } from '@databuddy/ai/lib/utils';
 
 const AIChat = dynamic(() => import('./_components/chat'), {
 	loading: () => <ChatSkeleton />,
@@ -54,15 +55,17 @@ function ChatSkeleton() {
 }
 
 export default function ChatPage() {
-	const { id } = useParams();
-	const { data: websiteData, isLoading } = useWebsite(id as string);
+	const { id: siteId } = useParams();
+  	const chatId = generateUUID();
+
+	const { data: websiteData, isLoading } = useWebsite(siteId);
 	const [, setWebsiteId] = useAtom(websiteIdAtom);
 	const [, setWebsiteData] = useAtom(websiteDataAtom);
 	const [, setDateRange] = useAtom(dateRangeAtom);
 
 	useEffect(() => {
-		if (id) {
-			setWebsiteId(id as string);
+		if (siteId) {
+			setWebsiteId(siteId as string);
 		}
 
 		if (websiteData) {
@@ -74,7 +77,7 @@ export default function ChatPage() {
 			end_date: new Date().toISOString(),
 			granularity: 'daily',
 		});
-	}, [id, setWebsiteId, websiteData, setWebsiteData, setDateRange]);
+	}, [siteId, setWebsiteId, websiteData, setWebsiteData, setDateRange]);
 
 	if (isLoading || !websiteData) {
 		return <ChatSkeleton />;
@@ -82,7 +85,7 @@ export default function ChatPage() {
 
 	return (
 		<div className="h-full min-h-0">
-			<AIChat />
+			<AIChat id={chatId} />
 		</div>
 	);
 }

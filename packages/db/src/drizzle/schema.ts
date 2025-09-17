@@ -771,8 +771,7 @@ export const chats = pgTable('assistant_chats', {
 	title: text('title').notNull(),
 	userId: text('userId')
 		.notNull()
-		.references(() => user.id),
-	lastContext: jsonb('lastContext').$type<Record<string, never> | null>(),
+		.references(() => user.id)
 });
 
 export type Chat = InferSelectModel<typeof chats>;

@@ -11,15 +11,15 @@ const openai = createOpenAI({
 });
 
 export const config = {
-	chat: {
+	'chat-model': {
 		stepCount: 3,
 		temperature: 0.1,
 	},
-	agent: {
+	'agent-model': {
 		stepCount: 10,
 		temperature: 0.2,
 	},
-	'agent-max': {
+	'agent-max-model': {
 		stepCount: 20,
 		temperature: 0.1,
 	},
@@ -34,6 +34,7 @@ export const provider = customProvider({
     // 'agent-model': openrouter.chat('openai/gpt-5'),
     'agent-max-model': openai.responses('gpt-5'),
     // 'agent-max-model': openrouter.chat('anthropic/claude-3-5-sonnet-20241022'),
+    'title-model': openai.responses('gpt-4o-mini'),
   },
   imageModels: {
     // 'small-model': openai.imageModel('dall-e-2'),

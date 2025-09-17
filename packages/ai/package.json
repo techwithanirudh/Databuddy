@@ -11,9 +11,12 @@
     "./lib/utils": "./src/lib/utils.ts",
     "./lib/types": "./src/lib/types.ts",
     "./prompts": "./src/prompts/index.ts",
-    "./tools/*": "./src/tools/*.ts"
+    "./tools": "./src/tools/index.ts",
+    "./artifacts": "./src/artifacts/index.ts",
+    "./context": "./src/context.ts"
   },
   "dependencies": {
+    "@ai-sdk-tools/artifacts": "^0.3.0",
     "@ai-sdk/openai": "^2.0.30",
     "@logtail/edge": "^0.5.5",
     "@openrouter/ai-sdk-provider": "^1.2.0",

@@ -1,11 +1,12 @@
 import {
 	convertToModelMessages,
+	createUIMessageStream,
+	createUIMessageStreamResponse,
 	smoothStream,
 	stepCountIs,
 	streamText,
 } from 'ai';
 import { systemPrompt } from '@databuddy/ai/prompts';
-import { executeSqlQuery } from '@databuddy/ai/tools/execute-sql-query';
 
 import { config, provider } from '@databuddy/ai/providers';
 import { getChatById, saveChat, getMessagesByChatId, saveMessages } from './db';
@@ -14,8 +15,9 @@ import { generateTitleFromUserMessage } from './utils';
 import type { RequestHints } from '../types/agent';
 import type { User } from '@databuddy/auth';
 import type { AssistantRequestType } from '../schemas/assistant-schemas';
-import { convertToUIMessages } from '@databuddy/ai/lib/utils';
-import { generateUUID } from '@databuddy/ai/lib/utils';
+import { convertToUIMessages, generateUUID } from '@databuddy/ai/lib/utils';
+import { setContext } from '@databuddy/ai/context';
+import { tools } from '@databuddy/ai/tools';
 
 interface HandleMessageProps {
 	id: string;
@@ -72,21 +74,29 @@ export async function handleMessage({
 	});
 
 	const modeConfig = config[selectedChatModel];
-	const response = streamText({
-		model: provider.languageModel(selectedChatModel),
-		system,
-		activeTools: selectedChatModel === 'chat-model' ? ['executeSqlQuery'] : [],
-		tools: {
-			executeSqlQuery: executeSqlQuery,
-		},
-		stopWhen: stepCountIs(modeConfig.stepCount),
-		messages: convertToModelMessages(uiMessages),
-		temperature: modeConfig.temperature,
-		experimental_transform: smoothStream({ chunking: 'word' }),
-	});
 
-	// https://github.com/vercel/ai-chatbot/blob/main/app/(chat)/api/chat/route.ts
-	return response.toUIMessageStreamResponse({
+
+	const stream = createUIMessageStream({
+		execute: ({ writer }) => {
+			setContext({
+				writer,
+				userId: user.id,
+				fullName: user.name,
+			});
+
+			const result = streamText({
+				model: provider.languageModel(selectedChatModel),
+				system,
+				// activeTools: selectedChatModel === 'chat-model' ? ['analyzeBurnRate', 'e'] : [],
+				tools: tools,
+				stopWhen: stepCountIs(modeConfig.stepCount),
+				messages: convertToModelMessages(uiMessages),
+				temperature: modeConfig.temperature,
+				experimental_transform: smoothStream({ chunking: 'word' }),
+			});
+
+			writer.merge(result.toUIMessageStream());
+		},
 		onFinish: async ({ messages }) => {
 			await saveMessages({
 				messages: messages.map((message) => ({
@@ -102,6 +112,9 @@ export async function handleMessage({
 		onError: () => {
 			return 'Oops, an error occurred!';
 		},
-		generateMessageId: generateUUID,
+		generateId: generateUUID,
 	});
+
+	return createUIMessageStreamResponse({ stream });
+
 }

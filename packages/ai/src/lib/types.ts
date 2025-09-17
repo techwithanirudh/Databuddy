@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { executeSqlQuery } from '../tools/execute-sql-query';
+import type { executeSqlQueryTool } from '../tools';
 import type { InferUITool, UIMessage } from 'ai';
 
 export type DataPart = { type: 'append-message'; message: string };
@@ -10,10 +10,10 @@ export const messageMetadataSchema = z.object({
 
 export type MessageMetadata = z.infer<typeof messageMetadataSchema>;
 
-type executeSqlQueryTool = InferUITool<typeof executeSqlQuery>;
+type executeSqlQuery = InferUITool<typeof executeSqlQueryTool>;
 
 export type ChatTools = {
-  executeSqlQuery: executeSqlQueryTool;
+  executeSqlQuery: executeSqlQuery;
 };
 
 export type ChatMessage = UIMessage<

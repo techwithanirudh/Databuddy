@@ -39,7 +39,7 @@ function validateSQL(sql: string): boolean {
 	return trimmed.startsWith('SELECT') || trimmed.startsWith('WITH');
 }
 
-export const executeSqlQuery = tool({
+export const executeSqlQueryTool = tool({
 	description:
 		'Executes a validated, read-only ClickHouse SQL query against analytics data. Only SELECT and WITH statements are allowed for security.',
 	inputSchema: z.object({

@@ -46,7 +46,7 @@ export const assistant = new Elysia({ prefix: '/v1/assistant' })
 		}) => {
 			try {
 				const websiteValidation = await validateWebsite(body.websiteId);
-				
+
 				if (!websiteValidation.success) {
 					return createErrorResponse(
 						websiteValidation.error || 'Website not found'
@@ -87,7 +87,7 @@ export const assistant = new Elysia({ prefix: '/v1/assistant' })
 						websiteHostname: website.domain,
 						timestamp: new Date().toISOString(),
 					},
-					user
+					user,
 				});
 				return updates;
 			} catch (error) {

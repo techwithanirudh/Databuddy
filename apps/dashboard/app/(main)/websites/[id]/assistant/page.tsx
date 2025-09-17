@@ -56,7 +56,7 @@ function ChatSkeleton() {
 
 export default function ChatPage() {
 	const { id: siteId } = useParams();
-  	const chatId = generateUUID();
+	const chatId = generateUUID();
 
 	const { data: websiteData, isLoading } = useWebsite(siteId);
 	const [, setWebsiteId] = useAtom(websiteIdAtom);

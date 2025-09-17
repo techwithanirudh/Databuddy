@@ -20,34 +20,35 @@ const AIChat = dynamic(() => import('./_components/chat'), {
 
 function ChatSkeleton() {
 	return (
-		<div className="flex h-full min-h-0 flex-col gap-2">
-			<div className="flex min-h-0 flex-1 gap-2 overflow-hidden">
-				<div className="flex flex-[2_2_0%] flex-col overflow-hidden rounded border bg-background">
-					<div className="flex-shrink-0 border-b p-2">
-						<Skeleton className="mb-1 h-4 w-32" />
-						<Skeleton className="h-3 w-48" />
-					</div>
-					<div className="flex-1 space-y-2 overflow-y-auto p-2">
-						<div className="flex gap-2">
-							<Skeleton className="h-8 w-8 flex-shrink-0 rounded-full" />
-							<Skeleton className="h-12 w-3/4 rounded" />
-						</div>
-						<div className="ml-auto flex flex-row-reverse gap-2">
-							<Skeleton className="h-8 w-8 flex-shrink-0 rounded-full" />
-							<Skeleton className="h-8 w-1/2 rounded" />
-						</div>
-					</div>
-					<div className="flex-shrink-0 border-t p-2">
-						<Skeleton className="h-8 w-full rounded" />
+		<div className="flex h-full flex-col overflow-hidden rounded border bg-background w-full">
+			{/* Header Skeleton */}
+			<div className="flex flex-shrink-0 items-center justify-between border-b p-4">
+				<div className="flex items-center gap-3">
+					<Skeleton className="h-8 w-8 rounded" />
+					<div>
+						<Skeleton className="mb-2 h-4 w-24" />
+						<Skeleton className="h-3 w-32" />
 					</div>
 				</div>
-				<div className="flex flex-[3_3_0%] flex-col overflow-hidden rounded border bg-background">
-					<div className="flex-shrink-0 border-b p-2">
-						<Skeleton className="mb-1 h-4 w-32" />
-					</div>
-					<div className="flex-1 p-2">
-						<Skeleton className="h-full w-full rounded" />
-					</div>
+				<Skeleton className="h-8 w-8 rounded" />
+			</div>
+			{/* Messages Area Skeleton */}
+			<div className="flex-1 space-y-4 overflow-y-auto p-4">
+				<div className="flex gap-3">
+					<Skeleton className="h-12 w-3/4 rounded" />
+				</div>
+				<div className="ml-auto flex flex-row-reverse gap-3">
+					<Skeleton className="h-10 w-1/2 rounded" />
+				</div>
+				<div className="flex gap-3">
+					<Skeleton className="h-16 w-4/5 rounded" />
+				</div>
+			</div>
+			{/* Input Area Skeleton */}
+			<div className="flex-shrink-0 border-t p-4">
+				<div className="flex gap-3">
+					<Skeleton className="h-10 flex-1 rounded" />
+					<Skeleton className="h-10 w-10 rounded" />
 				</div>
 			</div>
 		</div>

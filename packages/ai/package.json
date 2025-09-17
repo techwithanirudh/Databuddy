@@ -9,8 +9,9 @@
     ".": "./src/index.ts",
     "./providers": "./src/providers.ts",
     "./lib/utils": "./src/lib/utils.ts",
+    "./lib/types": "./src/lib/types.ts",
     "./prompts": "./src/prompts/index.ts",
-    "./tools": "./src/tools/index.ts"
+    "./tools/*": "./src/tools/*.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.30",

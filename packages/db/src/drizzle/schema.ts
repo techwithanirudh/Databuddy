@@ -1,16 +1,20 @@
-import { isNotNull, isNull } from 'drizzle-orm';
+import { InferSelectModel, isNotNull, isNull } from 'drizzle-orm';
 import {
 	boolean,
 	foreignKey,
 	index,
 	integer,
+	json,
 	jsonb,
+	primaryKey,
 	pgEnum,
 	pgTable,
 	text,
 	timestamp,
 	unique,
 	uniqueIndex,
+	uuid,
+	varchar,
 } from 'drizzle-orm/pg-core';
 
 export const funnelGoalType = pgEnum('FunnelGoalType', [
@@ -761,78 +765,50 @@ export const abGoals = pgTable(
 	]
 );
 
-export const assistantConversations = pgTable(
-	'assistant_conversations',
+export const chats = pgTable('assistant_chats', {
+	id: text('id').primaryKey().notNull(),
+	createdAt: timestamp('createdAt').notNull(),
+	title: text('title').notNull(),
+	userId: text('userId')
+		.notNull()
+		.references(() => user.id),
+	lastContext: jsonb('lastContext').$type<Record<string, never> | null>(),
+});
+
+export type Chat = InferSelectModel<typeof chats>;
+
+export const messages = pgTable('assistant_messages', {
+	id: text('id').primaryKey().notNull(),
+	chatId: text('chatId')
+		.notNull()
+		.references(() => chats.id),
+	role: varchar('role').notNull(),
+	parts: json('parts').notNull(),
+	attachments: json('attachments').notNull(),
+	createdAt: timestamp('createdAt').notNull(),
+});
+
+export type DBMessage = InferSelectModel<typeof messages>;
+
+export const votes = pgTable(
+	'assistant_votes',
 	{
-		id: text().primaryKey().notNull(),
-		userId: text('user_id'),
-		websiteId: text('website_id').notNull(),
-		title: text(),
-		createdAt: timestamp('created_at').defaultNow().notNull(),
-		updatedAt: timestamp('updated_at').defaultNow().notNull(),
+		chatId: text('chatId')
+			.notNull()
+			.references(() => chats.id),
+		messageId: text('messageId')
+			.notNull()
+			.references(() => messages.id),
+		isUpvoted: boolean('isUpvoted').notNull(),
 	},
-	(table) => [
-		index('assistant_conversations_website_id_idx').using(
-			'btree',
-			table.websiteId.asc().nullsLast().op('text_ops')
-		),
-		foreignKey({
-			columns: [table.userId],
-			foreignColumns: [user.id],
-			name: 'assistant_conversations_user_id_fkey',
-		}).onDelete('set null'),
-		foreignKey({
-			columns: [table.websiteId],
-			foreignColumns: [websites.id],
-			name: 'assistant_conversations_website_id_fkey',
-		}).onDelete('cascade'),
-	]
+	(table) => {
+		return {
+			pk: primaryKey({ columns: [table.chatId, table.messageId] }),
+		};
+	}
 );
 
-export const assistantMessages = pgTable(
-	'assistant_messages',
-	{
-		id: text().primaryKey().notNull(),
-		conversationId: text('conversation_id').notNull(),
-		role: text('role').notNull(),
-		content: text('content'),
-		modelType: text('model_type').notNull(),
-		sql: text('sql'),
-		chartType: text('chart_type'),
-		responseType: text('response_type'),
-		finalResult: jsonb('final_result'),
-		textResponse: text('text_response'),
-		thinkingSteps: text('thinking_steps').array(),
-		hasError: boolean('has_error').default(false).notNull(),
-		errorMessage: text('error_message'),
-		upvotes: integer('upvotes').default(0).notNull(),
-		downvotes: integer('downvotes').default(0).notNull(),
-		feedbackComments: jsonb('feedback_comments'),
-		aiResponseTime: integer('ai_response_time'),
-		totalProcessingTime: integer('total_processing_time'),
-		promptTokens: integer('prompt_tokens'),
-		completionTokens: integer('completion_tokens'),
-		totalTokens: integer('total_tokens'),
-		debugLogs: text('debug_logs').array(),
-		metadata: jsonb('metadata'),
-		createdAt: timestamp('created_at').defaultNow().notNull(),
-	},
-	(table) => [
-		index('assistant_messages_conversation_id_idx').using(
-			'btree',
-			table.conversationId.asc().nullsLast().op('text_ops')
-		),
-		index('assistant_messages_createdAt_idx').using(
-			'btree',
-			table.createdAt.asc().nullsLast()
-		),
-		foreignKey({
-			columns: [table.conversationId],
-			foreignColumns: [assistantConversations.id],
-			name: 'assistant_messages_conversation_id_fkey',
-		}).onDelete('cascade'),
-	]
-);
+export type Vote = InferSelectModel<typeof votes>;
 
 export const dbPermissionLevel = pgEnum('db_permission_level', [
 	'readonly',

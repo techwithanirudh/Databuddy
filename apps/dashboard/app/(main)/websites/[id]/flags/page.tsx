@@ -1,5 +1,6 @@
 'use client';
 
+import { useFlags } from '@databuddy/sdk/react';
 import { FlagIcon } from '@phosphor-icons/react';
 import { useAtom } from 'jotai';
 import { useParams } from 'next/navigation';
@@ -12,8 +13,6 @@ import { WebsitePageHeader } from '../_components/website-page-header';
 import { FlagSheet } from './_components/flag-sheet';
 import { FlagsList } from './_components/flags-list';
 import type { Flag } from './_components/types';
-
-type FlagStatus = 'active' | 'inactive' | 'archived';
 
 const FlagsListSkeleton = () => (
 	<div className="space-y-3">

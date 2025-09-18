@@ -15,36 +15,43 @@ export interface FlagsProviderProps extends FlagsConfig {
 }
 
 export function FlagsProvider({ children, ...config }: FlagsProviderProps) {
-	console.log('[Databuddy Flags] Provider rendering with config:', {
-		clientId: config.clientId,
-		debug: config.debug,
-		isPending: config.isPending,
-		hasUser: !!config.user,
-	});
-	useEffect(() => {
-		const newConfig = {
+	const debug = config.debug ?? false;
+
+	if (debug) {
+		console.log('[Databuddy Flags] Provider rendering with config:', {
 			clientId: config.clientId,
-			apiUrl: config.apiUrl,
-			user: config.user,
-			disabled: config.disabled,
-			debug: config.debug,
-			skipStorage: config.skipStorage,
+			debug,
 			isPending: config.isPending,
-			autoFetch: config.autoFetch,
+			hasUser: !!config.user,
+		});
+	}
+
+	useEffect(() => {
+		const configWithDefaults = {
+			clientId: config.clientId,
+			apiUrl: config.apiUrl ?? 'https://api.databuddy.cc',
+			user: config.user,
+			disabled: config.disabled ?? false,
+			debug,
+			skipStorage: config.skipStorage ?? false,
+			isPending: config.isPending,
+			autoFetch: config.autoFetch !== false,
 		};
 
-		flagsStore.set(configAtom, newConfig);
+		flagsStore.set(configAtom, configWithDefaults);
 
-		console.log('[Databuddy Flags] Config set on store', {
-			clientId: config.clientId,
-			apiUrl: config.apiUrl,
-			user: config.user,
-			isPending: config.isPending,
-			skipStorage: config.skipStorage,
-		});
+		if (debug) {
+			console.log('[Databuddy Flags] Config set on store', {
+				clientId: config.clientId,
+				apiUrl: configWithDefaults.apiUrl,
+				user: config.user,
+				isPending: config.isPending,
+				skipStorage: config.skipStorage ?? false,
+			});
+		}
 
-		if (!config.skipStorage) {
-			loadCachedFlagsImmediate(newConfig);
+		if (!(config.skipStorage ?? false)) {
+			loadCachedFlagsImmediate(configWithDefaults);
 			flagStorage.cleanupExpired().catch(() => {});
 		}
 	}, [
@@ -59,8 +66,8 @@ export function FlagsProvider({ children, ...config }: FlagsProviderProps) {
 		config.autoFetch,
 	]);
 
-	const loadCachedFlagsImmediate = (configToUse: FlagsConfig) => {
-		if (configToUse.skipStorage) {
+	const loadCachedFlagsImmediate = (config: FlagsConfig) => {
+		if (config.skipStorage) {
 			return;
 		}
 
@@ -82,7 +89,7 @@ export function FlagsProvider({ children, ...config }: FlagsProviderProps) {
 
 			if (Object.keys(cachedFlags).length > 0) {
 				flagsStore.set(memoryFlagsAtom, cachedFlags);
-				if (configToUse.debug) {
+				if (config.debug) {
 					console.log(
 						'[Databuddy Flags] Loaded cached flags immediately:',
 						Object.keys(cachedFlags)
@@ -90,7 +97,7 @@ export function FlagsProvider({ children, ...config }: FlagsProviderProps) {
 				}
 			}
 		} catch (err) {
-			if (configToUse.debug) {
+			if (config.debug) {
 				console.warn(
 					'[Databuddy Flags] Error loading cached flags immediately:',
 					err
@@ -106,7 +113,7 @@ export function FlagsProvider({ children, ...config }: FlagsProviderProps) {
 						...prev,
 						...(cachedFlags as Record<string, FlagResult>),
 					}));
-					if (configToUse.debug) {
+					if (config.debug) {
 						console.log(
 							'[Databuddy Flags] Loaded cached flags from IndexedDB:',
 							Object.keys(cachedFlags)
@@ -115,7 +122,7 @@ export function FlagsProvider({ children, ...config }: FlagsProviderProps) {
 				}
 			})
 			.catch((err) => {
-				if (configToUse.debug) {
+				if (config.debug) {
 					console.warn('[Databuddy Flags] Error loading from IndexedDB:', err);
 				}
 			});
@@ -133,15 +140,17 @@ export function useFlags() {
 		store: flagsStore,
 	});
 
-	console.log('[Databuddy Flags] useFlags called with config:', {
-		hasConfig: !!config,
-		clientId: config?.clientId,
-		isPending: config?.isPending,
-		debug: config?.debug,
-		skipStorage: config?.skipStorage,
-		memoryFlagsCount: Object.keys(memoryFlags).length,
-		memoryFlags: Object.keys(memoryFlags),
-	});
+	if (config?.debug) {
+		console.log('[Databuddy Flags] useFlags called with config:', {
+			hasConfig: !!config,
+			clientId: config?.clientId,
+			isPending: config?.isPending,
+			debug: config?.debug,
+			skipStorage: config?.skipStorage,
+			memoryFlagsCount: Object.keys(memoryFlags).length,
+			memoryFlags: Object.keys(memoryFlags),
+		});
+	}
 
 	const fetchAllFlags = async (): Promise<void> => {
 		if (!config) {
@@ -171,11 +180,7 @@ export function useFlags() {
 		const url = `${config.apiUrl}/public/v1/flags/bulk?${params.toString()}`;
 
 		try {
-			const response = await fetch(url, {
-				method: 'GET',
-				headers: { Accept: 'application/json' },
-			});
-
+			const response = await fetch(url);
 			if (!response.ok) {
 				throw new Error(`HTTP ${response.status}`);
 			}
@@ -191,12 +196,9 @@ export function useFlags() {
 
 				if (!config.skipStorage) {
 					try {
-						// Use setAll to properly sync cache (removes old flags)
 						await flagStorage.setAll(result.flags);
 						if (config.debug) {
-							console.log(
-								'[Databuddy Flags] Bulk flags synced to cache, removed old flags'
-							);
+							console.log('[Databuddy Flags] Bulk flags synced to cache');
 						}
 					} catch (err) {
 						if (config.debug) {
@@ -241,22 +243,11 @@ export function useFlags() {
 		const url = `${config.apiUrl}/public/v1/flags/evaluate?${params.toString()}`;
 
 		if (config.debug) {
-			console.log(`[Databuddy Flags] Fetching from server: ${key}`, { url });
-			console.log(`[Databuddy Flags] Request details for ${key}:`, {
-				hasConfig: !!config,
-				hasUser: !!config.user,
-				userId: config.user?.userId || 'MISSING',
-				email: config.user?.email || 'MISSING',
-				clientId: config.clientId || 'MISSING',
-			});
+			console.log(`[Databuddy Flags] Fetching: ${key}`);
 		}
 
 		try {
-			const response = await fetch(url, {
-				method: 'GET',
-				headers: { Accept: 'application/json' },
-			});
-
+			const response = await fetch(url);
 			if (!response.ok) {
 				throw new Error(`HTTP ${response.status}`);
 			}
@@ -264,22 +255,20 @@ export function useFlags() {
 			const result: FlagResult = await response.json();
 
 			if (config.debug) {
-				console.log(`[Databuddy Flags] Server response for: ${key}`, result);
+				console.log(`[Databuddy Flags] Response for ${key}:`, result);
 			}
 
-			// Store in memory
 			setMemoryFlags((prev) => ({ ...prev, [key]: result }));
 
-			// Store in persistent storage (if not skipped)
 			if (!config.skipStorage) {
 				try {
 					await flagStorage.set(key, result);
 					if (config.debug) {
-						console.log(`[Databuddy Flags] Stored in cache: ${key}`);
+						console.log(`[Databuddy Flags] Cached: ${key}`);
 					}
 				} catch (err) {
 					if (config.debug) {
-						console.warn(`[Databuddy Flags] Storage save error: ${key}`, err);
+						console.warn(`[Databuddy Flags] Cache error: ${key}`, err);
 					}
 				}
 			}
@@ -287,7 +276,7 @@ export function useFlags() {
 			return result;
 		} catch (err) {
 			if (config.debug) {
-				console.error(`[Databuddy Flags] Fetch error for: ${key}`, err);
+				console.error(`[Databuddy Flags] Fetch error: ${key}`, err);
 			}
 
 			const fallback = {
@@ -299,7 +288,6 @@ export function useFlags() {
 			setMemoryFlags((prev) => ({ ...prev, [key]: fallback }));
 			return fallback;
 		} finally {
-			// Remove from pending flags
 			setPendingFlags((prev: Set<string>) => {
 				const newSet = new Set(prev);
 				newSet.delete(key);
@@ -310,14 +298,12 @@ export function useFlags() {
 
 	const getFlag = async (key: string): Promise<FlagResult> => {
 		if (config?.debug) {
-			console.log(`[Databuddy Flags] Getting flag: ${key}`);
+			console.log(`[Databuddy Flags] Getting: ${key}`);
 		}
 
 		if (config?.isPending) {
 			if (config?.debug) {
-				console.log(
-					`[Databuddy Flags] Session pending, returning default for: ${key}`
-				);
+				console.log(`[Databuddy Flags] Session pending for: ${key}`);
 			}
 			return {
 				enabled: false,
@@ -329,19 +315,14 @@ export function useFlags() {
 
 		if (memoryFlags[key]) {
 			if (config?.debug) {
-				console.log(
-					`[Databuddy Flags] Found in memory: ${key}`,
-					memoryFlags[key]
-				);
+				console.log(`[Databuddy Flags] Memory: ${key}`);
 			}
 			return memoryFlags[key];
 		}
 
 		if (pendingFlags.has(key)) {
 			if (config?.debug) {
-				console.log(
-					`[Databuddy Flags] Already fetching: ${key}, returning default`
-				);
+				console.log(`[Databuddy Flags] Pending: ${key}`);
 			}
 			return {
 				enabled: false,
@@ -356,14 +337,14 @@ export function useFlags() {
 				const cached = await flagStorage.get(key);
 				if (cached) {
 					if (config?.debug) {
-						console.log(`[Databuddy Flags] Found in storage: ${key}`, cached);
+						console.log(`[Databuddy Flags] Cache: ${key}`);
 					}
 					setMemoryFlags((prev) => ({ ...prev, [key]: cached }));
 					return cached;
 				}
 			} catch (err) {
 				if (config?.debug) {
-					console.warn(`[Databuddy Flags] Storage error for: ${key}`, err);
+					console.warn(`[Databuddy Flags] Storage error: ${key}`, err);
 				}
 			}
 		}
@@ -389,7 +370,7 @@ export function useFlags() {
 
 	const refresh = async (forceClear = false): Promise<void> => {
 		if (config?.debug) {
-			console.log('[Databuddy Flags] Refreshing all flags', { forceClear });
+			console.log('[Databuddy Flags] Refreshing', { forceClear });
 		}
 
 		if (forceClear) {
@@ -421,7 +402,7 @@ export function useFlags() {
 	useEffect(() => {
 		if (config && !config.isPending && config.autoFetch !== false) {
 			if (config.debug) {
-				console.log('[Databuddy Flags] Auto-fetching flags in background');
+				console.log('[Databuddy Flags] Auto-fetching');
 			}
 			fetchAllFlags();
 		}

@@ -84,21 +84,14 @@ function FlagsProviderWrapper({ children }: { children: React.ReactNode }) {
 	const { data: session, isPending, error } = authClient.useSession();
 	const isLocalhost = process.env.NODE_ENV === 'development';
 
-	if (isLocalhost && !isPending && session) {
-		console.log('[Dashboard] Session loaded for flags:', {
-			userId: session.user?.id,
-			email: session.user?.email,
-		});
-	}
-
 	return (
 		<FlagsProvider
-			apiUrl={
-				isLocalhost ? 'http://localhost:3001' : 'https://api.databuddy.cc'
-			}
+			// apiUrl={
+			// 	isLocalhost ? 'http://localhost:3001' : 'https://api.databuddy.cc'
+			// }
 			clientId={
 				isLocalhost
-					? '5ced32e5-0219-4e75-a18a-ad9826f85698'
+					? 'OXmNQsViBT-FOS_wZCTHc'
 					: '3ed1fce1-5a56-4cb6-a977-66864f6d18e3'
 			}
 			isPending={isPending}

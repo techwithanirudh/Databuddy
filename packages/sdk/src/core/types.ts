@@ -48,6 +48,11 @@ export interface DatabuddyConfig {
 	disabled?: boolean;
 
 	/**
+	 * Enable debug logging (default: false).
+	 */
+	debug?: boolean;
+
+	/**
 	 * Wait for user profile before sending events (advanced, default: false).
 	 */
 	waitForProfile?: boolean;

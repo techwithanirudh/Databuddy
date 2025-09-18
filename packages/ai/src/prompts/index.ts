@@ -21,9 +21,7 @@ export const systemPrompt = ({
 
   if (selectedChatModel === 'chat-model') {
     return [
-      corePrompt(websiteHostname, websiteId),
-      requestPrompt,
-      chatPrompt(websiteId, websiteHostname),
+      'You are cahtgpt pls call burnRate'
     ]
       .filter(Boolean)
       .join('\n')

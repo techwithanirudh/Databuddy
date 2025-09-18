@@ -1,14 +1,7 @@
 'use client';
 
-import {
-  Conversation,
-  ConversationContent,
-  ConversationScrollButton,
-} from '@/components/ai-elements/conversation';
-
 import { useState } from 'react';
 import { useChat } from "@ai-sdk-tools/store";
-import { Loader } from '@/components/ai-elements/loader';
 import { DefaultChatTransport } from 'ai';
 import { useAtom } from 'jotai';
 import { websiteIdAtom } from '@/stores/jotai/assistantAtoms';
@@ -22,9 +15,9 @@ import { useArtifact } from "@ai-sdk-tools/artifacts/client";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { BurnRateArtifact } from "@databuddy/ai/artifacts";
-import { ChatMessage } from './chat-message';
-import { LoadingMessage } from './loading-message';
-import { Examples } from './examples';
+import { Greeting } from './greeting';
+import { Messages } from './messages';
+import { trpc } from '@/lib/trpc';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -50,7 +43,13 @@ const Chat = ({ id }: { id: string }) => {
   // const [websiteData] = useAtom(websiteDataAtom);
   const [hasArtifacts, setHasArtifacts] = useState(false);
 
-  const { messages, sendMessage, status } = useChat({
+  // Fetch votes for the current chat
+  const { data: votes = [] } = trpc.assistant.getVotes.useQuery(
+    { chatId: id },
+    { enabled: !!id }
+  );
+
+  const { messages, sendMessage, setMessages, regenerate, status } = useChat({
     id,
     generateId: generateUUID,
     experimental_throttle: 100,
@@ -136,21 +135,19 @@ const Chat = ({ id }: { id: string }) => {
   return (
     <div className="flex size-full items-center justify-center divide-x divide-border gap-2">
       <div className="p-6 relative size-full border border-border rounded-lg flex flex-col h-full">
-        {messages.length === 0 && <Examples sendMessage={sendMessage} isLoading={status === 'submitted'} isRateLimited={false} />}
-        {messages.length > 0 && ( <Conversation className="h-full">
-          <ConversationContent>
-            {messages.map((m, idx) => (
-              <ChatMessage
-                key={m.id}
-                message={m as any}
-                isLastMessage={idx === messages.length - 1}
-                isStreaming={status === 'streaming'}
-              />
-            ))}
-            {status === 'submitted' && <LoadingMessage />}
-            </ConversationContent>
-            <ConversationScrollButton />
-          </Conversation>
+        {messages.length === 0 && <Greeting />}
+        {/* {messages.length === 0 && <Examples sendMessage={sendMessage} isLoading={status === 'submitted'} isRateLimited={false} />} */}
+        {messages.length > 0 && (
+          <Messages
+            chatId={id}
+            status={status}
+            votes={votes}
+            messages={messages as any}
+            setMessages={setMessages as any}
+            regenerate={regenerate}
+            isReadonly={false}
+            selectedModelId={model}
+          />
         )}
 
         <MultimodalInput

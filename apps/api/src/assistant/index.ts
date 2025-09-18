@@ -9,7 +9,7 @@ import {
 import { systemPrompt } from '@databuddy/ai/prompts';
 
 import { config, provider } from '@databuddy/ai/providers';
-import { getChatById, saveChat, getMessagesByChatId, saveMessages } from './db';
+import { getChatById, getChatsbyWebsiteId, deleteChatById, saveChat, getMessagesByChatId, saveMessages } from '@databuddy/ai/lib/queries';
 import type { ChatMessage } from '@databuddy/ai/lib/types';
 import { generateTitleFromUserMessage } from './utils';
 import type { RequestHints } from '../types/agent';
@@ -44,6 +44,7 @@ export async function handleMessage({
 		await saveChat({
 			id,
 			userId: user.id,
+			websiteId: requestHints.websiteId,
 			title,
 		});
 	} else {

@@ -10,6 +10,7 @@
     "./providers": "./src/providers.ts",
     "./lib/utils": "./src/lib/utils.ts",
     "./lib/types": "./src/lib/types.ts",
+    "./lib/queries": "./src/lib/queries.ts",
     "./prompts": "./src/prompts/index.ts",
     "./tools": "./src/tools/index.ts",
     "./artifacts": "./src/artifacts/index.ts",
@@ -20,6 +21,7 @@
     "@ai-sdk/openai": "^2.0.30",
     "@logtail/edge": "^0.5.5",
     "@openrouter/ai-sdk-provider": "^1.2.0",
+    "@databuddy/db": "workspace:*",
     "ai": "^5.0.44",
     "zod": "^4.1.8"
   }

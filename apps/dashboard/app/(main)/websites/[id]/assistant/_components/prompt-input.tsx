@@ -7,7 +7,6 @@ import {
 	PromptInputAttachment,
 	PromptInputAttachments,
 	PromptInputBody,
-	PromptInputButton,
 	type PromptInputMessage,
 	PromptInputModelSelect,
 	PromptInputModelSelectContent,
@@ -39,7 +38,7 @@ export function MultimodalInput({
 	setModel: (model: string) => void;
 }) {
 	return (
-		<PromptInput onSubmit={handleSubmit} className="mt-4" globalDrop multiple>
+		<PromptInput onSubmit={handleSubmit} className="mt-4 border-t border-border" globalDrop multiple>
 			<PromptInputBody>
 				<PromptInputAttachments>
 					{(attachment) => <PromptInputAttachment data={attachment} />}

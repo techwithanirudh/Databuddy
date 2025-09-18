@@ -1,5 +1,5 @@
 import { apikeysRouter } from './routers/apikeys';
-// import { assistantRouter } from './routers/assistant';
+import { assistantRouter } from './routers/assistant';
 import { autocompleteRouter } from './routers/autocomplete';
 import { billingRouter } from './routers/billing';
 import { dbConnectionsRouter } from './routers/db-connections';
@@ -26,7 +26,7 @@ export const appRouter = createTRPCRouter({
 	apikeys: apikeysRouter,
 	experiments: experimentsRouter,
 	flags: flagsRouter,
-	// assistant: assistantRouter,
+	assistant: assistantRouter,
 	organizations: organizationsRouter,
 	dbConnections: dbConnectionsRouter,
 	performance: performanceRouter,

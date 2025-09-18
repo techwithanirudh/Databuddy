@@ -8,22 +8,26 @@ import {
 	messages,
 	type DBMessage,
 	type Chat,
+	chats,
 } from '@databuddy/db';
 
 export async function saveChat({
 	id,
 	userId,
 	title,
+	websiteId,
 }: {
 	id: string;
 	userId: string;
 	title: string;
+	websiteId: string;
 }) {
 	try {
 		return await db.insert(chats).values({
 			id,
 			createdAt: new Date(),
 			userId,
+			websiteId,
 			title,
 		});
 	} catch (error) {
@@ -46,13 +50,15 @@ export async function deleteChatById({ id }: { id: string }) {
 	}
 }
 
-export async function getChatsByUserId({
-	id,
+export async function getChatsbyWebsiteId({
+	userId,
+	websiteId,
 	limit,
 	startingAfter,
 	endingBefore,
 }: {
-	id: string;
+	userId: string;
+	websiteId: string;
 	limit: number;
 	startingAfter: string | null;
 	endingBefore: string | null;
@@ -66,8 +72,8 @@ export async function getChatsByUserId({
 				.from(chats)
 				.where(
 					whereCondition
-						? and(whereCondition, eq(chats.userId, id))
-						: eq(chats.userId, id)
+						? and(whereCondition, eq(chats.userId, userId))
+						: eq(chats.userId, userId)
 				)
 				.orderBy(desc(chats.createdAt))
 				.limit(extendedLimit);
@@ -78,7 +84,7 @@ export async function getChatsByUserId({
 			const [selectedChat] = await db
 				.select()
 				.from(chats)
-				.where(eq(chats.id, startingAfter))
+				.where(and(eq(chats.id, startingAfter), eq(chats.websiteId, websiteId)))
 				.limit(1);
 
 			if (!selectedChat) {
@@ -90,7 +96,7 @@ export async function getChatsByUserId({
 			const [selectedChat] = await db
 				.select()
 				.from(chats)
-				.where(eq(chats.id, endingBefore))
+				.where(and(eq(chats.id, endingBefore), eq(chats.websiteId, websiteId)))
 				.limit(1);
 
 			if (!selectedChat) {
@@ -99,7 +105,7 @@ export async function getChatsByUserId({
 
 			filteredChats = await query(lt(chats.createdAt, selectedChat.createdAt));
 		} else {
-			filteredChats = await query();
+			filteredChats = await query(eq(chats.websiteId, websiteId));
 		}
 
 		const hasMore = filteredChats.length > limit;
@@ -190,4 +196,19 @@ export async function getVotesByChatId({ id }: { id: string }) {
 	} catch (error) {
 		throw new Error('Failed to get votes by chat id');
 	}
+}
+
+
+export async function updateChatTitleById({
+  chatId,
+  title,
+}: {
+  chatId: string;
+  title: string;
+}) {
+  try {
+    return await db.update(chats).set({ title }).where(eq(chats.id, chatId));
+  } catch (error) {
+    throw new Error('Failed to update chat title in database');
+  }
 }

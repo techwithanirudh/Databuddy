@@ -23,9 +23,15 @@ export const Suggestions = ({
   </ScrollArea>
 );
 
+export type SuggestedAction = {
+  text: string;
+  icon: React.ElementType;
+  type: string;
+};
+
 export type SuggestionProps = Omit<ComponentProps<typeof Button>, "onClick"> & {
-  suggestion: string;
-  onClick?: (suggestion: string) => void;
+  suggestion: SuggestedAction;
+  onClick?: (suggestion: SuggestedAction) => void;
 };
 
 export const Suggestion = ({
@@ -50,7 +56,7 @@ export const Suggestion = ({
       variant={variant}
       {...props}
     >
-      {children || suggestion}
+      {children || suggestion.text}
     </Button>
   );
 };

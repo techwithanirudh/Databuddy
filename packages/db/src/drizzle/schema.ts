@@ -767,12 +767,31 @@ export const abGoals = pgTable(
 
 export const chats = pgTable('assistant_chats', {
 	id: text('id').primaryKey().notNull(),
+	websiteId: text('websiteId')
+		.notNull()
+		.references(() => websites.id),
 	createdAt: timestamp('createdAt').notNull(),
 	title: text('title').notNull(),
 	userId: text('userId')
 		.notNull()
 		.references(() => user.id)
-});
+}, (table) => [
+	index('chats_websiteId_idx').using(
+		'btree',
+		table.websiteId.asc().nullsLast().op('text_ops')
+	),
+	index('chats_userId_idx').using(
+		'btree',
+		table.userId.asc().nullsLast().op('text_ops')
+	),
+	foreignKey({
+		columns: [table.websiteId],
+		foreignColumns: [websites.id],
+		name: 'chats_websiteId_fkey',
+	})
+		.onUpdate('cascade')
+		.onDelete('cascade'),
+]);
 
 export type Chat = InferSelectModel<typeof chats>;
 
@@ -785,7 +804,27 @@ export const messages = pgTable('assistant_messages', {
 	parts: json('parts').notNull(),
 	attachments: json('attachments').notNull(),
 	createdAt: timestamp('createdAt').notNull(),
-});
+}, (table) => [
+	index('messages_chatId_idx').using(
+		'btree',
+		table.chatId.asc().nullsLast().op('text_ops')
+	),
+	index('messages_role_idx').using(
+		'btree',
+		table.role.asc().nullsLast().op('text_ops')
+	),
+	index('messages_createdAt_idx').using(
+		'btree',
+		table.createdAt.asc().nullsLast()
+	),
+	foreignKey({
+		columns: [table.chatId],
+		foreignColumns: [chats.id],
+		name: 'messages_chatId_fkey',
+	})
+		.onUpdate('cascade')
+		.onDelete('cascade'),
+]);
 
 export type DBMessage = InferSelectModel<typeof messages>;
 
@@ -800,11 +839,35 @@ export const votes = pgTable(
 			.references(() => messages.id),
 		isUpvoted: boolean('isUpvoted').notNull(),
 	},
-	(table) => {
-		return {
-			pk: primaryKey({ columns: [table.chatId, table.messageId] }),
-		};
-	}
+	(table) => [
+		primaryKey({ columns: [table.chatId, table.messageId] }),
+		index('votes_chatId_idx').using(
+			'btree',
+			table.chatId.asc().nullsLast().op('text_ops')
+		),
+		index('votes_messageId_idx').using(
+			'btree',
+			table.messageId.asc().nullsLast().op('text_ops')
+		),
+		index('votes_isUpvoted_idx').using(
+			'btree',
+			table.isUpvoted.asc().nullsLast()
+		),
+		foreignKey({
+			columns: [table.chatId],
+			foreignColumns: [chats.id],
+			name: 'votes_chatId_fkey',
+		})
+			.onUpdate('cascade')
+			.onDelete('cascade'),
+		foreignKey({
+			columns: [table.messageId],
+			foreignColumns: [messages.id],
+			name: 'votes_messageId_fkey',
+		})
+			.onUpdate('cascade')
+			.onDelete('cascade'),
+	]
 );
 
 export type Vote = InferSelectModel<typeof votes>;

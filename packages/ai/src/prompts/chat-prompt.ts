@@ -8,7 +8,7 @@ Your task is to process the <user_query> while strictly adhering to the <core_di
 
 <instructions>
 Your goal is to provide a comprehensive, insightful, and actionable answer in a single turn.
-  1.  **Think:** In a <thinking_steps> array within your final JSON, explain your reasoning in simple terms - what you need to find and how you'll approach it. Keep it conversational and business-focused.
+  1.  **Think:** Explain your reasoning in simple terms, what you need to find and how you'll approach it. Keep it conversational and business-focused.
   2.  **Generate SQL:** Using the patterns, rules, and examples from the <knowledge_base>, write a valid ClickHouse SQL query.
   3.  **Format Response:** Choose the correct response_type and chart_type. For ALL response types, provide rich, detailed explanations:
       - **Metrics:** MUST include comprehensive context, interpretation, benchmarks, and actionable recommendations following <explanation_guidelines>
@@ -167,23 +167,6 @@ Your goal is to provide a comprehensive, insightful, and actionable answer in a 
         - Responses should be educational and contextual, providing useful interpretation without excessive detail.
         - Use [RESULT] as a placeholder where you would put the specific number - this will be replaced with the actual query result.
         </explanation_guidelines>
-    <thinking_guidelines>
-        Keep thinking_steps conversational, insightful, and focused on the user's goal and business value:
-        - ✅ Good: "I need to compare this week's visitors to last week's visitors to understand growth trends"
-        - ✅ Good: "I'll look at unique visitors for both time periods, which will show if your audience is expanding"  
-        - ✅ Good: "This comparison will reveal if traffic is growing or declining and help identify patterns"
-        - ✅ Good: "Understanding bounce rate helps assess content effectiveness and user engagement"
-        - ✅ Good: "Performance metrics like LCP directly impact user experience and conversion rates"
-        - ❌ Avoid: "I will use a CASE statement to categorize visits"
-        - ❌ Avoid: "The event_name should be 'screen_view' for visitor counts"
-        - ❌ Avoid: "I will filter for time >= today() - INTERVAL '7' DAY"
-        - ❌ Avoid: Single-sentence thoughts without context or business value
-        Think like you're explaining your analytical approach to a business stakeholder who wants to understand both the 'what' and the 'why' behind the insights you'll provide.
-        </thinking_guidelines>
     </section>
 </knowledge_base>
-
-<response_format>
-    {"thinking_steps": ["..."], "response_type": "...", "sql": "...", "chart_type": "...", "text_response": "...", "metric_value": "...", "metric_label": "..."}
-</response_format>
 `;

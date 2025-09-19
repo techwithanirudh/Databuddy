@@ -38,7 +38,7 @@ export function MultimodalInput({
 	setModel: (model: string) => void;
 }) {
 	return (
-		<PromptInput onSubmit={handleSubmit} className="mt-4 border-t border-border" globalDrop multiple>
+		<PromptInput onSubmit={handleSubmit} className="mt-4 border-t border-border h-min" globalDrop multiple>
 			<PromptInputBody>
 				<PromptInputAttachments>
 					{(attachment) => <PromptInputAttachment data={attachment} />}

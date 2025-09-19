@@ -1,30 +1,41 @@
-import { useSWRConfig } from 'swr';
 import { useCopyToClipboard } from 'usehooks-ts';
 
 import type { Vote } from '@databuddy/db';
 
-import { CopyIcon, ThumbsDownIcon, ThumbsUpIcon, PencilIcon } from 'lucide-react';
+import { CopyIcon, ThumbsDownIcon, ThumbsUpIcon, PencilIcon, Copy, Check } from 'lucide-react';
 import { Actions, Action } from '@/components/ai-elements/actions';
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import equal from 'fast-deep-equal';
 import { toast } from 'sonner';
 import type { ChatMessage } from '@databuddy/ai/lib/types';
+import { trpc } from '@/lib/trpc';
+import { cn } from '@/lib/utils';
 
 export function PureMessageActions({
     chatId,
     message,
     vote,
     isLoading,
+    mode,
     setMode,
 }: {
     chatId: string;
     message: ChatMessage;
     vote: Vote | undefined;
     isLoading: boolean;
+    mode: 'view' | 'edit';
     setMode?: (mode: 'view' | 'edit') => void;
 }) {
-    const { mutate } = useSWRConfig();
     const [_, copyToClipboard] = useCopyToClipboard();
+    const [copied, setCopied] = useState(false);
+    const utils = trpc.useUtils();
+
+    const voteMutation = trpc.assistant.voteMessage.useMutation({
+        onSuccess: () => {
+            // Invalidate and refetch votes for this chat
+            utils.assistant.getVotes.invalidate({ chatId });
+        },
+    });
 
     if (isLoading) return null;
 
@@ -41,25 +52,38 @@ export function PureMessageActions({
         }
 
         await copyToClipboard(textFromParts);
+        setCopied(true);
         toast.success('Copied to clipboard!');
+        setTimeout(() => setCopied(false), 2000);
     };
 
     // User messages get edit (on hover) and copy actions
     if (message.role === 'user') {
         return (
             <Actions className="-mr-0.5 justify-end">
-                <div className="relative">
+                <div
+                    className={cn(
+                        'opacity-100 md:opacity-0 transition-opacity group-hover/message:opacity-100 gap-1',
+                        {
+                            'md:opacity-100': mode === 'edit',
+                        },
+                    )}
+                >
                     {setMode && (
-                        <Action
-                            tooltip="Edit"
-                            onClick={() => setMode('edit')}
-                            className="-left-10 absolute top-0 opacity-0 transition-opacity group-hover/message:opacity-100"
-                        >
+                        <Action tooltip="Edit" onClick={() => setMode('edit')}>
                             <PencilIcon />
                         </Action>
                     )}
                     <Action tooltip="Copy" onClick={handleCopy}>
-                        <CopyIcon />
+                        <span className="sr-only">{copied ? 'Copied' : 'Copy'}</span>
+                        <Copy
+                            className={`size-4 transition-all duration-300 ${copied ? 'scale-0' : 'scale-100'
+                                }`}
+                        />
+                        <Check
+                            className={`absolute inset-0 m-auto size-4 transition-all duration-300 ${copied ? 'scale-100' : 'scale-0'
+                                }`}
+                        />
                     </Action>
                 </div>
             </Actions>
@@ -69,51 +93,34 @@ export function PureMessageActions({
     return (
         <Actions className="-ml-0.5">
             <Action tooltip="Copy" onClick={handleCopy}>
-                <CopyIcon />
+                <span className="sr-only">{copied ? 'Copied' : 'Copy'}</span>
+                <Copy
+                    className={`size-4 transition-all duration-300 ${copied ? 'scale-0' : 'scale-100'
+                        }`}
+                />
+                <Check
+                    className={`absolute inset-0 m-auto size-4 transition-all duration-300 ${copied ? 'scale-100' : 'scale-0'
+                        }`}
+                />
             </Action>
 
             <Action
                 tooltip="Upvote Response"
                 data-testid="message-upvote"
-                disabled={vote?.isUpvoted}
-                onClick={async () => {
-                    const upvote = fetch('/api/vote', {
-                        method: 'PATCH',
-                        body: JSON.stringify({
+                disabled={vote?.isUpvoted || voteMutation.isPending}
+                onClick={() => {
+                    toast.promise(
+                        voteMutation.mutateAsync({
                             chatId,
                             messageId: message.id,
                             type: 'up',
                         }),
-                    });
-
-                    toast.promise(upvote, {
-                        loading: 'Upvoting Response...',
-                        success: () => {
-                            mutate<Array<Vote>>(
-                                `/api/vote?chatId=${chatId}`,
-                                (currentVotes) => {
-                                    if (!currentVotes) return [];
-
-                                    const votesWithoutCurrent = currentVotes.filter(
-                                        (vote) => vote.messageId !== message.id,
-                                    );
-
-                                    return [
-                                        ...votesWithoutCurrent,
-                                        {
-                                            chatId,
-                                            messageId: message.id,
-                                            isUpvoted: true,
-                                        },
-                                    ];
-                                },
-                                { revalidate: false },
-                            );
-
-                            return 'Upvoted Response!';
-                        },
-                        error: 'Failed to upvote response.',
-                    });
+                        {
+                            loading: 'Upvoting Response...',
+                            success: 'Upvoted Response!',
+                            error: 'Failed to upvote response.',
+                        }
+                    );
                 }}
             >
                 <ThumbsUpIcon />
@@ -122,45 +129,20 @@ export function PureMessageActions({
             <Action
                 tooltip="Downvote Response"
                 data-testid="message-downvote"
-                disabled={vote && !vote.isUpvoted}
-                onClick={async () => {
-                    const downvote = fetch('/api/vote', {
-                        method: 'PATCH',
-                        body: JSON.stringify({
+                disabled={(vote && !vote.isUpvoted) || voteMutation.isPending}
+                onClick={() => {
+                    toast.promise(
+                        voteMutation.mutateAsync({
                             chatId,
                             messageId: message.id,
                             type: 'down',
                         }),
-                    });
-
-                    toast.promise(downvote, {
-                        loading: 'Downvoting Response...',
-                        success: () => {
-                            mutate<Array<Vote>>(
-                                `/api/vote?chatId=${chatId}`,
-                                (currentVotes) => {
-                                    if (!currentVotes) return [];
-
-                                    const votesWithoutCurrent = currentVotes.filter(
-                                        (vote) => vote.messageId !== message.id,
-                                    );
-
-                                    return [
-                                        ...votesWithoutCurrent,
-                                        {
-                                            chatId,
-                                            messageId: message.id,
-                                            isUpvoted: false,
-                                        },
-                                    ];
-                                },
-                                { revalidate: false },
-                            );
-
-                            return 'Downvoted Response!';
-                        },
-                        error: 'Failed to downvote response.',
-                    });
+                        {
+                            loading: 'Downvoting Response...',
+                            success: 'Downvoted Response!',
+                            error: 'Failed to downvote response.',
+                        }
+                    );
                 }}
             >
                 <ThumbsDownIcon />

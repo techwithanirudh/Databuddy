@@ -13,6 +13,7 @@
     "./lib/queries": "./src/lib/queries.ts",
     "./prompts": "./src/prompts/index.ts",
     "./tools": "./src/tools/index.ts",
+    "./tools/*": "./src/tools/*.ts",
     "./artifacts": "./src/artifacts/index.ts",
     "./context": "./src/context.ts"
   },

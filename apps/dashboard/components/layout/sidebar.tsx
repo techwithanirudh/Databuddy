@@ -124,7 +124,8 @@ export function Sidebar() {
 			headerComponent = isWebsite ? (
 				<WebsiteHeader website={currentWebsite} />
 			) : (
-				<OrganizationSelector />
+				// <OrganizationSelector />
+				null
 			);
 			currentId = websiteId;
 		} else if (isDatabase) {
@@ -134,7 +135,8 @@ export function Sidebar() {
 			headerComponent = <SandboxHeader />;
 			currentId = 'sandbox';
 		} else {
-			headerComponent = <OrganizationSelector />;
+			headerComponent = null;
+			// <OrganizationSelector />
 			currentId = undefined;
 		}
 

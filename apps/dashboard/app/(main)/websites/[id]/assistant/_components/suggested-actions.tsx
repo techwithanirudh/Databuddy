@@ -2,18 +2,20 @@
 
 import { motion } from 'framer-motion';
 import { memo } from 'react';
-import type { UseChatHelpers } from '@ai-sdk/react';
-import type { ChatMessage } from '@databuddy/ai/lib/types';
 import { SuggestedAction, Suggestion } from '@/components/ai-elements/suggestion';
 import { ChartBarIcon, HashIcon, TrendUpIcon } from '@phosphor-icons/react'; 
+import type { UseChatHelpers } from '@ai-sdk/react';
+import { ChatMessage } from '@databuddy/ai/lib/types';
 
 interface SuggestedActionsProps {
     chatId: string;
     sendMessage: UseChatHelpers<ChatMessage>['sendMessage'];
+    websiteId: string;
 }
 
 function PureSuggestedActions({
     chatId,
+    websiteId,
     sendMessage,
 }: SuggestedActionsProps) {
     const suggestedActions: SuggestedAction[] = [
@@ -47,7 +49,7 @@ function PureSuggestedActions({
                     <Suggestion
                         suggestion={suggestedAction}
                         onClick={(suggestion: SuggestedAction) => {
-                            window.history.replaceState({}, '', `/chat/${chatId}`);
+                            window.history.replaceState({}, '', `/websites/${websiteId}/assistant/${chatId}`);
                             sendMessage({
                                 role: 'user',
                                 parts: [{ type: 'text', text: suggestion.text }],

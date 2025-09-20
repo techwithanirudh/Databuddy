@@ -8,16 +8,13 @@ import { websiteIdAtom } from '@/stores/jotai/assistantAtoms';
 import { generateUUID } from '@databuddy/ai/lib/utils';
 import { MultimodalInput } from './prompt-input';
 import type { PromptInputMessage } from '@/components/ai-elements/prompt-input';
-import { BurnRateAnalysisPanel } from './artifacts/burn-rate/analysis-panel';
-import { BurnRateLoading } from './artifacts/burn-rate/loading';
 
-import { useArtifact } from "@ai-sdk-tools/artifacts/client";
-import { useEffect } from "react";
-import { toast } from "sonner";
-import { BurnRateArtifact } from "@databuddy/ai/artifacts";
-import { Greeting } from './greeting';
+import { useArtifacts } from "@ai-sdk-tools/artifacts/client";
 import { Messages } from './messages';
 import { trpc } from '@/lib/trpc';
+import { Artifacts } from './artifacts';
+import { ChatMessage } from '@databuddy/ai/lib/types';
+import { notFound } from 'next/navigation';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -38,10 +35,9 @@ const models = [
 
 const Chat = ({ id }: { id: string }) => {
   const [input, setInput] = useState('');
-  const [model, setModel] = useState<string>(models[0].value);
+  const [model, setModel] = useState(models[0].value);
   const [websiteId] = useAtom(websiteIdAtom);
-  // const [websiteData] = useAtom(websiteDataAtom);
-  const [hasArtifacts, setHasArtifacts] = useState(false);
+  const { current } = useArtifacts();
 
   // Fetch votes for the current chat
   const { data: votes = [] } = trpc.assistant.getVotes.useQuery(
@@ -49,7 +45,7 @@ const Chat = ({ id }: { id: string }) => {
     { enabled: !!id }
   );
 
-  const { messages, sendMessage, setMessages, regenerate, status } = useChat({
+  const { messages, sendMessage, setMessages, regenerate, status } = useChat<ChatMessage>({
     id,
     generateId: generateUUID,
     experimental_throttle: 100,
@@ -67,55 +63,12 @@ const Chat = ({ id }: { id: string }) => {
           },
         };
       },
-    }),
-  });
+    })
+  })
 
-  const burnRateData = useArtifact(BurnRateArtifact, {
-    onStatusChange: (newStatus, oldStatus) => {
-      if (newStatus === "loading" && oldStatus === "idle") {
-        toast.loading("Starting burn rate analysis...", {
-          id: "burn-rate-analysis",
-        });
-      } else if (newStatus === "complete" && oldStatus === "streaming") {
-        const alerts = burnRateData?.data?.summary?.alerts?.length || 0;
-        const recommendations =
-          burnRateData?.data?.summary?.recommendations?.length || 0;
-        toast.success(
-          `Analysis complete! Found ${alerts} alerts and ${recommendations} recommendations.`,
-          { id: "burn-rate-analysis" },
-        );
-      }
-    },
-    onUpdate: (newData, oldData) => {
-      if (newData.stage === "processing" && oldData?.stage === "loading") {
-        toast.loading("Processing financial data...", {
-          id: "burn-rate-analysis",
-        });
-      } else if (
-        newData.stage === "analyzing" &&
-        oldData?.stage === "processing"
-      ) {
-        toast.loading("Analyzing trends and generating insights...", {
-          id: "burn-rate-analysis",
-        });
-      }
-    },
-    onError: (error) => {
-      toast.error(`Analysis failed: ${error}`, {
-        id: "burn-rate-analysis",
-      });
-    },
-  });
-
-  useEffect(() => {
-    if (burnRateData?.data && !hasArtifacts) {
-      setHasArtifacts(true);
-    }
-  }, [burnRateData?.data, hasArtifacts]);
-
-
-  const hasAnalysisData =
-    burnRateData?.data && burnRateData.data.stage === "complete";
+  if (!websiteId) {
+    return notFound();
+  }
 
   const handleSubmit = (message: PromptInputMessage) => {
     const hasText = Boolean(message.text);
@@ -135,33 +88,33 @@ const Chat = ({ id }: { id: string }) => {
   return (
     <div className="flex size-full items-center justify-center divide-x divide-border gap-2">
       <div className="p-6 relative size-full border border-border rounded-lg flex flex-col h-full">
-        {messages.length === 0 && <Greeting />}
-        {/* {messages.length === 0 && <Examples sendMessage={sendMessage} isLoading={status === 'submitted'} isRateLimited={false} />} */}
-        {messages.length > 0 && (
-          <Messages
-            chatId={id}
-            status={status}
-            votes={votes}
-            messages={messages as any}
-            setMessages={setMessages as any}
-            regenerate={regenerate}
-            isReadonly={false}
-            selectedModelId={model}
-          />
-        )}
+        <Messages
+          chatId={id}
+          status={status}
+          votes={votes}
+          messages={messages}
+          setMessages={setMessages}
+          regenerate={regenerate}
+          isReadonly={false}
+          selectedModelId={model}
+        />
 
         <MultimodalInput
           handleSubmit={handleSubmit}
+          sendMessage={sendMessage}
           models={models}
           status={status}
           input={input}
           setInput={setInput}
           model={model}
           setModel={setModel}
+          messages={messages}
+          chatId={id}
+          websiteId={websiteId}
         />
       </div>
 
-      {hasArtifacts && (
+      {current && (
         <div className="relative size-full border border-border rounded-lg flex flex-col h-full">
           <div className="flex items-center justify-between border-b border-border p-4">
             <h2 className="text-xl font-semibold text-foreground">
@@ -170,11 +123,7 @@ const Chat = ({ id }: { id: string }) => {
           </div>
 
           <div className="flex-1 overflow-y-auto p-4">
-            {hasAnalysisData ? (
-              <BurnRateAnalysisPanel />
-            ) : (
-              <BurnRateLoading />
-            )}
+            <Artifacts />
           </div>
         </div>
       )}

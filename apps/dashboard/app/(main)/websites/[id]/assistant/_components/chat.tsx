@@ -1,12 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useChat } from "@ai-sdk-tools/store";
-import { DefaultChatTransport } from 'ai';
-import { useAtom } from 'jotai';
-import { websiteIdAtom } from '@/stores/jotai/assistantAtoms';
+import { DefaultChatTransport } from 'ai';    
 import { generateUUID } from '@databuddy/ai/lib/utils';
-import { MultimodalInput } from './prompt-input';
+import { MultimodalInput } from './multimodal-input';
 import type { PromptInputMessage } from '@/components/ai-elements/prompt-input';
 
 import { useArtifacts } from "@ai-sdk-tools/artifacts/client";
@@ -18,25 +16,10 @@ import { notFound } from 'next/navigation';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-const models = [
-  {
-    name: 'Chat',
-    value: 'chat-model',
-  },
-  {
-    name: 'Agent',
-    value: 'agent-model',
-  },
-  {
-    name: 'Agent Max',
-    value: 'agent-max-model',
-  },
-];
-
-const Chat = ({ id }: { id: string }) => {
+const Chat = ({ id, websiteId, initialMessages, initialChatModel }: { id: string, websiteId: string, initialMessages: ChatMessage[], initialChatModel: string }) => {
   const [input, setInput] = useState('');
-  const [model, setModel] = useState(models[0].value);
-  const [websiteId] = useAtom(websiteIdAtom);
+  const [currentModelId, setCurrentModelId] = useState(initialChatModel);
+  const currentModelIdRef = useRef(currentModelId);
   const { current } = useArtifacts();
 
   // Fetch votes for the current chat
@@ -47,6 +30,7 @@ const Chat = ({ id }: { id: string }) => {
 
   const { messages, sendMessage, setMessages, regenerate, status } = useChat<ChatMessage>({
     id,
+    messages: initialMessages,
     generateId: generateUUID,
     experimental_throttle: 100,
     transport: new DefaultChatTransport({
@@ -57,7 +41,7 @@ const Chat = ({ id }: { id: string }) => {
           body: {
             id,
             message: messages.at(-1),
-            selectedChatModel: model,
+            selectedChatModel: currentModelIdRef.current,
             websiteId,
             ...body,
           },
@@ -85,6 +69,11 @@ const Chat = ({ id }: { id: string }) => {
     setInput('');
   };
 
+
+  useEffect(() => {
+    currentModelIdRef.current = currentModelId;
+  }, [currentModelId]);
+
   return (
     <div className="flex size-full items-center justify-center divide-x divide-border gap-2">
       <div className="p-6 relative size-full border border-border rounded-lg flex flex-col h-full">
@@ -96,18 +85,17 @@ const Chat = ({ id }: { id: string }) => {
           setMessages={setMessages}
           regenerate={regenerate}
           isReadonly={false}
-          selectedModelId={model}
+          selectedModelId={currentModelId}
         />
 
         <MultimodalInput
           handleSubmit={handleSubmit}
           sendMessage={sendMessage}
-          models={models}
           status={status}
           input={input}
           setInput={setInput}
-          model={model}
-          setModel={setModel}
+          selectedModelId={currentModelId}
+          onModelChange={setCurrentModelId}
           messages={messages}
           chatId={id}
           websiteId={websiteId}

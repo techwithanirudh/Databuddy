@@ -1,21 +1,18 @@
-'use client';
 
-import { useAtom } from 'jotai';
-import dynamic from 'next/dynamic';
-import { useParams } from 'next/navigation';
-import { useEffect } from 'react';
+import { notFound } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useWebsite } from '@/hooks/use-websites';
-import {
-    dateRangeAtom,
-    websiteDataAtom,
-    websiteIdAtom,
-} from '@/stores/jotai/assistantAtoms';
-import { generateUUID } from '@databuddy/ai/lib/utils';
+import Chat from '../_components/chat';
+import { getChatById, getMessagesByChatId } from '@databuddy/ai/lib/queries';
+import { cache, Suspense } from 'react';
+import { headers } from 'next/headers';
+import { auth } from '@databuddy/auth';
+import { convertToUIMessages } from '@databuddy/ai/lib/utils';
+import { DEFAULT_CHAT_MODEL } from '@databuddy/ai/models';
 
-const AIChat = dynamic(() => import('./_components/chat'), {
-    loading: () => <ChatSkeleton />,
-    ssr: false,
+
+const getSession = cache(async () => {
+    const session = await auth.api.getSession({ headers: await headers() });
+    return session;
 });
 
 function ChatSkeleton() {
@@ -55,37 +52,31 @@ function ChatSkeleton() {
     );
 }
 
-export default function ChatPage() {
-    const { id: siteId, chatId } = useParams();
+export default async function ChatPage(props: { params: Promise<{ id: string, chatId: string }> }) {
+    const params = await props.params;
+    const { id: websiteId, chatId } = params;
+    const chat = await getChatById({ id: chatId });
+    const session = await getSession();
 
-    const { data: websiteData, isLoading } = useWebsite(siteId);
-    const [, setWebsiteId] = useAtom(websiteIdAtom);
-    const [, setWebsiteData] = useAtom(websiteDataAtom);
-    const [, setDateRange] = useAtom(dateRangeAtom);
-
-    useEffect(() => {
-        if (siteId) {
-            setWebsiteId(siteId as string);
-        }
-
-        if (websiteData) {
-            setWebsiteData(websiteData);
-        }
-
-        setDateRange({
-            start_date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-            end_date: new Date().toISOString(),
-            granularity: 'daily',
-        });
-    }, [siteId, setWebsiteId, websiteData, setWebsiteData, setDateRange]);
-
-    if (isLoading || !websiteData) {
-        return <ChatSkeleton />;
+    if (!chat) {
+        notFound();
     }
+
+    if (session?.user?.id !== chat.userId) {
+        notFound();
+    }   
+    const messagesFromDb = await getMessagesByChatId({
+        id: chatId,
+    });
+
+    const uiMessages = convertToUIMessages(messagesFromDb);
+
 
     return (
         <div className="h-full min-h-0">
-            <AIChat id={chatId} />
+            <Suspense fallback={<ChatSkeleton />}>
+                <Chat id={chatId} websiteId={websiteId} initialMessages={uiMessages} initialChatModel={DEFAULT_CHAT_MODEL} />
+            </Suspense>
         </div>
     );
 }

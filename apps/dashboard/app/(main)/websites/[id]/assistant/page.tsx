@@ -1,22 +1,8 @@
-'use client';
-
-import { useAtom } from 'jotai';
-import dynamic from 'next/dynamic';
-import { useParams } from 'next/navigation';
-import { useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useWebsite } from '@/hooks/use-websites';
-import {
-	dateRangeAtom,
-	websiteDataAtom,
-	websiteIdAtom,
-} from '@/stores/jotai/assistantAtoms';
 import { generateUUID } from '@databuddy/ai/lib/utils';
-
-const AIChat = dynamic(() => import('./_components/chat'), {
-	loading: () => <ChatSkeleton />,
-	ssr: false,
-});
+import Chat from './_components/chat';
+import { Suspense } from 'react';
+import { DEFAULT_CHAT_MODEL } from '@databuddy/ai/models';
 
 function ChatSkeleton() {
 	return (
@@ -55,38 +41,16 @@ function ChatSkeleton() {
 	);
 }
 
-export default function ChatPage() {
-	const { id: siteId } = useParams();
+export default async function ChatPage(props: { params: Promise<{ id: string }> }) {
+	const params = await props.params;
+	const { id: websiteId } = params;
 	const chatId = generateUUID();
-
-	const { data: websiteData, isLoading } = useWebsite(siteId);
-	const [, setWebsiteId] = useAtom(websiteIdAtom);
-	const [, setWebsiteData] = useAtom(websiteDataAtom);
-	const [, setDateRange] = useAtom(dateRangeAtom);
-
-	useEffect(() => {
-		if (siteId) {
-			setWebsiteId(siteId as string);
-		}
-
-		if (websiteData) {
-			setWebsiteData(websiteData);
-		}
-
-		setDateRange({
-			start_date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-			end_date: new Date().toISOString(),
-			granularity: 'daily',
-		});
-	}, [siteId, setWebsiteId, websiteData, setWebsiteData, setDateRange]);
-
-	if (isLoading || !websiteData) {
-		return <ChatSkeleton />;
-	}
 
 	return (
 		<div className="h-full min-h-0">
-			<AIChat id={chatId} />
+			<Suspense fallback={<ChatSkeleton />}>
+				<Chat id={chatId} websiteId={websiteId} initialMessages={[]} initialChatModel={DEFAULT_CHAT_MODEL} />
+			</Suspense>
 		</div>
 	);
 }

@@ -18,6 +18,7 @@ import type { AssistantRequestType } from '../schemas/assistant-schemas';
 import { convertToUIMessages, generateUUID } from '@databuddy/ai/lib/utils';
 import { setContext } from '@databuddy/ai/context';
 import { tools } from '@databuddy/ai/tools';
+import { createErrorResponse } from '../utils';
 
 interface HandleMessageProps {
 	id: string;
@@ -49,7 +50,7 @@ export async function handleMessage({
 		});
 	} else {
 		if (chat.userId !== user.id) {
-			return new Error('forbidden:chat');
+			return createErrorResponse('forbidden:chat');
 		}
 	}
 

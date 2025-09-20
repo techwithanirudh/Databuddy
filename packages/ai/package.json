@@ -15,15 +15,17 @@
     "./tools": "./src/tools/index.ts",
     "./tools/*": "./src/tools/*.ts",
     "./artifacts": "./src/artifacts/index.ts",
-    "./context": "./src/context.ts"
+    "./context": "./src/context.ts",
+    "./models": "./src/models.ts"
   },
   "dependencies": {
     "@ai-sdk-tools/artifacts": "^0.3.0",
     "@ai-sdk/openai": "^2.0.30",
     "@logtail/edge": "^0.5.5",
     "@openrouter/ai-sdk-provider": "^1.2.0",
-    "@databuddy/db": "workspace:*",
     "ai": "^5.0.44",
-    "zod": "^4.1.8"
+    "zod": "^4.1.8",
+    "@databuddy/db": "workspace:*",
+    "drizzle-orm": "^0.44.4"
   }
 }

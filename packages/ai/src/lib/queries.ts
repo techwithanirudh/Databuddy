@@ -3,7 +3,6 @@
 import { and, eq, gt, lt, asc, desc, type SQL } from 'drizzle-orm';
 import { db } from '@databuddy/db/client';
 import {
-	chats,
 	votes,
 	messages,
 	type DBMessage,

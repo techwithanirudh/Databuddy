@@ -29,6 +29,7 @@
     "db:migrate": "bun run src/migrate.ts",
     "db:deploy": "bun run src/migrate.ts",
     "db:seed": "bun run src/seed.ts",
+    "db:reset": "bun run src/reset.ts",
     "clickhouse:init": "bun run src/clickhouse/setup.ts"
   }
 }

@@ -12,6 +12,7 @@
     "db:studio": "dotenv -- turbo run db:studio",
     "clickhouse:init": "dotenv -- turbo run clickhouse:init",
     "db:push": "dotenv -- turbo run db:push",
+    "db:reset": "dotenv -- turbo run db:reset",
     "db:migrate": "dotenv -- turbo run db:migrate",
     "db:deploy": "dotenv -- turbo run db:deploy",
     "db:seed": "dotenv -- turbo run db:seed -- --",

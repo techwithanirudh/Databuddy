@@ -18,7 +18,7 @@ import type { AssistantRequestType } from '../schemas/assistant-schemas';
 import { convertToUIMessages, generateUUID } from '@databuddy/ai/lib/utils';
 import { setContext } from '@databuddy/ai/context';
 import { tools } from '@databuddy/ai/tools';
-import { createErrorResponse } from '../utils';
+import type { StreamingUpdate } from '@databuddy/shared';
 
 interface HandleMessageProps {
 	id: string;
@@ -26,6 +26,10 @@ interface HandleMessageProps {
 	selectedChatModel: AssistantRequestType['selectedChatModel'];
 	requestHints: RequestHints;
 	user: User;
+}
+
+function createErrorResponse(message: string): StreamingUpdate[] {
+	return [{ type: 'error', content: message }];
 }
 
 export async function handleMessage({

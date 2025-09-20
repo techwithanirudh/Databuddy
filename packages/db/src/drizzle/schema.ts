@@ -877,11 +877,7 @@ export const dbPermissionLevel = pgEnum('db_permission_level', [
 	'admin',
 ]);
 
-export const flagType = pgEnum('flag_type', [
-	'boolean',
-	'multivariate',
-	'rollout',
-]);
+export const flagType = pgEnum('flag_type', ['boolean', 'rollout']);
 
 export const flagStatus = pgEnum('flag_status', [
 	'active',
@@ -941,7 +937,7 @@ export const flags = pgTable(
 		description: text(),
 		type: flagType().default('boolean').notNull(),
 		status: flagStatus().default('active').notNull(),
-		defaultValue: jsonb('default_value').default(false),
+		defaultValue: jsonb('default_value').default(false).notNull(),
 		payload: jsonb('payload'),
 		rules: jsonb('rules').default([]),
 		persistAcrossAuth: boolean('persist_across_auth').default(false).notNull(),

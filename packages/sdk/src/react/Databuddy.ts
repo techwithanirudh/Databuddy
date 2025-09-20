@@ -11,9 +11,8 @@ import { detectClientId } from '../utils';
 export function Databuddy(props: DatabuddyConfig) {
 	const clientId = detectClientId(props.clientId);
 
-	// Don't inject if no client ID is available
 	if (!clientId) {
-		if (typeof window !== 'undefined' && !props.disabled) {
+		if (typeof window !== 'undefined' && !props.disabled && props.debug) {
 			console.warn(
 				'Databuddy: No client ID found. Please provide clientId prop or set NEXT_PUBLIC_DATABUDDY_CLIENT_ID environment variable.'
 			);
@@ -21,7 +20,6 @@ export function Databuddy(props: DatabuddyConfig) {
 		return null;
 	}
 
-	// Only inject script on client-side and if not already injected
 	if (typeof window !== 'undefined' && !props.disabled && !isScriptInjected()) {
 		const script = createScript({ ...props, clientId });
 		document.head.appendChild(script);

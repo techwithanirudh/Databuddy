@@ -1,9 +1,11 @@
 'use client';
 
+import { useFlags } from '@databuddy/sdk/react';
 import { FlagIcon } from '@phosphor-icons/react';
 import { useAtom } from 'jotai';
 import { useParams } from 'next/navigation';
 import { Suspense, useCallback, useState } from 'react';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { useWebsite } from '@/hooks/use-websites';
 import { trpc } from '@/lib/trpc';
@@ -11,8 +13,7 @@ import { isAnalyticsRefreshingAtom } from '@/stores/jotai/filterAtoms';
 import { WebsitePageHeader } from '../_components/website-page-header';
 import { FlagSheet } from './_components/flag-sheet';
 import { FlagsList } from './_components/flags-list';
-
-type FlagStatus = 'active' | 'inactive' | 'archived';
+import type { Flag } from './_components/types';
 
 const FlagsListSkeleton = () => (
 	<div className="space-y-3">
@@ -54,9 +55,11 @@ export default function FlagsPage() {
 	const websiteId = id as string;
 	const [isRefreshing, setIsRefreshing] = useAtom(isAnalyticsRefreshingAtom);
 	const [isSheetOpen, setIsSheetOpen] = useState(false);
-	const [editingFlag, setEditingFlag] = useState<string | null>(null);
+	const [editingFlag, setEditingFlag] = useState<Flag | null>(null);
 
 	const { data: website } = useWebsite(websiteId);
+	const { isEnabled } = useFlags();
+	const experimentFlag = isEnabled('experiment-50');
 
 	const {
 		data: flags,
@@ -83,15 +86,14 @@ export default function FlagsPage() {
 		setIsSheetOpen(true);
 	};
 
-	const handleEditFlag = (flagId: string) => {
-		setEditingFlag(flagId);
+	const handleEditFlag = (flag: Flag) => {
+		setEditingFlag(flag);
 		setIsSheetOpen(true);
 	};
 
 	const handleSheetClose = () => {
 		setIsSheetOpen(false);
 		setEditingFlag(null);
-		refetchFlags();
 	};
 
 	if (flagsError) {
@@ -142,7 +144,21 @@ export default function FlagsPage() {
 				websiteId={websiteId}
 				websiteName={website?.name || undefined}
 			/>
-
+			{experimentFlag.isReady && (
+				<div className="flex items-center gap-2">
+					<FlagIcon
+						className="h-5 w-5"
+						color={experimentFlag.enabled ? 'red' : 'blue'}
+						size={16}
+						weight="fill"
+					/>
+					{experimentFlag.enabled ? (
+						<Badge className="bg-red-500 text-white">Red Team</Badge>
+					) : (
+						<Badge className="bg-blue-500 text-white">Blue Team</Badge>
+					)}
+				</div>
+			)}
 			<Suspense fallback={<FlagsListSkeleton />}>
 				<FlagsList
 					flags={flags || []}
@@ -155,7 +171,7 @@ export default function FlagsPage() {
 			{isSheetOpen && (
 				<Suspense fallback={null}>
 					<FlagSheet
-						flagId={editingFlag}
+						flag={editingFlag}
 						isOpen={isSheetOpen}
 						onClose={handleSheetClose}
 						websiteId={websiteId}

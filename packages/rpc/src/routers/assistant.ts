@@ -12,6 +12,7 @@ export const assistantRouter = createTRPCRouter({
 				limit: z.number().default(10),
 				startingAfter: z.string().optional(),
 				endingBefore: z.string().optional(),
+				search: z.string().optional(),
 			})
 		)
 		.query(async ({ ctx, input }) => {
@@ -28,6 +29,7 @@ export const assistantRouter = createTRPCRouter({
 				limit: input.limit,
 				startingAfter: input.startingAfter,
 				endingBefore: input.endingBefore,
+				search: input.search,
 			});
 
 			return chats;
@@ -35,10 +37,10 @@ export const assistantRouter = createTRPCRouter({
 
 	// Get chat with messages
 	getChat: protectedProcedure
-		.input(z.object({ id: z.string() }))
+		.input(z.object({ chatId: z.string() }))
 		.query(async ({ ctx, input }) => {
 			const chat = await getChatById({
-				id: input.id,
+				id: input.chatId,
 			});
 
 			if (!chat) {
@@ -128,10 +130,10 @@ export const assistantRouter = createTRPCRouter({
 
 	// Delete conversation
 	deleteChat: protectedProcedure
-		.input(z.object({ id: z.string() }))
+		.input(z.object({ chatId: z.string() }))
 		.mutation(async ({ ctx, input }) => {
-			const chat = await getChatById({	
-				id: input.id,
+			const chat = await getChatById({
+				id: input.chatId,
 			});
 
 			if (!chat) {
@@ -148,7 +150,7 @@ export const assistantRouter = createTRPCRouter({
 				});
 			}
 
-			await deleteChatById({ id: input.id });
+			await deleteChatById({ id: input.chatId });
 
 			return { success: true };
 		}),

@@ -1,8 +1,8 @@
 import { type BaseContext, createTypedContext } from "@ai-sdk-tools/artifacts";
+import { User } from "@databuddy/auth";
 
 interface ChatContext extends BaseContext {
-    userId: string;
-    fullName: string;
+    user: User;
 }
 
 const { setContext, getContext } = createTypedContext<ChatContext>();
@@ -10,8 +10,7 @@ const { setContext, getContext } = createTypedContext<ChatContext>();
 export function getCurrentUser() {
     const context = getContext();
     return {
-        id: context.userId,
-        fullName: context.fullName,
+        user: context.user,
     };
 }
 

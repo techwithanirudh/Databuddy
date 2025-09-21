@@ -28,11 +28,8 @@ import { SelectItem } from '@/components/ui/select';
 import { chatModels } from '@databuddy/ai/models';
 import * as SelectPrimitive from '@radix-ui/react-select';
 
-export function MultimodalInput({
-	handleSubmit,
+export function ChatInput({
 	status,
-	input,
-	setInput,
 	selectedModelId,
 	onModelChange,
 	messages,
@@ -40,20 +37,31 @@ export function MultimodalInput({
 	websiteId,
 	sendMessage,
 }: {
-	handleSubmit: (message: PromptInputMessage) => void;
 	messages: Array<UIMessage>;
 	chatId: string;
 	sendMessage: UseChatHelpers<ChatMessage>['sendMessage'];
 	status: ChatStatus;
-	input: string;
-	setInput: (input: string) => void;
 	selectedModelId: string;
 	onModelChange?: (modelId: string) => void;
 	websiteId: string;
 }) {
-	function onSubmit(message: PromptInputMessage) {
+	const [input, setInput] = useState('');
+
+	function handleSubmit(message: PromptInputMessage) {
 		window.history.replaceState({}, '', `/websites/${websiteId}/assistant/${chatId}`);
-		handleSubmit(message);
+
+		const hasText = Boolean(message.text);
+		const hasAttachments = Boolean(message.files?.length);
+
+		if (!(hasText || hasAttachments)) {
+			return;
+		}
+
+		sendMessage({
+			text: message.text || 'Sent with attachments',
+			files: message.files,
+		});
+		setInput('');
 	}
 
 	return (
@@ -68,7 +76,7 @@ export function MultimodalInput({
 				)
 			}
 
-			<PromptInput onSubmit={onSubmit} className="mt-4 border-t border-border h-min" globalDrop multiple>
+			<PromptInput onSubmit={handleSubmit} className="mt-4 border-t border-border h-min" globalDrop multiple>
 				<PromptInputBody>
 					<PromptInputAttachments>
 						{(attachment) => <PromptInputAttachment data={attachment} />}

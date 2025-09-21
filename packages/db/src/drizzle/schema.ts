@@ -770,7 +770,8 @@ export const chats = pgTable('assistant_chats', {
 	websiteId: text('websiteId')
 		.notNull()
 		.references(() => websites.id),
-	createdAt: timestamp('createdAt').notNull(),
+	createdAt: timestamp('createdAt').defaultNow().notNull(),
+	updatedAt: timestamp('updatedAt').defaultNow().notNull(),
 	title: text('title').notNull(),
 	userId: text('userId')
 		.notNull()
@@ -791,6 +792,14 @@ export const chats = pgTable('assistant_chats', {
 	})
 		.onUpdate('cascade')
 		.onDelete('cascade'),
+	index('chats_updatedAt_idx').using(
+		'btree',
+		table.updatedAt.asc().nullsLast()
+	),
+	index('chats_createdAt_idx').using(
+		'btree',
+		table.createdAt.asc().nullsLast()
+	)
 ]);
 
 export type Chat = InferSelectModel<typeof chats>;
@@ -803,7 +812,7 @@ export const messages = pgTable('assistant_messages', {
 	role: varchar('role').notNull(),
 	parts: json('parts').notNull(),
 	attachments: json('attachments').notNull(),
-	createdAt: timestamp('createdAt').notNull(),
+	createdAt: timestamp('createdAt').defaultNow().notNull(),
 }, (table) => [
 	index('messages_chatId_idx').using(
 		'btree',

@@ -1,7 +1,7 @@
 'use server';
 
-import { and, eq, gt, lt, asc, desc, type SQL } from 'drizzle-orm';
-import { db } from '@databuddy/db/client';
+import { and, eq, gt, lt, asc, desc, type SQL, like, or, ilike } from 'drizzle-orm';
+import { db } from '@databuddy/db';
 import {
 	votes,
 	messages,
@@ -25,6 +25,7 @@ export async function saveChat({
 		return await db.insert(chats).values({
 			id,
 			createdAt: new Date(),
+			updatedAt: new Date(),
 			userId,
 			websiteId,
 			title,
@@ -55,27 +56,39 @@ export async function getChatsbyWebsiteId({
 	limit,
 	startingAfter,
 	endingBefore,
+	search,
 }: {
 	userId: string;
 	websiteId: string;
 	limit: number;
 	startingAfter: string | null;
 	endingBefore: string | null;
+	search?: string | null;
 }) {
 	try {
 		const extendedLimit = limit + 1;
 
-		const query = (whereCondition?: SQL<any>) =>
-			db
+		const query = (whereCondition?: SQL<any>) => {
+			const baseConditions = [
+				eq(chats.userId, userId),
+				eq(chats.websiteId, websiteId),
+			];
+
+			if (search) {
+				baseConditions.push(ilike(chats.title, `%${search}%`));
+			}
+
+			const allConditions = whereCondition
+				? and(...baseConditions, whereCondition)
+				: and(...baseConditions);
+
+			return db
 				.select()
 				.from(chats)
-				.where(
-					whereCondition
-						? and(whereCondition, eq(chats.userId, userId))
-						: eq(chats.userId, userId)
-				)
+				.where(allConditions)
 				.orderBy(desc(chats.createdAt))
 				.limit(extendedLimit);
+		};
 
 		let filteredChats: Array<Chat> = [];
 
@@ -104,7 +117,7 @@ export async function getChatsbyWebsiteId({
 
 			filteredChats = await query(lt(chats.createdAt, selectedChat.createdAt));
 		} else {
-			filteredChats = await query(eq(chats.websiteId, websiteId));
+			filteredChats = await query();
 		}
 
 		const hasMore = filteredChats.length > limit;
@@ -199,15 +212,18 @@ export async function getVotesByChatId({ id }: { id: string }) {
 
 
 export async function updateChatTitleById({
-  chatId,
-  title,
+	chatId,
+	title,
 }: {
-  chatId: string;
-  title: string;
+	chatId: string;
+	title: string;
 }) {
-  try {
-    return await db.update(chats).set({ title }).where(eq(chats.id, chatId));
-  } catch (error) {
-    throw new Error('Failed to update chat title in database');
-  }
+	try {
+		return await db.update(chats).set({
+			title,
+			updatedAt: new Date()
+		}).where(eq(chats.id, chatId));
+	} catch (error) {
+		throw new Error('Failed to update chat title in database');
+	}
 }

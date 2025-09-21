@@ -2,6 +2,7 @@ import {
 	convertToModelMessages,
 	createUIMessageStream,
 	createUIMessageStreamResponse,
+	validateUIMessages,
 	smoothStream,
 	stepCountIs,
 	streamText,
@@ -10,7 +11,7 @@ import { systemPrompt } from '@databuddy/ai/prompts';
 
 import { config, provider } from '@databuddy/ai/providers';
 import { getChatById, getChatsbyWebsiteId, deleteChatById, saveChat, getMessagesByChatId, saveMessages } from '@databuddy/ai/lib/queries';
-import type { ChatMessage } from '@databuddy/ai/lib/types';
+import type { ChatMessage, MessageMetadata } from '@databuddy/ai/lib/types';
 import { generateTitleFromUserMessage } from './utils';
 import type { RequestHints } from '../types/agent';
 import type { User } from '@databuddy/auth';
@@ -19,6 +20,7 @@ import { convertToUIMessages, generateUUID } from '@databuddy/ai/lib/utils';
 import { setContext } from '@databuddy/ai/context';
 import { tools } from '@databuddy/ai/tools';
 import type { StreamingUpdate } from '@databuddy/shared';
+import { shouldForceStop } from '@/lib/streaming-utils';
 
 interface HandleMessageProps {
 	id: string;
@@ -59,7 +61,9 @@ export async function handleMessage({
 	}
 
 	const messagesFromDb = await getMessagesByChatId({ id });
-	const uiMessages = [...convertToUIMessages(messagesFromDb), message];
+	const uiMessages = await validateUIMessages({
+		messages: [...convertToUIMessages(messagesFromDb), message],
+	});
 
 	await saveMessages({
 		messages: [
@@ -81,27 +85,35 @@ export async function handleMessage({
 
 	const modeConfig = config[selectedChatModel];
 
-
 	const stream = createUIMessageStream({
 		execute: ({ writer }) => {
 			setContext({
 				writer,
-				userId: user.id,
-				fullName: user.name,
+				user,
 			});
 
 			const result = streamText({
 				model: provider.languageModel(selectedChatModel),
 				system,
-				// activeTools: selectedChatModel === 'chat-model' ? ['analyzeBurnRate', 'e'] : [],
-				tools: tools,
-				stopWhen: stepCountIs(modeConfig.stepCount),
 				messages: convertToModelMessages(uiMessages),
 				temperature: modeConfig.temperature,
+				stopWhen: (step) => {
+					if (stepCountIs(modeConfig.stepCount)(step)) {
+						return true;
+					}
+
+					return shouldForceStop(step);
+				},
 				experimental_transform: smoothStream({ chunking: 'word' }),
+				tools: tools,
 			});
 
-			writer.merge(result.toUIMessageStream());
+			result.consumeStream();
+			writer.merge(
+				result.toUIMessageStream({
+					sendStart: false,
+				}),
+			);
 		},
 		onFinish: async ({ messages }) => {
 			await saveMessages({

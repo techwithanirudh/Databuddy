@@ -1,5 +1,5 @@
 import { PreviewMessage, ThinkingMessage } from './message';
-import { Greeting } from './greeting';
+import { ChatGreeting } from './chat-greeting';
 import { memo } from 'react';
 import type { Vote } from '@databuddy/db';
 import equal from 'fast-deep-equal';
@@ -32,7 +32,7 @@ function PureMessages({
         <div className="flex flex-1 overflow-y-auto">
             <Conversation className="mx-auto flex min-w-0 flex-col gap-4 md:gap-6">
                 <ConversationContent className="flex flex-col gap-4 px-2 py-4 md:gap-6 md:px-4 h-full">
-                    {messages.length === 0 && <Greeting />}
+                    {messages.length === 0 && <ChatGreeting />}
 
                     {messages.map((message, index) => (
                         <PreviewMessage

@@ -1,0 +1,2 @@
+- search is broken
+- cleanup db queries

@@ -1,8 +1,9 @@
 export const schemaPrompt = `\
-<database_schema>
+<schema>
+    <description>The schema of the database you are querying.</description>
     <table>
-    <name>analytics.events</name>
-    <description>Contains all user interaction events like page views, clicks, etc.</description>
+        <name>analytics.events</name>
+        <description>Contains all user interaction events like page views, clicks, etc.</description>
         <columns>
         [
             {"name": "client_id", "type": "String", "description": "Website identifier"},
@@ -37,34 +38,34 @@ export const schemaPrompt = `\
         </columns>
     </table>
     <table>
-    <name>analytics.errors</name>
-    <description>Contains detailed information about JavaScript and other client-side errors.</description>
-    <columns>
-        [
-        {"name": "client_id", "type": "String", "description": "Website identifier"},
-        {"name": "timestamp", "type": "DateTime64", "description": "Error timestamp"},
-        {"name": "path", "type": "String", "description": "URL path where error occurred"},
-        {"name": "message", "type": "String", "description": "Error message"},
-        {"name": "filename", "type": "String", "description": "JavaScript file where error occurred"},
-        {"name": "lineno", "type": "Int32", "description": "Line number where error occurred"},
-        {"name": "colno", "type": "Int32", "description": "Column number where error occurred"},
-        {"name": "stack", "type": "String", "description": "Full error stack trace"},
-        {"name": "error_type", "type": "String", "description": "Type of error (e.g., TypeError, ReferenceError)"},
-        {"name": "anonymous_id", "type": "String", "description": "Anonymous user identifier"},
-        {"name": "session_id", "type": "String", "description": "User session identifier"},
-        {"name": "country", "type": "String", "description": "User country code"},
-        {"name": "region", "type": "String", "description": "Geographic region"},
-        {"name": "browser_name", "type": "String", "description": "Browser name"},
-        {"name": "browser_version", "type": "String", "description": "Browser version"},
-        {"name": "os_name", "type": "String", "description": "Operating system"},
-        {"name": "os_version", "type": "String", "description": "OS version"},
-        {"name": "device_type", "type": "String", "description": "Device type (desktop, mobile, tablet)"}
-        ]
-    </columns>
+        <name>analytics.errors</name>
+        <description>Contains detailed information about JavaScript and other client-side errors.</description>
+        <columns>
+            [
+            {"name": "client_id", "type": "String", "description": "Website identifier"},
+            {"name": "timestamp", "type": "DateTime64", "description": "Error timestamp"},
+            {"name": "path", "type": "String", "description": "URL path where error occurred"},
+            {"name": "message", "type": "String", "description": "Error message"},
+            {"name": "filename", "type": "String", "description": "JavaScript file where error occurred"},
+            {"name": "lineno", "type": "Int32", "description": "Line number where error occurred"},
+            {"name": "colno", "type": "Int32", "description": "Column number where error occurred"},
+            {"name": "stack", "type": "String", "description": "Full error stack trace"},
+            {"name": "error_type", "type": "String", "description": "Type of error (e.g., TypeError, ReferenceError)"},
+            {"name": "anonymous_id", "type": "String", "description": "Anonymous user identifier"},
+            {"name": "session_id", "type": "String", "description": "User session identifier"},
+            {"name": "country", "type": "String", "description": "User country code"},
+            {"name": "region", "type": "String", "description": "Geographic region"},
+            {"name": "browser_name", "type": "String", "description": "Browser name"},
+            {"name": "browser_version", "type": "String", "description": "Browser version"},
+            {"name": "os_name", "type": "String", "description": "Operating system"},
+            {"name": "os_version", "type": "String", "description": "OS version"},
+            {"name": "device_type", "type": "String", "description": "Device type (desktop, mobile, tablet)"}
+            ]
+        </columns>
     </table>
     <table>
-    <name>analytics.web_vitals</name>
-    <description>Contains Core Web Vitals and performance metrics for pages.</description>
+        <name>analytics.web_vitals</name>
+        <description>Contains Core Web Vitals and performance metrics for pages.</description>
         <columns>
         [
             {"name": "client_id", "type": "String", "description": "Website identifier"},
@@ -86,5 +87,5 @@ export const schemaPrompt = `\
         ]
         </columns>
     </table>
-</database_schema>
+</schema>
 `;

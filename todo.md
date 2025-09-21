@@ -1,2 +1,8 @@
 - search is broken
 - cleanup db queries
+- message metadata
+- split history  into history item and history
+- when upvoting a message it flashes
+- theres no optimistic update for history deletion
+- edit message
+- save chat model

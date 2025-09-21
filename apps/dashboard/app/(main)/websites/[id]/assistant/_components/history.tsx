@@ -5,12 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, type QueryKey } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useDebounceCallback } from "usehooks-ts";
-import { ListIcon, MagnifyingGlassIcon, TrashIcon } from "@phosphor-icons/react";
+import { ListIcon, MagnifyingGlassIcon, TrashIcon, ClockCounterClockwiseIcon } from "@phosphor-icons/react";
 
 type Chat = {
     id: string;
@@ -41,76 +41,47 @@ export function ChatHistory({ websiteId }: { websiteId: string }) {
     // Debounced search to avoid too many API calls
     const debouncedSearch = useDebounceCallback(setSearchQuery, 300);
 
+    const historyKey = [
+        'assistant.getHistory',
+        { websiteId: websiteId, limit: 20, search: searchQuery || undefined },
+    ] as const as QueryKey;
+
     // Fetch chats with search functionality
     const { data: chats, isLoading } = trpc.assistant.getHistory.useQuery({
         websiteId: websiteId,
         limit: 20,
-        search: searchQuery || undefined, // Only pass search if it's not empty
+        search: searchQuery || undefined, 
     }, {
-        enabled: isOpen, // Only fetch when popover is open
+        enabled: isOpen,
     });
 
     // Delete chat mutation with optimistic updates
     const deleteChatMutation = trpc.assistant.deleteChat.useMutation({
         onMutate: async ({ chatId }) => {
-            // Cancel outgoing refetches
-            await queryClient.cancelQueries({
-                queryKey: trpc.assistant.getHistory.useQuery({
-                    websiteId: websiteId,
-                    limit: 20,
-                    search: searchQuery || undefined,
-                }),
-            });
+            await queryClient.cancelQueries(historyKey);
 
-            // Snapshot previous value
-            const previousChats = queryClient.getQueryData(
-                trpc.assistant.getHistory.useQuery({
-                    websiteId: websiteId,
-                    limit: 20,
-                    search: searchQuery || undefined,
-                }),
-            );
+            const previousChats = queryClient.getQueryData(historyKey);
 
             // Optimistically update the cache
-            queryClient.setQueryData(
-                trpc.assistant.getHistory.useQuery({
-                    websiteId: websiteId,
-                    limit: 20,
-                    search: searchQuery || undefined,
-                }),
-                (old: any) => {
-                    if (!old?.chats) return old;
-                    return {
-                        ...old,
-                        chats: old.chats.filter((chat: Chat) => chat.id !== chatId)
-                    };
-                }
-            );
+            queryClient.setQueryData(historyKey, (old: any) => {
+                if (!old?.chats) return old;
+                return {
+                    ...old,
+                    chats: old.chats.filter((chat: Chat) => chat.id !== chatId),
+                };
+            });
 
             return { previousChats };
         },
         onError: (_, __, context) => {
             // Restore previous data on error
             if (context?.previousChats) {
-                queryClient.setQueryData(
-                    trpc.assistant.getHistory.useQuery({
-                        websiteId: websiteId,
-                        limit: 20,
-                        search: searchQuery || undefined,
-                    }),
-                    context.previousChats,
-                );
+                queryClient.setQueryData(historyKey, context.previousChats);
             }
         },
         onSettled: () => {
             // Refetch after error or success
-            queryClient.invalidateQueries({
-                queryKey: trpc.assistant.getHistory.useQuery({
-                    websiteId: websiteId,
-                    limit: 20,
-                    search: searchQuery || undefined,
-                }),
-            });
+            queryClient.invalidateQueries(historyKey);
         },
     });
 
@@ -128,7 +99,7 @@ export function ChatHistory({ websiteId }: { websiteId: string }) {
         <Popover open={isOpen} onOpenChange={setIsOpen}>
             <PopoverTrigger asChild>
                 <Button variant="outline" size="icon">
-                    <ListIcon size={16} />
+                    <ClockCounterClockwiseIcon size={16} />
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[380px] p-0" align="end">
@@ -155,11 +126,11 @@ export function ChatHistory({ websiteId }: { websiteId: string }) {
                                 </div>
                             </div>
                         ) : (
-                            <div className="space-y-4">
+                            <div className="space-y-1 pr-2">
                                 {chats?.chats?.map((chat: Chat) => (
                                     <div
                                         key={chat.id}
-                                        className="group relative flex items-center justify-between hover:bg-muted/50 rounded-md p-2 -m-2"
+                                        className="group relative flex items-center justify-between hover:bg-muted/50 rounded-md p-2"
                                     >
                                         <button
                                             type="button"

@@ -21,8 +21,8 @@ export const systemPrompt = ({
 
   if (selectedChatModel === 'chat-model') {
     return [
-
-      chatPrompt(websiteId, websiteHostname),
+      corePrompt(websiteHostname, websiteId),
+      requestPrompt,
       'You follow all the user instructions and provide a detailed response.'
     ]
       .filter(Boolean)

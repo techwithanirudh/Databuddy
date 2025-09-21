@@ -10,9 +10,6 @@ import {
 	type PromptInputMessage,
 	PromptInputModelSelect,
 	PromptInputModelSelectContent,
-	PromptInputModelSelectItem,
-	PromptInputModelSelectTrigger,
-	PromptInputModelSelectValue,
 	PromptInputSubmit,
 	PromptInputTextarea,
 	PromptInputToolbar,
@@ -23,10 +20,10 @@ import { SuggestedActions } from './suggested-actions';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import { ChatMessage } from '@databuddy/ai/lib/types';
 import { memo, useEffect, useState } from 'react';
-import { CpuIcon, ChevronDownIcon } from 'lucide-react';
 import { SelectItem } from '@/components/ui/select';
 import { chatModels } from '@databuddy/ai/models';
 import * as SelectPrimitive from '@radix-ui/react-select';
+import { CaretUpIcon, CpuIcon } from '@phosphor-icons/react';
 
 export function ChatInput({
 	status,
@@ -76,7 +73,9 @@ export function ChatInput({
 				)
 			}
 
-			<PromptInput onSubmit={handleSubmit} className="mt-4 border-t border-border h-min" globalDrop multiple>
+			{/* <div className="border-t border-border -mx-6 mt-6" /> */}
+
+			<PromptInput onSubmit={handleSubmit} className="h-min mt-6" globalDrop multiple>
 				<PromptInputBody>
 					<PromptInputAttachments>
 						{(attachment) => <PromptInputAttachment data={attachment} />}
@@ -143,7 +142,7 @@ function PureModelSelectorCompact({
 				<span className="hidden text-xs font-medium sm:block">
 					{selectedModel?.name}
 				</span>
-				<ChevronDownIcon size={16} />
+				<CaretUpIcon size={16} />
 			</SelectPrimitive.Trigger>
 			<PromptInputModelSelectContent className="min-w-[260px] p-0">
 				<div className="flex flex-col gap-px">

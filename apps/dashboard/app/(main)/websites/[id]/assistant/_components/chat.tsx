@@ -62,10 +62,10 @@ const Chat = ({ id, websiteId, initialMessages, initialChatModel }: { id: string
 
   return (
     <div className="flex size-full items-center justify-center divide-x divide-border gap-2">
-      <div className={cn("relative size-full border border-border rounded-lg flex flex-col transition-all duration-300 ease-in-out", isCanvasVisible && "pr-[603px]",)}>
+      <div className={cn("relative size-full border border-border rounded-2xl flex flex-col transition-all duration-300 ease-in-out", isCanvasVisible && "pr-[603px]",)}>
         <ChatHeader websiteId={websiteId} />
 
-        <div className="relative flex flex-col flex-1 h-full p-6 overflow-y-auto">
+        <div className="relative flex flex-col flex-1 h-full pb-6 px-6 overflow-y-auto">
           <Messages
             chatId={id}
             status={status}

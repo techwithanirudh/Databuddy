@@ -14,10 +14,10 @@ export function ChatHeader({ websiteId }: { websiteId: string }) {
   };
 
   return (
-    <div className="relative z-10 bg-background py-6 flex justify-between w-full px-6 border-b border-border">
+    <div className="relative z-10 bg-background py-6 flex justify-between w-full px-6 border-b border-border rounded-t-2xl">
       <div className="flex items-center">
-        <Button variant="outline" size="icon" onClick={() => router.push("/")}>
-          <ArrowLeftIcon size={16} />
+        <Button variant="outline" size="icon" onClick={handleNewChat}>
+          <PlusIcon size={16} />
         </Button>
       </div>
 
@@ -40,9 +40,6 @@ export function ChatHeader({ websiteId }: { websiteId: string }) {
       </div>
 
       <div className="flex items-center space-x-4 transition-all duration-300 ease-in-out">
-        <Button variant="outline" size="icon" onClick={handleNewChat}>
-            <PlusIcon size={16} />
-        </Button>
         <ChatHistory websiteId={websiteId} />
       </div>
     </div>

@@ -4,19 +4,20 @@ export const chatPrompt = (
 	websiteHostname: string,
 ) => `
 <workflow>
-Your task is to process the <user_query> while strictly adhering to the <core_directives>. You must consult the extensive <knowledge_base> to construct your response.
+    Your task is to process the <user_query> while strictly adhering to the <core_directives>. You must consult the extensive <knowledge_base> to construct your response.
 
-<instructions>
-Your goal is to provide a comprehensive, insightful, and actionable answer in a single turn.
-  1.  **Think:** Explain your reasoning in simple terms, what you need to find and how you'll approach it. Keep it conversational and business-focused.
-  2.  **Generate SQL:** Using the patterns, rules, and examples from the <knowledge_base>, write a valid ClickHouse SQL query.
-  3.  **Format Response:** Choose the correct response_type and chart_type. For ALL response types, provide rich, detailed explanations:
-      - **Metrics:** MUST include comprehensive context, interpretation, benchmarks, and actionable recommendations following <explanation_guidelines>
-      - **Text responses:** MUST be detailed, helpful, and provide real value - never give minimal answers
-      - **Charts:** MUST include interpretation of what the data patterns mean and business implications
-  4.  **Quality Check:** Ensure your response provides genuine insight and value, not just raw data
-  5.  **Respond:** Output a single, valid JSON object matching the <response_format>.
-</instructions>
+    <instructions>
+        Your goal is to provide a comprehensive, insightful, and actionable answer in a single turn.
+
+        1. **Think:** Explain your reasoning in simple terms, what you need to find and how you'll approach it. Keep it conversational and business-focused.
+        2. **Generate SQL:** Using the patterns, rules, and examples from the <knowledge_base>, write a valid ClickHouse SQL query.
+        3. **Format Response:** Choose the correct response_type and chart_type. For ALL response types, provide rich, detailed explanations:
+            - **Metrics:** MUST include comprehensive context, interpretation, benchmarks, and actionable recommendations following <explanation_guidelines>
+            - **Text responses:** MUST be detailed, helpful, and provide real value - never give minimal answers
+            - **Charts:** MUST include interpretation of what the data patterns mean and business implications
+        4. **Quality Check:** Ensure your response provides genuine insight and value, not just raw data
+        5. **Respond:** Output a single, valid JSON object matching the <response_format>.
+    </instructions>
 </workflow>
 
 <knowledge_base>
@@ -132,27 +133,26 @@ Your goal is to provide a comprehensive, insightful, and actionable answer in a 
 
 <section name="Metric-Specific Queries and Explanations">
     <metric_examples>
-    <example name="Page Views">
-        <user_query>"how many page views yesterday?"</user_query>
-        <sql>SELECT COUNT(*) AS page_views FROM analytics.events WHERE client_id = '${websiteId}' AND event_name = 'screen_view' AND toDate(time) = yesterday()</sql>
-        <label>Page Views (Yesterday)</label>
-    </example>
-    <example name="Unique Visitors">
-        <user_query>"unique visitors last 7 days"</user_query>
-        <sql>SELECT uniq(anonymous_id) AS unique_visitors FROM analytics.events WHERE client_id = '${websiteId}' AND event_name = 'screen_view' AND time >= today() - INTERVAL '7' DAY</sql>
-        <label>Unique Visitors (Last 7 Days)</label>
-    </example>
-    <example name="Average Load Time">
-        <user_query>"what's my average load time?"</user_query>
-        <sql>SELECT AVG(load_time) AS avg_load_time FROM analytics.events WHERE client_id = '${websiteId}' AND event_name = 'screen_view' AND load_time > 0</sql>
-        <label>Average Load Time (ms)</label>
-    </example>
-    <example name="Total Errors">
-        <user_query>"how many errors today?"</user_query>
-        <sql>SELECT COUNT(*) AS total_errors FROM analytics.errors WHERE client_id = '${websiteId}' AND toDate(timestamp) = today()</sql>
-        <label>Total Errors (Today)</label>
-    </example>
-
+        <example name="Page Views">
+            <user_query>"how many page views yesterday?"</user_query>
+            <sql>SELECT COUNT(*) AS page_views FROM analytics.events WHERE client_id = '${websiteId}' AND event_name = 'screen_view' AND toDate(time) = yesterday()</sql>
+            <label>Page Views (Yesterday)</label>
+        </example>
+        <example name="Unique Visitors">
+            <user_query>"unique visitors last 7 days"</user_query>
+            <sql>SELECT uniq(anonymous_id) AS unique_visitors FROM analytics.events WHERE client_id = '${websiteId}' AND event_name = 'screen_view' AND time >= today() - INTERVAL '7' DAY</sql>
+            <label>Unique Visitors (Last 7 Days)</label>
+        </example>
+        <example name="Average Load Time">
+            <user_query>"what's my average load time?"</user_query>
+            <sql>SELECT AVG(load_time) AS avg_load_time FROM analytics.events WHERE client_id = '${websiteId}' AND event_name = 'screen_view' AND load_time > 0</sql>
+            <label>Average Load Time (ms)</label>
+        </example>
+        <example name="Total Errors">
+            <user_query>"how many errors today?"</user_query>
+            <sql>SELECT COUNT(*) AS total_errors FROM analytics.errors WHERE client_id = '${websiteId}' AND toDate(timestamp) = today()</sql>
+            <label>Total Errors (Today)</label>
+        </example>
     </metric_examples>
     <explanation_guidelines>
         - For metric responses, the text_response field is CRITICAL and must be informative and contextual.

@@ -1,36 +1,33 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
-    Reasoning,
-    ReasoningTrigger,
-    ReasoningContent,
+	Reasoning,
+	ReasoningContent,
+	ReasoningTrigger,
 } from '@/components/ai-elements/reasoning';
 
 interface MessageReasoningProps {
-    isLoading: boolean;
-    reasoning: string;
+	isLoading: boolean;
+	reasoning: string;
 }
 
 export function MessageReasoning({
-    isLoading,
-    reasoning,
+	isLoading,
+	reasoning,
 }: MessageReasoningProps) {
-    const [hasBeenStreaming, setHasBeenStreaming] = useState(isLoading);
+	const [hasBeenStreaming, setHasBeenStreaming] = useState(isLoading);
 
-    useEffect(() => {
-        if (isLoading) {
-            setHasBeenStreaming(true);
-        }
-    }, [isLoading]);
+	useEffect(() => {
+		if (isLoading) {
+			setHasBeenStreaming(true);
+		}
+	}, [isLoading]);
 
-    return (
-        <Reasoning
-            isStreaming={isLoading}
-            defaultOpen={hasBeenStreaming}
-        >
-            <ReasoningTrigger />
-            <ReasoningContent>{reasoning}</ReasoningContent>
-        </Reasoning>
-    );
+	return (
+		<Reasoning defaultOpen={hasBeenStreaming} isStreaming={isLoading}>
+			<ReasoningTrigger />
+			<ReasoningContent>{reasoning}</ReasoningContent>
+		</Reasoning>
+	);
 }

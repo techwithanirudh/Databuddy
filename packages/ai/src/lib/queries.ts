@@ -1,14 +1,25 @@
 'use server';
 
-import { and, eq, gt, lt, asc, desc, type SQL, like, or, ilike } from 'drizzle-orm';
-import { db } from '@databuddy/db';
 import {
-	votes,
-	messages,
-	type DBMessage,
 	type Chat,
 	chats,
+	type DBMessage,
+	db,
+	messages,
+	votes,
 } from '@databuddy/db';
+import {
+	and,
+	asc,
+	desc,
+	eq,
+	gt,
+	gte,
+	ilike,
+	inArray,
+	lt,
+	type SQL,
+} from 'drizzle-orm';
 
 export async function saveChat({
 	id,
@@ -30,7 +41,7 @@ export async function saveChat({
 			websiteId,
 			title,
 		});
-	} catch (error) {
+	} catch (_error) {
 		throw new Error('Failed to save chat');
 	}
 }
@@ -45,7 +56,7 @@ export async function deleteChatById({ id }: { id: string }) {
 			.where(eq(chats.id, id))
 			.returning();
 		return chatsDeleted;
-	} catch (error) {
+	} catch (_error) {
 		throw new Error('Failed to delete chat by id');
 	}
 }
@@ -90,7 +101,7 @@ export async function getChatsbyWebsiteId({
 				.limit(extendedLimit);
 		};
 
-		let filteredChats: Array<Chat> = [];
+		let filteredChats: Chat[] = [];
 
 		if (startingAfter) {
 			const [selectedChat] = await db
@@ -126,7 +137,7 @@ export async function getChatsbyWebsiteId({
 			chats: hasMore ? filteredChats.slice(0, limit) : filteredChats,
 			hasMore,
 		};
-	} catch (error) {
+	} catch (_error) {
 		throw new Error('Failed to get chats by user id');
 	}
 }
@@ -142,7 +153,7 @@ export async function getChatById({ id }: { id: string }) {
 		}
 
 		return selectedChat;
-	} catch (error) {
+	} catch (_error) {
 		throw new Error('Failed to get chat by id');
 	}
 }
@@ -150,11 +161,11 @@ export async function getChatById({ id }: { id: string }) {
 export async function saveMessages({
 	messages: items,
 }: {
-	messages: Array<DBMessage>;
+	messages: DBMessage[];
 }) {
 	try {
 		return await db.insert(messages).values(items);
-	} catch (error) {
+	} catch (_error) {
 		throw new Error('Failed to save messages');
 	}
 }
@@ -166,7 +177,7 @@ export async function getMessagesByChatId({ id }: { id: string }) {
 			.from(messages)
 			.where(eq(messages.chatId, id))
 			.orderBy(asc(messages.createdAt));
-	} catch (error) {
+	} catch (_error) {
 		throw new Error('Failed to get messages by chat id');
 	}
 }
@@ -197,7 +208,7 @@ export async function voteMessage({
 			messageId,
 			isUpvoted: type === 'up',
 		});
-	} catch (error) {
+	} catch (_error) {
 		throw new Error('Failed to vote message');
 	}
 }
@@ -205,11 +216,10 @@ export async function voteMessage({
 export async function getVotesByChatId({ id }: { id: string }) {
 	try {
 		return await db.select().from(votes).where(eq(votes.chatId, id));
-	} catch (error) {
+	} catch (_error) {
 		throw new Error('Failed to get votes by chat id');
 	}
 }
-
 
 export async function updateChatTitleById({
 	chatId,
@@ -219,11 +229,57 @@ export async function updateChatTitleById({
 	title: string;
 }) {
 	try {
-		return await db.update(chats).set({
-			title,
-			updatedAt: new Date()
-		}).where(eq(chats.id, chatId));
-	} catch (error) {
+		return await db
+			.update(chats)
+			.set({
+				title,
+				updatedAt: new Date(),
+			})
+			.where(eq(chats.id, chatId));
+	} catch (_error) {
 		throw new Error('Failed to update chat title in database');
+	}
+}
+
+export async function getMessageById({ id }: { id: string }) {
+	try {
+		return await db.select().from(messages).where(eq(messages.id, id));
+	} catch (_error) {
+		throw new Error('Failed to get message by id');
+	}
+}
+
+export async function deleteMessagesByChatIdAfterTimestamp({
+	chatId,
+	timestamp,
+}: {
+	chatId: string;
+	timestamp: Date;
+}) {
+	try {
+		const messagesToDelete = await db
+			.select({ id: messages.id })
+			.from(messages)
+			.where(
+				and(eq(messages.chatId, chatId), gte(messages.createdAt, timestamp))
+			);
+
+		const messageIds = messagesToDelete.map((message) => message.id);
+
+		if (messageIds.length > 0) {
+			await db
+				.delete(votes)
+				.where(
+					and(eq(votes.chatId, chatId), inArray(votes.messageId, messageIds))
+				);
+
+			return await db
+				.delete(messages)
+				.where(
+					and(eq(messages.chatId, chatId), inArray(messages.id, messageIds))
+				);
+		}
+	} catch (_error) {
+		throw new Error('Failed to delete messages by chat id after timestamp');
 	}
 }

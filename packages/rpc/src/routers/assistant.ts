@@ -1,8 +1,14 @@
-
+import {
+	deleteChatById,
+	getChatById,
+	getChatsbyWebsiteId,
+	getVotesByChatId,
+	updateChatTitleById,
+	voteMessage,
+} from '@databuddy/ai/lib/queries';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { createTRPCRouter, protectedProcedure } from '../trpc';
-import { getChatById, getChatsbyWebsiteId, deleteChatById, voteMessage, updateChatTitleById, getVotesByChatId } from '@databuddy/ai/lib/queries';
 
 export const assistantRouter = createTRPCRouter({
 	getHistory: protectedProcedure
@@ -19,7 +25,8 @@ export const assistantRouter = createTRPCRouter({
 			if (input.startingAfter && input.endingBefore) {
 				throw new TRPCError({
 					code: 'BAD_REQUEST',
-					message: 'Starting after and ending before cannot be provided together',
+					message:
+						'Starting after and ending before cannot be provided together',
 				});
 			}
 
@@ -60,7 +67,6 @@ export const assistantRouter = createTRPCRouter({
 			return chat;
 		}),
 
-
 	getVotes: protectedProcedure
 		.input(z.object({ chatId: z.string() }))
 		.query(async ({ ctx, input }) => {
@@ -94,7 +100,7 @@ export const assistantRouter = createTRPCRouter({
 				.object({
 					chatId: z.string(),
 					messageId: z.string(),
-					type: z.enum(['up', 'down']).optional()
+					type: z.enum(['up', 'down']).optional(),
 				})
 				.refine((v) => v.type, {
 					message: 'Type must be provided',

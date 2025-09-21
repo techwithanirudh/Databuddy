@@ -21,14 +21,14 @@ export const Suggestions = ({
 );
 
 export type SuggestedAction = {
-  text: string;
-  icon: React.ElementType;
-  type: string;
+	text: string;
+	icon: React.ElementType;
+	type: string;
 };
 
-export type SuggestionProps = Omit<ComponentProps<typeof Button>, "onClick"> & {
-  suggestion: SuggestedAction;
-  onClick?: (suggestion: SuggestedAction) => void;
+export type SuggestionProps = Omit<ComponentProps<typeof Button>, 'onClick'> & {
+	suggestion: SuggestedAction;
+	onClick?: (suggestion: SuggestedAction) => void;
 };
 
 export const Suggestion = ({
@@ -44,16 +44,16 @@ export const Suggestion = ({
 		onClick?.(suggestion);
 	};
 
-  return (
-    <Button
-      className={cn("cursor-pointer rounded-xl px-4", className)}
-      onClick={handleClick}
-      size={size}
-      type="button"
-      variant={variant}
-      {...props}
-    >
-      {children || suggestion.text}
-    </Button>
-  );
+	return (
+		<Button
+			className={cn('cursor-pointer rounded-xl px-4', className)}
+			onClick={handleClick}
+			size={size}
+			type="button"
+			variant={variant}
+			{...props}
+		>
+			{children || suggestion.text}
+		</Button>
+	);
 };

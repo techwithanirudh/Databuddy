@@ -11,8 +11,8 @@
  * - import { env } from '@databuddy/env/docs'
  */
 
-export type { ApiEnv } from './api';
 export type { AiEnv } from './ai';
+export type { ApiEnv } from './api';
 export * from './base';
 export type { BasketEnv } from './basket';
 export type { BetterAdminEnv } from './better-admin';

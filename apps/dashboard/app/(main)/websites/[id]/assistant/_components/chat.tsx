@@ -1,97 +1,110 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { useChat } from "@ai-sdk-tools/store";
-import { DefaultChatTransport } from 'ai';
+import { useArtifacts } from '@ai-sdk-tools/artifacts/client';
+import { useChat } from '@ai-sdk-tools/store';
+import type { ChatMessage } from '@databuddy/ai/lib/types';
 import { generateUUID } from '@databuddy/ai/lib/utils';
-
-import { useArtifacts } from "@ai-sdk-tools/artifacts/client";
-import { Messages } from './messages';
-import { trpc } from '@/lib/trpc';
-import { ChatMessage } from '@databuddy/ai/lib/types';
+import { DefaultChatTransport } from 'ai';
 import { notFound } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
+import { trpc } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
-import { ChatInput } from './chat-input';
+import { Canvas } from './canvas';
 import { ChatHeader } from './chat-header';
-// import { Canvas } from './canvas';
+import { ChatInput } from './chat-input';
+import { Messages } from './messages';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-const Chat = ({ id, websiteId, initialMessages, initialChatModel }: { id: string, websiteId: string, initialMessages: ChatMessage[], initialChatModel: string }) => {
-  const [currentModelId, setCurrentModelId] = useState(initialChatModel);
-  const currentModelIdRef = useRef(currentModelId);
+const Chat = ({
+	id,
+	websiteId,
+	initialMessages,
+	initialChatModel,
+}: {
+	id: string;
+	websiteId: string;
+	initialMessages: ChatMessage[];
+	initialChatModel: string;
+}) => {
+	const [currentModelId, setCurrentModelId] = useState(initialChatModel);
+	const currentModelIdRef = useRef(currentModelId);
 
-  const { current } = useArtifacts();
-  const isCanvasVisible = !!current;
+	const { current } = useArtifacts();
+	const _isCanvasVisible = !!current;
 
-  // Fetch votes for the current chat
-  const { data: votes = [] } = trpc.assistant.getVotes.useQuery(
-    { chatId: id },
-    { enabled: !!id }
-  );
+	// Fetch votes for the current chat
+	const { data: votes = [] } = trpc.assistant.getVotes.useQuery(
+		{ chatId: id },
+		{ enabled: !!id }
+	);
 
-  const { messages, sendMessage, setMessages, regenerate, status } = useChat<ChatMessage>({
-    id,
-    messages: initialMessages,
-    generateId: generateUUID,
-    experimental_throttle: 100,
-    transport: new DefaultChatTransport({
-      api: `${API_BASE_URL}/v1/assistant`,
-      prepareSendMessagesRequest({ messages, id, body }) {
-        return {
-          credentials: 'include',
-          body: {
-            id,
-            message: messages.at(-1),
-            selectedChatModel: currentModelIdRef.current,
-            websiteId,
-            ...body,
-          },
-        };
-      },
-    })
-  })
+	const { messages, sendMessage, setMessages, regenerate, status } =
+		useChat<ChatMessage>({
+			id,
+			messages: initialMessages,
+			generateId: generateUUID,
+			experimental_throttle: 100,
+			transport: new DefaultChatTransport({
+				api: `${API_BASE_URL}/v1/assistant`,
+				prepareSendMessagesRequest({ messages, id, body }) {
+					return {
+						credentials: 'include',
+						body: {
+							id,
+							message: messages.at(-1),
+							selectedChatModel: currentModelIdRef.current,
+							websiteId,
+							...body,
+						},
+					};
+				},
+			}),
+		});
 
-  if (!websiteId) {
-    return notFound();
-  }
+	useEffect(() => {
+		currentModelIdRef.current = currentModelId;
+	}, [currentModelId]);
 
-  useEffect(() => {
-    currentModelIdRef.current = currentModelId;
-  }, [currentModelId]);
+	if (!websiteId) {
+		return notFound();
+	}
 
-  return (
-    <div className="flex size-full items-center justify-center divide-x divide-border gap-2">
-      <div className={cn("relative size-full border border-border rounded-2xl flex flex-col transition-all duration-300 ease-in-out", isCanvasVisible && "pr-[603px]",)}>
-        <ChatHeader websiteId={websiteId} />
+	return (
+		<div className="flex size-full items-center justify-center gap-2 divide-x divide-border">
+			<div
+				className={cn(
+					'relative flex size-full flex-col rounded-2xl border border-border transition-all duration-300 ease-in-out'
+				)}
+			>
+				<ChatHeader websiteId={websiteId} />
 
-        <div className="relative flex flex-col flex-1 h-full pb-6 px-6 overflow-y-auto">
-          <Messages
-            chatId={id}
-            status={status}
-            votes={votes}
-            messages={messages}
-            setMessages={setMessages}
-            regenerate={regenerate}
-            isReadonly={false}
-            selectedModelId={currentModelId}
-          />
+				<div className="relative flex h-full flex-1 flex-col overflow-y-auto px-6 pb-6">
+					<Messages
+						chatId={id}
+						isReadonly={false}
+						messages={messages}
+						regenerate={regenerate}
+						setMessages={setMessages}
+						status={status}
+						votes={votes}
+					/>
 
-          <ChatInput
-            sendMessage={sendMessage}
-            status={status}
-            selectedModelId={currentModelId}
-            onModelChange={setCurrentModelId}
-            messages={messages}
-            chatId={id}
-            websiteId={websiteId}
-          />
-        </div>
-      </div>
+					<ChatInput
+						chatId={id}
+						messages={messages}
+						onModelChange={setCurrentModelId}
+						selectedModelId={currentModelId}
+						sendMessage={sendMessage}
+						status={status}
+						websiteId={websiteId}
+					/>
+				</div>
+			</div>
 
-      {/* <Canvas websiteId={websiteId} /> */}
-    </div>
-  );
+			<Canvas websiteId={websiteId} />
+		</div>
+	);
 };
 
 export default Chat;

@@ -27,7 +27,6 @@ import { NavigationSection } from './navigation/navigation-section';
 import { SandboxHeader } from './navigation/sandbox-header';
 import type { NavigationSection as NavigationSectionType } from './navigation/types';
 import { WebsiteHeader } from './navigation/website-header';
-import { OrganizationSelector } from './organization-selector';
 
 type NavigationConfig = {
 	navigation: NavigationSectionType[];
@@ -123,10 +122,8 @@ export function Sidebar() {
 		if (isWebsite || isDemo) {
 			headerComponent = isWebsite ? (
 				<WebsiteHeader website={currentWebsite} />
-			) : (
-				// <OrganizationSelector />
-				null
-			);
+			) : // <OrganizationSelector />
+			null;
 			currentId = websiteId;
 		} else if (isDatabase) {
 			headerComponent = <DatabaseHeader database={currentDatabase} />;

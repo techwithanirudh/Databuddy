@@ -1,32 +1,32 @@
-"use client";
+'use client';
 
-import { ChatHistory } from "./history";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { useRouter } from "next/navigation";
-import { PlusIcon, ArrowLeftIcon } from "@phosphor-icons/react";
+import { PlusIcon } from '@phosphor-icons/react';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { ChatHistory } from './history';
 
 export function ChatHeader({ websiteId }: { websiteId: string }) {
-  const router = useRouter();
+	const router = useRouter();
 
-  const handleNewChat = () => {
-    router.push(`/websites/${websiteId}/assistant`);
-  };
+	const handleNewChat = () => {
+		router.push(`/websites/${websiteId}/assistant`);
+	};
 
-  return (
-    <div className="relative z-10 bg-background py-6 flex justify-between w-full px-6 border-b border-border rounded-t-2xl">
-      <div className="flex items-center">
-        <Button variant="outline" size="icon" onClick={handleNewChat}>
-          <PlusIcon size={16} />
-        </Button>
-      </div>
+	return (
+		<div className="relative z-10 flex h-22 w-full justify-between rounded-t-2xl border-border border-b bg-background p-6">
+			<div className="flex items-center">
+				<Button onClick={handleNewChat} size="icon" variant="outline">
+					<PlusIcon size={16} />
+				</Button>
+			</div>
 
-      <div
-        className={cn(
-          "flex items-center justify-center transition-all duration-300 ease-in-out",
-        )}
-      >
-        {/* {data && (
+			<div
+				className={cn(
+					'flex items-center justify-center transition-all duration-300 ease-in-out'
+				)}
+			>
+				{/* {data && (
           <TextEffect
             per="char"
             preset="fade"
@@ -37,11 +37,11 @@ export function ChatHeader({ websiteId }: { websiteId: string }) {
             {data.title}
           </TextEffect>
         )} */}
-      </div>
+			</div>
 
-      <div className="flex items-center space-x-4 transition-all duration-300 ease-in-out">
-        <ChatHistory websiteId={websiteId} />
-      </div>
-    </div>
-  );
+			<div className="flex items-center space-x-4 transition-all duration-300 ease-in-out">
+				<ChatHistory websiteId={websiteId} />
+			</div>
+		</div>
+	);
 }

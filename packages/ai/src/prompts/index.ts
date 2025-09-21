@@ -1,6 +1,6 @@
 import type { RequestHints } from '../../../../apps/api/src/types/agent';
-import { corePrompt } from './core';
 import { chatPrompt } from './chat-prompt';
+import { corePrompt } from './core';
 
 export const getRequestPromptFromHints = (requestHints: RequestHints) => `\
 <context>
@@ -10,32 +10,33 @@ export const getRequestPromptFromHints = (requestHints: RequestHints) => `\
 </context>`;
 
 export const systemPrompt = ({
-  selectedChatModel,
-  requestHints,
+	selectedChatModel,
+	requestHints,
 }: {
-  selectedChatModel: string;
-  requestHints: RequestHints;
+	selectedChatModel: string;
+	requestHints: RequestHints;
 }) => {
-  const { websiteHostname, websiteId } = requestHints;
-  const requestPrompt = getRequestPromptFromHints(requestHints);
+	const { websiteHostname, websiteId } = requestHints;
+	const requestPrompt = getRequestPromptFromHints(requestHints);
 
-  if (selectedChatModel === 'chat-model') {
-    return [
-      corePrompt(websiteHostname, websiteId),
-      requestPrompt,
-      'You follow all the user instructions and provide a detailed response.'
-    ]
-      .filter(Boolean)
-      .join('\n')
-      .trim();
-  } else if (selectedChatModel === 'relevance-model') {
-    return [
-      corePrompt(websiteHostname, websiteId),
-      requestPrompt,
-      chatPrompt(websiteId, websiteHostname),
-    ]
-      .filter(Boolean)
-      .join('\n\n')
-      .trim();
-  }
+	if (selectedChatModel === 'chat-model') {
+		return [
+			corePrompt(websiteHostname, websiteId),
+			requestPrompt,
+			'You follow all the user instructions and provide a detailed response.',
+		]
+			.filter(Boolean)
+			.join('\n')
+			.trim();
+	}
+	if (selectedChatModel === 'relevance-model') {
+		return [
+			corePrompt(websiteHostname, websiteId),
+			requestPrompt,
+			chatPrompt(websiteId, websiteHostname),
+		]
+			.filter(Boolean)
+			.join('\n\n')
+			.trim();
+	}
 };

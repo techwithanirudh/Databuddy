@@ -25,7 +25,11 @@ const nextConfig: NextConfig = {
 	},
 
 	output: 'standalone',
-	transpilePackages: ['@t3-oss/env-nextjs', '@t3-oss/env-core', '@databuddy/ai'],
+	transpilePackages: [
+		'@t3-oss/env-nextjs',
+		'@t3-oss/env-core',
+		'@databuddy/ai',
+	],
 };
 
 export function headers() {

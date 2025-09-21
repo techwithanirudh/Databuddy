@@ -18,8 +18,8 @@ import {
 	organization,
 	twoFactor,
 } from 'better-auth/plugins';
-import { ac, admin, member, owner, viewer } from './permissions';
 import { resend } from './lib/resend';
+import { ac, admin, member, owner, viewer } from './permissions';
 
 function isProduction() {
 	return process.env.NODE_ENV === 'production';

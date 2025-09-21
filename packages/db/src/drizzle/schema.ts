@@ -1,4 +1,4 @@
-import { InferSelectModel, isNotNull, isNull } from 'drizzle-orm';
+import { type InferSelectModel, isNotNull, isNull } from 'drizzle-orm';
 import {
 	boolean,
 	foreignKey,
@@ -6,14 +6,13 @@ import {
 	integer,
 	json,
 	jsonb,
-	primaryKey,
 	pgEnum,
 	pgTable,
+	primaryKey,
 	text,
 	timestamp,
 	unique,
 	uniqueIndex,
-	uuid,
 	varchar,
 } from 'drizzle-orm/pg-core';
 
@@ -765,75 +764,83 @@ export const abGoals = pgTable(
 	]
 );
 
-export const chats = pgTable('assistant_chats', {
-	id: text('id').primaryKey().notNull(),
-	websiteId: text('websiteId')
-		.notNull()
-		.references(() => websites.id),
-	createdAt: timestamp('createdAt').defaultNow().notNull(),
-	updatedAt: timestamp('updatedAt').defaultNow().notNull(),
-	title: text('title').notNull(),
-	userId: text('userId')
-		.notNull()
-		.references(() => user.id)
-}, (table) => [
-	index('chats_websiteId_idx').using(
-		'btree',
-		table.websiteId.asc().nullsLast().op('text_ops')
-	),
-	index('chats_userId_idx').using(
-		'btree',
-		table.userId.asc().nullsLast().op('text_ops')
-	),
-	foreignKey({
-		columns: [table.websiteId],
-		foreignColumns: [websites.id],
-		name: 'chats_websiteId_fkey',
-	})
-		.onUpdate('cascade')
-		.onDelete('cascade'),
-	index('chats_updatedAt_idx').using(
-		'btree',
-		table.updatedAt.asc().nullsLast()
-	),
-	index('chats_createdAt_idx').using(
-		'btree',
-		table.createdAt.asc().nullsLast()
-	)
-]);
+export const chats = pgTable(
+	'assistant_chats',
+	{
+		id: text('id').primaryKey().notNull(),
+		websiteId: text('websiteId')
+			.notNull()
+			.references(() => websites.id),
+		createdAt: timestamp('createdAt').defaultNow().notNull(),
+		updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+		title: text('title').notNull(),
+		userId: text('userId')
+			.notNull()
+			.references(() => user.id),
+	},
+	(table) => [
+		index('chats_websiteId_idx').using(
+			'btree',
+			table.websiteId.asc().nullsLast().op('text_ops')
+		),
+		index('chats_userId_idx').using(
+			'btree',
+			table.userId.asc().nullsLast().op('text_ops')
+		),
+		foreignKey({
+			columns: [table.websiteId],
+			foreignColumns: [websites.id],
+			name: 'chats_websiteId_fkey',
+		})
+			.onUpdate('cascade')
+			.onDelete('cascade'),
+		index('chats_updatedAt_idx').using(
+			'btree',
+			table.updatedAt.asc().nullsLast()
+		),
+		index('chats_createdAt_idx').using(
+			'btree',
+			table.createdAt.asc().nullsLast()
+		),
+	]
+);
 
 export type Chat = InferSelectModel<typeof chats>;
 
-export const messages = pgTable('assistant_messages', {
-	id: text('id').primaryKey().notNull(),
-	chatId: text('chatId')
-		.notNull()
-		.references(() => chats.id),
-	role: varchar('role').notNull(),
-	parts: json('parts').notNull(),
-	attachments: json('attachments').notNull(),
-	createdAt: timestamp('createdAt').defaultNow().notNull(),
-}, (table) => [
-	index('messages_chatId_idx').using(
-		'btree',
-		table.chatId.asc().nullsLast().op('text_ops')
-	),
-	index('messages_role_idx').using(
-		'btree',
-		table.role.asc().nullsLast().op('text_ops')
-	),
-	index('messages_createdAt_idx').using(
-		'btree',
-		table.createdAt.asc().nullsLast()
-	),
-	foreignKey({
-		columns: [table.chatId],
-		foreignColumns: [chats.id],
-		name: 'messages_chatId_fkey',
-	})
-		.onUpdate('cascade')
-		.onDelete('cascade'),
-]);
+export const messages = pgTable(
+	'assistant_messages',
+	{
+		id: text('id').primaryKey().notNull(),
+		chatId: text('chatId')
+			.notNull()
+			.references(() => chats.id),
+		role: varchar('role').notNull(),
+		parts: json('parts').notNull(),
+		attachments: json('attachments').notNull(),
+		createdAt: timestamp('createdAt').defaultNow().notNull(),
+	},
+	(table) => [
+		index('messages_chatId_idx').using(
+			'btree',
+			table.chatId.asc().nullsLast().op('text_ops')
+		),
+		index('messages_role_idx').using(
+			'btree',
+			table.role.asc().nullsLast().op('text_ops')
+		),
+		index('messages_createdAt_idx').using(
+			'btree',
+			table.createdAt.asc().nullsLast()
+		),
+		foreignKey({
+			columns: [table.chatId],
+			foreignColumns: [chats.id],
+			name: 'messages_chatId_fkey',
+		})
+			.onUpdate('cascade')
+			.onDelete('cascade'),
+	]
+);
 
 export type DBMessage = InferSelectModel<typeof messages>;
 

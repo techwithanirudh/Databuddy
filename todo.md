@@ -6,3 +6,5 @@
 - theres no optimistic update for history deletion
 - edit message
 - save chat model
+- attachment
+- feedback modal

@@ -119,7 +119,6 @@ export interface SettingsNavigationProps {
 	activeTab: SettingsTab;
 	setActiveTab: (tab: SettingsTab) => void;
 	onDeleteClick: () => void;
-	trackingOptions: TrackingOptions;
 }
 
 export interface TrackingCodeTabProps {

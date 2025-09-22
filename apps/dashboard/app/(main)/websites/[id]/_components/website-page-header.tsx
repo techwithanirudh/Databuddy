@@ -3,6 +3,7 @@
 import {
 	ArrowClockwiseIcon,
 	ArrowLeftIcon,
+	BookIcon,
 	PlusIcon,
 } from '@phosphor-icons/react';
 import Link from 'next/link';
@@ -35,6 +36,8 @@ interface WebsitePageHeaderProps {
 	variant?: 'default' | 'minimal';
 
 	additionalActions?: ReactNode;
+
+	docsUrl?: string;
 }
 
 export function WebsitePageHeader({
@@ -53,6 +56,7 @@ export function WebsitePageHeader({
 	showBackButton = false,
 	variant = 'default',
 	additionalActions,
+	docsUrl,
 }: WebsitePageHeaderProps) {
 	const renderSubtitle = () => {
 		if (isLoading) {
@@ -103,6 +107,19 @@ export function WebsitePageHeader({
 				</div>
 
 				<div className="flex items-center gap-3">
+					{docsUrl && (
+						<Button asChild variant="outline">
+							<Link
+								className="cursor-pointer gap-2 transition-all duration-300 hover:border-primary/50 hover:bg-primary/5"
+								href={docsUrl}
+								rel="noopener noreferrer"
+								target="_blank"
+							>
+								<BookIcon size={16} weight="duotone" />
+								<span className="xs:inline hidden">Docs</span>
+							</Link>
+						</Button>
+					)}
 					{onRefresh && (
 						<Button
 							className="cursor-pointer gap-2 transition-all duration-300 hover:border-primary/50 hover:bg-primary/5"
@@ -149,6 +166,19 @@ export function WebsitePageHeader({
 						</div>
 					</div>
 					<div className="flex items-center gap-3">
+						{docsUrl && (
+							<Button asChild variant="outline">
+								<Link
+									className="cursor-pointer select-none gap-2 border-border/50"
+									href={docsUrl}
+									rel="noopener noreferrer"
+									target="_blank"
+								>
+									<BookIcon size={16} />
+									Documentation
+								</Link>
+							</Button>
+						)}
 						{onRefresh && (
 							<Button
 								className="cursor-pointer select-none gap-2 border-border/50"

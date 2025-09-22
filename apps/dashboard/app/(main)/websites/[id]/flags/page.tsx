@@ -122,6 +122,7 @@ export default function FlagsPage() {
 			<WebsitePageHeader
 				createActionLabel="Create Flag"
 				description="Control feature rollouts and A/B testing"
+				docsUrl="https://www.databuddy.cc/docs/features/feature-flags"
 				hasError={!!flagsError}
 				icon={
 					<FlagIcon

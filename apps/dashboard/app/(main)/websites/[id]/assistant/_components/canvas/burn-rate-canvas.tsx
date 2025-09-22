@@ -2,7 +2,6 @@
 
 import { useArtifact } from '@ai-sdk-tools/artifacts/client';
 import { analyzeBurnRateTool } from '@databuddy/ai/tools/burn-rate';
-import { useSession } from '@databuddy/auth/client';
 import { BurnRateChart } from '@/components/charts';
 import {
 	BaseCanvas,
@@ -15,7 +14,6 @@ import { CanvasContent } from './base/canvas-content';
 
 export function BurnRateCanvas({ websiteId }: { websiteId: string }) {
 	const { data, status } = useArtifact(analyzeBurnRateTool);
-	const { data: session } = useSession();
 
 	const isLoading = status === 'loading';
 	const stage = data?.stage;
@@ -97,7 +95,6 @@ export function BurnRateCanvas({ websiteId }: { websiteId: string }) {
 								currency={data?.currency || 'USD'}
 								data={burnRateData}
 								height={320}
-								locale={user?.locale ?? undefined}
 								showLegend={false}
 							/>
 						</CanvasChart>

@@ -38,7 +38,7 @@ const PureChatItem = ({
 	});
 
 	const handleDelete = () => {
-		deleteChatMutation.mutate({ id: chat.id });
+		deleteChatMutation.mutate({ chatId: chat.id });
 	};
 
 	return (

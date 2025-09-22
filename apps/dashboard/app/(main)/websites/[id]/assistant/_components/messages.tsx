@@ -9,7 +9,8 @@ import {
 	ConversationScrollButton,
 } from '@/components/ai-elements/conversation';
 import { ChatGreeting } from './chat-greeting';
-import { PreviewMessage, ThinkingMessage } from './message';
+import { PreviewMessage } from './message';
+import { ThinkingMessage } from './message/thinking-message';
 
 interface MessagesProps {
 	chatId: string;

@@ -1,14 +1,14 @@
 import type { ChatMessage } from '@databuddy/ai/lib/types';
 
 import type { Vote } from '@databuddy/db';
-import equal from 'fast-deep-equal';
 import {
-	Check,
-	Copy,
+	CheckIcon,
+	CopyIcon,
 	PencilIcon,
 	ThumbsDownIcon,
 	ThumbsUpIcon,
-} from 'lucide-react';
+} from '@phosphor-icons/react';
+import equal from 'fast-deep-equal';
 import { memo, useState } from 'react';
 import { toast } from 'sonner';
 import { useCopyToClipboard } from 'usehooks-ts';
@@ -78,20 +78,16 @@ export function PureMessageActions({
 				>
 					{setMode && (
 						<Action onClick={() => setMode('edit')} tooltip="Edit">
-							<PencilIcon />
+							<PencilIcon size={16} />
 						</Action>
 					)}
 					<Action onClick={handleCopy} tooltip="Copy">
 						<span className="sr-only">{copied ? 'Copied' : 'Copy'}</span>
-						<Copy
-							className={`size-4 transition-all duration-300 ${
-								copied ? 'scale-0' : 'scale-100'
-							}`}
+						<CopyIcon
+							className={`size-4 transition-all duration-300 ${copied ? 'scale-0' : 'scale-100'}`}
 						/>
-						<Check
-							className={`absolute inset-0 m-auto size-4 transition-all duration-300 ${
-								copied ? 'scale-100' : 'scale-0'
-							}`}
+						<CheckIcon
+							className={`absolute inset-0 m-auto size-4 transition-all duration-300 ${copied ? 'scale-100' : 'scale-0'}`}
 						/>
 					</Action>
 				</div>
@@ -103,15 +99,11 @@ export function PureMessageActions({
 		<Actions className="-ml-0.5">
 			<Action onClick={handleCopy} tooltip="Copy">
 				<span className="sr-only">{copied ? 'Copied' : 'Copy'}</span>
-				<Copy
-					className={`size-4 transition-all duration-300 ${
-						copied ? 'scale-0' : 'scale-100'
-					}`}
+				<CopyIcon
+					className={`size-4 transition-all duration-300 ${copied ? 'scale-0' : 'scale-100'}`}
 				/>
-				<Check
-					className={`absolute inset-0 m-auto size-4 transition-all duration-300 ${
-						copied ? 'scale-100' : 'scale-0'
-					}`}
+				<CheckIcon
+					className={`absolute inset-0 m-auto size-4 transition-all duration-300 ${copied ? 'scale-100' : 'scale-0'}`}
 				/>
 			</Action>
 
@@ -134,7 +126,7 @@ export function PureMessageActions({
 				}}
 				tooltip="Upvote Response"
 			>
-				<ThumbsUpIcon />
+				<ThumbsUpIcon size={16} />
 			</Action>
 
 			<Action
@@ -156,7 +148,7 @@ export function PureMessageActions({
 				}}
 				tooltip="Downvote Response"
 			>
-				<ThumbsDownIcon />
+				<ThumbsDownIcon size={16} />
 			</Action>
 		</Actions>
 	);

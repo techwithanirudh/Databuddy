@@ -6,7 +6,7 @@ import { customProvider } from 'ai';
 //   apiKey: process.env.AI_API_KEY!,
 // });
 const openai = createOpenAI({
-	apiKey: process.env.AI_API_KEY!,
+	apiKey: process.env.AI_API_KEY as string,
 });
 
 export const config = {

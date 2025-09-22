@@ -4,7 +4,6 @@ import type { ChatMessage } from '@databuddy/ai/lib/types';
 import type { Vote } from '@databuddy/db';
 // import { PreviewAttachment } from './preview-attachment';
 import equal from 'fast-deep-equal';
-import { motion } from 'framer-motion';
 import { memo, useState } from 'react';
 import { Message, MessageContent } from '@/components/ai-elements/message';
 import { Response } from '@/components/ai-elements/response';
@@ -139,6 +138,8 @@ const PurePreviewMessage = ({
 							);
 						}
 					}
+
+					return null;
 				})}
 
 				{!isReadonly && (
@@ -176,45 +177,3 @@ export const PreviewMessage = memo(
 		return false;
 	}
 );
-
-export const ThinkingMessage = () => {
-	const role = 'assistant';
-
-	return (
-		<motion.div
-			animate={{ opacity: 1 }}
-			className="group w-full"
-			data-role={role}
-			initial={{ opacity: 0 }}
-		>
-			<div className="flex items-start justify-start gap-3">
-				<div className="flex w-full flex-col gap-2 text-sm md:gap-4">
-					<LoadingText>Thinking...</LoadingText>
-				</div>
-			</div>
-		</motion.div>
-	);
-};
-
-const LoadingText = ({ children }: { children: React.ReactNode }) => {
-	return (
-		<motion.div
-			animate={{ backgroundPosition: ['100% 50%', '-100% 50%'] }}
-			className="flex items-center text-transparent"
-			style={{
-				background:
-					'linear-gradient(90deg, hsl(var(--muted-foreground)) 0%, hsl(var(--muted-foreground)) 35%, hsl(var(--foreground)) 50%, hsl(var(--muted-foreground)) 65%, hsl(var(--muted-foreground)) 100%)',
-				backgroundSize: '200% 100%',
-				WebkitBackgroundClip: 'text',
-				backgroundClip: 'text',
-			}}
-			transition={{
-				duration: 1.5,
-				repeat: Number.POSITIVE_INFINITY,
-				ease: 'linear',
-			}}
-		>
-			{children}
-		</motion.div>
-	);
-};

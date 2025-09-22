@@ -22,7 +22,7 @@ export function ChatSkeleton() {
 				{/* Messages container (matches Messages wrapper) */}
 				<div className="relative flex h-full flex-1 flex-col overflow-y-auto px-6 pb-6">
 					<div className="flex min-w-0 flex-col gap-4 md:gap-6">
-						<div className="flex h-full flex-col gap-2 px-2 py-4 md:gap-4 md:px-4">
+						<div className="flex h-full flex-col gap-2 md:gap-4 md:px-4">
 							{Array.from({ length: 6 }).map((_, i) => (
 								<div
 									className={

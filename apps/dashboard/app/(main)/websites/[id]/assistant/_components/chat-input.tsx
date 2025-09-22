@@ -1,8 +1,7 @@
 import type { UseChatHelpers } from '@ai-sdk/react';
 import type { ChatMessage } from '@databuddy/ai/lib/types';
 import { chatModels } from '@databuddy/ai/models';
-import { CaretUpIcon, CpuIcon } from '@phosphor-icons/react';
-import * as SelectPrimitive from '@radix-ui/react-select';
+import { CpuIcon } from '@phosphor-icons/react';
 import type { ChatStatus, UIMessage } from 'ai';
 import { memo, startTransition, useEffect, useState } from 'react';
 import {
@@ -22,7 +21,7 @@ import {
 	PromptInputToolbar,
 	PromptInputTools,
 } from '@/components/ai-elements/prompt-input';
-import { SelectItem } from '@/components/ui/select';
+import { SelectItem, SelectTrigger } from '@/components/ui/select';
 import { saveChatModelAsCookie } from '../actions';
 import { SuggestedActions } from './suggested-actions';
 
@@ -144,7 +143,7 @@ function PureModelSelectorCompact({
 			}}
 			value={selectedModel?.name}
 		>
-			<SelectPrimitive.Trigger
+			<SelectTrigger
 				className="flex h-8 items-center gap-2 rounded-lg border-0 bg-background px-2 text-foreground shadow-none transition-colors hover:bg-accent focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
 				type="button"
 			>
@@ -152,8 +151,7 @@ function PureModelSelectorCompact({
 				<span className="hidden font-medium text-xs sm:block">
 					{selectedModel?.name}
 				</span>
-				<CaretUpIcon size={16} />
-			</SelectPrimitive.Trigger>
+			</SelectTrigger>
 			<PromptInputModelSelectContent className="min-w-[260px] p-0">
 				<div className="flex flex-col gap-px">
 					{chatModels.map((model) => (

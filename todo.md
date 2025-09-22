@@ -8,3 +8,4 @@
 - save chat model
 - attachment
 - feedback modal
+- skeleton

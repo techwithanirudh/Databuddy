@@ -175,7 +175,7 @@ export interface ChartDataRow {
 	bounce_rate?: number;
 	avg_session_duration?: number;
 	avg_session_duration_formatted?: string;
-	// Load time metrics
+	// Load time metrics\
 	avg_load_time?: number;
 	p50_load_time?: number;
 	p75_load_time?: number;

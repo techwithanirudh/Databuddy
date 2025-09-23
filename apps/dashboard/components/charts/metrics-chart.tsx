@@ -1,5 +1,4 @@
 import { ChartLineIcon } from '@phosphor-icons/react';
-import { useCallback, useMemo } from 'react';
 import {
 	Area,
 	AreaChart,
@@ -20,27 +19,13 @@ import {
 import { cn } from '@/lib/utils';
 import {
 	type ChartDataRow,
-	METRIC_COLORS,
 	METRICS,
 	type MetricConfig,
 } from './metrics-constants';
 import { SkeletonChart } from './skeleton-chart';
 
-const CustomTooltip = ({
-	active,
-	payload,
-	label,
-}: {
-	active?: boolean;
-	payload?: Array<{
-		name: string;
-		value: number;
-		color: string;
-		payload: ChartDataRow;
-	}>;
-	label?: string;
-}) => {
-	if (!(active && payload && payload.length)) {
+const CustomTooltip = ({ active, payload, label }: any) => {
+	if (!(active && payload?.length)) {
 		return null;
 	}
 
@@ -51,38 +36,31 @@ const CustomTooltip = ({
 				<p className="font-semibold text-foreground text-sm">{label}</p>
 			</div>
 			<div className="space-y-2.5">
-				{payload.map((entry) => {
-					const dataPoint = entry.payload;
-					const metric = METRICS.find(
-						(m) => m.label === entry.name || m.key === entry.name
-					);
+				{payload.map((entry: any) => {
+					const metric = METRICS.find((m) => m.key === entry.dataKey);
 					if (!metric) {
 						return null;
 					}
 
-					const Icon = metric.icon;
 					const displayValue = metric.formatValue
-						? metric.formatValue(entry.value, dataPoint)
+						? metric.formatValue(entry.value, entry.payload)
 						: entry.value.toLocaleString();
 
 					return (
 						<div
-							className="group flex items-center justify-between gap-3"
-							key={`item-${metric.key}`}
+							className="flex items-center justify-between gap-3"
+							key={metric.key}
 						>
 							<div className="flex items-center gap-2.5">
 								<div
-									className="h-3 w-3 rounded-full shadow-sm ring-2 ring-background"
+									className="h-3 w-3 rounded-full"
 									style={{ backgroundColor: entry.color }}
 								/>
-								<div className="flex items-center gap-1.5">
-									<Icon className="h-3 w-3" />
-									<span className="font-medium text-muted-foreground text-xs">
-										{metric.label}
-									</span>
-								</div>
+								<span className="text-muted-foreground text-xs">
+									{metric.label}
+								</span>
 							</div>
-							<span className="font-bold text-foreground text-sm group-hover:text-primary">
+							<span className="font-bold text-foreground text-sm">
 								{displayValue}
 							</span>
 						</div>
@@ -118,9 +96,9 @@ export function MetricsChart({
 	metricsFilter,
 	showLegend = true,
 }: MetricsChartProps) {
-	const chartData = useMemo(() => data || [], [data]);
+	const chartData = data || [];
 
-	const valueFormatter = useCallback((value: number): string => {
+	const valueFormatter = (value: number): string => {
 		if (value >= 1_000_000) {
 			return `${(value / 1_000_000).toFixed(1)}M`;
 		}
@@ -128,7 +106,7 @@ export function MetricsChart({
 			return `${(value / 1000).toFixed(1)}k`;
 		}
 		return value.toString();
-	}, []);
+	};
 
 	const yAxisConfig = {
 		yAxisId: 'left',
@@ -185,15 +163,15 @@ export function MetricsChart({
 
 	const displayMetrics = metricsFilter
 		? METRICS.filter(metricsFilter)
-		: METRICS.filter((metric) =>
-				[
+		: METRICS.filter((metric) => {
+				return [
 					'pageviews',
 					'visitors',
 					'sessions',
 					'bounce_rate',
 					'avg_session_duration',
-				].includes(metric.key)
-			);
+				].includes(metric.key);
+			});
 
 	return (
 		<Card className={cn('w-full overflow-hidden rounded-none p-0', className)}>
@@ -202,8 +180,6 @@ export function MetricsChart({
 					className="relative"
 					style={{ width: '100%', height: height + 20 }}
 				>
-					<div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-muted/5" />
-
 					<ResponsiveContainer height="100%" width="100%">
 						<AreaChart
 							data={chartData}
@@ -215,10 +191,10 @@ export function MetricsChart({
 							}}
 						>
 							<defs>
-								{Object.entries(METRIC_COLORS).map(([key, colors]) => (
+								{displayMetrics.map((metric) => (
 									<linearGradient
-										id={`gradient-${key}`}
-										key={key}
+										id={`gradient-${metric.gradient}`}
+										key={metric.key}
 										x1="0"
 										x2="0"
 										y1="0"
@@ -226,29 +202,15 @@ export function MetricsChart({
 									>
 										<stop
 											offset="0%"
-											stopColor={colors.primary}
+											stopColor={metric.color}
 											stopOpacity={0.3}
 										/>
 										<stop
-											offset="50%"
-											stopColor={colors.primary}
-											stopOpacity={0.1}
-										/>
-										<stop
 											offset="100%"
-											stopColor={colors.primary}
+											stopColor={metric.color}
 											stopOpacity={0.02}
 										/>
 									</linearGradient>
-								))}
-								{Object.entries(METRIC_COLORS).map(([key]) => (
-									<filter id={`glow-${key}`} key={`glow-${key}`}>
-										<feGaussianBlur result="coloredBlur" stdDeviation="3" />
-										<feMerge>
-											<feMergeNode in="coloredBlur" />
-											<feMergeNode in="SourceGraphic" />
-										</feMerge>
-									</filter>
 								))}
 							</defs>
 							<CartesianGrid
@@ -284,104 +246,42 @@ export function MetricsChart({
 									align="center"
 									formatter={(value) => {
 										const metric = displayMetrics.find(
-											(m) => m.label === value || m.key === value
+											(m) => m.label === value
 										);
-										if (!metric) {
-											// Fallback for unknown metrics
-											return (
-												<span className="inline-flex cursor-pointer select-none items-center font-medium text-muted-foreground text-xs capitalize leading-none opacity-100 transition-all duration-200 hover:text-foreground">
-													{String(value).replace(/_/g, ' ')}
-												</span>
-											);
-										}
-
-										const hasData = chartData.some(
-											(item) =>
-												metric.key in item &&
-												item[metric.key] !== undefined &&
-												item[metric.key] !== null
-										);
-										const isHidden = hiddenMetrics[metric.key];
-
+										const isHidden = metric && hiddenMetrics[metric.key];
 										return (
 											<span
-												className={`inline-flex cursor-pointer select-none items-center font-medium text-xs capitalize leading-none transition-all duration-200 ${
+												className={`cursor-pointer text-xs ${
 													isHidden
-														? 'text-slate-600 line-through decoration-1 opacity-40'
-														: hasData
-															? 'text-muted-foreground opacity-100 hover:text-foreground'
-															: 'text-muted-foreground/60 opacity-60 hover:text-foreground'
+														? 'text-muted-foreground/50 line-through'
+														: 'text-muted-foreground hover:text-foreground'
 												}`}
 											>
-												{metric.label}
+												{value}
 											</span>
 										);
 									}}
-									iconSize={10}
-									iconType="circle"
-									layout="horizontal"
-									onClick={(payload) => {
-										const anyPayload = payload as unknown as {
-											dataKey?: string | number;
-											value?: string | number;
-											id?: string | number;
-										};
-										const raw =
-											anyPayload?.dataKey ??
-											anyPayload?.value ??
-											anyPayload?.id;
-										if (raw == null || !onToggleMetric) {
-											return;
-										}
-										const key = String(raw);
+									onClick={(payload: any) => {
 										const metric = displayMetrics.find(
-											(m) => m.label === key || m.key === key
+											(m) => m.label === payload.value
 										);
-										if (metric) {
+										if (metric && onToggleMetric) {
 											onToggleMetric(metric.key);
 										}
 									}}
-									payload={displayMetrics.map((metric) => ({
-										value: metric.label,
-										type: 'circle',
-										color: metric.color,
-										id: metric.key,
-										dataKey: metric.key,
-									}))}
 									verticalAlign="bottom"
-									wrapperStyle={{
-										display: 'flex',
-										justifyContent: 'center',
-										gap: 12,
-										fontSize: '12px',
-										paddingTop: '20px',
-										bottom: chartData.length > 5 ? 35 : 5,
-										fontWeight: 500,
-										cursor: 'pointer',
-									}}
 								/>
 							)}
 							{displayMetrics.map((metric) => {
 								const hasData = chartData.some(
-									(item) =>
-										metric.key in item &&
-										item[metric.key] !== undefined &&
-										item[metric.key] !== null
+									(item) => item[metric.key] != null
 								);
 								const isHidden = hiddenMetrics[metric.key];
 								return (
 									<Area
-										activeDot={{
-											r: 6,
-											strokeWidth: 3,
-											stroke: metric.color,
-											fill: 'var(--background)',
-											filter: `url(#glow-${metric.gradient})`,
-										}}
+										activeDot={{ r: 4, stroke: metric.color, strokeWidth: 2 }}
 										dataKey={metric.key}
-										dot={{ r: 0 }}
 										fill={`url(#gradient-${metric.gradient})`}
-										fillOpacity={1}
 										hide={!hasData || isHidden}
 										key={metric.key}
 										name={metric.label}

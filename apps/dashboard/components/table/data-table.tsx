@@ -266,6 +266,8 @@ export function DataTable<TData extends { name: string | number }, TValue>({
 						>
 							<FullScreenModal
 								activeTab={activeTab}
+								columns={tableColumns}
+								data={tableData}
 								description={description}
 								expandable={expandable}
 								getSubRows={getSubRows}
@@ -277,7 +279,6 @@ export function DataTable<TData extends { name: string | number }, TValue>({
 								onTabChange={handleTabChange}
 								renderSubRow={renderSubRow}
 								searchValue={globalFilter}
-								table={table}
 								tabs={tabs}
 								title={title}
 							/>

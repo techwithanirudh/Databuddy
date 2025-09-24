@@ -1,5 +1,13 @@
 import { MagnifyingGlassIcon, XIcon } from '@phosphor-icons/react';
-import type { Table } from '@tanstack/react-table';
+import {
+	type ColumnDef,
+	getCoreRowModel,
+	getFilteredRowModel,
+	getSortedRowModel,
+	type SortingState,
+	useReactTable,
+} from '@tanstack/react-table';
+import { useMemo, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { TableContent } from './table-content';
 import { TableTabs } from './table-tabs';
@@ -8,12 +16,13 @@ interface TabConfig<TData> {
 	id: string;
 	label: string;
 	data: TData[];
-	columns: any[];
+	columns: ColumnDef<TData, unknown>[];
 	getFilter?: (row: TData) => { field: string; value: string };
 }
 
 interface FullScreenModalProps<TData extends { name: string | number }> {
-	table: Table<TData>;
+	data?: TData[];
+	columns?: ColumnDef<TData, unknown>[];
 	title?: string;
 	description?: string;
 	onClose: () => void;
@@ -35,7 +44,8 @@ interface FullScreenModalProps<TData extends { name: string | number }> {
 }
 
 export function FullScreenModal<TData extends { name: string | number }>({
-	table,
+	data,
+	columns,
 	title,
 	description,
 	onClose,
@@ -51,6 +61,58 @@ export function FullScreenModal<TData extends { name: string | number }>({
 	onRowAction,
 	onRowClick,
 }: FullScreenModalProps<TData>) {
+	const [sorting, setSorting] = useState<SortingState>([]);
+	const [globalFilter, setGlobalFilter] = useState(searchValue || '');
+
+	// Update global filter when searchValue prop changes
+	useMemo(() => {
+		setGlobalFilter(searchValue || '');
+	}, [searchValue]);
+
+	const currentTabData = tabs?.find((tab) => tab.id === activeTab);
+	const tableData = useMemo(
+		() => currentTabData?.data || data || [],
+		[currentTabData?.data, data]
+	);
+	const tableColumns = useMemo(
+		() => currentTabData?.columns || columns || [],
+		[currentTabData?.columns, columns]
+	);
+
+	const table = useReactTable({
+		data: tableData,
+		columns: tableColumns,
+		getRowId: (row, index) => {
+			if ((row as any)._uniqueKey) {
+				return (row as any)._uniqueKey;
+			}
+			return activeTab ? `${activeTab}-${index}` : `row-${index}`;
+		},
+		state: {
+			sorting,
+			globalFilter,
+		},
+		onSortingChange: setSorting,
+		onGlobalFilterChange: (value) => {
+			setGlobalFilter(value);
+			onSearchChange?.(value);
+		},
+		getCoreRowModel: getCoreRowModel(),
+		getFilteredRowModel: getFilteredRowModel(),
+		getSortedRowModel: getSortedRowModel(),
+		globalFilterFn: 'includesString',
+	});
+
+	const handleTabChange = (tabId: string) => {
+		if (tabId === activeTab) {
+			return;
+		}
+
+		setSorting([]);
+		setGlobalFilter('');
+		onSearchChange?.('');
+		onTabChange?.(tabId);
+	};
 	return (
 		<div className="relative flex h-full w-full flex-col bg-sidebar">
 			<div className="flex items-start justify-between border-sidebar-border border-b bg-sidebar px-3 pt-3 pb-2">
@@ -72,10 +134,13 @@ export function FullScreenModal<TData extends { name: string | number }>({
 							<MagnifyingGlassIcon className="-translate-y-1/2 absolute top-1/2 left-2.5 h-4 w-4 text-muted-foreground" />
 							<Input
 								className="h-8 w-64 pl-8 text-sm"
-								onChange={(e) => onSearchChange(e.target.value)}
+								onChange={(e) => {
+									setGlobalFilter(e.target.value);
+									onSearchChange(e.target.value);
+								}}
 								placeholder="Search..."
 								type="search"
-								value={searchValue}
+								value={globalFilter}
 							/>
 						</div>
 					)}
@@ -97,7 +162,7 @@ export function FullScreenModal<TData extends { name: string | number }>({
 				<div className="mt-2">
 					<TableTabs
 						activeTab={activeTab || ''}
-						onTabChange={onTabChange || (() => {})}
+						onTabChange={handleTabChange}
 						tabs={tabs}
 					/>
 				</div>

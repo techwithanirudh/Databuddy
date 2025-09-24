@@ -1,39 +1,65 @@
-import { artifact } from '@ai-sdk-tools/artifacts';
-import { z } from 'zod';
+import { artifact } from "@ai-sdk-tools/artifacts";
+import { z } from "zod";
+import { toastSchema } from "../tools/schema";
 
-// Define the burn rate artifact schema
-export const BurnRateArtifact = artifact(
-	'burn-rate',
-	z.object({
-		title: z.string(),
-		stage: z
-			.enum(['loading', 'processing', 'analyzing', 'complete'])
-			.default('loading'),
-		currency: z.string().default('USD'),
-		progress: z.number().min(0).max(1).default(0),
+export const burnRateArtifact = artifact(
+  "burn-rate",
+  z.object({
+    // Processing stage
+    stage: z.enum([
+      "loading",
+      "chart_ready",
+      "metrics_ready",
+      "analysis_ready",
+    ]),
 
-		// Chart data
-		chartData: z
-			.array(
-				z.object({
-					month: z.string(),
-					revenue: z.number(),
-					expenses: z.number(),
-					burnRate: z.number(),
-					runway: z.number(),
-				})
-			)
-			.default([]),
+    // Basic info
+    currency: z.string(),
 
-		// Summary insights
-		summary: z
-			.object({
-				currentBurnRate: z.number(),
-				averageRunway: z.number(),
-				trend: z.enum(['improving', 'stable', 'declining']),
-				alerts: z.array(z.string()),
-				recommendations: z.array(z.string()),
-			})
-			.optional(),
-	})
+    toast: toastSchema,
+
+    // Chart data (available at chart_ready stage)
+    chart: z
+      .object({
+        monthlyData: z.array(
+          z.object({
+            month: z.string(),
+            amount: z.number(),
+            average: z.number(),
+            currentBurn: z.number(),
+            averageBurn: z.number(),
+          }),
+        ),
+      })
+      .optional(),
+
+    // Core metrics (available at metrics_ready stage)
+    metrics: z
+      .object({
+        currentMonthlyBurn: z.number(),
+        averageBurnRate: z.number(),
+        runway: z.number(),
+        runwayStatus: z.string(),
+        topCategory: z.object({
+          name: z.string(),
+          percentage: z.number(),
+          amount: z.number(),
+        }),
+      })
+      .optional(),
+
+    // Analysis data (available at analysis_ready stage)
+    analysis: z
+      .object({
+        burnRateChange: z.object({
+          percentage: z.number(),
+          period: z.string(),
+          startValue: z.number(),
+          endValue: z.number(),
+        }),
+        summary: z.string(),
+        recommendations: z.array(z.string()),
+      })
+      .optional(),
+  }),
 );

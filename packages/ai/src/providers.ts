@@ -33,6 +33,7 @@ export const provider = customProvider({
 		'agent-max-model': openai.responses('gpt-5'),
 		// 'agent-max-model': openrouter.chat('anthropic/claude-3-5-sonnet-20241022'),
 		'title-model': openai.responses('gpt-4o-mini'),
+		'artifact-model': openai.responses('gpt-4o-mini'),
 	},
 	imageModels: {
 		// 'small-model': openai.imageModel('dall-e-2'),

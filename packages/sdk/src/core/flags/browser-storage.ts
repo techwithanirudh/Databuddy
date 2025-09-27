@@ -1,4 +1,6 @@
-class FlagStorage {
+import type { StorageInterface } from './types';
+
+export class BrowserFlagStorage implements StorageInterface {
 	private ttl = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
 	get(key: string) {
@@ -131,5 +133,3 @@ class FlagStorage {
 		}
 	}
 }
-
-export const flagStorage = new FlagStorage();

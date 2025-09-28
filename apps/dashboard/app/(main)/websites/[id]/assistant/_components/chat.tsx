@@ -31,7 +31,6 @@ const Chat = ({
 	const currentModelIdRef = useRef(currentModelId);
 
 	const { current } = useArtifacts();
-	const _isCanvasVisible = !!current;
 
 	// Fetch votes for the current chat
 	const { data: votes = [] } = trpc.assistant.getVotes.useQuery(
@@ -44,6 +43,7 @@ const Chat = ({
 			id,
 			messages: initialMessages,
 			generateId: generateUUID,
+			// enableBatching: true,
 			experimental_throttle: 100,
 			transport: new DefaultChatTransport({
 				api: `${API_BASE_URL}/v1/assistant`,
@@ -77,7 +77,7 @@ const Chat = ({
 					'relative flex size-full flex-col rounded-2xl border border-border transition-all duration-300 ease-in-out'
 				)}
 			>
-				<ChatHeader websiteId={websiteId} />
+				<ChatHeader websiteId={websiteId} chatId={id} />
 
 				<div className="relative flex h-full flex-1 flex-col overflow-y-auto px-6 pb-6">
 					<Messages

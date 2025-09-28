@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ChatHistory } from './history';
 
-export function ChatHeader({ websiteId }: { websiteId: string }) {
+export function ChatHeader({ websiteId, chatId }: { websiteId: string, chatId: string }) {
 	const router = useRouter();
 
 	const handleNewChat = () => {
@@ -27,16 +27,16 @@ export function ChatHeader({ websiteId }: { websiteId: string }) {
 				)}
 			>
 				{/* {data && (
-          <TextEffect
-            per="char"
-            preset="fade"
-            speedReveal={3}
-            speedSegment={2}
-            className="text-sm font-regular truncate"
-          >
-            {data.title}
-          </TextEffect>
-        )} */}
+					<TextEffect
+						per="char"
+						preset="fade"
+						speedReveal={3}
+						speedSegment={2}
+						className="text-sm font-regular truncate"
+					>
+						{data.title}
+					</TextEffect>
+				)} */}
 			</div>
 
 			<div className="flex items-center space-x-4 transition-all duration-300 ease-in-out">

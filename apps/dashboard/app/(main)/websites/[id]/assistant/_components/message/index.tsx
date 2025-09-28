@@ -4,7 +4,7 @@ import type { ChatMessage } from '@databuddy/ai/types';
 import type { Vote } from '@databuddy/db';
 // import { PreviewAttachment } from './preview-attachment';
 import equal from 'fast-deep-equal';
-import { memo, useState } from 'react';
+import { Fragment, memo, useState } from 'react';
 import { Message, MessageContent } from '@/components/ai-elements/message';
 import { Response } from '@/components/ai-elements/response';
 import {
@@ -22,6 +22,7 @@ import { MessageReasoning } from './message-reasoning';
 const PurePreviewMessage = ({
 	chatId,
 	message,
+	status,
 	vote,
 	isLoading,
 	isReadonly,
@@ -29,6 +30,7 @@ const PurePreviewMessage = ({
 	setMessages,
 }: {
 	chatId: string;
+	status: UseChatHelpers<ChatMessage>['status'];
 	message: ChatMessage;
 	vote: Vote | undefined;
 	isLoading: boolean;
@@ -91,21 +93,13 @@ const PurePreviewMessage = ({
 						);
 					}
 
-					if (type === 'tool-executeSQLQuery') {
-						const { toolCallId, state } = part;
-
+					if (type.startsWith("tool-")) {
 						return (
-							<Tool defaultOpen={true} key={toolCallId}>
-								<ToolHeader state={state} type="tool-executeSQLQuery" />
-								<ToolContent>
-									{state === 'input-available' && (
-										<ToolInput input={part.input} />
-									)}
-									{state === 'output-available' && (
-										<ToolOutput errorText={undefined} output={part.output} />
-									)}
-								</ToolContent>
-							</Tool>
+							<MessageContent>
+								<Response>
+									{(part as any)?.output?.text}
+								</Response>
+							</MessageContent>
 						);
 					}
 
@@ -142,7 +136,7 @@ const PurePreviewMessage = ({
 					return null;
 				})}
 
-				{!isReadonly && (
+				{!isReadonly && status !== 'streaming' && (
 					<MessageActions
 						chatId={chatId}
 						isLoading={isLoading}

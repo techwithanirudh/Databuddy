@@ -10,3 +10,7 @@
 - feedback modal
 - skeleton
 - do not getVotes when chatting
+- stop is broken
+chart doesnt update after gen
+- fix chart viz, tooltips are broken, recheck tooltip logic and artifact logic 
+- add abilitiy to close viz canvas

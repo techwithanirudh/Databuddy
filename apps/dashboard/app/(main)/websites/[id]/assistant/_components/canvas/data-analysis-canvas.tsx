@@ -72,7 +72,8 @@ export function DataAnalysisCanvas(_props: { websiteId: string }) {
 		].includes(stage);
 
 	const showSummarySkeleton = !stage || stage !== 'analysis_ready';
-
+	const showRecommendationsSkeleton = !stage || stage !== 'analysis_ready';
+	
 	return (
 		<BaseCanvas>
 			<CanvasHeader
@@ -149,12 +150,12 @@ export function DataAnalysisCanvas(_props: { websiteId: string }) {
 							{data?.analysis?.summary ? (
 								<p className="text-[13px] leading-6">{data.analysis.summary}</p>
 							) : null}
+						</div>
+					</CanvasSection>
 
-							{data?.analysis?.recommendations?.length ? (
-								<p className="font-semibold text-lg leading-6">
-									Recommendations:
-								</p>
-							) : null}
+					{/* Recommendations */}
+					<CanvasSection title="Recommendations" isLoading={showRecommendationsSkeleton}>
+						<div className="space-y-3">
 							{data?.analysis?.recommendations?.length ? (
 								<ul className="list-disc space-y-1 pl-5 text-[13px] leading-6">
 									{data.analysis.recommendations.map((r, i) => (

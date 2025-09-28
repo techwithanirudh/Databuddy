@@ -69,8 +69,9 @@ export const getDataTool = tool({
 				};
 			}
 
-			const response = `Here's your data: 
+			const response = `Here's your data:
 ${JSON.stringify(rows, null, 2)}
+
 Execution time: ${execTime}ms`;
 
 			// Return the data

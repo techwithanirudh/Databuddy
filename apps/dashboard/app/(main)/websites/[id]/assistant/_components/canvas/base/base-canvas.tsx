@@ -14,7 +14,7 @@ export function BaseCanvas({ children }: { children: React.ReactNode }) {
 	return (
 		<div
 			className={cn(
-				'size-full rounded-2xl border border-border bg-card',
+				'size-full rounded-2xl border border-border bg-background',
 				'overflow-y-auto overflow-x-hidden transition-transform duration-300 ease-in-out',
 				isCanvasVisible ? 'translate-x-0' : 'translate-x-[calc(100%+24px)]'
 			)}

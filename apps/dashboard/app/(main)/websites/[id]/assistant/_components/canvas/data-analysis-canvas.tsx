@@ -30,7 +30,7 @@ function formatMs(ms?: number) {
 	return `${s}s`;
 }
 
-export function DataAnalysisCanvas({}: { websiteId: string }) {
+export function DataAnalysisCanvas(_props: { websiteId: string }) {
 	// Pulls the latest artifact snapshot for this tool
 	const { data, status } = useArtifact(dataAnalysisArtifact);
 

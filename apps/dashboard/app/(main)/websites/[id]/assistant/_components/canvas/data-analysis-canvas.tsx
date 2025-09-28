@@ -90,7 +90,7 @@ export function DataAnalysisCanvas(_props: { websiteId: string }) {
 				<div className="space-y-8">
 					{/* SQL preview and schema snapshot */}
 					{data?.sqlPreview ? (
-						<CanvasSection title="Query">
+						<CanvasSection title="Query" className="mt-0">
 							<pre className="whitespace-pre-wrap rounded-md bg-muted p-3 text-[11px] text-muted-foreground leading-5">
 								{data.sqlPreview}
 							</pre>

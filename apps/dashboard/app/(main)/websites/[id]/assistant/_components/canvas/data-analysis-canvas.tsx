@@ -120,7 +120,10 @@ export function DataAnalysisCanvas() {
 							) : null}
 
 							{data?.analysis?.recommendations?.length ? (
-								<ul className="list-disc space-y-1 pl-5 text-[13px]">
+								<p className="text-lg font-semibold leading-6">Recommendations:</p>
+							) : null}
+							{data?.analysis?.recommendations?.length ? (
+								<ul className="list-disc space-y-1 pl-5 text-[13px] leading-6">
 									{data.analysis.recommendations.map((r, i) => (
 										<li key={i}>{r}</li>
 									))}

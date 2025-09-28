@@ -1,3 +1,6 @@
+import { getDataAnalysisSchema } from "../tools/schema";
+import { z } from "zod";
+
 export interface QueryResult {
     data: unknown[];
     executionTime: number;

@@ -5,34 +5,26 @@ import { getContext } from "../context";
 import { safeValue } from "../utils/safe-value";
 import { getDataAnalysisSchema } from "./schema";
 import { provider } from "../providers";
-import { validateSQL } from "../utils/execute-sql-query";
+import { validateSQL } from "../utils/sql";
 import { systemPrompt } from "../prompts";
 import { z } from "zod";
-import { type Row } from "@databuddy/db";
 import { chQuery } from "@databuddy/db";
-import { ChartSpec, sanitizeChartSpec, summarizeSchema } from "../artifacts/charts";
-import { chartPrompt } from "../prompts/chart-prompt";
+import { ChartSpec, sanitizeChartSpec, summarizeSchema, type Row } from "../artifacts/charts";
+import { chartPrompt } from "../prompts/artifacts/data-analysis/chart-prompt";
+import { sqlPrompt } from "../prompts/artifacts/data-analysis/sql-prompt";
+import { insightPrompt } from "../prompts/artifacts/data-analysis/insight-prompt";
 
-function buildSqlUserPrompt(input: z.infer<typeof getDataAnalysisSchema>) {
-  const lines: string[] = [];
-  lines.push(`Question: ${input.question}`);
-  if (input.from) lines.push(`From: ${input.from}`);
-  if (input.to) lines.push(`To: ${input.to}`);
-  if (input.maxRows) lines.push(`Row cap: ${input.maxRows}`);
-  lines.push(`Output: a single ClickHouse SELECT or WITH query with LIMIT`);
-  return lines.join("\n");
-}
+const inputSchema = getDataAnalysisSchema.omit({ showCanvas: true });
 
 export const getDataAnalysisTool = tool({
   description:
-    "Generate comprehensive burn rate analysis with interactive visualizations, spending trends, runway projections, and actionable insights. Use this tool when users want detailed financial analysis, visual charts, spending breakdowns, or need to understand their business's financial health and future projections.",
-  inputSchema: getDataAnalysisSchema.omit({ showCanvas: true }), // Remove showCanvas since this always shows canvas
-  execute: async function* (input: z.infer<typeof getDataAnalysisSchema>) {
+    "Generate comprehensive data analysis with interactive visualizations, and actionable insights. Use this tool when users want detailed data analysis, visual charts, or need to understand their data.",
+  inputSchema, // Remove showCanvas since this always shows canvas
+  execute: async function* (input: z.infer<typeof inputSchema>) {
     try {
       const context = getContext();
       const userFirstName = safeValue(context?.user.name?.split(" ")[0]) || "there";
 
-      // Always create canvas for analysis tool
       const analysis = dataAnalysisArtifact.stream({
         stage: "loading",
         toast: {
@@ -40,18 +32,16 @@ export const getDataAnalysisTool = tool({
           currentStep: 0,
           totalSteps: 4,
           currentLabel: "Loading data",
-          stepDescription: "Preparing analysis and generating SQL",
+          stepDescription: "Fetching data from Databuddy",
         },
       });
 
-      // Generate a contextual initial message based on the analysis request
       const initialMessageStream = streamText({
         model: provider.languageModel("artifact-model"),
-        temperature: 0.2,
         system: `You are an assistant generating a brief initial message for a data analysis. 
 
 The user has requested a data analysis. Create a message that:
-- Explains what you're currently doing (preparing analysis and generating SQL)
+- Explains what you're currently doing (gathering data)
 - Mentions the specific insights they'll receive
 - Uses a warm, personal tone while staying professional
 - Uses the user's first name (${userFirstName}) when appropriate
@@ -89,13 +79,11 @@ Example format: "I'm analyzing your data to show your [xyz]"`,
         schema: z.object({
           sql: z.string().describe("The SQL query to execute"),
         }),
-        messages: [{ role: "user", content: buildSqlUserPrompt(input) }],
+        messages: [{ role: "user", content: sqlPrompt(input) }],
       });
 
       const sql = sqlObject.sql;
-      console.log("sql", sql);
       if (!validateSQL(sql)) {
-        console.log("sql validation failed", sql);
         await analysis.update({
           stage: "analysis_ready",
           chart: { spec: null, series: [] },
@@ -106,25 +94,15 @@ Example format: "I'm analyzing your data to show your [xyz]"`,
               "Rephrase your request to focus on SELECT based analytics",
               "Specify the table and time window you want to analyze",
             ],
-          },
-          toast: {
-            visible: false,
-            currentStep: 4,
-            totalSteps: 4,
-            currentLabel: "Validation failed",
-            stepDescription: "Query blocked by safety rules",
-            completed: true,
-            completedMessage: "Validation failed",
-          },
+          }
         });
 
         return {
           ok: false,
-          reason: "SQL validation failed",
+          summary: "SQL validation failed",
         };
       }
 
-      // 3) Update canvas to show we are about to query
       await analysis.update({
         stage: "query_ready",
         sqlPreview: sql.length > 800 ? sql.slice(0, 800) + " ..." : sql,
@@ -133,7 +111,7 @@ Example format: "I'm analyzing your data to show your [xyz]"`,
           currentStep: 1,
           totalSteps: 4,
           currentLabel: "Running query",
-          stepDescription: "Executing read-only SQL on ClickHouse",
+          stepDescription: "Executing SQL query on ClickHouse",
         },
       });
       yield { text: completeMessage };
@@ -142,12 +120,9 @@ Example format: "I'm analyzing your data to show your [xyz]"`,
       let rows: Row[] = [];
       const qStart = Date.now();
       try {
-        console.log("executing query", sql);
         const result = await chQuery(sql);
-        console.log("query result", result);
         rows = Array.isArray(result) ? result : [];
       } catch (err) {
-        console.error("query error", err);
         await analysis.update({
           stage: "analysis_ready",
           chart: { spec: null, series: [] },
@@ -158,18 +133,9 @@ Example format: "I'm analyzing your data to show your [xyz]"`,
               "Check column names or joins",
               "Try a smaller window or fewer fields"
             ]
-          },
-          toast: {
-            visible: false,
-            currentStep: 5,
-            totalSteps: 5,
-            currentLabel: "Query failed",
-            stepDescription: "Database error",
-            completed: true,
-            completedMessage: "Query failed"
           }
         });
-        return { ok: false, reason: "query error" };
+        return { ok: false, summary: "Query execution failed." };
       }
       const execTime = Date.now() - qStart;
 
@@ -186,18 +152,9 @@ Example format: "I'm analyzing your data to show your [xyz]"`,
               "Relax filters or groupings",
               "Verify the source has data"
             ]
-          },
-          toast: {
-            visible: false,
-            currentStep: 5,
-            totalSteps: 5,
-            currentLabel: "No data",
-            stepDescription: "Empty result",
-            completed: true,
-            completedMessage: "No data returned"
           }
         });
-        return { ok: true, rowCount: 0, executionTime: execTime };
+        return { ok: true, summary: "No data returned.", rowCount: 0, executionTime: execTime };
       }
       // Schema summary for chart generation
       const schema = summarizeSchema(rows);
@@ -212,20 +169,11 @@ Example format: "I'm analyzing your data to show your [xyz]"`,
           currentStep: 2,
           totalSteps: 5,
           currentLabel: "Choosing chart",
-          stepDescription: "Selecting encodings and chart type"
+          stepDescription: "Selecting chart type"
         }
       });
       yield { text: completeMessage };
 
-      // Ask model to produce a ChartSpec JSON
-      const chartUserPayload = {
-        question: input.question,
-        preferredChartKind: input.preferredChartKind ?? null,
-        chartHints: input.chartHints ?? [],
-        schema,
-        // we do not send the full dataset to avoid bloat
-        sample: rows.slice(0, 50)
-      };
 
       const { object: chartGen } = await generateObject({
         model: provider.languageModel("artifact-model"),
@@ -234,11 +182,15 @@ Example format: "I'm analyzing your data to show your [xyz]"`,
         messages: [
           {
             role: "user",
-            content: JSON.stringify(chartUserPayload)
+            content: JSON.stringify({
+              question: input.question,
+              preferredChartKind: input.preferredChartKind ?? null,
+              schema,
+              sample: rows.slice(0, 50)
+            })
           }
         ],
       });
-
 
       const safeSpec = sanitizeChartSpec(chartGen);
       await analysis.update({
@@ -262,15 +214,13 @@ Example format: "I'm analyzing your data to show your [xyz]"`,
 
       const timeKey = Object.entries(schema.types).find(([, t]) => t === "date")?.[0] ?? null;
 
-      const insightPrompt = [
-        "Summarize in 2 sentences based only on sample rows and schema.",
-        "If a time field exists, mention overall direction briefly.",
-        "Then give 2 or 3 compact next steps."
-      ].join("\n");
-
-      const summaryGen = await generateText({
+      const { object: analysisGen } = await generateObject({
         model: provider.languageModel("artifact-model"),
-        system: insightPrompt,
+        system: insightPrompt(),
+        schema: z.object({
+          summary: z.string(),
+          recommendations: z.array(z.string()),
+        }),
         messages: [
           {
             role: "user",
@@ -282,18 +232,13 @@ Example format: "I'm analyzing your data to show your [xyz]"`,
               numericKeys
             })
           }
-        ],
-        temperature: 0.2
+        ]
       });
-
-      const lines = summaryGen.text.split("\n").map(s => s.trim()).filter(Boolean);
-      const summary = lines[0] || "Analysis ready.";
-      const recommendations = lines.slice(1, 4).map(x => x.replace(/^[-*•]\s*/, ""));
 
       await analysis.update({
         stage: "metrics_ready",
         metrics: { executionTimeMs: execTime, rowCount: rows.length },
-        analysis: { summary, recommendations },
+        analysis: analysisGen,
         toast: {
           visible: true,
           currentStep: 4,
@@ -324,7 +269,7 @@ Keep it tight. No greeting.
               executionTimeMs: execTime,
               hasTimeSeries: Boolean(timeKey),
               metrics: numericKeys.slice(0, 3),
-              recommendations
+              recommendations: analysisGen.recommendations
             })
           }
         ],
@@ -341,7 +286,7 @@ Keep it tight. No greeting.
       await analysis.update({
         stage: "analysis_ready",
         metrics: { executionTimeMs: execTime, rowCount: rows.length },
-        analysis: { summary, recommendations },
+        analysis: analysisGen,
         toast: {
           visible: false,
           currentStep: 5,
@@ -353,8 +298,9 @@ Keep it tight. No greeting.
         }
       });
 
+      // Yield the final response with forceStop flag
+      // Always stop for analysis tool since canvas is complete
       yield { text: completeMessage, forceStop: true };
-      return { ok: true, rowCount: rows.length, executionTime: execTime };
     } catch (error) {
       console.error(error);
       throw error;

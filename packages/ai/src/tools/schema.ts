@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+export type Row = Record<string, unknown>;
+
 export const toastSchema = z
   .object({
     visible: z.boolean(),
@@ -34,5 +36,5 @@ export const getDataAnalysisSchema = z.object({
     ),
   maxRows: z.number().optional().describe("The maximum number of rows to return."),
   preferredChartKind: z.enum(["line", "bar", "pie", "area", "scatter", "heatmap", "histogram", "table"]).optional(),
-  chartHints: z.array(z.string()).optional()
+  chartHints: z.array(z.string()).optional(),
 });

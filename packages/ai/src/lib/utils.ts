@@ -1,7 +1,7 @@
 import type { DBMessage } from '@databuddy/db';
 import type { UIMessagePart } from 'ai';
 import { formatISO } from 'date-fns';
-import type { ChatMessage, ChatTools, CustomUIDataTypes } from './types';
+import type { ChatMessage, ChatTools, CustomUIDataTypes } from '../types';
 
 export function generateUUID(): string {
 	return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {

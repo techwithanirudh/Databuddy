@@ -5,11 +5,11 @@ import {
 	saveChat,
 	saveMessages,
 } from '@databuddy/ai/lib/queries';
-import type { ChatMessage } from '@databuddy/ai/lib/types';
+import type { ChatMessage } from '@databuddy/ai/types';
 import { convertToUIMessages, generateUUID } from '@databuddy/ai/lib/utils';
 import { systemPrompt } from '@databuddy/ai/prompts';
 import { config, provider } from '@databuddy/ai/providers';
-import { tools } from '@databuddy/ai/tools';
+import { createToolRegistry } from '@databuddy/ai/tool-types';
 import type { User } from '@databuddy/auth';
 import type { StreamingUpdate } from '@databuddy/shared';
 import {
@@ -111,7 +111,7 @@ export async function handleMessage({
 					return shouldForceStop(step);
 				},
 				experimental_transform: smoothStream({ chunking: 'word' }),
-				tools,
+				tools: createToolRegistry(),
 			});
 
 			result.consumeStream();

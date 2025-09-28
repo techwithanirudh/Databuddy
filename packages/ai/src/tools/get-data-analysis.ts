@@ -1,17 +1,17 @@
 import { openai } from "@ai-sdk/openai";
-import { getBurnRate, getRunway, getSpending } from "@db/queries";
-import { generateText, smoothStream, streamText, tool } from "ai";
-import {
-  eachMonthOfInterval,
-  endOfMonth,
-  format,
-  startOfMonth,
-} from "date-fns";
-import { burnRateArtifact } from "../artifacts/burn-rate";
+import { generateObject, generateText, smoothStream, streamText, tool } from "ai";
+import { dataAnalysisArtifact } from "../artifacts/data-analysis";
 import { getContext } from "../context";
 import { safeValue } from "../utils/safe-value";
-import { getBurnRateSchema } from "./schema";
+import { getDataAnalysisSchema } from "./schema";
 import { provider } from "../providers";
+import { ensureLimit, validateSQL } from "../utils/execute-sql-query";
+import { systemPrompt } from "../prompts";
+import { z } from "zod";
+import { Row } from "@databuddy/db";
+import { chQuery } from "@databuddy/db";
+import { ChartSpec, sanitizeChartSpec, summarizeSchema } from "../artifacts/charts";
+import { chartPrompt } from "../prompts/chart-prompt";
 
 function buildSqlUserPrompt(input: z.infer<typeof getDataAnalysisSchema>) {
   const lines: string[] = [];
@@ -26,18 +26,17 @@ function buildSqlUserPrompt(input: z.infer<typeof getDataAnalysisSchema>) {
   return lines.join("\n");
 }
 
-
-export const getBurnRateAnalysisTool = tool({
+export const getDataAnalysisTool = tool({
   description:
     "Generate comprehensive burn rate analysis with interactive visualizations, spending trends, runway projections, and actionable insights. Use this tool when users want detailed financial analysis, visual charts, spending breakdowns, or need to understand their business's financial health and future projections.",
-  inputSchema: getBurnRateSchema.omit({ showCanvas: true }), // Remove showCanvas since this always shows canvas
-  execute: async function* ({ from, to, currency }) {
+  inputSchema: getDataAnalysisSchema.omit({ showCanvas: true }), // Remove showCanvas since this always shows canvas
+  execute: async function* (input: z.infer<typeof getDataAnalysisSchema>) {
     try {
       const context = getContext();
       const userFirstName = safeValue(context?.user.name?.split(" ")[0]) || "there";
 
       // Always create canvas for analysis tool
-      const analysis = burnRateArtifact.stream({
+      const analysis = dataAnalysisArtifact.stream({
         stage: "loading",
         toast: {
           visible: true,
@@ -80,353 +79,284 @@ Example format: "I'm analyzing your data to show your [xyz]"`,
       completeMessage += "\n";
       yield { text: completeMessage };
 
-      // Run all database queries in parallel for maximum performance
-      const [burnRateData, runway, spendingData] = await Promise.all([
-        getBurnRate(context.db, {
-          teamId: context.user.teamId,
-          from,
-          to,
-          currency: currency ?? undefined,
+      const sqlGen = await generateText({
+        model: provider.languageModel("artifact-model"),
+        system: systemPrompt({
+          selectedChatModel: "artifact-model",
+          requestHints: {
+            websiteId: context.websiteId,
+            websiteHostname: context.websiteHostname,
+            timestamp: new Date().toISOString(),
+          },
         }),
-        getRunway(context.db, {
-          teamId: context.user.teamId,
-          from,
-          to,
-          currency: currency ?? undefined,
-        }),
-        getSpending(context.db, {
-          teamId: context.user.teamId,
-          from,
-          to,
-          currency: currency ?? undefined,
-        }),
-      ]);
+        messages: [{ role: "user", content: buildSqlUserPrompt(input) }],
+        temperature: 0.1,
+      });
 
-      // Early return if no data
-      if (burnRateData.length === 0) {
+      let sql = sqlGen.text.trim()
+        .replace(/^```[a-zA-Z]*\s*/g, "")
+        .replace(/```$/g, "")
+        .trim();
+
+      sql = ensureLimit(sql, input.maxRows ?? 2000);
+      if (!validateSQL(sql)) {
         await analysis.update({
           stage: "analysis_ready",
-          chart: { monthlyData: [] },
-          metrics: {
-            currentMonthlyBurn: 0,
-            averageBurnRate: 0,
-            runway: 0,
-            runwayStatus: "No data available",
-            topCategory: {
-              name: "No data",
-              percentage: 0,
-              amount: 0,
-            },
-          },
+          chart: { spec: null, series: [] },
+          tablePreview: [],
           analysis: {
-            burnRateChange: {
-              percentage: 0,
-              period: "0 months",
-              startValue: 0,
-              endValue: 0,
-            },
-            summary: "No burn rate data available for the selected period.",
+            summary: "The generated SQL did not pass safety validation.",
             recommendations: [
-              "Ensure transactions are properly categorized",
-              "Check date range selection",
+              "Rephrase your request to focus on SELECT based analytics",
+              "Specify the table and time window you want to analyze",
             ],
+          },
+          toast: {
+            visible: false,
+            currentStep: 4,
+            totalSteps: 4,
+            currentLabel: "Validation failed",
+            stepDescription: "Query blocked by safety rules",
+            completed: true,
+            completedMessage: "Validation failed",
           },
         });
 
         return {
-          currentMonthlyBurn: 0,
-          runway: 0,
-          topCategory: "No data",
-          topCategoryPercentage: 0,
-          burnRateChange: 0,
-          summary: "No data available",
+          ok: false,
+          reason: "SQL validation failed",
         };
       }
 
-      // Calculate basic metrics from burn rate data
-      const currentMonthlyBurn =
-        burnRateData.length > 0
-          ? burnRateData[burnRateData.length - 1]?.value || 0
-          : 0;
-
-      const averageBurnRate =
-        burnRateData.length > 0
-          ? Math.round(
-            burnRateData.reduce((sum, item) => sum + (item?.value || 0), 0) /
-            burnRateData.length,
-          )
-          : 0;
-
-      // Generate monthly chart data
-      const fromDate = startOfMonth(new Date(from));
-      const toDate = endOfMonth(new Date(to));
-      const monthSeries = eachMonthOfInterval({ start: fromDate, end: toDate });
-
-      const monthlyData = monthSeries.map((month, index) => {
-        const currentBurn = burnRateData[index]?.value || 0;
-        const averageBurn = averageBurnRate;
-
-        return {
-          month: format(month, "MMM"),
-          amount: currentBurn,
-          average: averageBurn,
-          currentBurn,
-          averageBurn,
-        };
-      });
-
-      // Update with chart data first
+      // 3) Update canvas to show we are about to query
       await analysis.update({
-        stage: "chart_ready",
-        chart: {
-          monthlyData,
-        },
+        stage: "query_ready",
+        sqlPreview: sql.length > 800 ? sql.slice(0, 800) + " ..." : sql,
         toast: {
           visible: true,
           currentStep: 1,
           totalSteps: 4,
-          currentLabel: "Preparing chart data",
-          stepDescription:
-            "Processing transaction data and calculating metrics",
+          currentLabel: "Running query",
+          stepDescription: "Executing read-only SQL on ClickHouse",
         },
       });
-
-      // Yield to continue processing while showing chart step
       yield { text: completeMessage };
 
-      // Get the highest spending category (first item is highest)
-      const highestCategory =
-        spendingData.length > 0
-          ? spendingData[0]
-          : {
-            name: "Uncategorized",
-            slug: "uncategorized",
-            amount: 0,
-            percentage: 0,
-          };
+      // Execute query
+      let rows: Row[] = [];
+      const qStart = Date.now();
+      try {
+        const result = await chQuery(sql);
+        rows = Array.isArray(result) ? result : [];
+      } catch (err) {
+        await analysis.update({
+          stage: "analysis_ready",
+          chart: { spec: null, series: [] },
+          tablePreview: [],
+          analysis: {
+            summary: "Query execution failed.",
+            recommendations: [
+              "Check column names or joins",
+              "Try a smaller window or fewer fields"
+            ]
+          },
+          toast: {
+            visible: false,
+            currentStep: 5,
+            totalSteps: 5,
+            currentLabel: "Query failed",
+            stepDescription: "Database error",
+            completed: true,
+            completedMessage: "Query failed"
+          }
+        });
+        return { ok: false, reason: "query error" };
+      }
+      const execTime = Date.now() - qStart;
 
-      const highestCategoryPercentage = highestCategory?.percentage || 0;
+      if (rows.length === 0) {
+        await analysis.update({
+          stage: "analysis_ready",
+          chart: { spec: null, series: [] },
+          tablePreview: [],
+          metrics: { executionTimeMs: execTime, rowCount: 0 },
+          analysis: {
+            summary: "No rows returned.",
+            recommendations: [
+              "Widen the date range",
+              "Relax filters or groupings",
+              "Verify the source has data"
+            ]
+          },
+          toast: {
+            visible: false,
+            currentStep: 5,
+            totalSteps: 5,
+            currentLabel: "No data",
+            stepDescription: "Empty result",
+            completed: true,
+            completedMessage: "No data returned"
+          }
+        });
+        return { ok: true, rowCount: 0, executionTime: execTime };
+      }
+      // Schema summary for chart generation
+      const schema = summarizeSchema(rows);
 
-      // Calculate burn rate change for metrics
-      const burnRateStartValue =
-        burnRateData.length > 0 ? burnRateData[0]?.value || 0 : 0;
-      const burnRateEndValue = currentMonthlyBurn;
-      const burnRateChangePercentage =
-        burnRateStartValue > 0
-          ? Math.round(
-            ((burnRateEndValue - burnRateStartValue) / burnRateStartValue) *
-            100,
-          )
-          : 0;
-      const burnRateChangePeriod = `${burnRateData.length} months`;
-
-      // Update with metrics data including burn rate change
       await analysis.update({
-        stage: "metrics_ready",
-        chart: {
-          monthlyData,
-        },
-        metrics: {
-          currentMonthlyBurn,
-          averageBurnRate,
-          runway,
-          runwayStatus:
-            runway >= 12
-              ? "Above recommended 12+ months"
-              : "Below recommended 12+ months",
-          topCategory: {
-            name: highestCategory?.name || "Uncategorized",
-            percentage: highestCategoryPercentage,
-            amount: highestCategory?.amount || 0,
-          },
-        },
-        analysis: {
-          burnRateChange: {
-            percentage: burnRateChangePercentage,
-            period: burnRateChangePeriod,
-            startValue: burnRateStartValue,
-            endValue: burnRateEndValue,
-          },
-          summary: "Loading analysis...",
-          recommendations: [],
-        },
+        stage: "chart_planning",
+        metrics: { executionTimeMs: execTime, rowCount: rows.length },
+        tablePreview: rows.slice(0, 20),
+        schemaPreview: schema,
         toast: {
           visible: true,
           currentStep: 2,
-          totalSteps: 4,
-          currentLabel: "Metrics ready",
-          stepDescription: "Generating visual charts and analytics",
-        },
+          totalSteps: 5,
+          currentLabel: "Choosing chart",
+          stepDescription: "Selecting encodings and chart type"
+        }
       });
-
-      // Yield to continue processing while showing metrics step
       yield { text: completeMessage };
 
-      // Get the target currency for display
-      const targetCurrency = currency ?? context.user.baseCurrency ?? "USD";
+      // Ask model to produce a ChartSpec JSON
+      const chartUserPayload = {
+        question: input.question,
+        preferredChartKind: input.preferredChartKind ?? null,
+        chartHints: input.chartHints ?? [],
+        schema,
+        // we do not send the full dataset to avoid bloat
+        sample: rows.slice(0, 50)
+      };
 
-      // Show AI processing step
+      const { object: chartGen } = await generateObject({
+        model: provider.languageModel("artifact-model"),
+        system: chartPrompt(context.websiteId, context.websiteHostname),
+        schema: ChartSpec,
+        messages: [
+          {
+            role: "user",
+            content: JSON.stringify(chartUserPayload)
+          }
+        ],
+        temperature: 0.2
+      });
+
+
+      const safeSpec = sanitizeChartSpec(chartGen);
       await analysis.update({
+        stage: "chart_ready",
+        chart: { spec: safeSpec, series: [] },
+        tablePreview: rows.slice(0, 100),
         toast: {
           visible: true,
           currentStep: 3,
-          totalSteps: 4,
-          currentLabel: "Generating insights",
-          stepDescription: "Running AI analysis and generating insights",
-        },
+          totalSteps: 5,
+          currentLabel: "Rendering",
+          stepDescription: `Rendering ${safeSpec.kind} chart`
+        }
       });
-
-      // Yield to continue processing while showing AI processing step
       yield { text: completeMessage };
 
-      // Generate AI summary with a simpler, faster prompt
-      const analysisResult = await generateText({
-        model: openai("gpt-4o-mini"),
+      // Concise insights
+      const numericKeys = Object.entries(schema.types)
+        .filter(([, t]) => t === "number")
+        .map(([k]) => k);
+
+      const timeKey = Object.entries(schema.types).find(([, t]) => t === "date")?.[0] ?? null;
+
+      const insightPrompt = [
+        "Summarize in 2 sentences based only on sample rows and schema.",
+        "If a time field exists, mention overall direction briefly.",
+        "Then give 2 or 3 compact next steps."
+      ].join("\n");
+
+      const summaryGen = await generateText({
+        model: provider.languageModel("artifact-model"),
+        system: insightPrompt,
         messages: [
           {
             role: "user",
-            content: `Analyze this burn rate data:
-
-Monthly Burn: ${formatAmount({ amount: currentMonthlyBurn, currency: targetCurrency, locale: context.user.locale ?? undefined })}
-Runway: ${runway} months
-Change: ${burnRateChangePercentage}% over ${burnRateChangePeriod}
-Top Category: ${highestCategory?.name || "Uncategorized"} (${highestCategoryPercentage}%)
-
-Provide a concise 2-sentence summary and 2-3 brief recommendations.`,
-          },
+            content: JSON.stringify({
+              schema,
+              sample: rows.slice(0, 50),
+              rowCount: rows.length,
+              timeKey,
+              numericKeys
+            })
+          }
         ],
+        temperature: 0.2
       });
 
-      // Simple parsing - just split by line breaks and take first few lines
-      const responseText = analysisResult.text;
-      const lines = responseText
-        .split("\n")
-        .filter((line) => line.trim().length > 0);
+      const lines = summaryGen.text.split("\n").map(s => s.trim()).filter(Boolean);
+      const summary = lines[0] || "Analysis ready.";
+      const recommendations = lines.slice(1, 4).map(x => x.replace(/^[-*•]\s*/, ""));
 
-      const summaryText =
-        lines[0] ||
-        `Current monthly burn: ${formatAmount({ amount: currentMonthlyBurn, currency: targetCurrency, locale: context.user.locale ?? undefined })} with ${runway}-month runway.`;
-      const recommendations = lines
-        .slice(1, 4)
-        .map((line) => line.replace(/^[-•*]\s*/, "").trim())
-        .filter((line) => line.length > 0);
+      await analysis.update({
+        stage: "metrics_ready",
+        metrics: { executionTimeMs: execTime, rowCount: rows.length },
+        analysis: { summary, recommendations },
+        toast: {
+          visible: true,
+          currentStep: 4,
+          totalSteps: 5,
+          currentLabel: "Generating insights",
+          stepDescription: "Writing a short summary"
+        }
+      });
+      yield { text: completeMessage };
 
-      const finalData = {
-        chart: { monthlyData },
-        metrics: {
-          currentMonthlyBurn,
-          averageBurnRate,
-          runway,
-          runwayStatus:
-            runway >= 12
-              ? "Above recommended 12+ months"
-              : "Below recommended 12+ months",
-          topCategory: {
-            name: highestCategory?.name || "Uncategorized",
-            percentage: highestCategoryPercentage,
-            amount: highestCategory?.amount || 0,
-          },
-        },
-      };
+      // Final body stream
+      const responseStream = streamText({
+        model: provider.languageModel("artifact-model"),
+        system: `
+You are producing ONLY the analysis body for the canvas.
+Sections:
+## Data Snapshot
+## Key Metrics
+## Trends and Insights
+## What To Explore Next
+Keep it tight. No greeting.
+`.trim(),
+        messages: [
+          {
+            role: "user",
+            content: JSON.stringify({
+              rowCount: rows.length,
+              executionTimeMs: execTime,
+              hasTimeSeries: Boolean(timeKey),
+              metrics: numericKeys.slice(0, 3),
+              recommendations
+            })
+          }
+        ],
+        experimental_transform: smoothStream({ chunking: "word" })
+      });
 
-      // Final update with all data and completion
+      let body = "";
+      for await (const chunk of responseStream.textStream) {
+        body += chunk;
+        yield { text: completeMessage + body };
+      }
+      completeMessage += body;
+
       await analysis.update({
         stage: "analysis_ready",
-        chart: finalData.chart,
-        metrics: finalData.metrics,
-        analysis: {
-          burnRateChange: {
-            percentage: burnRateChangePercentage,
-            period: burnRateChangePeriod,
-            startValue: burnRateStartValue,
-            endValue: burnRateEndValue,
-          },
-          summary: summaryText,
-          recommendations,
-        },
+        metrics: { executionTimeMs: execTime, rowCount: rows.length },
+        analysis: { summary, recommendations },
         toast: {
           visible: false,
-          currentStep: 4,
-          totalSteps: 4,
+          currentStep: 5,
+          totalSteps: 5,
           currentLabel: "Analysis complete",
-          stepDescription: "Burn rate analysis complete",
+          stepDescription: "Done",
           completed: true,
-          completedMessage: "Burn rate analysis complete",
-        },
+          completedMessage: "Data analysis complete"
+        }
       });
 
-      // Prepare data for streaming response
-      const burnRateAnalysisData = {
-        currentMonthlyBurn: formatAmount({
-          amount: currentMonthlyBurn,
-          currency: targetCurrency,
-          locale: context.user.locale ?? undefined,
-        }),
-        runway: runway,
-        topCategory: highestCategory?.name || "Uncategorized",
-        topCategoryPercentage: highestCategoryPercentage,
-        burnRateChange: burnRateChangePercentage,
-        burnRateChangePeriod: burnRateChangePeriod,
-        runwayStatus:
-          runway >= 12 ? "healthy" : runway >= 6 ? "concerning" : "critical",
-      };
-
-      // Stream the detailed analysis to extend the initial message
-      const responseStream = streamText({
-        model: openai("gpt-4o-mini"),
-        system: `You are a financial assistant providing a burn rate analysis. Generate ONLY the detailed analysis section using the exact data provided.
-
-CRITICAL INSTRUCTIONS:
-- Generate ONLY the analysis content below, do NOT repeat any initial message
-- Use ONLY the data provided in the burnRateData object
-- Format the response EXACTLY as shown below
-- Do NOT add greetings, introductions, or repeat the initial message
-- Do NOT generate your own calculations or estimates
-
-REQUIRED FORMAT:
-## Monthly Burn Rate
-
-Your current monthly burn rate is {currentMonthlyBurn} per month, representing your average monthly spending.
-
-## Cash Runway
-
-Your cash runway is approximately {runway} months, meaning you can sustain operations for the next {runway} months before needing additional funding. This is {runwayStatus} for your business planning.
-
-## Expense Breakdown
-
-Your largest expense category is {topCategory}, accounting for {topCategoryPercentage}% of your total monthly burn rate.
-
-## Trends and Insights
-
-Your burn rate has {burnRateChange > 0 ? "increased" : burnRateChange < 0 ? "decreased" : "remained stable"} by {Math.abs(burnRateChange)}% over the past {burnRateChangePeriod}.
-
-The chart on the right shows your monthly burn rate trends with current vs average spending patterns, while the metrics provide additional context about your financial runway and expense breakdown.`,
-        messages: [
-          {
-            role: "user",
-            content: `Generate a burn rate analysis using this exact data: ${JSON.stringify(burnRateAnalysisData)}`,
-          },
-        ],
-        experimental_transform: smoothStream({ chunking: "word" }),
-      });
-
-      // Yield the streamed response
-      let analysisText = "";
-      for await (const chunk of responseStream.textStream) {
-        analysisText += chunk;
-        // Yield the initial message plus the new analysis text
-        yield { text: completeMessage + analysisText };
-      }
-
-      // Update completeMessage with the final analysis
-      completeMessage += analysisText;
-
-      // Yield the final response with forceStop flag
-      // Always stop for analysis tool since canvas is complete
-      yield {
-        text: completeMessage,
-        forceStop: true,
-      };
+      yield { text: completeMessage, forceStop: true };
+      return { ok: true, rowCount: rows.length, executionTime: execTime };
     } catch (error) {
       console.error(error);
       throw error;

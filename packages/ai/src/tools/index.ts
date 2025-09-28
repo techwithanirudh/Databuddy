@@ -1,7 +1,5 @@
-import { analyzeBurnRateTool } from './get-data-analysis';
-import { executeSQLQueryTool } from './execute-sql-query';
+import { getDataAnalysisTool } from './get-data-analysis';
 
 export const tools = {
-	analyzeBurnRate: analyzeBurnRateTool,
-	executeSQLQuery: executeSQLQueryTool
+	analyzeData: getDataAnalysisTool,
 };

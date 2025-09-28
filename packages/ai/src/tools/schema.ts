@@ -12,7 +12,7 @@ export const toastSchema = z
   })
   .optional();
 
-export const getBurnRateSchema = z.object({
+export const getDataAnalysisSchema = z.object({
   question: z.string().min(5, "Please describe what you want to analyze"),
   from: z
     .string()
@@ -32,4 +32,7 @@ export const getBurnRateSchema = z.object({
     .describe(
       "Whether to show detailed visual analytics. Use true for in-depth analysis requests, trends, breakdowns, or when user asks for charts/visuals. Use false for simple questions or quick answers.",
     ),
+  maxRows: z.number().optional().describe("The maximum number of rows to return."),
+  preferredChartKind: z.enum(["line", "bar", "pie", "area", "scatter", "heatmap", "histogram", "table"]).optional(),
+  chartHints: z.array(z.string()).optional()
 });

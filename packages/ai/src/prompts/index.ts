@@ -1,6 +1,7 @@
 import type { RequestHints } from '../../../../apps/api/src/types/agent';
 import { chatPrompt } from './chat-prompt';
 import { corePrompt } from './core';
+import { schemaPrompt } from './schema-prompt';
 
 export const getRequestPromptFromHints = (requestHints: RequestHints) => `\
 <context>
@@ -29,9 +30,11 @@ export const systemPrompt = ({
 			.join('\n')
 			.trim();
 	}
-	if (selectedChatModel === 'relevance-model') {
+
+	if (selectedChatModel === 'artifact-model') {
 		return [
 			corePrompt(websiteHostname, websiteId),
+			schemaPrompt,
 			requestPrompt,
 			chatPrompt(websiteId, websiteHostname),
 		]

@@ -1,12 +1,12 @@
 import { useArtifacts } from '@ai-sdk-tools/artifacts/client';
-import { BurnRateCanvas } from './burn-rate-canvas';
+import { DataAnalysisCanvas } from './data-analysis-canvas';
 
 export function Canvas({ websiteId }: { websiteId: string }) {
 	const { current } = useArtifacts();
 
 	switch (current?.type) {
-		case 'burn-rate':
-			return <BurnRateCanvas websiteId={websiteId} />;
+		case 'data-analysis':
+			return <DataAnalysisCanvas />;
 		default:
 			return null;
 	}

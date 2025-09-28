@@ -1,8 +1,8 @@
 'use client';
 
 import type { UseChatHelpers } from '@ai-sdk/react';
-import type { ChatMessage } from '@databuddy/ai/types';
 import { getTextFromMessage } from '@databuddy/ai/lib/utils';
+import type { ChatMessage } from '@databuddy/ai/types';
 import {
 	type Dispatch,
 	type SetStateAction,

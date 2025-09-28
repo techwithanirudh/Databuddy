@@ -1,17 +1,17 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 export const ChartKind = z.enum([
-	"line",
-	"area",
-	"bar",
-	"stackedBar",
-	"groupedBar",
-	"pie",
-	"donut",
-	"scatter",
-	"heatmap",
-	"histogram",
-	"table"
+	'line',
+	'area',
+	'bar',
+	'stackedBar',
+	'groupedBar',
+	'pie',
+	'donut',
+	'scatter',
+	'heatmap',
+	'histogram',
+	'table',
 ]);
 
 const StringOrNumber = z.union([z.string(), z.number()]);
@@ -19,74 +19,93 @@ const StringOrNumber = z.union([z.string(), z.number()]);
 // Common encodings used across charts
 const TimeEncoding = z.object({
 	field: z.string().min(1),
-	type: z.enum(["time", "date"]),
-	format: z.string().optional() // ISO, unix, custom
+	type: z.enum(['time', 'date']),
+	format: z.string().optional(), // ISO, unix, custom
 });
 
 const CategoryEncoding = z.object({
 	field: z.string().min(1),
-	type: z.literal("category")
+	type: z.literal('category'),
 });
 
 const NumericEncoding = z.object({
 	field: z.string().min(1),
-	type: z.literal("number"),
-	aggregate: z.enum(["sum", "avg", "min", "max", "count", "none"]).default("none")
+	type: z.literal('number'),
+	aggregate: z
+		.enum(['sum', 'avg', 'min', 'max', 'count', 'none'])
+		.default('none'),
 });
 
-const SeriesEncoding = z.object({
-	field: z.string().min(1),
-	type: z.enum(["category", "number"]),
-}).optional();
+const SeriesEncoding = z
+	.object({
+		field: z.string().min(1),
+		type: z.enum(['category', 'number']),
+	})
+	.optional();
 
 // A generic filter syntax that is easy to validate
-const FilterOp = z.enum(["=", "!=", ">", ">=", "<", "<=", "in", "not-in", "between"]);
+const FilterOp = z.enum([
+	'=',
+	'!=',
+	'>',
+	'>=',
+	'<',
+	'<=',
+	'in',
+	'not-in',
+	'between',
+]);
 export const ChartFilter = z.object({
 	field: z.string().min(1),
 	op: FilterOp,
 	// Use an array (1 or 2 entries) instead of a tuple to avoid producing
 	// JSON Schema tuple types which some response-format validators reject.
-	value: z.union([
-		StringOrNumber,
-		z.array(StringOrNumber).min(1).max(2)
-	])
+	value: z.union([StringOrNumber, z.array(StringOrNumber).min(1).max(2)]),
 });
 
-const SortOrder = z.enum(["asc", "desc"]);
+const SortOrder = z.enum(['asc', 'desc']);
 const SortSpec = z.object({
 	field: z.string().min(1),
-	order: SortOrder.default("asc")
+	order: SortOrder.default('asc'),
 });
 
-const AxisSpec = z.object({
+const _AxisSpec = z.object({
 	label: z.string().optional(),
 	tickFormat: z.string().optional(),
-	hide: z.boolean().optional()
+	hide: z.boolean().optional(),
 });
 
 // Basic legend config
-const LegendSpec = z.object({
-	position: z.enum(["top", "right", "bottom", "left"]).default("top"),
-	show: z.boolean().default(true)
-}).optional();
+const LegendSpec = z
+	.object({
+		position: z.enum(['top', 'right', 'bottom', 'left']).default('top'),
+		show: z.boolean().default(true),
+	})
+	.optional();
 
 // Tooltip fields to show
-const TooltipSpec = z.object({
-	fields: z.array(z.string()).max(6).optional()
-}).optional();
+const TooltipSpec = z
+	.object({
+		fields: z.array(z.string()).max(6).optional(),
+	})
+	.optional();
 
-const ColorSpec = z.object({
-	scheme: z.enum([
-		"auto",
-		"category10",
-		"accent",
-		"paired",
-		"pastel",
-		"set1",
-		"set2",
-		"set3"
-	]).default("auto")
-}).optional();
+const ColorSpec = z
+	.object({
+		scheme: z
+			.enum([
+				'auto',
+				'category10',
+				'accent',
+				'paired',
+				'pastel',
+				'set1',
+				'set2',
+				'set3',
+			])
+			.default('auto'),
+	})
+	.optional();
 
 /**
  * ChartSpec is the contract the model must produce and we strictly validate.
@@ -115,7 +134,7 @@ export const ChartSpec = z.object({
 	// Limits to keep things sane in UI
 	maxPoints: z.number().int().positive().max(5000).default(2000),
 	// Optional table columns for "table" kind
-	tableColumns: z.array(z.string()).optional()
+	tableColumns: z.array(z.string()).optional(),
 });
 
 export type ChartSpec = z.infer<typeof ChartSpec>;
@@ -129,24 +148,34 @@ export type Row = Record<string, unknown>;
 export function summarizeSchema(rows: Row[]) {
 	const sample = rows[0] || {};
 	const columns = Object.keys(sample);
-	const types: Record<string, "number" | "string" | "boolean" | "date" | "unknown"> = {};
+	const types: Record<
+		string,
+		'number' | 'string' | 'boolean' | 'date' | 'unknown'
+	> = {};
 	for (const c of columns) {
 		const v = sample[c];
 		types[c] =
-			typeof v === "number" ? "number" :
-				typeof v === "string" && looksLikeDate(v) ? "date" :
-					typeof v === "string" ? "string" :
-						typeof v === "boolean" ? "boolean" :
-							v instanceof Date ? "date" :
-								"unknown";
+			typeof v === 'number'
+				? 'number'
+				: typeof v === 'string' && looksLikeDate(v)
+					? 'date'
+					: typeof v === 'string'
+						? 'string'
+						: typeof v === 'boolean'
+							? 'boolean'
+							: v instanceof Date
+								? 'date'
+								: 'unknown';
 	}
 	return { columns, types };
 }
 
 function looksLikeDate(s: string): boolean {
-	if (!s) return false;
+	if (!s) {
+		return false;
+	}
 	const d = new Date(s);
-	return !isNaN(d.getTime());
+	return !Number.isNaN(d.getTime());
 }
 
 /**
@@ -154,9 +183,10 @@ function looksLikeDate(s: string): boolean {
  */
 export function sanitizeChartSpec(spec: ChartSpec): ChartSpec {
 	// Limit fields count in tooltip
-	const tooltip = spec.tooltip?.fields && spec.tooltip.fields.length > 6
-		? { fields: spec.tooltip.fields.slice(0, 6) }
-		: spec.tooltip;
+	const tooltip =
+		spec.tooltip?.fields && spec.tooltip.fields.length > 6
+			? { fields: spec.tooltip.fields.slice(0, 6) }
+			: spec.tooltip;
 
 	const maxPoints = Math.min(Math.max(spec.maxPoints ?? 2000, 10), 5000);
 

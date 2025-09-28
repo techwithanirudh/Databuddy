@@ -1,6 +1,6 @@
 import type { UseChatHelpers } from '@ai-sdk/react';
-import type { ChatMessage } from '@databuddy/ai/types';
 import { chatModels } from '@databuddy/ai/models';
+import type { ChatMessage } from '@databuddy/ai/types';
 import { CpuIcon } from '@phosphor-icons/react';
 import type { ChatStatus, UIMessage } from 'ai';
 import { memo, startTransition, useEffect, useState } from 'react';

@@ -127,13 +127,7 @@ export const auth = betterAuth({
 		maxPasswordLength: 32,
 		autoSignIn: false,
 		requireEmailVerification: process.env.NODE_ENV === 'production',
-		sendResetPassword: async ({
-			user,
-			url,
-		}: {
-			user: any;
-			url: string;
-		}) => {
+		sendResetPassword: async ({ user, url }: { user: any; url: string }) => {
 			await resend.emails.send({
 				from: process.env.RESEND_FROM ?? 'no-reply@databuddy.cc',
 				to: user.email,

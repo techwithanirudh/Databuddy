@@ -1,6 +1,6 @@
 import type { UIMessage } from 'ai';
-import type { UITools } from './tool-types';
 import { z } from 'zod';
+import type { UITools } from './tool-types';
 
 export type DataPart = { type: 'append-message'; message: string };
 

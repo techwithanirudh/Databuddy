@@ -6,7 +6,7 @@ export function Canvas({ websiteId }: { websiteId: string }) {
 
 	switch (current?.type) {
 		case 'data-analysis':
-			return <DataAnalysisCanvas />;
+			return <DataAnalysisCanvas websiteId={websiteId} />;
 		default:
 			return null;
 	}

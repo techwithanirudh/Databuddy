@@ -41,7 +41,10 @@ type ChartKind =
 type EncodingCommon = { field: string };
 type TimeEncoding = EncodingCommon & { type: 'time' | 'date'; format?: string };
 type CatEncoding = EncodingCommon & { type: 'category' };
-type NumEncoding = EncodingCommon & { type: 'number'; aggregate?: 'sum' | 'avg' | 'min' | 'max' | 'count' | 'none' };
+type NumEncoding = EncodingCommon & {
+	type: 'number';
+	aggregate?: 'sum' | 'avg' | 'min' | 'max' | 'count' | 'none';
+};
 
 type ChartSpec = {
 	kind: ChartKind;
@@ -55,8 +58,22 @@ type ChartSpec = {
 	size?: NumEncoding;
 	legend?: { position?: 'top' | 'right' | 'bottom' | 'left'; show?: boolean };
 	tooltip?: { fields?: string[] };
-	color?: { scheme?: 'auto' | 'category10' | 'accent' | 'paired' | 'pastel' | 'set1' | 'set2' | 'set3' };
-	filters?: Array<{ field: string; op: '=' | '!=' | '>' | '>=' | '<' | '<=' | 'in' | 'not-in' | 'between'; value: any }>;
+	color?: {
+		scheme?:
+			| 'auto'
+			| 'category10'
+			| 'accent'
+			| 'paired'
+			| 'pastel'
+			| 'set1'
+			| 'set2'
+			| 'set3';
+	};
+	filters?: Array<{
+		field: string;
+		op: '=' | '!=' | '>' | '>=' | '<' | '<=' | 'in' | 'not-in' | 'between';
+		value: any;
+	}>;
 	sort?: Array<{ field: string; order?: 'asc' | 'desc' }>;
 	maxPoints?: number;
 	tableColumns?: string[];
@@ -71,10 +88,10 @@ export function DataAnalysisChart({
 	rows: AnyRow[];
 	height?: number;
 }) {
-	if (!spec || !rows?.length) {
+	if (!(spec && rows?.length)) {
 		return (
 			<div
-				className="flex h-[240px] w-full items-center justify-center text-sm text-neutral-500 dark:text-neutral-400"
+				className="flex h-[240px] w-full items-center justify-center text-neutral-500 text-sm dark:text-neutral-400"
 				style={{ height }}
 			>
 				No data to visualize
@@ -101,18 +118,37 @@ export function DataAnalysisChart({
 		case 'line':
 			return (
 				<ChartShell height={height} title={spec.title}>
-					<ResponsiveContainer width="100%" height="100%">
+					<ResponsiveContainer height="100%" width="100%">
 						<LineChart data={data}>
 							<Grid />
 							<XAxis dataKey={xKey ?? inferFirstKey(data)} />
 							<YAxis />
-							<Tooltip content={<Tip fields={spec.tooltip?.fields} />} wrapperStyle={{ zIndex: 9999 }} />
-							{sKey
-								? seriesKeys(data, sKey).map((k) => (
-									<Line key={k} type="monotone" dataKey={(row) => getNumber(row, yKey, k, sKey)} strokeWidth={2} dot={false} name={`${yKey} (${k})`} />
+							<Tooltip
+								content={<Tip fields={spec.tooltip?.fields} />}
+								wrapperStyle={{ zIndex: 9999 }}
+							/>
+							{sKey ? (
+								seriesKeys(data, sKey).map((k) => (
+									<Line
+										dataKey={(row) => getNumber(row, yKey, k, sKey)}
+										dot={false}
+										key={k}
+										name={`${yKey} (${k})`}
+										strokeWidth={2}
+										type="monotone"
+									/>
 								))
-								: <Line type="monotone" dataKey={yKey ?? inferFirstNumeric(data)} strokeWidth={2} dot={false} />}
-							{spec.legend?.show !== false ? <Legend verticalAlign="top" height={24} /> : null}
+							) : (
+								<Line
+									dataKey={yKey ?? inferFirstNumeric(data)}
+									dot={false}
+									strokeWidth={2}
+									type="monotone"
+								/>
+							)}
+							{spec.legend?.show !== false ? (
+								<Legend height={24} verticalAlign="top" />
+							) : null}
 						</LineChart>
 					</ResponsiveContainer>
 				</ChartShell>
@@ -121,18 +157,37 @@ export function DataAnalysisChart({
 		case 'area':
 			return (
 				<ChartShell height={height} title={spec.title}>
-					<ResponsiveContainer width="100%" height="100%">
+					<ResponsiveContainer height="100%" width="100%">
 						<AreaChart data={data}>
 							<Grid />
 							<XAxis dataKey={xKey ?? inferFirstKey(data)} />
 							<YAxis />
-							<Tooltip content={<Tip fields={spec.tooltip?.fields} />} wrapperStyle={{ zIndex: 9999 }} />
-							{sKey
-								? seriesKeys(data, sKey).map((k) => (
-									<Area key={k} type="monotone" dataKey={(row) => getNumber(row, yKey, k, sKey)} strokeWidth={2} fillOpacity={0.1} name={`${yKey} (${k})`} />
+							<Tooltip
+								content={<Tip fields={spec.tooltip?.fields} />}
+								wrapperStyle={{ zIndex: 9999 }}
+							/>
+							{sKey ? (
+								seriesKeys(data, sKey).map((k) => (
+									<Area
+										dataKey={(row) => getNumber(row, yKey, k, sKey)}
+										fillOpacity={0.1}
+										key={k}
+										name={`${yKey} (${k})`}
+										strokeWidth={2}
+										type="monotone"
+									/>
 								))
-								: <Area type="monotone" dataKey={yKey ?? inferFirstNumeric(data)} strokeWidth={2} fillOpacity={0.1} />}
-							{spec.legend?.show !== false ? <Legend verticalAlign="top" height={24} /> : null}
+							) : (
+								<Area
+									dataKey={yKey ?? inferFirstNumeric(data)}
+									fillOpacity={0.1}
+									strokeWidth={2}
+									type="monotone"
+								/>
+							)}
+							{spec.legend?.show !== false ? (
+								<Legend height={24} verticalAlign="top" />
+							) : null}
 						</AreaChart>
 					</ResponsiveContainer>
 				</ChartShell>
@@ -142,18 +197,29 @@ export function DataAnalysisChart({
 		case 'groupedBar':
 			return (
 				<ChartShell height={height} title={spec.title}>
-					<ResponsiveContainer width="100%" height="100%">
+					<ResponsiveContainer height="100%" width="100%">
 						<BarChart data={data}>
 							<Grid />
 							<XAxis dataKey={xKey ?? inferFirstKey(data)} />
 							<YAxis />
-							<Tooltip content={<Tip fields={spec.tooltip?.fields} />} wrapperStyle={{ zIndex: 9999 }} />
-							{sKey
-								? seriesKeys(data, sKey).map((k) => (
-									<Bar key={k} dataKey={(row) => getNumber(row, yKey, k, sKey)} name={`${yKey} (${k})`} />
+							<Tooltip
+								content={<Tip fields={spec.tooltip?.fields} />}
+								wrapperStyle={{ zIndex: 9999 }}
+							/>
+							{sKey ? (
+								seriesKeys(data, sKey).map((k) => (
+									<Bar
+										dataKey={(row) => getNumber(row, yKey, k, sKey)}
+										key={k}
+										name={`${yKey} (${k})`}
+									/>
 								))
-								: <Bar dataKey={yKey ?? inferFirstNumeric(data)} />}
-							{spec.legend?.show !== false ? <Legend verticalAlign="top" height={24} /> : null}
+							) : (
+								<Bar dataKey={yKey ?? inferFirstNumeric(data)} />
+							)}
+							{spec.legend?.show !== false ? (
+								<Legend height={24} verticalAlign="top" />
+							) : null}
 						</BarChart>
 					</ResponsiveContainer>
 				</ChartShell>
@@ -162,18 +228,30 @@ export function DataAnalysisChart({
 		case 'stackedBar':
 			return (
 				<ChartShell height={height} title={spec.title}>
-					<ResponsiveContainer width="100%" height="100%">
+					<ResponsiveContainer height="100%" width="100%">
 						<BarChart data={data}>
 							<Grid />
 							<XAxis dataKey={xKey ?? inferFirstKey(data)} />
 							<YAxis />
-							<Tooltip content={<Tip fields={spec.tooltip?.fields} />} wrapperStyle={{ zIndex: 9999 }} />
-							{sKey
-								? seriesKeys(data, sKey).map((k) => (
-									<Bar key={k} stackId="1" dataKey={(row) => getNumber(row, yKey, k, sKey)} name={`${yKey} (${k})`} />
+							<Tooltip
+								content={<Tip fields={spec.tooltip?.fields} />}
+								wrapperStyle={{ zIndex: 9999 }}
+							/>
+							{sKey ? (
+								seriesKeys(data, sKey).map((k) => (
+									<Bar
+										dataKey={(row) => getNumber(row, yKey, k, sKey)}
+										key={k}
+										name={`${yKey} (${k})`}
+										stackId="1"
+									/>
 								))
-								: <Bar dataKey={yKey ?? inferFirstNumeric(data)} />}
-							{spec.legend?.show !== false ? <Legend verticalAlign="top" height={24} /> : null}
+							) : (
+								<Bar dataKey={yKey ?? inferFirstNumeric(data)} />
+							)}
+							{spec.legend?.show !== false ? (
+								<Legend height={24} verticalAlign="top" />
+							) : null}
 						</BarChart>
 					</ResponsiveContainer>
 				</ChartShell>
@@ -188,19 +266,22 @@ export function DataAnalysisChart({
 
 			return (
 				<ChartShell height={height} title={spec.title}>
-					<ResponsiveContainer width="100%" height="100%">
+					<ResponsiveContainer height="100%" width="100%">
 						<PieChart>
-							<Tooltip content={<Tip fields={spec.tooltip?.fields} />} wrapperStyle={{ zIndex: 9999 }} />
-							<Legend verticalAlign="top" height={24} />
+							<Tooltip
+								content={<Tip fields={spec.tooltip?.fields} />}
+								wrapperStyle={{ zIndex: 9999 }}
+							/>
+							<Legend height={24} verticalAlign="top" />
 							<Pie
 								data={pieData}
 								dataKey="value"
-								nameKey="name"
-								outerRadius={90}
 								innerRadius={innerRadius}
 								isAnimationActive={false}
+								nameKey="name"
+								outerRadius={90}
 							>
-								{pieData.map((entry, idx) => (
+								{pieData.map((_entry, idx) => (
 									<Cell key={`cell-${idx}`} />
 								))}
 							</Pie>
@@ -215,12 +296,15 @@ export function DataAnalysisChart({
 			const y = spec.y?.field ?? inferSecondNumeric(data, x);
 			return (
 				<ChartShell height={height} title={spec.title}>
-					<ResponsiveContainer width="100%" height="100%">
+					<ResponsiveContainer height="100%" width="100%">
 						<ScatterChart>
 							<Grid />
 							<XAxis dataKey={x} type="number" />
 							<YAxis dataKey={y} type="number" />
-							<Tooltip cursor={{ strokeDasharray: '3 3' }} wrapperStyle={{ zIndex: 9999 }} />
+							<Tooltip
+								cursor={{ strokeDasharray: '3 3' }}
+								wrapperStyle={{ zIndex: 9999 }}
+							/>
 							<Scatter data={data} fill="currentColor" />
 						</ScatterChart>
 					</ResponsiveContainer>
@@ -234,7 +318,7 @@ export function DataAnalysisChart({
 			const hist = histogram(data, valueKey, bins);
 			return (
 				<ChartShell height={height} title={spec.title}>
-					<ResponsiveContainer width="100%" height="100%">
+					<ResponsiveContainer height="100%" width="100%">
 						<BarChart data={hist}>
 							<Grid />
 							<XAxis dataKey="bin" />
@@ -262,7 +346,7 @@ export function DataAnalysisChart({
 			return (
 				<ChartShell height={height} title={spec.title}>
 					<div className="overflow-auto">
-						<div className="mb-2 flex gap-2 text-xs text-neutral-500 dark:text-neutral-400">
+						<div className="mb-2 flex gap-2 text-neutral-500 text-xs dark:text-neutral-400">
 							<span>X: {x}</span>
 							<span>Y: {y}</span>
 							<span>Value: {v}</span>
@@ -274,9 +358,12 @@ export function DataAnalysisChart({
 							}}
 						>
 							{/* header row */}
-							<div className="sticky left-0 top-0 z-10 bg-neutral-50 p-2 text-xs font-medium dark:bg-neutral-900" />
+							<div className="sticky top-0 left-0 z-10 bg-neutral-50 p-2 font-medium text-xs dark:bg-neutral-900" />
 							{grid.xs.map((xv) => (
-								<div key={`hx-${xv}`} className="bg-neutral-50 p-2 text-xs font-medium dark:bg-neutral-900">
+								<div
+									className="bg-neutral-50 p-2 font-medium text-xs dark:bg-neutral-900"
+									key={`hx-${xv}`}
+								>
 									{String(xv)}
 								</div>
 							))}
@@ -284,19 +371,21 @@ export function DataAnalysisChart({
 							{grid.ys.map((yv) => (
 								<>
 									<div
+										className="sticky left-0 bg-neutral-50 p-2 font-medium text-xs dark:bg-neutral-900"
 										key={`hy-${yv}`}
-										className="sticky left-0 bg-neutral-50 p-2 text-xs font-medium dark:bg-neutral-900"
 									>
 										{String(yv)}
 									</div>
 									{grid.xs.map((xv) => {
-										const cell = grid.cells.find((c) => c.x === xv && c.y === yv);
+										const cell = grid.cells.find(
+											(c) => c.x === xv && c.y === yv
+										);
 										const value = cell?.value ?? 0;
 										const t = normalize(value, min, max);
 										return (
 											<div
-												key={`c-${xv}-${yv}`}
 												className="h-10 w-24 border border-neutral-200 text-center text-xs dark:border-neutral-800"
+												key={`c-${xv}-${yv}`}
 												style={{
 													background: `rgba(0,0,0,${0.08 + 0.5 * t})`,
 													color: t > 0.6 ? 'white' : 'black',
@@ -314,12 +403,10 @@ export function DataAnalysisChart({
 				</ChartShell>
 			);
 		}
-
-		case 'table':
 		default:
 			return (
 				<ChartShell height={height} title={spec.title ?? 'Table'}>
-					<Table rows={data} columns={spec.tableColumns} />
+					<Table columns={spec.tableColumns} rows={data} />
 				</ChartShell>
 			);
 	}
@@ -339,20 +426,22 @@ function ChartShell({
 	return (
 		<div className="w-full">
 			{title ? (
-				<div className="mb-2 text-sm font-medium text-neutral-700 dark:text-neutral-200">
+				<div className="mb-2 font-medium text-neutral-700 text-sm dark:text-neutral-200">
 					{title}
 				</div>
 			) : null}
-			<div style={{ height }}>
-				{children}
-			</div>
+			<div style={{ height }}>{children}</div>
 		</div>
 	);
 }
 
 function Grid() {
 	return (
-		<CartesianGrid className="dark:stroke-[#1d1d1d]" stroke="#e6e6e6" strokeDasharray="3 3" />
+		<CartesianGrid
+			className="dark:stroke-[#1d1d1d]"
+			stroke="#e6e6e6"
+			strokeDasharray="3 3"
+		/>
 	);
 }
 
@@ -362,7 +451,7 @@ function Tip({ fields }: { fields?: string[] }) {
 			{fields?.length ? (
 				<ul className="space-y-1">
 					{fields.map((f) => (
-						<li key={f} className="text-neutral-600 dark:text-neutral-400">
+						<li className="text-neutral-600 dark:text-neutral-400" key={f}>
 							{f}
 						</li>
 					))}
@@ -375,15 +464,20 @@ function Tip({ fields }: { fields?: string[] }) {
 }
 
 function Table({ rows, columns }: { rows: AnyRow[]; columns?: string[] }) {
-	if (!rows.length) return <div className="text-sm text-neutral-500">No rows</div>;
-	const cols = columns && columns.length ? columns : Object.keys(rows[0]);
+	if (!rows.length) {
+		return <div className="text-neutral-500 text-sm">No rows</div>;
+	}
+	const cols = columns?.length ? columns : Object.keys(rows[0]);
 	return (
 		<div className="w-full overflow-auto rounded border border-neutral-200 dark:border-neutral-800">
-			<table className="min-w-[640px] w-full text-sm">
+			<table className="w-full min-w-[640px] text-sm">
 				<thead className="bg-neutral-50 dark:bg-neutral-900">
 					<tr>
 						{cols.map((c) => (
-							<th key={c} className="px-3 py-2 text-left font-medium text-neutral-700 dark:text-neutral-200">
+							<th
+								className="px-3 py-2 text-left font-medium text-neutral-700 dark:text-neutral-200"
+								key={c}
+							>
 								{c}
 							</th>
 						))}
@@ -391,9 +485,15 @@ function Table({ rows, columns }: { rows: AnyRow[]; columns?: string[] }) {
 				</thead>
 				<tbody>
 					{rows.slice(0, 500).map((r, i) => (
-						<tr key={i} className="border-t border-neutral-200 dark:border-neutral-800">
+						<tr
+							className="border-neutral-200 border-t dark:border-neutral-800"
+							key={i}
+						>
 							{cols.map((c) => (
-								<td key={c} className="px-3 py-2 text-neutral-800 dark:text-neutral-100">
+								<td
+									className="px-3 py-2 text-neutral-800 dark:text-neutral-100"
+									key={c}
+								>
 									{formatCell(r[c])}
 								</td>
 							))}
@@ -406,9 +506,15 @@ function Table({ rows, columns }: { rows: AnyRow[]; columns?: string[] }) {
 }
 
 function formatCell(v: unknown) {
-	if (v == null) return '';
-	if (typeof v === 'number') return Number.isFinite(v) ? String(v) : '';
-	if (v instanceof Date) return v.toISOString();
+	if (v == null) {
+		return '';
+	}
+	if (typeof v === 'number') {
+		return Number.isFinite(v) ? String(v) : '';
+	}
+	if (v instanceof Date) {
+		return v.toISOString();
+	}
 	return String(v);
 }
 
@@ -419,56 +525,89 @@ function clamp(n: number, min: number, max: number) {
 }
 
 function thin<T>(arr: T[], every: number): T[] {
-	if (every <= 1) return arr;
+	if (every <= 1) {
+		return arr;
+	}
 	const out: T[] = [];
-	for (let i = 0; i < arr.length; i += every) out.push(arr[i]);
+	for (let i = 0; i < arr.length; i += every) {
+		out.push(arr[i]);
+	}
 	return out;
 }
 
-function getNumber(row: AnyRow, yKey: string | null, seriesValue: string, seriesKey: string) {
+function getNumber(
+	row: AnyRow,
+	yKey: string | null,
+	_seriesValue: string,
+	_seriesKey: string
+) {
 	// If yKey is a single measure and seriesKey partitions rows, look for yKey
 	const base = yKey ? row[yKey] : undefined;
-	if (typeof base === 'number') return base;
+	if (typeof base === 'number') {
+		return base;
+	}
 	// If measure is encoded in wide format like value_<series>, you can adapt here
 	// For now, fallback to 0
 	return 0;
 }
 
-function applyFilters(rows: AnyRow[], filters: NonNullable<ChartSpec['filters']>) {
-	if (!filters.length) return rows;
+function applyFilters(
+	rows: AnyRow[],
+	filters: NonNullable<ChartSpec['filters']>
+) {
+	if (!filters.length) {
+		return rows;
+	}
 	return rows.filter((r) =>
 		filters.every((f) => {
 			const v = r[f.field as keyof AnyRow] as any;
 			switch (f.op) {
-				case '=': return v === (f.value as any);
-				case '!=': return v !== (f.value as any);
-				case '>': return Number(v) > Number(f.value);
-				case '>=': return Number(v) >= Number(f.value);
-				case '<': return Number(v) < Number(f.value);
-				case '<=': return Number(v) <= Number(f.value);
-				case 'in': return Array.isArray(f.value) && (f.value as any[]).includes(v);
-				case 'not-in': return Array.isArray(f.value) && !(f.value as any[]).includes(v);
+				case '=':
+					return v === (f.value as any);
+				case '!=':
+					return v !== (f.value as any);
+				case '>':
+					return Number(v) > Number(f.value);
+				case '>=':
+					return Number(v) >= Number(f.value);
+				case '<':
+					return Number(v) < Number(f.value);
+				case '<=':
+					return Number(v) <= Number(f.value);
+				case 'in':
+					return Array.isArray(f.value) && (f.value as any[]).includes(v);
+				case 'not-in':
+					return Array.isArray(f.value) && !(f.value as any[]).includes(v);
 				case 'between': {
-					if (!Array.isArray(f.value)) return true;
+					if (!Array.isArray(f.value)) {
+						return true;
+					}
 					const [a, b] = f.value as [number, number];
 					const nv = Number(v);
 					return nv >= a && nv <= b;
 				}
-				default: return true;
+				default:
+					return true;
 			}
 		})
 	);
 }
 
 function applySort(rows: AnyRow[], sort: NonNullable<ChartSpec['sort']>) {
-	if (!sort.length) return rows;
+	if (!sort.length) {
+		return rows;
+	}
 	const copy = [...rows];
 	copy.sort((a, b) => {
 		for (const s of sort) {
 			const av = a[s.field as keyof AnyRow] as any;
 			const bv = b[s.field as keyof AnyRow] as any;
-			if (av < bv) return s.order === 'desc' ? 1 : -1;
-			if (av > bv) return s.order === 'desc' ? -1 : 1;
+			if (av < bv) {
+				return s.order === 'desc' ? 1 : -1;
+			}
+			if (av > bv) {
+				return s.order === 'desc' ? -1 : 1;
+			}
 		}
 		return 0;
 	});
@@ -491,14 +630,18 @@ function inferFirstNumeric(rows: AnyRow[]) {
 
 function inferSecondNumeric(rows: AnyRow[], first: string) {
 	const keys = Object.keys(rows[0] ?? {});
-	return keys.find((k) => k !== first && typeof rows[0]?.[k] === 'number') ?? first;
+	return (
+		keys.find((k) => k !== first && typeof rows[0]?.[k] === 'number') ?? first
+	);
 }
 
 function seriesKeys(rows: AnyRow[], field: string): string[] {
 	const set = new Set<string>();
 	for (const r of rows) {
 		const v = r[field];
-		if (v != null) set.add(String(v));
+		if (v != null) {
+			set.add(String(v));
+		}
 	}
 	return Array.from(set.values()).slice(0, 12);
 }
@@ -514,12 +657,19 @@ function toPiePairs(rows: AnyRow[], nameKey: string, valueKey: string) {
 }
 
 function histogram(rows: AnyRow[], key: string, bins: number) {
-	const vals = rows.map((r) => Number(r[key] ?? 0)).filter((n) => Number.isFinite(n));
-	if (!vals.length) return [];
+	const vals = rows
+		.map((r) => Number(r[key] ?? 0))
+		.filter((n) => Number.isFinite(n));
+	if (!vals.length) {
+		return [];
+	}
 	const min = Math.min(...vals);
 	const max = Math.max(...vals);
 	const step = (max - min) / bins || 1;
-	const buckets = Array.from({ length: bins }, (_, i) => ({ bin: `${(min + i * step).toFixed(1)}-${(min + (i + 1) * step).toFixed(1)}`, count: 0 }));
+	const buckets = Array.from({ length: bins }, (_, i) => ({
+		bin: `${(min + i * step).toFixed(1)}-${(min + (i + 1) * step).toFixed(1)}`,
+		count: 0,
+	}));
 
 	for (const v of vals) {
 		const idx = Math.min(Math.floor((v - min) / step), bins - 1);
@@ -545,6 +695,8 @@ function toHeatGrid(rows: AnyRow[], xKey: string, yKey: string, vKey: string) {
 }
 
 function normalize(v: number, min: number, max: number) {
-	if (max === min) return 0.5;
+	if (max === min) {
+		return 0.5;
+	}
 	return (v - min) / (max - min);
 }

@@ -1,4 +1,4 @@
-export const chartPrompt = (websiteId: string, websiteHostname: string) => `
+export const chartPrompt = (_websiteId: string, _websiteHostname: string) => `
 <chart_prompt>
     You produce a JSON chart specification for analytics UI. You cannot output prose.
     Rules:

@@ -33,23 +33,29 @@ export function PureMessageActions({
 }) {
 	const [_, copyToClipboard] = useCopyToClipboard();
 	const [copied, setCopied] = useState(false);
-	const [optimisticVote, setOptimisticVote] = useState<boolean | null>(null);
+	const [_optimisticVote, setOptimisticVote] = useState<boolean | null>(null);
 	const utils = trpc.useUtils();
 
 	const voteMutation = trpc.assistant.voteMessage.useMutation({
 		// Optimistic update: update votes cache immediately to avoid flicker
 		onMutate: async ({ chatId: mutateChatId, messageId, type }) => {
 			// cancel any outgoing refetches
-			await utils.assistant.getVotes.cancel({ chatId: mutateChatId } as any).catch(() => {
-				/* ignore */
-			});
+			await utils.assistant.getVotes
+				.cancel({ chatId: mutateChatId } as any)
+				.catch(() => {
+					/* ignore */
+				});
 
 			// Snapshot previous votes
-			const previousVotes = utils.assistant.getVotes.getData({ chatId: mutateChatId });
+			const previousVotes = utils.assistant.getVotes.getData({
+				chatId: mutateChatId,
+			});
 
 			// Optimistically update cache
 			utils.assistant.getVotes.setData({ chatId: mutateChatId }, (old: any) => {
-				if (!old) return old;
+				if (!old) {
+					return old;
+				}
 				const exists = old.find((v: any) => v.messageId === messageId);
 				if (exists) {
 					return old.map((v: any) =>
@@ -65,19 +71,26 @@ export function PureMessageActions({
 
 			return { previousVotes, chatId: mutateChatId };
 		},
-		onError: (_err, vars, context) => {
+		onError: (_err, _vars, context) => {
 			setOptimisticVote(null);
 			if (context?.previousVotes && context.chatId) {
-				utils.assistant.getVotes.setData({ chatId: context.chatId }, context.previousVotes);
+				utils.assistant.getVotes.setData(
+					{ chatId: context.chatId },
+					context.previousVotes
+				);
 			}
 		},
 		onSuccess: (_data, vars) => {
 			// Confirm optimistic change with server result by re-applying the same change
 			setOptimisticVote(null);
 			utils.assistant.getVotes.setData({ chatId: vars.chatId }, (old: any) => {
-				if (!old) return old;
+				if (!old) {
+					return old;
+				}
 				return old.map((v: any) =>
-					v.messageId === vars.messageId ? { ...v, isUpvoted: vars.type === 'up' } : v
+					v.messageId === vars.messageId
+						? { ...v, isUpvoted: vars.type === 'up' }
+						: v
 				);
 			});
 		},

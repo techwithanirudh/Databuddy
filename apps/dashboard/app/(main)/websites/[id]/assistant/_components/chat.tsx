@@ -1,7 +1,7 @@
 'use client';
 
 import { useArtifacts } from '@ai-sdk-tools/artifacts/client';
-import { useChat } from '@ai-sdk-tools/store';
+import { useChat } from '@ai-sdk/react';
 import { generateUUID } from '@databuddy/ai/lib/utils';
 import type { ChatMessage } from '@databuddy/ai/types';
 import { DefaultChatTransport } from 'ai';

@@ -14,11 +14,13 @@
 chart doesnt update after gen
 - fix chart viz, tooltips are broken, recheck tooltip logic and artifact logic 
 - add abilitiy to close viz canvas
-- fix upvote and copy button
+- fix upvote and copy button (not copying tool data)
 - regenerate message
 - filtering 
 - show chat title
 - question suggestions
 - thinking message fix
-- cleanup the artifact logic and input / output calls
-- weird spacing bug
+- cleanup the artifact logic and input / output calls. provide actually useful insights for the ai for chartgen and summary gen, cleanup the functions for validatio
+- optimize sql query security, and chart gen
+- weird canvas open / close layout shift for chat
+- migrate to @ai-sdk-tools/store

@@ -1,14 +1,14 @@
-import { openai } from "@ai-sdk/openai";
+'use server'
 import { generateObject, generateText, smoothStream, streamText, tool } from "ai";
 import { dataAnalysisArtifact } from "../artifacts/data-analysis";
 import { getContext } from "../context";
 import { safeValue } from "../utils/safe-value";
 import { getDataAnalysisSchema } from "./schema";
 import { provider } from "../providers";
-import { ensureLimit, validateSQL } from "../utils/execute-sql-query";
+import { validateSQL } from "../utils/execute-sql-query";
 import { systemPrompt } from "../prompts";
 import { z } from "zod";
-import { Row } from "@databuddy/db";
+import { type Row } from "@databuddy/db";
 import { chQuery } from "@databuddy/db";
 import { ChartSpec, sanitizeChartSpec, summarizeSchema } from "../artifacts/charts";
 import { chartPrompt } from "../prompts/chart-prompt";
@@ -16,11 +16,8 @@ import { chartPrompt } from "../prompts/chart-prompt";
 function buildSqlUserPrompt(input: z.infer<typeof getDataAnalysisSchema>) {
   const lines: string[] = [];
   lines.push(`Question: ${input.question}`);
-  if (input.tables?.length) lines.push(`Candidate tables: ${input.tables.join(", ")}`);
-  if (input.hints?.length) lines.push(`Hints: ${input.hints.join(" | ")}`);
   if (input.from) lines.push(`From: ${input.from}`);
   if (input.to) lines.push(`To: ${input.to}`);
-  if (input.timezone) lines.push(`Timezone: ${input.timezone}`);
   if (input.maxRows) lines.push(`Row cap: ${input.maxRows}`);
   lines.push(`Output: a single ClickHouse SELECT or WITH query with LIMIT`);
   return lines.join("\n");
@@ -79,7 +76,7 @@ Example format: "I'm analyzing your data to show your [xyz]"`,
       completeMessage += "\n";
       yield { text: completeMessage };
 
-      const sqlGen = await generateText({
+      const { object: sqlObject } = await generateObject({
         model: provider.languageModel("artifact-model"),
         system: systemPrompt({
           selectedChatModel: "artifact-model",
@@ -89,17 +86,16 @@ Example format: "I'm analyzing your data to show your [xyz]"`,
             timestamp: new Date().toISOString(),
           },
         }),
+        schema: z.object({
+          sql: z.string().describe("The SQL query to execute"),
+        }),
         messages: [{ role: "user", content: buildSqlUserPrompt(input) }],
-        temperature: 0.1,
       });
 
-      let sql = sqlGen.text.trim()
-        .replace(/^```[a-zA-Z]*\s*/g, "")
-        .replace(/```$/g, "")
-        .trim();
-
-      sql = ensureLimit(sql, input.maxRows ?? 2000);
+      const sql = sqlObject.sql;
+      console.log("sql", sql);
       if (!validateSQL(sql)) {
+        console.log("sql validation failed", sql);
         await analysis.update({
           stage: "analysis_ready",
           chart: { spec: null, series: [] },
@@ -146,9 +142,12 @@ Example format: "I'm analyzing your data to show your [xyz]"`,
       let rows: Row[] = [];
       const qStart = Date.now();
       try {
+        console.log("executing query", sql);
         const result = await chQuery(sql);
+        console.log("query result", result);
         rows = Array.isArray(result) ? result : [];
       } catch (err) {
+        console.error("query error", err);
         await analysis.update({
           stage: "analysis_ready",
           chart: { spec: null, series: [] },
@@ -238,7 +237,6 @@ Example format: "I'm analyzing your data to show your [xyz]"`,
             content: JSON.stringify(chartUserPayload)
           }
         ],
-        temperature: 0.2
       });
 
 

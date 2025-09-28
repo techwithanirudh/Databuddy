@@ -44,7 +44,12 @@ const FilterOp = z.enum(["=", "!=", ">", ">=", "<", "<=", "in", "not-in", "betwe
 export const ChartFilter = z.object({
 	field: z.string().min(1),
 	op: FilterOp,
-	value: z.union([StringOrNumber, z.array(StringOrNumber), z.tuple([StringOrNumber, StringOrNumber])])
+	// Use an array (1 or 2 entries) instead of a tuple to avoid producing
+	// JSON Schema tuple types which some response-format validators reject.
+	value: z.union([
+		StringOrNumber,
+		z.array(StringOrNumber).min(1).max(2)
+	])
 });
 
 const SortOrder = z.enum(["asc", "desc"]);

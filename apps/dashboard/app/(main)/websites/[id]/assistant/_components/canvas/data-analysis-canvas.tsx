@@ -1,7 +1,6 @@
 'use client';
 
 import { useArtifact } from '@ai-sdk-tools/artifacts/client';
-import { getDataAnalysisTool } from '@databuddy/ai/tools/get-data-analysis'; // your tool id stays the same path-wise
 import { DataAnalysisChart } from '@/components/charts/data-analysis-chart';
 import {
 	BaseCanvas,
@@ -11,6 +10,7 @@ import {
 	CanvasSection,
 } from './base';
 import { CanvasContent } from './base/canvas-content';
+import { dataAnalysisArtifact } from '@databuddy/ai/artifacts';
 
 type MetricItem = {
 	id: string;
@@ -28,7 +28,7 @@ function formatMs(ms?: number) {
 
 export function DataAnalysisCanvas() {
 	// Pulls the latest artifact snapshot for this tool
-	const { data, status } = useArtifact(getDataAnalysisTool);
+	const { data, status } = useArtifact(dataAnalysisArtifact);
 
 	const isLoading = status === 'loading';
 	const stage = data?.stage;
@@ -58,7 +58,7 @@ export function DataAnalysisCanvas() {
 
 	return (
 		<BaseCanvas>
-			<CanvasHeader isLoading={isLoading} title="Analysis" subtitle={data?.sqlPreview ? 'Result of a validated read-only SQL query' : undefined} />
+			<CanvasHeader isLoading={isLoading} title="Analysis" description={data?.sqlPreview ? 'Result of a validated read-only SQL query' : undefined} />
 
 			<CanvasContent>
 				<div className="space-y-8">

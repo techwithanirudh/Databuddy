@@ -94,6 +94,8 @@ export async function handleMessage({
 			setContext({
 				writer,
 				user,
+				websiteId: requestHints.websiteId,
+				websiteHostname: requestHints.websiteHostname,
 			});
 
 			const result = streamText({

@@ -9,3 +9,4 @@
 - attachment
 - feedback modal
 - skeleton
+- do not getVotes when chatting

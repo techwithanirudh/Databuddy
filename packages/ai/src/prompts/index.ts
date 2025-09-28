@@ -20,7 +20,7 @@ export const systemPrompt = ({
 	const { websiteHostname, websiteId } = requestHints;
 	const requestPrompt = getRequestPromptFromHints(requestHints);
 
-	if (selectedChatModel === 'chat-model') {
+	if (selectedChatModel === 'chat-model' || selectedChatModel === 'agent-model' || selectedChatModel === 'agent-max-model') {
 		return [
 			corePrompt(websiteHostname, websiteId),
 			requestPrompt,

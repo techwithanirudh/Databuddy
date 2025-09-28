@@ -1,7 +1,7 @@
 'use client';
 
 import type { UseChatHelpers } from '@ai-sdk/react';
-import type { ChatMessage } from '@databuddy/ai/lib/types';
+import type { ChatMessage } from '@databuddy/ai/types';
 import { getTextFromMessage } from '@databuddy/ai/lib/utils';
 import {
 	type Dispatch,
@@ -74,7 +74,6 @@ export function MessageEditor({
 				</Button>
 				<Button
 					className="h-fit px-3 py-2"
-					data-testid="message-editor-send-button"
 					disabled={isSubmitting}
 					onClick={async () => {
 						setIsSubmitting(true);

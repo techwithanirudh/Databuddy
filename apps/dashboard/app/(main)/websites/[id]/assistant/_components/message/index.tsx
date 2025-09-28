@@ -1,6 +1,6 @@
 'use client';
 import type { UseChatHelpers } from '@ai-sdk/react';
-import type { ChatMessage } from '@databuddy/ai/lib/types';
+import type { ChatMessage } from '@databuddy/ai/types';
 import type { Vote } from '@databuddy/db';
 // import { PreviewAttachment } from './preview-attachment';
 import equal from 'fast-deep-equal';

@@ -1,7 +1,7 @@
 'use client';
 
 import type { UseChatHelpers } from '@ai-sdk/react';
-import type { ChatMessage } from '@databuddy/ai/lib/types';
+import type { ChatMessage } from '@databuddy/ai/types';
 import { ChartBarIcon, HashIcon, TrendUpIcon } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import { memo } from 'react';

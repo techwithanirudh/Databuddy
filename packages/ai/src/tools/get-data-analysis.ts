@@ -94,7 +94,16 @@ Example format: "I'm analyzing your data to show your [xyz]"`,
               "Rephrase your request to focus on SELECT based analytics",
               "Specify the table and time window you want to analyze",
             ],
-          }
+          },
+          toast: {
+            visible: false,
+            currentStep: 4,
+            totalSteps: 4,
+            currentLabel: "Validation failed",
+            stepDescription: "Query blocked by safety rules",
+            completed: true,
+            completedMessage: "Validation failed",
+          },
         });
 
         return {
@@ -133,9 +142,18 @@ Example format: "I'm analyzing your data to show your [xyz]"`,
               "Check column names or joins",
               "Try a smaller window or fewer fields"
             ]
+          },
+          toast: {
+            visible: false,
+            currentStep: 5,
+            totalSteps: 5,
+            currentLabel: "Query failed",
+            stepDescription: "Database error",
+            completed: true,
+            completedMessage: "Query failed"
           }
         });
-        return { ok: false, summary: "Query execution failed." };
+        return { ok: false, summary: "query error" };
       }
       const execTime = Date.now() - qStart;
 
@@ -152,9 +170,18 @@ Example format: "I'm analyzing your data to show your [xyz]"`,
               "Relax filters or groupings",
               "Verify the source has data"
             ]
+          },
+          toast: {
+            visible: false,
+            currentStep: 5,
+            totalSteps: 5,
+            currentLabel: "No data",
+            stepDescription: "Empty result",
+            completed: true,
+            completedMessage: "No data returned"
           }
         });
-        return { ok: true, summary: "No data returned.", rowCount: 0, executionTime: execTime };
+        return { ok: true, summary: "No data returned.", rowCount: 0, executionTime: execTime };      
       }
       // Schema summary for chart generation
       const schema = summarizeSchema(rows);
@@ -173,7 +200,6 @@ Example format: "I'm analyzing your data to show your [xyz]"`,
         }
       });
       yield { text: completeMessage };
-
 
       const { object: chartGen } = await generateObject({
         model: provider.languageModel("artifact-model"),

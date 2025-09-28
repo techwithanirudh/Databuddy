@@ -1,4 +1,4 @@
-import type { ChatMessage } from '@databuddy/ai/lib/types';
+import type { ChatMessage } from '@databuddy/ai/types';
 
 import type { Vote } from '@databuddy/db';
 import {

@@ -1,5 +1,5 @@
 import type { UseChatHelpers } from '@ai-sdk/react';
-import type { ChatMessage } from '@databuddy/ai/lib/types';
+import type { ChatMessage } from '@databuddy/ai/types';
 import type { Vote } from '@databuddy/db';
 import equal from 'fast-deep-equal';
 import { memo } from 'react';

@@ -22,7 +22,7 @@ export function CanvasHeader({
 		return (
 			<div
 				className={cn(
-					'flex items-center justify-between border-border border-b p-6',
+					'-my-4 -mx-6 mb-4 flex h-22 items-center justify-between border-border border-b px-6',
 					className
 				)}
 			>

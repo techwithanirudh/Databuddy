@@ -4,16 +4,9 @@ import type { ChatMessage } from '@databuddy/ai/types';
 import type { Vote } from '@databuddy/db';
 // import { PreviewAttachment } from './preview-attachment';
 import equal from 'fast-deep-equal';
-import { Fragment, memo, useState } from 'react';
+import { memo, useState } from 'react';
 import { Message, MessageContent } from '@/components/ai-elements/message';
 import { Response } from '@/components/ai-elements/response';
-import {
-	Tool,
-	ToolContent,
-	ToolHeader,
-	ToolInput,
-	ToolOutput,
-} from '@/components/ai-elements/tool';
 import { cn, sanitizeText } from '@/lib/utils';
 import { MessageActions } from './message-actions';
 import { MessageEditor } from './message-editor';
@@ -95,7 +88,7 @@ const PurePreviewMessage = ({
 
 					if (type.startsWith("tool-")) {
 						return (
-							<MessageContent>
+							<MessageContent key={key} variant={'flat'}>
 								<Response>
 									{(part as any)?.output?.text}
 								</Response>

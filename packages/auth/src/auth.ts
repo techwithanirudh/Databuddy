@@ -126,8 +126,8 @@ export const auth = betterAuth({
 		minPasswordLength: 8,
 		maxPasswordLength: 32,
 		autoSignIn: false,
-		requireEmailVerification: true,
-		sendResetPasswordEmail: async ({
+		requireEmailVerification: process.env.NODE_ENV === 'production',
+		sendResetPassword: async ({
 			user,
 			url,
 		}: {
@@ -143,10 +143,8 @@ export const auth = betterAuth({
 		},
 	},
 	emailVerification: {
-		sendOnSignUp: true,
-		sendVerificationOnSignUp: true,
-		disableSignUp: true,
-		sendVerificationOnSignIn: true,
+		sendOnSignUp: process.env.NODE_ENV === 'production',
+		sendOnSignIn: process.env.NODE_ENV === 'production',
 		autoSignInAfterVerification: true,
 		sendVerificationEmail: async ({
 			user,

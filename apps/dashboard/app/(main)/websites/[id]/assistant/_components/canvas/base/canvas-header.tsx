@@ -48,9 +48,11 @@ export function CanvasHeader({
 			)}
 		>
 			<div>
-				<h2 className="text-foreground text-lg font-semibold leading-[23px]">{title}</h2>
+				<h2 className="font-semibold text-foreground text-lg leading-[23px]">
+					{title}
+				</h2>
 				{description && (
-					<p className="mt-1 text-sm text-muted-foreground">{description}</p>
+					<p className="mt-1 text-muted-foreground text-sm">{description}</p>
 				)}
 			</div>
 		</div>

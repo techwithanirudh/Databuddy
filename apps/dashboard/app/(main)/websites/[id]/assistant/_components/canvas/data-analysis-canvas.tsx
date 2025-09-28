@@ -90,7 +90,7 @@ export function DataAnalysisCanvas(_props: { websiteId: string }) {
 				<div className="space-y-8">
 					{/* SQL preview and schema snapshot */}
 					{data?.sqlPreview ? (
-						<CanvasSection title="Query" className="mt-0">
+						<CanvasSection className="mt-0" title="Query">
 							<pre className="whitespace-pre-wrap rounded-md bg-muted p-3 text-[11px] text-muted-foreground leading-5">
 								{data.sqlPreview}
 							</pre>
@@ -101,13 +101,8 @@ export function DataAnalysisCanvas(_props: { websiteId: string }) {
 						<CanvasSection title="Schema">
 							<div className="grid grid-cols-2 gap-3 text-[12px] md:grid-cols-3">
 								{data.schemaPreview.columns.map((c) => (
-									<div
-										className="rounded border border-border p-2"
-										key={c}
-									>
-										<div className="text-muted-foreground">
-											{c}
-										</div>
+									<div className="rounded border border-border p-2" key={c}>
+										<div className="text-muted-foreground">{c}</div>
 										<div className="text-foreground">
 											{data.schemaPreview?.types?.[c] ?? 'unknown'}
 										</div>
@@ -154,7 +149,10 @@ export function DataAnalysisCanvas(_props: { websiteId: string }) {
 					</CanvasSection>
 
 					{/* Recommendations */}
-					<CanvasSection title="Recommendations" isLoading={showRecommendationsSkeleton}>
+					<CanvasSection
+						isLoading={showRecommendationsSkeleton}
+						title="Recommendations"
+					>
 						<div className="space-y-3">
 							{data?.analysis?.recommendations?.length ? (
 								<ul className="list-disc space-y-1 pl-5 text-[13px] leading-6">

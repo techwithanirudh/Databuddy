@@ -77,7 +77,7 @@ const Chat = ({
 					'relative flex size-full flex-col rounded-2xl border border-border transition-all duration-300 ease-in-out'
 				)}
 			>
-				<ChatHeader websiteId={websiteId} chatId={id} />
+				<ChatHeader chatId={id} websiteId={websiteId} />
 
 				<div className="relative flex h-full flex-1 flex-col overflow-y-auto px-6 pb-6">
 					<Messages

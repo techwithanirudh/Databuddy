@@ -40,7 +40,6 @@ function PureMessages({
 					{messages.map((message, index) => (
 						<PreviewMessage
 							chatId={chatId}
-							status={status}
 							isLoading={
 								status === 'streaming' && messages.length - 1 === index
 							}
@@ -49,6 +48,7 @@ function PureMessages({
 							message={message}
 							regenerate={regenerate}
 							setMessages={setMessages}
+							status={status}
 							vote={
 								votes
 									? votes.find((vote) => vote.messageId === message.id)

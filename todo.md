@@ -14,3 +14,11 @@
 chart doesnt update after gen
 - fix chart viz, tooltips are broken, recheck tooltip logic and artifact logic 
 - add abilitiy to close viz canvas
+- fix upvote and copy button
+- regenerate message
+- filtering 
+- show chat title
+- question suggestions
+- thinking message fix
+- cleanup the artifact logic and input / output calls
+- weird spacing bug

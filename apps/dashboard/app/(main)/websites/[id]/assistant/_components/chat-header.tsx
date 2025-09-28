@@ -6,7 +6,13 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ChatHistory } from './history';
 
-export function ChatHeader({ websiteId, chatId }: { websiteId: string, chatId: string }) {
+export function ChatHeader({
+	websiteId,
+	chatId,
+}: {
+	websiteId: string;
+	chatId: string;
+}) {
 	const router = useRouter();
 
 	const handleNewChat = () => {

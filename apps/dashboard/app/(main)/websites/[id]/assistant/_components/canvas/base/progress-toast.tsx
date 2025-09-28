@@ -224,12 +224,12 @@ export function ProgressToast({
 											{displayedLabel || 'Processing...'}
 										</span>
 									</div>
-									<span className="text-muted-foreground text-[12px] leading-[17px]">
+									<span className="text-[12px] text-muted-foreground leading-[17px]">
 										{displayedStep + 1}/{totalSteps}
 									</span>
 								</div>
 								<div className="pl-6">
-									<span className="text-muted-foreground text-[12px] leading-[17px]">
+									<span className="text-[12px] text-muted-foreground leading-[17px]">
 										{displayedDescription || 'Computing'}
 									</span>
 								</div>

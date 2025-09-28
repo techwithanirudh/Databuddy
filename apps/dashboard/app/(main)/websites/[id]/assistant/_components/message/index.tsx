@@ -86,7 +86,7 @@ const PurePreviewMessage = ({
 						);
 					}
 
-					if (type.startsWith("tool-")) {
+					if (type.startsWith('tool-')) {
 						return (
 							<MessageContent key={key} variant={'flat'}>
 								<Response>{(part as any)?.output?.text}</Response>

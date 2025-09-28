@@ -32,7 +32,7 @@ export function CanvasSection({
 	return (
 		<div className={cn('mt-8 mb-4', className)}>
 			{title && (
-				<h3 className="mb-3 text-muted-foreground text-[12px] leading-normal">
+				<h3 className="mb-3 text-[12px] text-muted-foreground leading-normal">
 					{title}
 				</h3>
 			)}

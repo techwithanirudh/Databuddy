@@ -39,32 +39,37 @@ export function CanvasChart({
 		<div className={cn('mb-6', className)}>
 			{/* Chart Header */}
 			<div className="mb-4 flex items-center justify-between">
-				<h4 className="font-normal font-serif text-[18px] text-foreground">
+				<h4 className="font-normal font-serif text-[18px] text-black dark:text-white">
 					{title}
 				</h4>
 				{legend && (
 					<div className="flex items-center gap-4" data-hide-in-pdf="true">
 						{legend.items.map((item, index) => {
-							const getSquareStyle = () => {
-								const baseColor = item.color || '#707070';
+							const getSquareClasses = (type: string, color?: string) => {
+								const baseColor = color || '#707070';
 
-								switch (item.type) {
+								switch (type) {
 									case 'solid':
-										return {
-											backgroundColor: item.color || '#000000',
-										};
+										return 'w-2 h-2 flex-shrink-0 bg-primary';
 									case 'dashed':
-										return {
-											backgroundColor: 'transparent',
-											border: `1px dashed ${baseColor}`,
-										};
+										return `w-2 h-2 flex-shrink-0 bg-transparent border border-dashed border-[${baseColor}]`;
+									case 'pattern':
+										return 'w-2 h-2 flex-shrink-0 bg-transparent';
+									default:
+										return `w-2 h-2 flex-shrink-0 bg-[${baseColor}]`;
+								}
+							};
+
+							const getSquareStyle = (type: string, color?: string) => {
+								const baseColor = color || '#707070';
+
+								switch (type) {
 									case 'pattern':
 										return {
-											backgroundColor: 'transparent',
 											backgroundImage: `repeating-linear-gradient(45deg, ${baseColor}, ${baseColor} 1px, transparent 1px, transparent 2px)`,
 										};
 									default:
-										return { backgroundColor: baseColor };
+										return {};
 								}
 							};
 
@@ -74,10 +79,10 @@ export function CanvasChart({
 									key={`legend-${item.label}-${index}`}
 								>
 									<div
-										className="h-2 w-2 flex-shrink-0 border-0"
-										style={getSquareStyle()}
+										className={getSquareClasses(item.type, item.color)}
+										style={getSquareStyle(item.type, item.color)}
 									/>
-									<span className="text-muted-foreground text-[12px] leading-none">
+									<span className="text-[#707070] text-[12px] leading-none dark:text-[#666666]">
 										{item.label}
 									</span>
 								</div>

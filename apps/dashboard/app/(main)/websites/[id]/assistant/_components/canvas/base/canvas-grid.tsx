@@ -57,18 +57,15 @@ export function CanvasGrid({
 				})}
 			>
 				{displayItems.map((item, _index) => (
-					<div
-						className="border border-border bg-card p-3"
-						key={item.id}
-					>
-						<div className="mb-1 text-muted-foreground text-[12px]">
+					<div className="border border-border bg-card p-3" key={item.id}>
+						<div className="mb-1 text-[12px] text-muted-foreground">
 							{item.title}
 						</div>
 						<div className="mb-1 font-normal text-[18px] text-foreground">
 							{item.value}
 						</div>
 						{item.subtitle && (
-							<div className="text-muted-foreground text-[10px]">
+							<div className="text-[10px] text-muted-foreground">
 								{item.subtitle}
 							</div>
 						)}

@@ -73,7 +73,7 @@ export function DataAnalysisCanvas(_props: { websiteId: string }) {
 
 	const showSummarySkeleton = !stage || stage !== 'analysis_ready';
 	const showRecommendationsSkeleton = !stage || stage !== 'analysis_ready';
-	
+
 	return (
 		<BaseCanvas>
 			<CanvasHeader
@@ -91,7 +91,7 @@ export function DataAnalysisCanvas(_props: { websiteId: string }) {
 					{/* SQL preview and schema snapshot */}
 					{data?.sqlPreview ? (
 						<CanvasSection title="Query">
-							<pre className="whitespace-pre-wrap rounded-md bg-neutral-50 p-3 text-[11px] text-neutral-800 leading-5 dark:bg-neutral-900 dark:text-neutral-200">
+							<pre className="whitespace-pre-wrap rounded-md bg-muted p-3 text-[11px] text-muted-foreground leading-5">
 								{data.sqlPreview}
 							</pre>
 						</CanvasSection>
@@ -102,13 +102,13 @@ export function DataAnalysisCanvas(_props: { websiteId: string }) {
 							<div className="grid grid-cols-2 gap-3 text-[12px] md:grid-cols-3">
 								{data.schemaPreview.columns.map((c) => (
 									<div
-										className="rounded border border-neutral-200 p-2 dark:border-neutral-800"
+										className="rounded border border-border p-2"
 										key={c}
 									>
-										<div className="text-neutral-500 dark:text-neutral-400">
+										<div className="text-muted-foreground">
 											{c}
 										</div>
-										<div className="text-neutral-900 dark:text-neutral-100">
+										<div className="text-foreground">
 											{data.schemaPreview?.types?.[c] ?? 'unknown'}
 										</div>
 									</div>

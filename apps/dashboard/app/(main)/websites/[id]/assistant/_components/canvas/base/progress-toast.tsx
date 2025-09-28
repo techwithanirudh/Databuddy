@@ -186,7 +186,7 @@ export function ProgressToast({
 				>
 					<motion.div
 						className={cn(
-							'border border-[#e6e6e6] bg-white p-3 dark:border-[#1d1d1d] dark:bg-[#0c0c0c]',
+							'border border-border bg-card p-3',
 							'backdrop-blur-sm'
 						)}
 						transition={{
@@ -206,10 +206,10 @@ export function ProgressToast({
 										damping: 15,
 									}}
 								>
-									<CheckIcon className="text-black dark:text-white" size={16} />
+									<CheckIcon className="text-foreground" size={16} />
 								</motion.div>
 								<div>
-									<p className="text-[12px] text-black leading-[17px] dark:text-white">
+									<p className="text-[12px] text-foreground leading-[17px]">
 										{completedMessage || 'Analysis complete'}
 									</p>
 								</div>
@@ -219,17 +219,17 @@ export function ProgressToast({
 								<div className="flex items-center justify-between">
 									<div className="flex items-center gap-2">
 										{/* Loading Spinner */}
-										<Spinner className="size-4 text-[#878787]" />
-										<span className="text-[12px] text-black leading-[17px] dark:text-white">
+										<Spinner className="size-4 text-muted-foreground" />
+										<span className="text-[12px] text-foreground leading-[17px]">
 											{displayedLabel || 'Processing...'}
 										</span>
 									</div>
-									<span className="text-[#707070] text-[12px] leading-[17px] dark:text-[#666666]">
+									<span className="text-muted-foreground text-[12px] leading-[17px]">
 										{displayedStep + 1}/{totalSteps}
 									</span>
 								</div>
 								<div className="pl-6">
-									<span className="text-[#707070] text-[12px] leading-[17px] dark:text-[#666666]">
+									<span className="text-muted-foreground text-[12px] leading-[17px]">
 										{displayedDescription || 'Computing'}
 									</span>
 								</div>

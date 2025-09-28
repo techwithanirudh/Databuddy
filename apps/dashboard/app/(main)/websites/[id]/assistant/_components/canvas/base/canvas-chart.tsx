@@ -39,7 +39,7 @@ export function CanvasChart({
 		<div className={cn('mb-6', className)}>
 			{/* Chart Header */}
 			<div className="mb-4 flex items-center justify-between">
-				<h4 className="font-normal font-serif text-[18px] text-black dark:text-white">
+				<h4 className="font-normal font-serif text-[18px] text-foreground">
 					{title}
 				</h4>
 				{legend && (
@@ -77,7 +77,7 @@ export function CanvasChart({
 										className="h-2 w-2 flex-shrink-0 border-0"
 										style={getSquareStyle()}
 									/>
-									<span className="text-[#707070] text-[12px] leading-none dark:text-[#666666]">
+									<span className="text-muted-foreground text-[12px] leading-none">
 										{item.label}
 									</span>
 								</div>

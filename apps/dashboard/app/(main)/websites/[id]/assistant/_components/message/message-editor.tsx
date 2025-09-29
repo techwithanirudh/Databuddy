@@ -13,20 +13,21 @@ import {
 import { deleteTrailingMessages } from '@/app/(main)/websites/[id]/assistant/actions';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { useChatActions } from '@ai-sdk-tools/store';
 
 export type MessageEditorProps = {
 	message: ChatMessage;
 	setMode: Dispatch<SetStateAction<'view' | 'edit'>>;
-	setMessages: UseChatHelpers<ChatMessage>['setMessages'];
-	regenerate: UseChatHelpers<ChatMessage>['regenerate'];
+
 };
 
 export function MessageEditor({
 	message,
 	setMode,
-	setMessages,
-	regenerate,
+
 }: MessageEditorProps) {
+	const { setMessages, regenerate } = useChatActions();
+
 	const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
 	const [draftContent, setDraftContent] = useState<string>(
@@ -56,7 +57,6 @@ export function MessageEditor({
 		<div className="flex w-full flex-col gap-2">
 			<Textarea
 				className="w-full resize-none overflow-hidden rounded-xl bg-transparent text-base! outline-hidden"
-				data-testid="message-editor"
 				onChange={handleInput}
 				ref={textareaRef}
 				value={draftContent}

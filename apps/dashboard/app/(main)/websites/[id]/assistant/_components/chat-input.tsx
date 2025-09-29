@@ -1,8 +1,6 @@
-import type { UseChatHelpers } from '@ai-sdk/react';
+
 import { chatModels } from '@databuddy/ai/models';
-import type { ChatMessage } from '@databuddy/ai/types';
-import { CpuIcon } from '@phosphor-icons/react';
-import type { ChatStatus, UIMessage } from 'ai';
+import { ArrowUpIcon, CpuIcon } from '@phosphor-icons/react';
 import { memo, startTransition, useEffect, useState } from 'react';
 import {
 	PromptInput,
@@ -24,24 +22,25 @@ import {
 import { SelectItem, SelectTrigger } from '@/components/ui/select';
 import { saveChatModelAsCookie } from '../actions';
 import { SuggestedActions } from './suggested-actions';
+import { useChatMessages, useChatActions, useChatStatus } from '@ai-sdk-tools/store';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { SpinnerIcon, StopIcon } from '@phosphor-icons/react';
 
 export function ChatInput({
-	status,
 	selectedModelId,
 	onModelChange,
-	messages,
 	chatId,
 	websiteId,
-	sendMessage,
 }: {
-	messages: UIMessage[];
 	chatId: string;
-	sendMessage: UseChatHelpers<ChatMessage>['sendMessage'];
-	status: ChatStatus;
 	selectedModelId: string;
 	onModelChange?: (modelId: string) => void;
 	websiteId: string;
 }) {
+	const messages = useChatMessages();
+	const { sendMessage } = useChatActions();
+	const status = useChatStatus();
+
 	const [input, setInput] = useState('');
 
 	function handleSubmit(message: PromptInputMessage) {
@@ -70,12 +69,9 @@ export function ChatInput({
 			{messages.length === 0 && (
 				<SuggestedActions
 					chatId={chatId}
-					sendMessage={sendMessage}
 					websiteId={websiteId}
 				/>
 			)}
-
-			{/* <div className="border-t border-border -mx-6 mt-6" /> */}
 
 			<PromptInput
 				className="h-min"
@@ -90,6 +86,7 @@ export function ChatInput({
 					<PromptInputTextarea
 						onChange={(e) => setInput(e.target.value)}
 						value={input}
+						disabled={status === 'streaming' || status === 'submitted'}
 					/>
 				</PromptInputBody>
 				<PromptInputToolbar>
@@ -105,7 +102,13 @@ export function ChatInput({
 							selectedModelId={selectedModelId}
 						/>
 					</PromptInputTools>
-					<PromptInputSubmit disabled={!(input || status)} status={status} />
+					{status !== 'streaming' && status !== 'submitted' ? (
+						<PromptInputSubmit disabled={!(input || status)} status={status}>
+							<ArrowUpIcon className="size-4" />
+						</PromptInputSubmit>
+					) : (
+						<StopButton />
+					)}
 				</PromptInputToolbar>
 			</PromptInput>
 		</div>
@@ -175,3 +178,33 @@ function PureModelSelectorCompact({
 }
 
 const ModelSelectorCompact = memo(PureModelSelectorCompact);
+
+function PureStopButton() {
+	const status = useChatStatus();
+	const { stop, setMessages } = useChatActions();
+
+	if (status === 'submitted') {
+		return (
+			<div className={buttonVariants({ variant: 'default', size: 'icon', className: 'rounded-lg' })}>
+				<SpinnerIcon className="size-4 animate-spin" />
+			</div>
+		);
+	}
+
+	return (
+		<Button
+			className="rounded-lg"
+			size="icon"
+			variant="destructive"
+			onClick={(event) => {
+				event.preventDefault();
+				stop();
+				setMessages((messages) => messages);
+			}}
+		>
+			<StopIcon className="size-4" />
+		</Button>
+	);
+}
+
+const StopButton = memo(PureStopButton);

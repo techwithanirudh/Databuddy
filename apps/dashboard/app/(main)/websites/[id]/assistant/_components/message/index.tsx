@@ -1,5 +1,4 @@
 'use client';
-import type { UseChatHelpers } from '@ai-sdk/react';
 import type { ChatMessage } from '@databuddy/ai/types';
 import type { Vote } from '@databuddy/db';
 // import { PreviewAttachment } from './preview-attachment';
@@ -11,32 +10,28 @@ import { cn, sanitizeText } from '@/lib/utils';
 import { MessageActions } from './message-actions';
 import { MessageEditor } from './message-editor';
 import { MessageReasoning } from './message-reasoning';
+import { useChatStatus } from '@ai-sdk-tools/store';
 
 const PurePreviewMessage = ({
 	chatId,
 	message,
-	status,
+
 	vote,
 	isLoading,
 	isReadonly,
-	regenerate,
-	setMessages,
 }: {
 	chatId: string;
-	status: UseChatHelpers<ChatMessage>['status'];
+
 	message: ChatMessage;
 	vote: Vote | undefined;
 	isLoading: boolean;
 	isReadonly: boolean;
-	setMessages: UseChatHelpers<ChatMessage>['setMessages'];
-	regenerate: UseChatHelpers<ChatMessage>['regenerate'];
 }) => {
 	const [mode, setMode] = useState<'view' | 'edit'>('view');
-
 	// const attachmentsFromMessage = message.parts.filter(
 	//     (part) => part.type === 'file',
 	// );
-
+	const status = useChatStatus();
 	return (
 		<Message from={message.role} key={message.id}>
 			<div
@@ -72,7 +67,7 @@ const PurePreviewMessage = ({
                         </div>
                     )} */}
 
-				{message.parts?.map((part, index) => {
+				{message.parts?.map((part: ChatMessagePart, index: number) => {
 					const { type } = part;
 					const key = `message-${message.id}-part-${index}`;
 
@@ -114,8 +109,6 @@ const PurePreviewMessage = ({
 										<MessageEditor
 											key={message.id}
 											message={message}
-											regenerate={regenerate}
-											setMessages={setMessages}
 											setMode={setMode}
 										/>
 									</div>

@@ -1,5 +1,5 @@
 import { SparkleIcon } from '@phosphor-icons/react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 
 export const ChatGreeting = () => {
 	return (

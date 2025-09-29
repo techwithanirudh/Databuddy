@@ -3,24 +3,24 @@
 import type { UseChatHelpers } from '@ai-sdk/react';
 import type { ChatMessage } from '@databuddy/ai/types';
 import { ChartBarIcon, HashIcon, TrendUpIcon } from '@phosphor-icons/react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { memo } from 'react';
 import {
 	type SuggestedAction,
 	Suggestion,
 } from '@/components/ai-elements/suggestion';
+import { useChatActions } from '@ai-sdk-tools/store';
 
 interface SuggestedActionsProps {
 	chatId: string;
-	sendMessage: UseChatHelpers<ChatMessage>['sendMessage'];
 	websiteId: string;
 }
 
 function PureSuggestedActions({
 	chatId,
 	websiteId,
-	sendMessage,
 }: SuggestedActionsProps) {
+	const { sendMessage } = useChatActions();
 	const suggestedActions: SuggestedAction[] = [
 		{
 			text: 'Show me page views over the last 7 days',

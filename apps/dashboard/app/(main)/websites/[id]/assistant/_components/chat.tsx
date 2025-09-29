@@ -1,7 +1,6 @@
 'use client';
 
-import { useArtifacts } from '@ai-sdk-tools/artifacts/client';
-import { useChat } from '@ai-sdk/react';
+import { useChat } from '@ai-sdk-tools/store';
 import { generateUUID } from '@databuddy/ai/lib/utils';
 import type { ChatMessage } from '@databuddy/ai/types';
 import { DefaultChatTransport } from 'ai';
@@ -30,37 +29,34 @@ const Chat = ({
 	const [currentModelId, setCurrentModelId] = useState(initialChatModel);
 	const currentModelIdRef = useRef(currentModelId);
 
-	const { current } = useArtifacts();
-
 	// Fetch votes for the current chat
 	const { data: votes = [] } = trpc.assistant.getVotes.useQuery(
 		{ chatId: id },
 		{ enabled: !!id }
 	);
 
-	const { messages, sendMessage, setMessages, regenerate, status } =
-		useChat<ChatMessage>({
-			id,
-			messages: initialMessages,
-			generateId: generateUUID,
-			// enableBatching: true,
-			experimental_throttle: 100,
-			transport: new DefaultChatTransport({
-				api: `${API_BASE_URL}/v1/assistant`,
-				prepareSendMessagesRequest({ messages, id, body }) {
-					return {
-						credentials: 'include',
-						body: {
-							id,
-							message: messages.at(-1),
-							selectedChatModel: currentModelIdRef.current,
-							websiteId,
-							...body,
-						},
-					};
-				},
-			}),
-		});
+	useChat<ChatMessage>({
+		id,
+		messages: initialMessages,
+		generateId: generateUUID,
+		// enableBatching: true,
+		experimental_throttle: 100,
+		transport: new DefaultChatTransport({
+			api: `${API_BASE_URL}/v1/assistant`,
+			prepareSendMessagesRequest({ messages, id, body }) {
+				return {
+					credentials: 'include',
+					body: {
+						id,
+						message: messages.at(-1),
+						selectedChatModel: currentModelIdRef.current,
+						websiteId,
+						...body,
+					},
+				};
+			},
+		}),
+	});
 
 	useEffect(() => {
 		currentModelIdRef.current = currentModelId;
@@ -83,20 +79,13 @@ const Chat = ({
 					<Messages
 						chatId={id}
 						isReadonly={false}
-						messages={messages}
-						regenerate={regenerate}
-						setMessages={setMessages}
-						status={status}
 						votes={votes}
 					/>
 
 					<ChatInput
 						chatId={id}
-						messages={messages}
 						onModelChange={setCurrentModelId}
 						selectedModelId={currentModelId}
-						sendMessage={sendMessage}
-						status={status}
 						websiteId={websiteId}
 					/>
 				</div>

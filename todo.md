@@ -1,4 +1,4 @@
-- search is broken
+- search chats is broken
 - cleanup db queries
 - message metadata
 - split history  into history item and history
@@ -24,3 +24,7 @@ chart doesnt update after gen
 - optimize sql query security, and chart gen
 - weird canvas open / close layout shift for chat
 - migrate to @ai-sdk-tools/store
+- do not allow people to send messages while generating in textare submit
+- add forcedToolCall code to force examples to use tools with metadata
+- cache user context in redis
+- prompt input suggestions

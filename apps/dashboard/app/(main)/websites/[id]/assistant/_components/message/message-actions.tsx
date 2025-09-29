@@ -2,6 +2,7 @@ import type { ChatMessage } from '@databuddy/ai/types';
 
 import type { Vote } from '@databuddy/db';
 import {
+	ArrowClockwiseIcon,
 	CheckIcon,
 	CopyIcon,
 	PencilIcon,
@@ -15,6 +16,8 @@ import { useCopyToClipboard } from 'usehooks-ts';
 import { Action, Actions } from '@/components/ai-elements/actions';
 import { trpc } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
+import { useChatActions, useChatMessages, useChatStatus } from '@ai-sdk-tools/store';
+import { deleteTrailingMessages } from '@/app/(main)/websites/[id]/assistant/actions';
 
 export function PureMessageActions({
 	chatId,
@@ -35,6 +38,8 @@ export function PureMessageActions({
 	const [copied, setCopied] = useState(false);
 	const [_optimisticVote, setOptimisticVote] = useState<boolean | null>(null);
 	const utils = trpc.useUtils();
+	const { regenerate } = useChatActions();
+	const messages = useChatMessages();
 
 	const voteMutation = trpc.assistant.voteMessage.useMutation({
 		// Optimistic update: update votes cache immediately to avoid flicker
@@ -118,6 +123,20 @@ export function PureMessageActions({
 		setTimeout(() => setCopied(false), 2000);
 	};
 
+	const handleRegenerate = async () => {
+		const index = messages.findIndex((m) => m.id === message.id);
+		
+		if (index === -1) {
+			return;
+		}
+
+		const prevMessage = messages[index - 1];
+		await deleteTrailingMessages({
+			id: prevMessage.id,
+		});
+		await regenerate({ messageId: prevMessage.id });
+	};
+
 	// User messages get edit (on hover) and copy actions
 	if (message.role === 'user') {
 		return (
@@ -161,8 +180,11 @@ export function PureMessageActions({
 				/>
 			</Action>
 
+			<Action onClick={handleRegenerate} tooltip="Regenerate">
+				<ArrowClockwiseIcon size={16} />
+			</Action>
+			
 			<Action
-				data-testid="message-upvote"
 				disabled={vote?.isUpvoted || voteMutation.isPending}
 				onClick={() => {
 					toast.promise(
@@ -184,7 +206,6 @@ export function PureMessageActions({
 			</Action>
 
 			<Action
-				data-testid="message-downvote"
 				disabled={(vote && !vote.isUpvoted) || voteMutation.isPending}
 				onClick={() => {
 					toast.promise(

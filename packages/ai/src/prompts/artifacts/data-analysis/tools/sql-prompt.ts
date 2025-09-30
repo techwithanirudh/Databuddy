@@ -1,5 +1,5 @@
 import type { z } from 'zod';
-import { getDataAnalysisSchema } from '../../../tools/schema';
+import { getDataAnalysisSchema } from '../../../../tools/schema';
 
 const inputSchema = getDataAnalysisSchema.omit({ showCanvas: true });
 

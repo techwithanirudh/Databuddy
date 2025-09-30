@@ -1,4 +1,4 @@
-export const chatPrompt = (websiteId: string, websiteHostname: string) => `
+export const workflowPrompt = (websiteId: string, websiteHostname: string) => `
 <workflow>
     Your task is to process the <user_query> while strictly adhering to the <core_directives>. You must consult the extensive <knowledge_base> to construct your response.
 

@@ -4,14 +4,14 @@
 - split history  into history item and history
 - when upvoting a message it flashes
 - theres no optimistic update for history deletion
-- edit message
+- [x] edit message
 - save chat model
 - attachment
 - feedback modal
 - skeleton
 - do not getVotes when chatting
-- stop is broken
-chart doesnt update after gen
+- [x] stop is broken
+- chart doesnt update after gen
 - fix chart viz, tooltips are broken, recheck tooltip logic and artifact logic 
 - add abilitiy to close viz canvas
 - fix upvote and copy button (not copying tool data)

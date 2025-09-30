@@ -11,6 +11,7 @@ import { MessageActions } from './message-actions';
 import { MessageEditor } from './message-editor';
 import { MessageReasoning } from './message-reasoning';
 import { useChatStatus } from '@ai-sdk-tools/store';
+import { ToolCallIndicator } from './tool-call-message';
 
 const PurePreviewMessage = ({
 	chatId,
@@ -21,7 +22,6 @@ const PurePreviewMessage = ({
 	isReadonly,
 }: {
 	chatId: string;
-
 	message: ChatMessage;
 	vote: Vote | undefined;
 	isLoading: boolean;
@@ -67,7 +67,7 @@ const PurePreviewMessage = ({
                         </div>
                     )} */}
 
-				{message.parts?.map((part: ChatMessagePart, index: number) => {
+				{message.parts?.map((part, index: number) => {
 					const { type } = part;
 					const key = `message-${message.id}-part-${index}`;
 
@@ -82,8 +82,14 @@ const PurePreviewMessage = ({
 					}
 
 					if (type.startsWith('tool-')) {
+						const { state } = part;
+						const toolName = type.replace('tool-', '');
+
 						return (
 							<MessageContent key={key} variant={'flat'}>
+								{state !== 'output-available' && (
+									<ToolCallIndicator toolName={toolName} />
+								)}
 								<Response>{(part as any)?.output?.text}</Response>
 							</MessageContent>
 						);

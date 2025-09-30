@@ -1,7 +1,6 @@
 import type { RequestHints } from '../../../../apps/api/src/types/agent';
-import { chatPrompt } from './chat-prompt';
 import { corePrompt } from './core';
-import { schemaPrompt } from './schema-prompt';
+import { dataAnalysisPrompt } from './artifacts/data-analysis';
 
 export const getRequestPromptFromHints = (requestHints: RequestHints) => `\
 <context>
@@ -26,7 +25,7 @@ export const systemPrompt = ({
 		selectedChatModel === 'agent-max-model'
 	) {
 		return [
-			corePrompt(websiteHostname, websiteId),
+			corePrompt(websiteId, websiteHostname),
 			requestPrompt,
 			'You follow all the user instructions and provide a detailed response.',
 		]
@@ -37,10 +36,9 @@ export const systemPrompt = ({
 
 	if (selectedChatModel === 'artifact-model') {
 		return [
-			corePrompt(websiteHostname, websiteId),
-			schemaPrompt,
+			corePrompt(websiteId, websiteHostname),
+			dataAnalysisPrompt(websiteId, websiteHostname),
 			requestPrompt,
-			chatPrompt(websiteId, websiteHostname),
 		]
 			.filter(Boolean)
 			.join('\n\n')

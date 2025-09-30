@@ -4,7 +4,7 @@ import z from 'zod';
 import type { Row } from '../artifacts/charts';
 import { getContext } from '../context';
 import { systemPrompt } from '../prompts';
-import { sqlPrompt } from '../prompts/artifacts/data-analysis/sql-prompt';
+import { sqlPrompt } from '../prompts/artifacts/data-analysis/tools/sql-prompt';
 import { provider } from '../providers';
 import { validateSQL } from '../utils/sql';
 import { getDataAnalysisSchema } from './schema';

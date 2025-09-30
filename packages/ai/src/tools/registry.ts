@@ -8,7 +8,7 @@ export const toolMetadata = {
 	},
 	getData: {
 		name: 'getData',
-		title: 'Data',
+		title: 'Get Data',
 		description: 'Get data from the database',
 	},
 } as const;

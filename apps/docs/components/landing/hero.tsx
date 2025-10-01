@@ -1,6 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import Image from 'next/image';
 import DemoContainer from './demo';
 import { SciFiButton } from './scifi-btn';
 import { Spotlight } from './spotlight';
@@ -88,6 +89,25 @@ export default function Hero() {
 								GET STARTED
 							</SciFiButton>
 						</div>
+
+					{/* Product Hunt Badge */}
+					<div className="flex w-full justify-center pt-2 lg:justify-start">
+						<a
+							className="inline-flex items-center"
+							href="https://www.producthunt.com/products/databuddy-analytics"
+							rel="noopener noreferrer"
+							target="_blank"
+							aria-label="View Databuddy Analytics on Product Hunt"
+						>
+							<Image
+								alt="Databuddy Analytics on Product Hunt"
+								height={40}
+								src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1021633&theme=light"
+								title="Databuddy Analytics — Product Hunt"
+								width={250}
+							/>
+						</a>
+					</div>
 					</div>
 
 					{/* Map Visualization */}

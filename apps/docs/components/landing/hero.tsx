@@ -1,4 +1,4 @@
-	'use client';
+'use client';
 
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
@@ -102,7 +102,7 @@ export default function Hero() {
 							<Image
 								alt="Databuddy Analytics on Product Hunt"
 								height={40}
-								src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?product=databuddy-analytics&theme=light"
+								src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1021633&theme=light"
 								title="Databuddy Analytics — Product Hunt"
 								width={250}
 							/>
